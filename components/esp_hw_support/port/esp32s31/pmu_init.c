@@ -23,7 +23,9 @@
 #include "esp_hw_log.h"
 #include "hal/regi2c_ctrl_ll.h"
 #include "soc/rtc.h"
-#include "hal/efuse_hal.h"
+#include "soc/reset_reasons.h"
+#include "esp_rom_sys.h"
+#include "esp_private/ocode_init.h"
 
 ESP_HW_LOG_ATTR_TAG(TAG, "pmu_init");
 
@@ -111,8 +113,7 @@ void pmu_hp_system_init(pmu_context_t *ctx, pmu_hp_mode_t mode, pmu_hp_system_pa
      * sleep modes */
     pmu_ll_hp_set_bias_xpd                    (ctx->hal->dev, mode, anlg->bias.xpd_bias);
     pmu_ll_hp_set_dbg_atten                   (ctx->hal->dev, mode, anlg->bias.dbg_atten);
-    pmu_ll_hp_set_current_power_off           (ctx->hal->dev, mode, anlg->bias.pd_cur);
-    pmu_ll_hp_set_bias_sleep_enable           (ctx->hal->dev, mode, anlg->bias.bias_sleep);
+    pmu_ll_hp_set_pd_cur_bias_sleep(ctx->hal->dev, mode, anlg->bias.pd_cur, anlg->bias.bias_sleep);
     if (mode == PMU_MODE_HP_ACTIVE) {
         pmu_ll_hp_set_regulator_lp_dbias_voltage(ctx->hal->dev, mode, anlg->regulator0.lp_dbias_vol);
         pmu_ll_hp_set_regulator_hp_dbias_voltage(ctx->hal->dev, mode, anlg->regulator0.hp_dbias_vol);
@@ -153,10 +154,11 @@ void pmu_lp_system_init(pmu_context_t *ctx, pmu_lp_mode_t mode, pmu_lp_system_pa
 
     /* Default configuration of lp-system analog sub-system in active and
      * sleep modes */
-    pmu_ll_lp_set_bias_xpd             (ctx->hal->dev, PMU_MODE_LP_SLEEP, anlg->bias.xpd_bias);
-    pmu_ll_lp_set_dbg_atten            (ctx->hal->dev, PMU_MODE_LP_SLEEP, anlg->bias.dbg_atten);
-    pmu_ll_lp_set_current_power_off    (ctx->hal->dev, PMU_MODE_LP_SLEEP, anlg->bias.pd_cur);
-    pmu_ll_lp_set_bias_sleep_enable    (ctx->hal->dev, PMU_MODE_LP_SLEEP, anlg->bias.bias_sleep);
+    if (mode == PMU_MODE_LP_SLEEP) {
+        pmu_ll_lp_set_bias_xpd             (ctx->hal->dev, PMU_MODE_LP_SLEEP, anlg->bias.xpd_bias);
+        pmu_ll_lp_set_dbg_atten            (ctx->hal->dev, PMU_MODE_LP_SLEEP, anlg->bias.dbg_atten);
+        pmu_ll_lp_set_pd_cur_bias_sleep    (ctx->hal->dev, PMU_MODE_LP_SLEEP, anlg->bias.pd_cur, anlg->bias.bias_sleep);
+    }
     pmu_ll_lp_set_regulator_xpd        (ctx->hal->dev, mode, anlg->regulator0.xpd);
     pmu_ll_lp_set_regulator_dbias      (ctx->hal->dev, mode, anlg->regulator0.dbias);
     pmu_ll_lp_set_regulator_slp_xpd    (ctx->hal->dev, mode, anlg->regulator0.slp_xpd);
@@ -241,6 +243,12 @@ void pmu_init(void)
     pmu_hp_system_init_default(PMU_instance());
     pmu_lp_system_init_default(PMU_instance());
     pmu_power_domain_force_default(PMU_instance());
+
+#if !CONFIG_IDF_ENV_FPGA
+    if (esp_rom_get_reset_reason(0) == RESET_REASON_CHIP_POWER_ON) {
+        esp_ocode_calib_init();
+    }
+#endif
 
 #if CONFIG_ESP_ENABLE_PVT
     /*setup pvt function*/

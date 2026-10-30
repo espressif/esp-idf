@@ -1,15 +1,31 @@
 以太网
 =========
 
-{IDF_TARGET_SOC_DMA_DESC_SIZE:default="", esp32="32 字节", esp32p4=" 32 字节（由于需要适当的内存对齐，实际占用 64 字节）"}
-{IDF_TARGET_SOC_REF_CLK_IN_GPIO:default="", esp32="GPIO0", esp32p4="GPIO32，GPIO44 和 GPIO50"}
-{IDF_TARGET_SOC_REF_CLK_OUT_GPIO:default="", esp32="GPIO0，GPIO16 和 GPIO17", esp32p4="GPIO23 和 GPIO39"}
-{IDF_TARGET_SOC_RMII_TX_EN:default="", esp32="GPIO21", esp32p4="GPIO33，GPIO40 和 GPIO49"}
-{IDF_TARGET_SOC_RMII_TXD0:default="", esp32="GPIO19", esp32p4="GPIO34 和 GPIO41"}
-{IDF_TARGET_SOC_RMII_TXD1:default="", esp32="GPIO22", esp32p4="GPIO35 和 GPIO42"}
-{IDF_TARGET_SOC_RMII_CRS_DV:default="", esp32="GPIO27", esp32p4="GPIO28，GPIO45 和 GPIO51"}
-{IDF_TARGET_SOC_RMII_RXD0:default="", esp32="GPIO25", esp32p4="GPIO29，GPIO46 和 GPIO52"}
-{IDF_TARGET_SOC_RMII_RXD1:default="", esp32="GPIO26", esp32p4="GPIO30，GPIO47 和 GPIO53"}
+{IDF_TARGET_SOC_DMA_DESC_SIZE:default="", esp32="32 字节", esp32p4=" 32 字节（由于需要适当的内存对齐，实际占用 64 字节）", esp32s31="32 字节"}
+{IDF_TARGET_SOC_REF_CLK_IN_GPIO:default="", esp32="GPIO0", esp32p4="GPIO32、GPIO44 或 GPIO50", esp32s31="GPIO13 或 GPIO43"}
+{IDF_TARGET_SOC_REF_CLK_OUT_GPIO:default="", esp32="GPIO0、GPIO16 或 GPIO17", esp32p4="", esp32s31="GPIO13 或 GPIO43"}
+{IDF_TARGET_SOC_INTERNAL_CLK_OUT_SRC:default="", esp32s31="MPLL、CPLL 或 APLL"}
+{IDF_TARGET_SOC_RMII_TX_EN:default="", esp32="GPIO21", esp32p4="GPIO33、GPIO40 或 GPIO49", esp32s31="GPIO12 或 GPIO37"}
+{IDF_TARGET_SOC_RMII_TXD0:default="", esp32="GPIO19", esp32p4="GPIO34 或 GPIO41", esp32s31="GPIO8 或 GPIO44"}
+{IDF_TARGET_SOC_RMII_TXD1:default="", esp32="GPIO22", esp32p4="GPIO35 或 GPIO42", esp32s31="GPIO9 或 GPIO45"}
+{IDF_TARGET_SOC_RMII_CRS_DV:default="", esp32="GPIO27", esp32p4="GPIO28、GPIO45 或 GPIO51", esp32s31="GPIO15 或 GPIO36"}
+{IDF_TARGET_SOC_RMII_RXD0:default="", esp32="GPIO25", esp32p4="GPIO29、GPIO46 或 GPIO52", esp32s31="GPIO19"}
+{IDF_TARGET_SOC_RMII_RXD1:default="", esp32="GPIO26", esp32p4="GPIO30、GPIO47 或 GPIO53", esp32s31="GPIO18 或 GPIO40"}
+{IDF_TARGET_SOC_RGMII_TX_CLK:default="", esp32s31="GPIO13 或 GPIO43"}
+{IDF_TARGET_SOC_RGMII_TX_CTL:default="", esp32s31="GPIO12 或 GPIO37"}
+{IDF_TARGET_SOC_RGMII_TXD0:default="", esp32s31="GPIO8 或 GPIO44"}
+{IDF_TARGET_SOC_RGMII_TXD1:default="", esp32s31="GPIO9 或 GPIO45"}
+{IDF_TARGET_SOC_RGMII_TXD2:default="", esp32s31="GPIO10 或 GPIO46"}
+{IDF_TARGET_SOC_RGMII_TXD3:default="", esp32s31="GPIO11 或 GPIO47"}
+{IDF_TARGET_SOC_RGMII_RX_CLK:default="", esp32s31="GPIO14 或 GPIO42"}
+{IDF_TARGET_SOC_RGMII_RX_CTL:default="", esp32s31="GPIO15 或 GPIO36"}
+{IDF_TARGET_SOC_RGMII_RXD0:default="", esp32s31="GPIO19"}
+{IDF_TARGET_SOC_RGMII_RXD1:default="", esp32s31="GPIO18 或 GPIO40"}
+{IDF_TARGET_SOC_RGMII_RXD2:default="", esp32s31="GPIO17 或 GPIO39"}
+{IDF_TARGET_SOC_RGMII_RXD3:default="", esp32s31="GPIO16 或 GPIO38"}
+{IDF_TARGET_SOC_PHY_REF_CLK_GPIO:default="", esp32p4="GPIO23 或 GPIO39", esp32s31="GPIO35"}
+{IDF_TARGET_SOC_PHY_REF_CLK_SRC:default="", esp32p4="MPLL", esp32s31="CPLL 或 MPLL"}
+{IDF_TARGET_SOC_CNNT_GPIO_RANGE:default="", esp32s31="GPIO13 至 GPIO19"}
 
 
 :link_to_translation:`en:[English]`
@@ -130,10 +146,29 @@
 
     MII 和 RMII 的一个明显区别在于其所需的信号数。MII 通常需要多达 18 个信号，RMII 接口则仅需要 9 个信号。
 
-    .. note::
-        ESP-IDF 只支持 RMII 接口，所以请将 :cpp:member:`eth_esp32_emac_config_t::interface` 设置为 :cpp:enumerator:`eth_data_interface_t::EMAC_DATA_INTERFACE_RMII`。
+    .. only:: not SOC_EMAC_SUPPORT_1000M
 
-    在 RMII 模式下，接收器和发射器信号的参考时钟为 ``REF_CLK``。 **在访问 PHY 和 MAC 时，REF_CLK 必须保持稳定**。一般来说，根据设计中 PHY 设备的特征，可通过以下三种方式生成 ``REF_CLK``：
+        .. note::
+            ESP-IDF 只支持 RMII 接口，所以请将 :cpp:member:`eth_esp32_emac_config_t::interface` 设置为 :cpp:enumerator:`eth_data_interface_t::EMAC_DATA_INTERFACE_RMII`。
+
+    .. only:: SOC_EMAC_SUPPORT_1000M
+
+        {IDF_TARGET_NAME} 还支持以 1000 Mbps 运行所需的 **RGMII**\ （简化千兆媒体独立接口）。请根据开发板设计，将 :cpp:member:`eth_esp32_emac_config_t::interface` 设置为 :cpp:enumerator:`eth_data_interface_t::EMAC_DATA_INTERFACE_RMII` 或 :cpp:enumerator:`eth_data_interface_t::EMAC_DATA_INTERFACE_RGMII`。有关 RGMII 的具体配置，请参阅 :ref:`rgmii-interface`。
+
+        .. note::
+            ESP-IDF 不支持 MII 接口。
+
+    .. only:: esp32s31
+
+        .. note::
+            {IDF_TARGET_SOC_CNNT_GPIO_RANGE} 属于 CNNT 电源域，需要以组为单位处理 IO MUX。如果选择该范围内的任意 GPIO 用于 RMII 或 RGMII 信号，则该范围内的所有 GPIO（包括未显式选择的 GPIO）都会路由到 EMAC。因此，请勿将该范围内的其余 GPIO 分配给非 EMAC 功能。
+
+    .. _rmii-interface:
+
+    RMII 接口
+    ^^^^^^^^^
+
+    在 RMII 模式下，接收器和发射器信号的参考时钟为 ``REF_CLK``。**在访问 PHY 和 MAC 时，REF_CLK 必须保持稳定**。一般来说，根据设计中 PHY 设备的特征，可通过以下三种方式生成 ``REF_CLK``：
 
     * 一些 PHY 芯片可以从其外部连接的 25 MHz 晶体振荡器中衍生出 ``REF_CLK`` （如图中的选项 **a** 所示）。对于此类芯片，请将 :cpp:member:`eth_esp32_emac_config_t::clock_config` 中的 :cpp:member:`eth_mac_clock_config_t::clock_mode` 设置为 :cpp:enumerator:`emac_rmii_clock_mode_t::EMAC_CLK_EXT_IN`。
 
@@ -146,7 +181,7 @@
         .. warning::
             如果将 RMII 时钟模式配置为 :cpp:enumerator:`emac_rmii_clock_mode_t::EMAC_CLK_OUT`，则会使用内部音频 PLL (APLL) 时钟作为 50 MHz 时钟源。因此，请确保该配置不会与 I2S 总线的配置发生冲突。
 
-            当选择内部时钟时，可以使用 ``GPIO0`` 输出 ``REF_CLK`` 信号。然而，在这种情况下时钟是直接输出到 GPIO 的，因此与 EMAC 外设并没有直接关联。有时这种配置可能无法很好地兼容所使用的 PHY 芯片。如果设计中未使用 PSRAM，则还可以使用 GPIO16 和 GPIO17 来输出参考时钟信号。其时钟源相同（均来自 APLL），但这些信号是通过 EMAC 外设引出的。
+            当选择内部时钟时，可以使用 ``GPIO0`` 输出 ``REF_CLK`` 信号。然而，在这种情况下时钟是直接输出到 GPIO 的，因此与 EMAC 外设并没有直接关联。有时这种配置可能无法很好地兼容所使用的 PHY 芯片。如果设计中未使用 PSRAM，则还可以使用 GPIO16 或 GPIO17 来输出参考时钟信号。其时钟源相同（均来自 APLL），但这些信号是通过 EMAC 外设引出的。
 
             如果配置 RMII 时钟模式为 :cpp:enumerator:`emac_rmii_clock_mode_t::EMAC_CLK_EXT_IN`，那么只能选择 ``GPIO0`` 输入 ``REF_CLK`` 信号。请注意， ``GPIO0`` 同时也是 ESP32 上一个重要的 strapping GPIO 管脚。如果上电时 GPIO0 为低电平，则 ESP32 将进入下载模式，需进行手动复位重启系统。解决这个问题的方法是，在硬件中默认禁用 ``REF_CLK``，从而避免 strapping 管脚在启动阶段受到其他信号的干扰。随后，再在以太网驱动安装阶段重新启用 ``REF_CLK``。
 
@@ -158,35 +193,39 @@
 
         .. warning::
 
-            如希望 **以太网与 Wi-Fi 一起工作**，不要选择 ESP32 作为 ``REF_CLK`` 的源，因为这会导致 ``REF_CLK`` 不稳定。可以选择禁用 Wi-Fi，或使用 PHY 或外部振荡器作为 ``REF_CLK`` 的源。
+            如希望 **以太网与 Wi-Fi 或蓝牙一起工作**，不要选择 ESP32 作为 ``REF_CLK`` 的源，因为这会导致 ``REF_CLK`` 不稳定。可以选择禁用 Wi-Fi，或使用 PHY 或外部振荡器作为 ``REF_CLK`` 的源。
 
     .. only:: not esp32
 
         .. note::
-            如果 RMII 时钟模式配置为 :cpp:enumerator:`emac_rmii_clock_mode_t::EMAC_CLK_OUT`，则可以通过 IO_MUX 将 {IDF_TARGET_SOC_REF_CLK_OUT_GPIO} 选择为 ``REF_CLK`` 信号的输出管脚。
+            如果 RMII 时钟模式配置为 :cpp:enumerator:`emac_rmii_clock_mode_t::EMAC_CLK_OUT`，则可以通过 IO_MUX 将 {IDF_TARGET_SOC_PHY_REF_CLK_GPIO} 选择为 ``REF_CLK`` 信号的输出管脚。该时钟来自与 EMAC 无直接关联的 PLL ({IDF_TARGET_SOC_PHY_REF_CLK_SRC})。
 
             如果 RMII 时钟模式配置为 :cpp:enumerator:`emac_rmii_clock_mode_t::EMAC_CLK_EXT_IN`，则可以通过 IO_MUX 将 {IDF_TARGET_SOC_REF_CLK_IN_GPIO} 选择为 ``REF_CLK`` 信号的输入管脚。
 
-    .. only:: esp32p4
+            .. only:: SOC_EMAC_SUPPORT_1000M
 
-        .. warning::
-            如果 RMII 时钟模式配置为 :cpp:enumerator:`emac_rmii_clock_mode_t::EMAC_CLK_OUT`，EMAC 将通过整数分频器从 MPLL 获取 50 MHz RMII 参考时钟。当同时启用 PSRAM 时，两个外设共享 MPLL，PSRAM 会将 MPLL 锁定在由其速度配置决定的频率上。如果 PSRAM 速度配置为 80 MHz (:menuitem:`CONFIG_SPIRAM_SPEED`)，MPLL 将运行在 320 MHz，而 320 MHz 无法通过任何整数分频得到满足 ±50 ppm 容差要求的 50 MHz（最接近的候选值为 320 / 6 ≈ 53.33 MHz）。在此配置下，EMAC 初始化将失败。
-
-            如果必须使用 80 MHz 的 PSRAM 速度，请通过外部时钟源（PHY 或振荡器）提供 ``REF_CLK``，并配置为 :cpp:enumerator:`emac_rmii_clock_mode_t::EMAC_CLK_EXT_IN`。
+                对于支持 1000 Mbps 的设备，另一种选择是通过 IO_MUX 将 {IDF_TARGET_SOC_REF_CLK_OUT_GPIO} 选择为 ``REF_CLK`` 信号的输出管脚。此时，时钟来自与 EMAC 直接关联的 PLL ({IDF_TARGET_SOC_INTERNAL_CLK_OUT_SRC})，因此 ``REF_CLK`` 可在 EMAC 内部使用，无需外部回环。虽然此内部时钟路径是生成随链路速率变化的 RGMII ``TX_CLK`` 所必需的，但在 RMII 模式下同样可用。
 
     .. only:: not SOC_EMAC_RMII_CLK_OUT_INTERNAL_LOOPBACK
 
         .. warning::
-            如果 RMII 时钟模式配置为 :cpp:enumerator:`emac_rmii_clock_mode_t::EMAC_CLK_OUT`，则必须从外部将 ``REF_CLK`` 输出信号回环到 EMAC。请将 :cpp:member:`eth_esp32_emac_config_t::clock_config_out_in` 中的 :cpp:member:`eth_mac_clock_config_t::clock_mode` 配置为 :cpp:enumerator:`emac_rmii_clock_mode_t::EMAC_CLK_EXT_IN`，并选择与 ``REF_CLK`` 输入 GPIO ({IDF_TARGET_SOC_REF_CLK_IN_GPIO}) 相关联的 GPIO 编号。
+            如果 RMII 时钟模式配置为 :cpp:enumerator:`emac_rmii_clock_mode_t::EMAC_CLK_OUT`，且选择 {IDF_TARGET_SOC_PHY_REF_CLK_GPIO}，则必须从外部将 ``REF_CLK`` 输出信号回环到 EMAC。请将 :cpp:member:`eth_esp32_emac_config_t::clock_config_out_in` 中的 :cpp:member:`eth_mac_clock_config_t::clock_mode` 配置为 :cpp:enumerator:`emac_rmii_clock_mode_t::EMAC_CLK_EXT_IN`，并选择与 ``REF_CLK`` 输入 GPIO ({IDF_TARGET_SOC_REF_CLK_IN_GPIO}) 相关联的 GPIO 编号。
 
-            .. only:: esp32p4
+            .. figure:: ../../../_static/rmii_ref_clk.png
+                :scale: 95 %
+                :alt: RMII REF_CLK 输出回环
+                :figclass: align-center
 
-                .. figure:: ../../../_static/rmii_ref_clk_esp32p4.png
-                    :scale: 95 %
-                    :alt: RMII REF_CKL Output Loopback
-                    :figclass: align-center
+                RMII REF_CLK 输出回环
 
-                    RMII REF_CKL 输出回环
+    .. only:: not esp32
+
+        .. warning::
+            如果 RMII 时钟模式配置为 :cpp:enumerator:`emac_rmii_clock_mode_t::EMAC_CLK_OUT`，EMAC 会通过整数分频器从内部 PLL 时钟源生成 50 MHz RMII 参考时钟。该 PLL 时钟源可能与其他外设共享，而这些外设的配置可能会限制其频率。可用的时钟源及其共享方式因芯片目标而异。
+
+            如果共享 PLL 固定在某个频率，且该频率无法通过整数分频得到满足 ±50 ppm 容差要求的 50 MHz 时钟，则 EMAC 初始化将失败。例如，某种 PSRAM 配置可能会将共享 MPLL 固定为 320 MHz；320 MHz 无法通过任何整数分频得到满足容差要求的 50 MHz（最接近的候选值为 320 / 6 ≈ 53.33 MHz）。
+
+            在这种情况下，请尽可能将共享该 PLL 的外设配置为使用兼容的时钟频率。否则，请通过外部时钟源（PHY 或振荡器）提供 ``REF_CLK``，并改为配置 :cpp:enumerator:`emac_rmii_clock_mode_t::EMAC_CLK_EXT_IN`。
 
     **无论选择哪种 RMII 时钟模式，都请确保硬件设计中 REF_CLK 的信号完整性！** 信号线越短越好，并远离 RF 设备和电感。
 
@@ -197,93 +236,169 @@
 
     .. only:: SOC_EMAC_USE_MULTI_IO_MUX
 
-        .. note::
-            数据平面中使用的信号可以通过 IO_MUX 配置为 RMII 预定义的 GPIO，请参阅下表。数据平面 GPIO 配置由驱动程序根据 :cpp:member:`eth_esp32_emac_config_t::emac_dataif_gpio` 的内容执行。控制平面中使用的信号可以通过 GPIO 矩阵路由到任何空闲的 GPIO。
+        数据平面中使用的信号可以通过 IO_MUX 配置为 RMII 预定义的 GPIO，请参阅下表。数据平面 GPIO 配置由驱动程序根据 :cpp:member:`eth_esp32_emac_config_t::emac_dataif_gpio` 的内容执行。控制平面中使用的信号可以通过 GPIO 矩阵路由到任何空闲的 GPIO。
 
-            .. list-table:: {IDF_TARGET_NAME} RMII 数据平面 GPIO
-                :header-rows: 1
-                :widths: 50 50
-                :align: center
+        .. list-table:: {IDF_TARGET_NAME} RMII 数据平面 GPIO
+            :header-rows: 1
+            :widths: 50 50
+            :align: center
 
-                * - 管脚名
-                  - GPIO 编号
+            * - 管脚名
+              - GPIO 编号
 
-                * - TX_EN
-                  - {IDF_TARGET_SOC_RMII_TX_EN}
+            * - TX_EN
+              - {IDF_TARGET_SOC_RMII_TX_EN}
 
-                * - TXD0
-                  - {IDF_TARGET_SOC_RMII_TXD0}
+            * - TXD0
+              - {IDF_TARGET_SOC_RMII_TXD0}
 
-                * - TXD1
-                  - {IDF_TARGET_SOC_RMII_TXD1}
+            * - TXD1
+              - {IDF_TARGET_SOC_RMII_TXD1}
 
-                * - CRS_DV
-                  - {IDF_TARGET_SOC_RMII_CRS_DV}
+            * - CRS_DV
+              - {IDF_TARGET_SOC_RMII_CRS_DV}
 
-                * - RXD0
-                  - {IDF_TARGET_SOC_RMII_RXD0}
+            * - RXD0
+              - {IDF_TARGET_SOC_RMII_RXD0}
 
-                * - RXD1
-                  - {IDF_TARGET_SOC_RMII_RXD1}
+            * - RXD1
+              - {IDF_TARGET_SOC_RMII_RXD1}
 
-根据以太网板设计，需要分别为 MAC 和 PHY 配置必要的参数，通过两者完成驱动程序的安装。
+    .. only:: SOC_EMAC_SUPPORT_1000M
 
-MAC 的相关配置可以在 :cpp:class:`eth_mac_config_t` 中找到，具体包括：
+        .. _rgmii-interface:
 
-.. list::
+        RGMII 接口
+        ^^^^^^^^^^
 
-    * :cpp:member:`eth_mac_config_t::sw_reset_timeout_ms`：软件复位超时值，单位为毫秒。通常，MAC 复位应在 100 ms 内完成。
+        在 1000 Mbps 下，RGMII 在收发两个方向上均使用以 125 MHz 时钟驱动的 4 位宽数据路径，并在时钟的上升沿和下降沿传输数据。在 100 Mbps 和 10 Mbps 下，时钟频率分别为 25 MHz 和 2.5 MHz。与 RMII 相比，RGMII 增加了 ``TXD2``、``TXD3``、``RXD2`` 和 ``RXD3``，并以 ``TX_CTL``/``RX_CTL`` 取代 ``TX_EN``/``CRS_DV``。
 
-    * :cpp:member:`eth_mac_config_t::rx_task_stack_size` 和 :cpp:member:`eth_mac_config_t::rx_task_prio`：MAC 驱动会创建一个专门的任务来处理传入的数据包，这两个参数用于设置该任务的堆栈大小和优先级。
+        与 RMII 不同，RGMII 的两个时钟并不共享：
 
-    * :cpp:member:`eth_mac_config_t::flags`：指定 MAC 驱动应支持的额外功能，尤其适用于某些特殊情况。这个字段的值支持与以 ``ETH_MAC_FLAG_`` 为前缀的宏进行 OR 运算。例如，如果要求 MAC 驱动程序在 cache 禁用时仍能正常工作，那么则需要用 :c:macro:`ETH_MAC_FLAG_WORK_WITH_CACHE_DISABLE` 配置这个字段。
+        * ``RX_CLK`` 始终由 PHY 提供，并作为 {IDF_TARGET_NAME} EMAC 的输入。请在 :cpp:member:`eth_esp32_emac_config_t::clock_config` 的 :cpp:member:`eth_mac_clock_config_t::clock_rx_gpio` 中配置其连接的 GPIO。
 
-.. only:: SOC_EMAC_SUPPORTED
+        * ``TX_CLK`` 由 EMAC 内部生成并输出至 PHY。请在 :cpp:member:`eth_mac_clock_config_t::clock_tx_gpio` 中配置相应 GPIO。驱动程序从 PLL ({IDF_TARGET_SOC_INTERNAL_CLK_OUT_SRC}) 生成该时钟，并在链路速率变化时重新配置分频器，从而在 1000 Mbps、100 Mbps 和 10 Mbps 下分别输出 125 MHz、25 MHz 和 2.5 MHz。其 PLL 时钟源由 :menuitem:`CONFIG_ETH_EMAC_INTERNAL_OUT_CLK_SRC` 选择，默认由驱动程序自动选择。
 
-    :cpp:class:`eth_esp32_emac_config_t` 描述了 **内部 MAC 模块** 的特定配置，其中包括：
+        EMAC 还可以选择输出 50 MHz ``PHY_REF_CLK``，使 PHY 无需使用自身的晶体。将 :cpp:member:`eth_mac_clock_config_t::clock_phy_ref_gpio` 设置为 GPIO 编号 {IDF_TARGET_SOC_PHY_REF_CLK_GPIO} 即可启用，设置为 ``-1`` 则保持禁用。其 PLL 时钟源 ({IDF_TARGET_SOC_PHY_REF_CLK_SRC}) 由 :menuitem:`CONFIG_ETH_EMAC_PHY_REF_CLK_SRC` 选择。
+
+        RGMII 数据平面和时钟信号可通过 IO_MUX 分配给以下 GPIO。请通过 :cpp:member:`eth_esp32_emac_config_t::emac_dataif_gpio` 配置数据和控制信号，并按上述说明通过 :cpp:member:`eth_esp32_emac_config_t::clock_config` 配置 ``TX_CLK``、``RX_CLK`` 和 ``PHY_REF_CLK``。
+
+        .. list-table:: {IDF_TARGET_NAME} RGMII 数据平面和时钟 GPIO
+            :header-rows: 1
+            :widths: 50 50
+            :align: center
+
+            * - 管脚名
+              - GPIO 编号
+
+            * - TX_CLK
+              - {IDF_TARGET_SOC_RGMII_TX_CLK}
+
+            * - TX_CTL
+              - {IDF_TARGET_SOC_RGMII_TX_CTL}
+
+            * - TXD0
+              - {IDF_TARGET_SOC_RGMII_TXD0}
+
+            * - TXD1
+              - {IDF_TARGET_SOC_RGMII_TXD1}
+
+            * - TXD2
+              - {IDF_TARGET_SOC_RGMII_TXD2}
+
+            * - TXD3
+              - {IDF_TARGET_SOC_RGMII_TXD3}
+
+            * - RX_CLK
+              - {IDF_TARGET_SOC_RGMII_RX_CLK}
+
+            * - RX_CTL
+              - {IDF_TARGET_SOC_RGMII_RX_CTL}
+
+            * - RXD0
+              - {IDF_TARGET_SOC_RGMII_RXD0}
+
+            * - RXD1
+              - {IDF_TARGET_SOC_RGMII_RXD1}
+
+            * - RXD2
+              - {IDF_TARGET_SOC_RGMII_RXD2}
+
+            * - RXD3
+              - {IDF_TARGET_SOC_RGMII_RXD3}
+
+            * - PHY_REF_CLK
+              - {IDF_TARGET_SOC_PHY_REF_CLK_GPIO}
+
+配置参数
+--------
+
+需要根据以太网开发板的设计分别为 MAC 和 PHY 配置必要参数，然后将二者组合起来完成驱动程序的安装。
+
+MAC 配置
+^^^^^^^^
+
+    MAC 层的基本通用配置由 :cpp:class:`eth_mac_config_t` 描述，包括：
 
     .. list::
 
-        * :cpp:member:`eth_esp32_emac_config_t::smi_mdc_gpio_num` 和 :cpp:member:`eth_esp32_emac_config_t::smi_mdio_gpio_num`：连接 SMI 信号的 GPIO 编号。
+        * :cpp:member:`eth_mac_config_t::sw_reset_timeout_ms`：软件复位超时值，单位为毫秒。通常，MAC 复位应在 100 ms 内完成。
 
-        * :cpp:member:`eth_esp32_emac_config_t::interface`：配置到 PHY (MII/RMII) 的 MAC 数据接口。
+        * :cpp:member:`eth_mac_config_t::rx_task_stack_size` 和 :cpp:member:`eth_mac_config_t::rx_task_prio`：MAC 驱动会创建一个专门的任务来处理传入的数据包，这两个参数用于设置该任务的堆栈大小和优先级。
 
-        * :cpp:member:`eth_esp32_emac_config_t::clock_config`：配置 EMAC 接口时钟（RMII 模式下的 ``REF_CLK`` 模式以及 GPIO 编号）。
+        * :cpp:member:`eth_mac_config_t::flags`：指定 MAC 驱动应支持的额外功能，尤其适用于某些特殊情况。这个字段的值支持与以 ``ETH_MAC_FLAG_`` 为前缀的宏进行 OR 运算。例如，如果要求 MAC 驱动程序在 cache 禁用时仍能正常工作，那么则需要用 :c:macro:`ETH_MAC_FLAG_WORK_WITH_CACHE_DISABLE` 配置这个字段。
 
-        * :cpp:member:`eth_esp32_emac_config_t::intr_priority`： 设置 MAC 中断的优先级。如果设置为 ``0`` 或负值，则驱动程序将分配一个具有默认优先级的中断。否则，驱动程序将使用给定的优先级。请注意，可以设置 *低*、 *中* 中断优先级（1 到 3），因为这可以在 C 中处理。
+    .. only:: SOC_EMAC_SUPPORTED
 
-        :SOC_EMAC_USE_MULTI_IO_MUX: * :cpp:member:`eth_esp32_emac_config_t::emac_dataif_gpio`：EMAC MII/RMII 数据平面 GPIO 编号配置。
+        :cpp:class:`eth_esp32_emac_config_t` 描述了 **内部 MAC 模块** 的特定配置，其中包括：
 
-        :not SOC_EMAC_RMII_CLK_OUT_INTERNAL_LOOPBACK: * :cpp:member:`eth_esp32_emac_config_t::clock_config_out_in`：当 ``REF_CLK`` 信号在内部生成并从外部回环到 EMAC 时，配置 EMAC 输入接口时钟。必须始终将 EMAC 的模式配置为 :cpp:enumerator:`emac_rmii_clock_mode_t::EMAC_CLK_EXT_IN`。此选项仅在 :cpp:member:`eth_esp32_emac_config_t::clock_config` 的配置设置为 :cpp:enumerator:`emac_rmii_clock_mode_t::EMAC_CLK_OUT` 时有效。
+        .. list::
 
-    使用内部 MAC 时的内存注意事项
-    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+            * :cpp:member:`eth_esp32_emac_config_t::smi_mdc_gpio_num` 和 :cpp:member:`eth_esp32_emac_config_t::smi_mdio_gpio_num`：连接 SMI 信号的 GPIO 编号。
 
-    内部 MAC 子系统通过 DMA 使用描述符链表在 CPU 域之间传输数据。描述符有发送和接收两种类型，分别保存接收或已发送帧的状态信息，或提供传输控制。每个描述符还包含指向当前数据缓冲区和下一个描述符的指针。因此，在支持 DMA 的内存中，单个 EMAC DMA 描述符的大小为 {IDF_TARGET_SOC_DMA_DESC_SIZE}。
+            :not SOC_EMAC_SUPPORT_1000M: * :cpp:member:`eth_esp32_emac_config_t::interface`：配置连接到 PHY 的 MAC 数据接口 (MII/RMII)。
+            :SOC_EMAC_SUPPORT_1000M: * :cpp:member:`eth_esp32_emac_config_t::interface`：配置连接到 PHY 的 MAC 数据接口 (RMII/RGMII)。
 
-    默认配置应涵盖大多数用例。然而，某些情况可能需要对以太网 DMA 内存的使用进行配置，以满足特定需求。典型问题可能发生于下列情形：
+            :not SOC_EMAC_SUPPORT_1000M: * :cpp:member:`eth_esp32_emac_config_t::clock_config`：配置 EMAC 接口时钟（RMII 模式下的 ``REF_CLK`` 模式和 GPIO 编号）。
+            :SOC_EMAC_SUPPORT_1000M: * :cpp:member:`eth_esp32_emac_config_t::clock_config`：配置 EMAC 接口时钟（RMII 模式下的 ``REF_CLK`` 模式和 GPIO 编号，或 RGMII 模式下的 ``RX_CLK``、``TX_CLK`` 及可选的 ``PHY_REF_CLK`` GPIO 编号）。
+
+            * :cpp:member:`eth_esp32_emac_config_t::intr_priority`：设置 MAC 中断的优先级。如果设置为 ``0`` 或负值，则驱动程序将分配具有默认优先级的中断；否则，驱动程序将使用给定的优先级。请注意，可以设置 *低* 和 *中* 中断优先级（1 到 3），因为这些中断可以在 C 中处理。
+
+            :SOC_EMAC_USE_MULTI_IO_MUX and not SOC_EMAC_SUPPORT_1000M: * :cpp:member:`eth_esp32_emac_config_t::emac_dataif_gpio`：配置 EMAC MII/RMII 数据平面 GPIO 编号。
+            :SOC_EMAC_USE_MULTI_IO_MUX and SOC_EMAC_SUPPORT_1000M: * :cpp:member:`eth_esp32_emac_config_t::emac_dataif_gpio`：配置 EMAC RMII/RGMII 数据平面 GPIO 编号。
+
+            :not SOC_EMAC_RMII_CLK_OUT_INTERNAL_LOOPBACK: * :cpp:member:`eth_esp32_emac_config_t::clock_config_out_in`：当 ``REF_CLK`` 信号由 ESP 芯片内部生成并从外部回环到 EMAC 时，配置 EMAC 输入接口时钟。必须始终将模式配置为 :cpp:enumerator:`emac_rmii_clock_mode_t::EMAC_CLK_EXT_IN`。此选项仅在 :cpp:member:`eth_esp32_emac_config_t::clock_config` 设置为 :cpp:enumerator:`emac_rmii_clock_mode_t::EMAC_CLK_OUT`，且使用与 EMAC 无直接关联的内部时钟和 GPIO 时有效。有关 RMII 时钟配置和硬件要求，请参阅 :ref:`rmii-interface`。
+
+        使用内部 MAC 时的内存注意事项
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+        内部 MAC 子系统通过 DMA 使用描述符链表在 CPU 域之间传输数据。描述符有发送和接收两种类型，分别保存接收或已发送帧的状态信息，或提供传输控制。每个描述符还包含指向当前数据缓冲区和下一个描述符的指针。因此，在支持 DMA 的内存中，单个 EMAC DMA 描述符的大小为 {IDF_TARGET_SOC_DMA_DESC_SIZE}。
+
+        默认配置应涵盖大多数用例。然而，某些情况可能需要对以太网 DMA 内存的使用进行配置，以满足特定需求。典型问题可能发生于下列情形：
+
+        .. list::
+
+            * **网络流量由短且频繁的帧主导时**：如果你的网络流量主要由短且频繁发送（或接收）的帧组成，可能会遇到吞吐量低于预期（尽管额定为 100 Mbps），以及接收过程中丢帧等问题。在发送时，套接字发送 API 可能会返回 ``errno`` 为 ``ENOMEM``，并显示 `TX 缓冲区大小不足`（如果启用了调试日志级别）。这些问题的主要原因是，默认的内存配置针对较大帧进行了优化。默认情况下 :menuitem:`CONFIG_ETH_DMA_BUFFER_SIZE` 设置为 512 字节，以确保 *数据缓冲区* 与 *描述符* 大小的开销比。要解决此问题，可以增加缓冲区数量， :menuitem:`CONFIG_ETH_DMA_RX_BUFFER_NUM` 或 :menuitem:`CONFIG_ETH_DMA_TX_BUFFER_NUM`。此外，还可以减小 :menuitem:`CONFIG_ETH_DMA_BUFFER_SIZE`，使其与网络中典型帧的大小相匹配，从而合理控制以太网驱动的内存占用。
+
+            * **高吞吐量导致缓冲区耗尽时**：如果套接字发送 API 间歇性返回 ``errno`` 为 ``ENOMEM``，并显示 `TX 缓冲区大小不足`（如果启用了调试日志级别），且吞吐量接近额定的 100 Mbps，这通常表明接近硬件限制。在这种情况下，硬件无法跟上传输请求。解决方案是，增加 :menuitem:`CONFIG_ETH_DMA_TX_BUFFER_NUM`，以缓存更多的帧，并缓解传输请求的短时峰值。然而，如果请求的流量持续超过额定吞吐量，此方法将失效，需通过应用层通过软件限制带宽。
+
+PHY 配置
+^^^^^^^^
+    PHY 的相关配置由 :cpp:class:`eth_phy_config_t` 描述，包括：
 
     .. list::
 
-        * **网络流量由短且频繁的帧主导时**：如果你的网络流量主要由短且频繁发送（或接收）的帧组成，可能会遇到吞吐量低于预期（尽管额定为 100 Mbps），以及接收过程中丢帧等问题。在发送时，套接字发送 API 可能会返回 ``errno`` 为 ``ENOMEM``，并显示 `TX 缓冲区大小不足`（如果启用了调试日志级别）。这些问题的主要原因是，默认的内存配置针对较大帧进行了优化。默认情况下 :menuitem:`CONFIG_ETH_DMA_BUFFER_SIZE` 设置为 512 字节，以确保 *数据缓冲区* 与 *描述符* 大小的开销比。要解决此问题，可以增加缓冲区数量， :menuitem:`CONFIG_ETH_DMA_RX_BUFFER_NUM` 或 :menuitem:`CONFIG_ETH_DMA_TX_BUFFER_NUM`。此外，还可以减小 :menuitem:`CONFIG_ETH_DMA_BUFFER_SIZE`，使其与网络中典型帧的大小相匹配，从而合理控制以太网驱动的内存占用。
+        * :cpp:member:`eth_phy_config_t::phy_addr`：同一条 SMI 总线上可以存在多个 PHY 设备，所以有必要为各个 PHY 设备分配唯一地址。通常，这个地址是在硬件设计期间，通过拉高/拉低一些 PHY strapping 管脚来配置的。根据不同的以太网开发板，可配置值为 ``0`` 到 ``15``。需注意，如果 SMI 总线上仅有一个 PHY 设备，将该值配置为 ``-1``，即可使驱动程序自动检测 PHY 地址。
 
-        * **高吞吐量导致缓冲区耗尽时**：如果套接字发送 API 间歇性返回 ``errno`` 为 ``ENOMEM``，并显示 `TX 缓冲区大小不足`（如果启用了调试日志级别），且吞吐量接近额定的 100 Mbps，这通常表明接近硬件限制。在这种情况下，硬件无法跟上传输请求。解决方案是，增加 :menuitem:`CONFIG_ETH_DMA_TX_BUFFER_NUM`，以缓存更多的帧，并缓解传输请求的短时峰值。然而，如果请求的流量持续超过额定吞吐量，此方法将失效，需通过应用层通过软件限制带宽。
+        * :cpp:member:`eth_phy_config_t::reset_timeout_ms`：复位超时值，单位为毫秒。通常，PHY 复位应在 100 ms 内完成。
 
-PHY 的相关配置可以在 :cpp:class:`eth_phy_config_t` 中找到，具体包括：
+        * :cpp:member:`eth_phy_config_t::autonego_timeout_ms`：自动协商超时值，单位为毫秒。以太网驱动程序会与链路另一端的设备进行自协商，以确定连接的最佳双工模式和速率。此值通常取决于电路板上 PHY 设备的性能。
 
-.. list::
+        * :cpp:member:`eth_phy_config_t::reset_gpio_num`：如果开发板同时将 PHY 复位管脚连接至了任意 GPIO 管脚，请使用该字段进行配置。否则，配置为 ``-1``。
 
-    * :cpp:member:`eth_phy_config_t::phy_addr`：同一条 SMI 总线上可以存在多个 PHY 设备，所以有必要为各个 PHY 设备分配唯一地址。通常，这个地址是在硬件设计期间，通过拉高/拉低一些 PHY strapping 管脚来配置的。根据不同的以太网开发板，可配置值为 ``0`` 到 ``15``。需注意，如果 SMI 总线上仅有一个 PHY 设备，将该值配置为 ``-1``，即可使驱动程序自动检测 PHY 地址。
+        * :cpp:member:`eth_phy_config_t::hw_reset_assert_time_us`：PHY 复位引脚被置为有效状态的时间（以微秒为单位）。将该值配置为 ``0``，即可使用芯片默认的复位时长。
 
-    * :cpp:member:`eth_phy_config_t::reset_timeout_ms`：复位超时值，单位为毫秒。通常，PHY 复位应在 100 ms 内完成。
-
-    * :cpp:member:`eth_phy_config_t::autonego_timeout_ms`：自动协商超时值，单位为毫秒。以太网驱动程序会与链路另一端的设备进行自协商，以确定连接的最佳双工模式和速率。此值通常取决于电路板上 PHY 设备的性能。
-
-    * :cpp:member:`eth_phy_config_t::reset_gpio_num`：如果开发板同时将 PHY 复位管脚连接至了任意 GPIO 管脚，请使用该字段进行配置。否则，配置为 ``-1``。
-
-    * :cpp:member:`eth_phy_config_t::hw_reset_assert_time_us`：PHY 复位引脚被置为有效状态的时间（以微秒为单位）。将该值配置为 ``0``，即可使用芯片默认的复位时长。
-
-    * :cpp:member:`eth_phy_config_t::post_hw_reset_delay_ms`：PHY 硬件复位完成后的等待时间（以毫秒为单位）。将该值配置为 ``0``，即可使用芯片默认的等待时长，配置为 ``-1``，表示执行 PHY 硬件复位后不等待。
+        * :cpp:member:`eth_phy_config_t::post_hw_reset_delay_ms`：PHY 硬件复位完成后的等待时间（以毫秒为单位）。将该值配置为 ``0``，即可使用芯片默认的等待时长，配置为 ``-1``，表示执行 PHY 硬件复位后不等待。
 
 ESP-IDF 在宏 :c:macro:`ETH_MAC_DEFAULT_CONFIG` 和 :c:macro:`ETH_PHY_DEFAULT_CONFIG` 中为 MAC 和 PHY 提供了默认配置。
 
@@ -319,24 +434,44 @@ ESP-IDF 在宏 :c:macro:`ETH_MAC_DEFAULT_CONFIG` 和 :c:macro:`ETH_PHY_DEFAULT_C
     .. tip::
         乐鑫为多种特定的以太网 PHY 芯片提供了驱动程序，这些驱动程序可在 `esp-eth-drivers <https://github.com/espressif/esp-eth-drivers>`_ 仓库中获取。驱动以组件形式分发，并可在 `ESP 组件库 <https://components.espressif.com/>`_ 上获取。
 
-    可选的运行时 MAC 时钟配置
-    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    运行时 MAC 时钟配置
+    ^^^^^^^^^^^^^^^^^^^
 
-    可以通过用户应用程序代码，选择性配置 EMAC 中的 ``REF_CLK``。
+    EMAC ``REF_CLK`` 通过用户应用程序代码进行配置。
 
-    .. highlight:: c
+    .. only:: esp32
 
-    ::
+        .. code-block:: c
 
-        eth_esp32_emac_config_t esp32_emac_config = ETH_ESP32_EMAC_DEFAULT_CONFIG(); // 应用默认的供应商特定 MAC 配置
+            eth_esp32_emac_config_t esp32_emac_config = ETH_ESP32_EMAC_DEFAULT_CONFIG();
+            esp32_emac_config.interface = EMAC_DATA_INTERFACE_RMII;
+            esp32_emac_config.clock_config.rmii.clock_mode = EMAC_CLK_OUT;
+            esp32_emac_config.clock_config.rmii.clock_gpio = 17;
+            esp_eth_mac_t *mac = esp_eth_mac_new_esp32(&esp32_emac_config, &mac_config);
 
-        // ...
+    .. only:: esp32p4
 
-        esp32_emac_config.interface = EMAC_DATA_INTERFACE_RMII;                      // 更改 EMAC 数据接口
-        esp32_emac_config.clock_config.rmii.clock_mode = EMAC_CLK_OUT;               // 配置 EMAC REF_CLK 模式
-        esp32_emac_config.clock_config.rmii.clock_gpio = 17;                         // 配置用于输入/输出 EMAC REF_CLK 的 GPIO 编号
-        esp_eth_mac_t *mac = esp_eth_mac_new_esp32(&esp32_emac_config, &mac_config); // 创建 MAC 实例
+        在 ESP32-P4 上，内部生成的时钟输出必须从外部回环到 RMII 时钟输入。
 
+        .. code-block:: c
+
+            eth_esp32_emac_config_t esp32_emac_config = ETH_ESP32_EMAC_DEFAULT_CONFIG();
+            esp32_emac_config.interface = EMAC_DATA_INTERFACE_RMII;
+            esp32_emac_config.clock_config.rmii.clock_mode = EMAC_CLK_OUT;
+            esp32_emac_config.clock_config.rmii.clock_gpio = 23;
+            esp32_emac_config.clock_config_out_in.rmii.clock_mode = EMAC_CLK_EXT_IN;
+            esp32_emac_config.clock_config_out_in.rmii.clock_gpio = 32;
+            esp_eth_mac_t *mac = esp_eth_mac_new_esp32(&esp32_emac_config, &mac_config);
+
+    .. only:: esp32s31
+
+        .. code-block:: c
+
+            eth_esp32_emac_config_t esp32_emac_config = ETH_ESP32_EMAC_DEFAULT_CONFIG();
+            esp32_emac_config.interface = EMAC_DATA_INTERFACE_RMII;
+            esp32_emac_config.clock_config.rmii.clock_mode = EMAC_CLK_OUT;
+            esp32_emac_config.clock_config.rmii.clock_gpio = 13;
+            esp_eth_mac_t *mac = esp_eth_mac_new_esp32(&esp32_emac_config, &mac_config);
 
 SPI-Ethernet 模块
 ^^^^^^^^^^^^^^^^^^^

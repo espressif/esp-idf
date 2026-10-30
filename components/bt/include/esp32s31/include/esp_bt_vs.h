@@ -14,3 +14,5 @@
 #if UC_BT_CTRL_BR_EDR_IS_ENABLE
 #include "../../common/btdm_bredr_vs.h"
 #endif // UC_BT_CTRL_BR_EDR_IS_ENABLE
+
+#include "../../common/btdm_common_vs.h"

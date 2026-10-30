@@ -654,7 +654,13 @@ int esp_aes_process_dma(esp_aes_context *ctx, const unsigned char *input, unsign
     }
 
 #ifdef SOC_MEMSPI_ENCRYPTION_ALIGNMENT
-    if (esp_ptr_external_ram(input) || esp_ptr_external_ram(output) || esp_ptr_in_drom(input) || esp_ptr_in_drom(output)) {
+    /* A lone partial block has no block aligned part to check, and
+       esp_mspi_buffer_alignment_satisfied() rejects a zero length by design. Without
+       this test, esp_aes_process_dma_ext_ram() would send such a chunk straight back
+       here, and the two functions would call each other until the stack ran out.
+       generate_descriptor_list() stages a partial block through an aligned buffer. */
+    if (block_bytes > 0 &&
+            (esp_ptr_external_ram(input) || esp_ptr_external_ram(output) || esp_ptr_in_drom(input) || esp_ptr_in_drom(output))) {
         if (!esp_mspi_buffer_alignment_satisfied(input, block_bytes)) {
             input_needs_realloc = true;
         }

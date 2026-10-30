@@ -1,0 +1,5 @@
+## IDF Component Manager Manifest File
+dependencies:
+  espressif/iqmath: "^2.0.0" # use Q15 fixed-point arithmetic
+  espressif/clarke_park: "^0.2.0"
+  espressif/pid_ctrl: "^0.4.0" # reserved for the upcoming current and speed control loops

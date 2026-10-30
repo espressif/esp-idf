@@ -8,7 +8,6 @@
 #include <stdint.h>
 #include <stddef.h>
 #include <stdlib.h>
-#include "sdkconfig.h"
 #include "esp32s31/rom/ets_sys.h"
 #include "esp32s31/rom/rtc.h"
 #include "soc/rtc.h"
@@ -39,12 +38,9 @@ static inline void rtc_clk_pll_disable(rtc_clk_config_t cfg)
     if (cfg.disable_cpll) {
         clk_ll_cpll_disable();
     }
-#if !CONFIG_USJ_ENABLE_USB_SERIAL_JTAG && !CONFIG_ESP_CONSOLE_USB_SERIAL_JTAG_ENABLED
-    // USB-Serial-JTAG depends on bbpll480M, bypass disable bbpll if USB console is used.
     if (cfg.disable_bbpll) {
         clk_ll_bbpll_disable();
     }
-#endif
 }
 
 void rtc_clk_init(rtc_clk_config_t cfg)

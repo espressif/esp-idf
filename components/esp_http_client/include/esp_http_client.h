@@ -35,7 +35,11 @@ struct esp_transport_item_t;
  * @brief   HTTP Client events id
  */
 typedef enum {
-    HTTP_EVENT_ERROR = 0,       /*!< This event occurs when there are any errors during execution */
+    HTTP_EVENT_ERROR = 0,       /*!< This event occurs when there are any errors during execution.
+                                     error holds the esp_err_t the failing call returns. data is the
+                                     transport's esp_tls_error_handle_t (NULL when no transport was
+                                     selected yet) with what the transport recorded: last_error, and
+                                     the TLS detail in esp_tls_error_code and esp_tls_flags */
     HTTP_EVENT_ON_CONNECTED,    /*!< Once the HTTP has been connected to the server, no data exchange has been performed */
     HTTP_EVENT_HEADERS_SENT,     /*!< After sending all the headers to the server */
     HTTP_EVENT_HEADER_SENT = HTTP_EVENT_HEADERS_SENT, /*!< This header has been kept for backward compatibility
@@ -55,11 +59,15 @@ typedef enum {
 typedef struct esp_http_client_event {
     esp_http_client_event_id_t event_id;    /*!< event_id, to know the cause of the event */
     esp_http_client_handle_t client;        /*!< esp_http_client_handle_t context */
-    void *data;                             /*!< data of the event */
+    void *data;                             /*!< data of the event, see the event_id description */
     int data_len;                           /*!< data length of data */
     void *user_data;                        /*!< user_data context, from esp_http_client_config_t user_data */
     char *header_key;                       /*!< For HTTP_EVENT_ON_HEADER event_id, it's store current http header key */
     char *header_value;                     /*!< For HTTP_EVENT_ON_HEADER event_id, it's store current http header value */
+    esp_err_t error;                        /*!< For HTTP_EVENT_ERROR: the esp_err_t the failing call returns: an ESP_ERR_HTTP_* code,
+                                                 ESP_FAIL where the call reports a plain failure (for example a failed POST body write),
+                                                 or the esp_err_t of a failed connect or prepare (ESP_ERR_INVALID_ARG,
+                                                 ESP_ERR_INVALID_STATE, ESP_ERR_NO_MEM). ESP_OK for every other event */
 } esp_http_client_event_t;
 
 /**
@@ -179,13 +187,13 @@ typedef enum {
  */
 typedef struct {
     const char                  *url;                /*!< HTTP URL, the information on the URL is most important, it overrides the other fields below, if any */
-    const char                  *host;               /*!< Domain or IP as string */
+    const char                  *host;               /*!< Domain or IP as string. Must not contain CR or LF */
     int                         port;                /*!< Port to connect, default depend on esp_http_client_transport_t (80 or 443) */
     const char                  *username;           /*!< Using for Http authentication */
     const char                  *password;           /*!< Using for Http authentication */
     esp_http_client_auth_type_t auth_type;           /*!< Http authentication type, see `esp_http_client_auth_type_t` */
-    const char                  *path;               /*!< HTTP Path, if not set, default is `/` */
-    const char                  *query;              /*!< HTTP query */
+    const char                  *path;               /*!< HTTP Path, if not set, default is `/`. Must not contain CR or LF */
+    const char                  *query;              /*!< HTTP query. Must not contain CR or LF */
     union {
         const char              *cert_pem;           /*!< SSL server certification, PEM format as string, if the client requires to verify server */
         const char              *cert_der;           /*!< SSL server certification, DER format as binary, if the client requires to verify server */
@@ -440,8 +448,12 @@ int esp_http_client_get_post_field(esp_http_client_handle_t client, char **data)
  * @param[in]  key     The header key
  * @param[in]  value   The header value
  *
+ * @note       A key or value that contains CR or LF is refused, because it would end
+ *             the header line early and let the rest be read as another header.
+ *
  * @return
  *  - ESP_OK
+ *  - ESP_ERR_INVALID_ARG: client or key is NULL, or the key or value contains CR or LF
  *  - ESP_FAIL
  */
 esp_err_t esp_http_client_set_header(esp_http_client_handle_t client, const char *key, const char *value);

@@ -106,8 +106,12 @@ typedef enum {
  */
 static inline void spi_ll_enable_bus_clock(spi_host_device_t host_id, bool enable)
 {
-    HAL_ASSERT(host_id == SPI2_HOST);
-    PCR.spi2_conf.spi2_clk_en = enable;
+    /**
+     * On this chip version, close this clock will also stop USJ due to ROM bug.
+     * So we keep it always enabled.
+     */
+    // HAL_ASSERT(host_id == SPI2_HOST);
+    // PCR.spi2_conf.spi2_clk_en = enable;
 }
 
 /**
@@ -130,8 +134,12 @@ static inline void spi_ll_reset_register(spi_host_device_t host_id)
  */
 static inline void spi_ll_enable_clock(spi_host_device_t host_id, bool enable)
 {
-    HAL_ASSERT(host_id == SPI2_HOST);
-    PCR.spi2_clkm_conf.spi2_clkm_en = enable;
+    /**
+     * On this chip version, close this clock will also stop USJ due to ROM bug.
+     * So we keep it always enabled.
+     */
+    // HAL_ASSERT(host_id == SPI2_HOST);
+    // PCR.spi2_clkm_conf.spi2_clkm_en = enable;
 }
 
 /**

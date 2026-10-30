@@ -19,6 +19,7 @@ ESP HTTP 客户端
 - :example:`protocols/esp_http_client` 演示了如何使用 ESP HTTP 客户端发起 HTTP/S 请求。
 - :example:`protocols/esp_http_client_mutual_auth` 演示了如何使用 ESP HTTP 客户端配置双向 TLS 认证。
 
+
 HTTP 基本请求
 -------------
 
@@ -225,7 +226,9 @@ ESP HTTP 客户端诊断信息
     - HTTP_EVENT_DISCONNECTED       :   ``esp_http_client_handle_t``
     - HTTP_EVENT_REDIRECT           :   ``esp_http_client_redirect_event_data_t``
 
-在无法接收到 :cpp:enumerator:`HTTP_EVENT_DISCONNECTED <esp_http_client_event_id_t::HTTP_EVENT_DISCONNECTED>` 之前，与事件数据一起接收到的 :cpp:type:`esp_http_client_handle_t` 将始终有效。这个句柄主要是为了区分不同的客户端连接，无法用于其他目的，因为它可能会随着客户端连接状态的变化而改变。
+在接收到 :cpp:enumerator:`HTTP_EVENT_DISCONNECTED <esp_http_client_event_id_t::HTTP_EVENT_DISCONNECTED>` 之前，与事件数据一起接收到的 :cpp:type:`esp_http_client_handle_t` 将始终有效。这个句柄主要是为了区分不同的客户端连接，无法用于其他目的，因为它可能会随着客户端连接状态的变化而改变。
+
+对于 :cpp:enumerator:`HTTP_EVENT_ERROR <esp_http_client_event_id_t::HTTP_EVENT_ERROR>`，回调处理程序可以从 :cpp:member:`esp_http_client_event_t::error` 中获取失败原因，即失败调用返回的 ``esp_err_t``；该值始终属于处理程序当前接收的事件。事件循环的事件数据仍然是客户端句柄。传输层自身记录的失败信息（包含 TLS 详细信息）仍然可以通过 :cpp:func:`esp_http_client_get_and_clear_last_tls_error` 获取。
 
 TLS 协议版本
 --------------------
@@ -234,12 +237,31 @@ TLS 协议版本
 
 HTTP 客户端的 TLS 协议版本可按如下方式配置：
 
-    .. code-block:: c
+.. code-block:: c
 
-        #include "esp_http_client.h"
-        esp_http_client_config_t config = {
-            .tls_version = ESP_HTTP_CLIENT_TLS_VER_TLS_1_2,
-        };
+    #include "esp_http_client.h"
+    esp_http_client_config_t config = {
+        .tls_version = ESP_HTTP_CLIENT_TLS_VER_TLS_1_2,
+    };
+
+TLS 加密套件与支持组
+--------------------
+
+可在 :cpp:type:`esp_http_client_config_t` 中设置底层 TLS 连接的加密套件和支持组。两个列表都仅适用于当前客户端。更多信息，请参考 :doc:`/api-reference/protocols/esp_tls` 中的 **TLS 加密套件** 和 **TLS 支持组** 章节。
+
+客户端仅保存各数组的指针，不会复制数组。每个数组必须以 0 结尾，并且在调用 :cpp:func:`esp_http_client_cleanup` 之前始终有效。
+
+.. code-block:: c
+
+    #include "esp_http_client.h"
+    static const int ciphersuites_list[] = {MBEDTLS_TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256, 0};
+    static const uint16_t groups_list[] = {MBEDTLS_SSL_IANA_TLS_GROUP_X25519, MBEDTLS_SSL_IANA_TLS_GROUP_SECP256R1, 0};
+    esp_http_client_config_t config = {
+        .ciphersuites_list = ciphersuites_list,
+        .groups_list = groups_list,
+    };
+
+调用 :cpp:func:`esp_tls_get_ciphersuites_list` 和 :cpp:func:`esp_tls_get_supported_groups_list` 可获取 TLS 协议栈支持的列表，并与所提供的列表进行核对。
 
 API 参考
 ---------

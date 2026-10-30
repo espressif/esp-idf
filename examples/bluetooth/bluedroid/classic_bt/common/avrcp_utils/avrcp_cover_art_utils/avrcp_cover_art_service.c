@@ -319,7 +319,7 @@ void avrc_cover_art_srv_ca_req(void)
     if (s_avrc_cover_art_srv_cb.connected) {
         uint8_t attr_mask = ESP_AVRC_MD_ATTR_COVER_ART;
 
-        esp_avrc_ct_send_metadata_cmd(bt_avrc_common_alloc_tl(), attr_mask);
+        esp_avrc_ct_send_metadata_cmd_by_handle(bt_avrc_common_ct_get_conn_hdl(), bt_avrc_common_alloc_tl(), attr_mask);
     }
 }
 

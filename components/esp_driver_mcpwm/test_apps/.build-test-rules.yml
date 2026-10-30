@@ -7,4 +7,5 @@ components/esp_driver_mcpwm/test_apps/mcpwm:
     - esp_driver_mcpwm
     - esp_hal_mcpwm
     - esp_hw_support
+    - esp_sleep
     - soc

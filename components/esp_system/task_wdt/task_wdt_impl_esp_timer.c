@@ -8,12 +8,10 @@
 #include <stdbool.h>
 #include <stdio.h>
 #include "sdkconfig.h"
-#include "hal/wdt_hal.h"
 #include "esp_err.h"
 #include "esp_attr.h"
 #include "esp_check.h"
 #include "esp_log.h"
-#include "esp_debug_helpers.h"
 #include "esp_timer.h"
 #include "esp_private/esp_task_wdt_impl.h"
 

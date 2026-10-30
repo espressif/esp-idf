@@ -6,3 +6,5 @@ entries:
     interrupt:intr_handler_set (default)
     vectors (noflash_text)
     rv_utils (noflash_text)
+    if SOC_RISCV_SV32_SUPPORTED = y:
+        sv32 (noflash_text)

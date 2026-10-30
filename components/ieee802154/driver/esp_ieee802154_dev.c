@@ -4,6 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <stdint.h>
 #include <string.h>
 #include "sdkconfig.h"
 #include "freertos/portmacro.h"
@@ -25,6 +26,7 @@
 #include "esp_ieee802154_util.h"
 #include "esp_ieee802154_timer.h"
 #include "esp_attr.h"
+#include "esp_intr_alloc.h"
 #include "esp_phy_init.h"
 
 #if CONFIG_IEEE802154_MULTI_PAN_ENABLE
@@ -117,14 +119,28 @@ static void ieee802154_transmit_done(const uint8_t *frame, const uint8_t *ack, e
     }
 }
 
+static inline bool ptr_in_buffer(const void *ptr, const void *buffer, size_t buffer_size)
+{
+    uintptr_t addr = (uintptr_t)ptr;
+    uintptr_t start = (uintptr_t)buffer;
+
+    return addr >= start && (addr - start) < buffer_size;
+}
+
 esp_err_t ieee802154_receive_handle_done(const uint8_t *data)
 {
-    uint16_t size = data - &s_rx_frame[0][0];
-    if ((size % IEEE802154_RX_FRAME_SIZE) != 0
-            || (size / IEEE802154_RX_FRAME_SIZE) >= CONFIG_IEEE802154_RX_BUFFER_SIZE) {
+    const size_t valid_buffer_size = CONFIG_IEEE802154_RX_BUFFER_SIZE * sizeof(s_rx_frame[0]);
+    if (!ptr_in_buffer(data, &s_rx_frame[0][0], valid_buffer_size)) {
         return ESP_FAIL;
     }
-    s_rx_frame_info[size / IEEE802154_RX_FRAME_SIZE].process = false;
+
+    const size_t offset = (uintptr_t)data - (uintptr_t)&s_rx_frame[0][0];
+    if ((offset % sizeof(s_rx_frame[0])) != 0) {
+        return ESP_FAIL;
+    }
+
+    const size_t index = offset / sizeof(s_rx_frame[0]);
+    s_rx_frame_info[index].process = false;
     IEEE802154_RX_BUFFER_STAT_IS_FREE(true);
     return ESP_OK;
 }
@@ -205,6 +221,9 @@ IEEE802154_STATIC IEEE802154_NOINLINE void update_mpf_index(void)
         is_target_panid_present = (ieee802154_frame_get_dest_panid(frame, target_panid) == ESP_OK) ? true : false;
     }
     dest_addr_mode = ieee802154_frame_get_dst_addr(frame, dest_addr);
+    if (dest_addr_mode == IEEE802154_FRAME_INVALID_VALUE) {
+        return;
+    }
     // Check is this packet is Broadcast
     if (is_broadcast_addr(dest_addr, dest_addr_mode) || (is_target_panid_present && is_broadcast_panid(target_panid))) {
         return;
@@ -664,8 +683,14 @@ static IRAM_ATTR void isr_handle_tx_ack_phase_rx_abort(ieee802154_ll_rx_abort_re
     case IEEE802154_RX_ABORT_BY_ED_ABORT:
     case IEEE802154_RX_ABORT_BY_ED_COEX_REJECT:
         return;
-    case IEEE802154_RX_ABORT_BY_TX_ACK_TIMEOUT:
     case IEEE802154_RX_ABORT_BY_TX_ACK_COEX_BREAK:
+#if !CONFIG_IEEE802154_TEST
+#if (CONFIG_ESP_COEX_SW_COEXIST_ENABLE || CONFIG_EXTERNAL_COEX_ENABLE)
+        esp_coex_ieee802154_coex_break_notify();
+        __attribute__((fallthrough));
+#endif
+#endif
+    case IEEE802154_RX_ABORT_BY_TX_ACK_TIMEOUT:
 #if CONFIG_IEEE802154_DEBUG_ASSERT_MONITOR
         // Jira TZ-1523
         IEEE802154_ASSERT(s_ieee802154_state == IEEE802154_STATE_TX_ACK || s_ieee802154_state == IEEE802154_STATE_TX_ENH_ACK);
@@ -691,6 +716,26 @@ static IRAM_ATTR void isr_handle_tx_ack_phase_rx_abort(ieee802154_ll_rx_abort_re
         IEEE802154_ASSERT(false);
     }
     NEEDS_NEXT_OPT(true);
+}
+
+esp_err_t IRAM_ATTR ieee802154_intr_disable(void)
+{
+    esp_err_t err = esp_intr_disable(s_ieee802154_isr_handle);
+
+    if (err != ESP_OK) {
+        ESP_EARLY_LOGE(IEEE802154_TAG, "Failed to disable IEEE 802.15.4 interrupt (%d)", err);
+    }
+    return err;
+}
+
+esp_err_t IRAM_ATTR ieee802154_intr_enable(void)
+{
+    esp_err_t err = esp_intr_enable(s_ieee802154_isr_handle);
+
+    if (err != ESP_OK) {
+        ESP_EARLY_LOGE(IEEE802154_TAG, "Failed to enable IEEE 802.15.4 interrupt (%d)", err);
+    }
+    return err;
 }
 
 static IRAM_ATTR void isr_handle_tx_abort(ieee802154_ll_tx_abort_reason_t tx_abort_reason)
@@ -729,8 +774,10 @@ static IRAM_ATTR void isr_handle_tx_abort(ieee802154_ll_tx_abort_reason_t tx_abo
         NEEDS_NEXT_OPT(true);
         break;
     case IEEE802154_TX_ABORT_BY_TX_COEX_BREAK:
+#if !CONFIG_IEEE802154_TEST
 #if (CONFIG_ESP_COEX_SW_COEXIST_ENABLE || CONFIG_EXTERNAL_COEX_ENABLE)
         esp_coex_ieee802154_coex_break_notify();
+#endif
 #endif
         IEEE802154_ASSERT(s_ieee802154_state == IEEE802154_STATE_TX || s_ieee802154_state == IEEE802154_STATE_TX_CCA);
         IEEE802154_TX_BREAK_COEX_NUMS_UPDATE();
@@ -920,7 +967,7 @@ esp_err_t ieee802154_mac_init(void)
     ieee802154_ll_enable_tx_abort_events(BIT(IEEE802154_TX_ABORT_BY_RX_ACK_TIMEOUT - 1) | BIT(IEEE802154_TX_ABORT_BY_TX_COEX_BREAK - 1) | BIT(IEEE802154_TX_ABORT_BY_TX_SECURITY_ERROR - 1) | BIT(IEEE802154_TX_ABORT_BY_CCA_FAILED - 1) | BIT(IEEE802154_TX_ABORT_BY_CCA_BUSY - 1));
     ieee802154_ll_enable_rx_abort_events(BIT(IEEE802154_RX_ABORT_BY_TX_ACK_TIMEOUT - 1) | BIT(IEEE802154_RX_ABORT_BY_TX_ACK_COEX_BREAK - 1));
 
-    ieee802154_ll_set_ed_sample_mode(IEEE802154_ED_SAMPLE_AVG);
+    ieee802154_ll_set_ed_pwr_sel_mode(IEEE802154_ED_SAMPLE_AVG);
 #if !CONFIG_IEEE802154_TEST && (CONFIG_ESP_COEX_SW_COEXIST_ENABLE || CONFIG_EXTERNAL_COEX_ENABLE)
     esp_coex_ieee802154_ack_pti_set(IEEE802154_MIDDLE);
     IEEE802154_SET_TXRX_PTI(IEEE802154_SCENE_IDLE);

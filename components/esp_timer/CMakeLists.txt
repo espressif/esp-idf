@@ -36,7 +36,12 @@ idf_component_register(SRCS "${srcs}"
                        LDFRAGMENTS linker.lf)
 
 # Forces the linker to include esp_timer_init.c
-target_link_libraries(${COMPONENT_LIB} INTERFACE "-u esp_timer_init_include_func")
+# Mach-O (Apple) uses a leading underscore for C symbol mangling
+if(APPLE)
+    target_link_libraries(${COMPONENT_LIB} INTERFACE "-u _esp_timer_init_include_func")
+else()
+    target_link_libraries(${COMPONENT_LIB} INTERFACE "-u esp_timer_init_include_func")
+endif()
 
 if(${target} STREQUAL "linux" AND NOT APPLE)
     # Link with librt, which contains POSIX real-time APIs, for example: clock_gettime, clock_settime, etc.

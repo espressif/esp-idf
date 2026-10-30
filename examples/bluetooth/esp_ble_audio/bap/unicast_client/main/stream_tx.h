@@ -25,8 +25,8 @@
 struct tx_stream {
     esp_ble_audio_bap_stream_t *stream;
     uint16_t seq_num;
+    example_audio_tx_count_t tx_count;
     uint8_t *data;
-    example_audio_tx_scheduler_t scheduler;
 };
 
 void stream_tx_sent(esp_ble_audio_bap_stream_t *stream, void *user_data);

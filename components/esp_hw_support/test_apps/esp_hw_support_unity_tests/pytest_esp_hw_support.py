@@ -41,3 +41,31 @@ def test_esp_hw_support_esp32c5(dut: Dut) -> None:
 )
 def test_esp_hw_support_esp32c5_rev1(dut: Dut) -> None:
     dut.run_all_single_board_cases(timeout=180)
+
+
+@pytest.mark.generic
+@idf_parametrize(
+    'config,target',
+    [
+        ('pvt', target)
+        for target in filter(
+            lambda t: t != 'esp32c5',
+            soc_filtered_targets('SOC_PMU_PVT_SUPPORTED == 1'),
+        )
+    ],
+    indirect=['config', 'target'],
+)
+def test_esp_hw_support_pvt(dut: Dut) -> None:
+    dut.run_all_single_board_cases(group='pvt', timeout=180)
+
+
+# ESP32-C5 PD_TOP requires chip rev >= 3 (eco3); runner marked esp32c5_rev1
+@pytest.mark.generic
+@pytest.mark.esp32c5_rev1
+@idf_parametrize(
+    'config,target',
+    [('pvt', 'esp32c5')],
+    indirect=['config', 'target'],
+)
+def test_esp_hw_support_pvt_esp32c5_eco3(dut: Dut) -> None:
+    dut.run_all_single_board_cases(group='pvt', timeout=180)

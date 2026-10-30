@@ -12,7 +12,6 @@ import shutil
 import subprocess
 import time
 from typing import Any
-from typing import List
 
 import gitlab_api
 
@@ -25,7 +24,7 @@ SUBMODULE_ARCHIVE_TEMP_FOLDER = 'submodule_archive'
 SUBMODULE_ARCHIVE_CACHE_DIR = '.cache/submodule_archives'
 
 
-class SubModule(object):
+class SubModule:
     # We don't need to support recursive submodule clone now
 
     GIT_LS_TREE_OUTPUT_PATTERN = re.compile(r'\d+\s+commit\s+([0-9a-f]+)\s+')
@@ -52,7 +51,7 @@ class SubModule(object):
         return project_id
 
     def download_archive(self) -> None:
-        print('Update submodule: {}: {}'.format(self.path, self.commit_id))
+        print(f'Update submodule: {self.path}: {self.commit_id}')
         path_name = self.gitlab_inst.download_archive(
             self.commit_id, SUBMODULE_ARCHIVE_TEMP_FOLDER, self.project_id, SUBMODULE_ARCHIVE_CACHE_DIR
         )
@@ -62,10 +61,10 @@ class SubModule(object):
         shutil.move(renamed_path, os.path.dirname(self.path))
 
 
-def update_submodule(git_module_file: str, submodules_to_update: List) -> None:
+def update_submodule(git_module_file: str, submodules_to_update: list) -> None:
     gitlab_inst = gitlab_api.Gitlab()
     submodules = []
-    with open(git_module_file, 'r') as f:
+    with open(git_module_file) as f:
         data = f.read()
     match = SUBMODULE_PATTERN.search(data)
     if match is not None:
@@ -118,4 +117,4 @@ if __name__ == '__main__':
     else:
         _submodules = args.submodule.split(';')
     update_submodule(os.path.join(args.repo_path, '.gitmodules'), _submodules)
-    print('total time spent on update submodule: {:.02f}s'.format(time.time() - start_time))
+    print(f'total time spent on update submodule: {time.time() - start_time:.02f}s')

@@ -22,6 +22,36 @@
 extern "C" {
 #endif
 
+FORCE_INLINE_ATTR uint32_t pmu_ll_get_active_hp_dbias(void)
+{
+    return EFUSE.rd_mac_sys4.active_hp_dbias;
+}
+
+FORCE_INLINE_ATTR uint32_t pmu_ll_get_active_lp_dbias(void)
+{
+    return EFUSE.rd_mac_sys4.active_lp_dbias;
+}
+
+FORCE_INLINE_ATTR uint32_t pmu_ll_get_lslp_dbg(void)
+{
+    return EFUSE.rd_mac_sys4.lslp_hp_dbg;
+}
+
+FORCE_INLINE_ATTR uint32_t pmu_ll_get_lslp_hp_dbias(void)
+{
+    return EFUSE.rd_mac_sys4.lslp_hp_dbias;
+}
+
+FORCE_INLINE_ATTR uint32_t pmu_ll_get_dslp_dbg(void)
+{
+    return (EFUSE.rd_mac_sys5.dslp_lp_dbg_1 << 2) | EFUSE.rd_mac_sys4.dslp_lp_dbg;
+}
+
+FORCE_INLINE_ATTR uint32_t pmu_ll_get_dslp_lp_dbias(void)
+{
+    return EFUSE.rd_mac_sys5.dslp_lp_dbias;
+}
+
 FORCE_INLINE_ATTR int32_t pmu_ll_get_dbias_vol_gap(void)
 {
     return EFUSE.rd_mac_sys5.lp_hp_dbias_vol_gap;
@@ -171,6 +201,19 @@ FORCE_INLINE_ATTR void pmu_ll_hp_set_bias_sleep_enable(pmu_dev_t *hw, pmu_hp_mod
     hw->hp_sys[mode].bias.bias_sleep = en;
 }
 
+/**
+ * Update pd_cur and bias_sleep in one register write.
+ * Hardware must not observe pd_cur=1 with bias_sleep=0.
+ */
+FORCE_INLINE_ATTR void pmu_ll_hp_set_pd_cur_bias_sleep(pmu_dev_t *hw, pmu_hp_mode_t mode, bool pd_cur, bool bias_sleep)
+{
+    HAL_ASSERT(!pd_cur || bias_sleep);
+    pmu_hp_bias_reg_t bias = {.val = hw->hp_sys[mode].bias.val};
+    bias.pd_cur = pd_cur;
+    bias.bias_sleep = bias_sleep;
+    hw->hp_sys[mode].bias.val = bias.val;
+}
+
 FORCE_INLINE_ATTR void pmu_ll_hp_set_retention_param(pmu_dev_t *hw, pmu_hp_mode_t mode, uint32_t param)
 {
     hw->hp_sys[mode].backup_cfg.val = param;
@@ -267,6 +310,12 @@ FORCE_INLINE_ATTR void pmu_ll_hp_set_regulator_hp_dbias_voltage(pmu_dev_t *hw, p
 {
     HAL_ASSERT(mode == PMU_MODE_HP_ACTIVE);
     hw->hp_sys[mode].regulator0.hp_dbias_vol = voltage;
+}
+
+FORCE_INLINE_ATTR uint32_t pmu_ll_hp_get_regulator_hp_dbias_voltage(pmu_dev_t *hw, pmu_hp_mode_t mode)
+{
+    HAL_ASSERT(mode == PMU_MODE_HP_ACTIVE);
+    return hw->hp_sys[mode].regulator0.hp_dbias_vol;
 }
 
 FORCE_INLINE_ATTR void pmu_ll_hp_set_regulator_dbias_select(pmu_dev_t *hw, pmu_hp_mode_t mode, bool sel)
@@ -389,6 +438,20 @@ FORCE_INLINE_ATTR void pmu_ll_lp_set_bias_sleep_enable(pmu_dev_t *hw, pmu_lp_mod
 {
     HAL_ASSERT(mode == PMU_MODE_LP_SLEEP);
     hw->lp_sys[mode].bias.bias_sleep = en;
+}
+
+/**
+ * Update pd_cur and bias_sleep in one register write.
+ * Hardware must not observe pd_cur=1 with bias_sleep=0.
+ */
+FORCE_INLINE_ATTR void pmu_ll_lp_set_pd_cur_bias_sleep(pmu_dev_t *hw, pmu_lp_mode_t mode, bool pd_cur, bool bias_sleep)
+{
+    HAL_ASSERT(mode == PMU_MODE_LP_SLEEP);
+    HAL_ASSERT(!pd_cur || bias_sleep);
+    pmu_lp_bias_reg_t bias = {.val = hw->lp_sys[mode].bias.val};
+    bias.pd_cur = pd_cur;
+    bias.bias_sleep = bias_sleep;
+    hw->lp_sys[mode].bias.val = bias.val;
 }
 
 FORCE_INLINE_ATTR void pmu_ll_imm_set_clk_power(pmu_dev_t *hw, uint32_t flag0, uint32_t flag1)

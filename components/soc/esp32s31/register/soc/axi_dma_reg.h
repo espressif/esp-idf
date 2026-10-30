@@ -769,7 +769,7 @@ extern "C" {
 #define AXI_DMA_RX_CH_ARB_WEIGH_CH0_V  0x0000000FU
 #define AXI_DMA_RX_CH_ARB_WEIGH_CH0_S  4
 /** AXI_DMA_RX_ARB_WEIGH_OPT_DIR_CH0 : R/W; bitpos: [8]; default: 0;
- *  0: mean not optimization weight function ,1: mean optimization
+ *  0: enable weight optimization, 1: disable weight optimization
  */
 #define AXI_DMA_RX_ARB_WEIGH_OPT_DIR_CH0    (BIT(8))
 #define AXI_DMA_RX_ARB_WEIGH_OPT_DIR_CH0_M  (AXI_DMA_RX_ARB_WEIGH_OPT_DIR_CH0_V << AXI_DMA_RX_ARB_WEIGH_OPT_DIR_CH0_S)
@@ -1548,7 +1548,7 @@ extern "C" {
 #define AXI_DMA_RX_CH_ARB_WEIGH_CH1_V  0x0000000FU
 #define AXI_DMA_RX_CH_ARB_WEIGH_CH1_S  4
 /** AXI_DMA_RX_ARB_WEIGH_OPT_DIR_CH1 : R/W; bitpos: [8]; default: 0;
- *  0: mean not optimization weight function ,1: mean optimization
+ *  0: enable weight optimization, 1: disable weight optimization
  */
 #define AXI_DMA_RX_ARB_WEIGH_OPT_DIR_CH1    (BIT(8))
 #define AXI_DMA_RX_ARB_WEIGH_OPT_DIR_CH1_M  (AXI_DMA_RX_ARB_WEIGH_OPT_DIR_CH1_V << AXI_DMA_RX_ARB_WEIGH_OPT_DIR_CH1_S)
@@ -2327,7 +2327,7 @@ extern "C" {
 #define AXI_DMA_RX_CH_ARB_WEIGH_CH2_V  0x0000000FU
 #define AXI_DMA_RX_CH_ARB_WEIGH_CH2_S  4
 /** AXI_DMA_RX_ARB_WEIGH_OPT_DIR_CH2 : R/W; bitpos: [8]; default: 0;
- *  0: mean not optimization weight function ,1: mean optimization
+ *  0: enable weight optimization, 1: disable weight optimization
  */
 #define AXI_DMA_RX_ARB_WEIGH_OPT_DIR_CH2    (BIT(8))
 #define AXI_DMA_RX_ARB_WEIGH_OPT_DIR_CH2_M  (AXI_DMA_RX_ARB_WEIGH_OPT_DIR_CH2_V << AXI_DMA_RX_ARB_WEIGH_OPT_DIR_CH2_S)
@@ -3097,7 +3097,7 @@ extern "C" {
 #define AXI_DMA_TX_CH_ARB_WEIGH_CH0_V  0x0000000FU
 #define AXI_DMA_TX_CH_ARB_WEIGH_CH0_S  4
 /** AXI_DMA_TX_ARB_WEIGH_OPT_DIR_CH0 : R/W; bitpos: [8]; default: 0;
- *  0: mean not optimization weight function ,1: mean optimization
+ *  0: enable weight optimization, 1: disable weight optimization
  */
 #define AXI_DMA_TX_ARB_WEIGH_OPT_DIR_CH0    (BIT(8))
 #define AXI_DMA_TX_ARB_WEIGH_OPT_DIR_CH0_M  (AXI_DMA_TX_ARB_WEIGH_OPT_DIR_CH0_V << AXI_DMA_TX_ARB_WEIGH_OPT_DIR_CH0_S)
@@ -3867,7 +3867,7 @@ extern "C" {
 #define AXI_DMA_TX_CH_ARB_WEIGH_CH1_V  0x0000000FU
 #define AXI_DMA_TX_CH_ARB_WEIGH_CH1_S  4
 /** AXI_DMA_TX_ARB_WEIGH_OPT_DIR_CH1 : R/W; bitpos: [8]; default: 0;
- *  0: mean not optimization weight function ,1: mean optimization
+ *  0: enable weight optimization, 1: disable weight optimization
  */
 #define AXI_DMA_TX_ARB_WEIGH_OPT_DIR_CH1    (BIT(8))
 #define AXI_DMA_TX_ARB_WEIGH_OPT_DIR_CH1_M  (AXI_DMA_TX_ARB_WEIGH_OPT_DIR_CH1_V << AXI_DMA_TX_ARB_WEIGH_OPT_DIR_CH1_S)
@@ -4637,7 +4637,7 @@ extern "C" {
 #define AXI_DMA_TX_CH_ARB_WEIGH_CH2_V  0x0000000FU
 #define AXI_DMA_TX_CH_ARB_WEIGH_CH2_S  4
 /** AXI_DMA_TX_ARB_WEIGH_OPT_DIR_CH2 : R/W; bitpos: [8]; default: 0;
- *  0: mean not optimization weight function ,1: mean optimization
+ *  0: enable weight optimization, 1: disable weight optimization
  */
 #define AXI_DMA_TX_ARB_WEIGH_OPT_DIR_CH2    (BIT(8))
 #define AXI_DMA_TX_ARB_WEIGH_OPT_DIR_CH2_M  (AXI_DMA_TX_ARB_WEIGH_OPT_DIR_CH2_V << AXI_DMA_TX_ARB_WEIGH_OPT_DIR_CH2_S)

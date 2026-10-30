@@ -41,23 +41,23 @@ On the NimBLE path, the shared init at `../common_components/example_init/ble_is
 
 ## Build & Flash
 
-The base `sdkconfig.defaults` defaults to the **Bluedroid** host; idf.py automatically merges the per-target overlay (`sdkconfig.defaults.$IDF_TARGET`). To build with **NimBLE** host instead, layer `sdkconfig.defaults.nimble` on top via `-DSDKCONFIG_DEFAULTS`.
+The base `sdkconfig.defaults` defaults to the **Bluedroid** host; idf.py automatically merges the per-target overlay (`sdkconfig.defaults.$IDF_TARGET`). To build with **NimBLE** host instead, layer `sdkconfig.defaults.nimble` on top via `-DSDKCONFIG_DEFAULTS` in a separate build directory with its own `sdkconfig`, because an existing `sdkconfig` takes precedence over the defaults.
 
 ### Bluedroid host (default)
 
 ```bash
-idf.py set-target esp32h4
+idf.py --preview set-target esp32h4
 idf.py -p PORT flash monitor
 ```
 
 ### NimBLE host
 
 ```bash
-idf.py set-target esp32h4
-idf.py -DSDKCONFIG_DEFAULTS="sdkconfig.defaults;sdkconfig.defaults.esp32h4;sdkconfig.defaults.nimble" -p PORT flash monitor
+idf.py --preview -B build_nimble_esp32h4 -DSDKCONFIG=build_nimble_esp32h4/sdkconfig -DSDKCONFIG_DEFAULTS="sdkconfig.defaults;sdkconfig.defaults.nimble" set-target esp32h4
+idf.py -B build_nimble_esp32h4 -DSDKCONFIG=build_nimble_esp32h4/sdkconfig -DSDKCONFIG_DEFAULTS="sdkconfig.defaults;sdkconfig.defaults.nimble" -p PORT flash monitor
 ```
 
-For `esp32s31`, replace the chip overlay accordingly.
+For `esp32s31`, replace `esp32h4` with `esp32s31` in the commands above.
 
 (Exit serial monitor with `Ctrl-]`.)
 
@@ -93,8 +93,8 @@ I (xxx) BIG_SNC: [BIS #1] Connected
 Steady-state (logged every `LOG_INTERVAL_PACKETS` SDUs by the shared RX helper):
 
 ```
-I (xxx) BIG_SNC: [BIS #0] RX: <N> packets
-I (xxx) BIG_SNC: [BIS #1] RX: <N> packets
+I (xxx) BIG_SNC: [BIS #0] RX: <N> packets, valid <v> (empty <e>), error <x>, lost <l>
+I (xxx) BIG_SNC: [BIS #1] RX: <N> packets, valid <v> (empty <e>), error <x>, lost <l>
 ```
 
 Teardown / re-sync (broadcaster disappears or restarts; reason `0x08` is the typical timeout, `0x3D` is the rare MIC-fail race documented in source):

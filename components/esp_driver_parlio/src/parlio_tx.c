@@ -301,7 +301,7 @@ esp_err_t parlio_new_tx_unit(const parlio_tx_unit_config_t *config, parlio_tx_un
     parlio_group_t *group = unit->base.group;
     parlio_hal_context_t *hal = &group->hal;
     // select the clock source
-    ESP_GOTO_ON_ERROR(esp_clk_tree_acquire_src((soc_module_clk_t)(config->clk_src)), err, TAG, "clock source enable failed");
+    ESP_GOTO_ON_ERROR(esp_clk_tree_acquire_src((soc_module_clk_t)(config->clk_src), NULL), err, TAG, "clock source enable failed");
     ESP_GOTO_ON_ERROR(parlio_select_periph_clock(unit, config), err, TAG, "set clock source failed");
 
     // install interrupt service

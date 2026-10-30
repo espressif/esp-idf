@@ -365,7 +365,8 @@ typedef struct {
  *             Should be `NULL` if not used.
  *
  * @return  ESP_OK if successful, ESP_ERR_NO_MEM if too many FSes are
- *          registered.
+ *          registered, ESP_ERR_INVALID_ARG if given an invalid parameter,
+ *          ESP_ERR_INVALID_STATE if an FS is already registered at base_path.
  */
 esp_err_t esp_vfs_register_fs(const char *base_path, const esp_vfs_fs_ops_t *vfs, int flags, void *ctx);
 
@@ -380,6 +381,29 @@ esp_err_t esp_vfs_register_fs_with_id(const esp_vfs_fs_ops_t *vfs, int flags, vo
  * Alias for esp_vfs_unregister for naming consistency
  */
 esp_err_t esp_vfs_unregister_fs(const char *base_path);
+
+/**
+ * Unregister the FS at given path prefix, but only if it was registered with the same arguments.
+ *
+ * Use this instead of esp_vfs_unregister_fs() when a driver must not remove an FS
+ * registered by someone else, or by another instance of the same driver, at the same path.
+ * Pass the same arguments that were passed to esp_vfs_register_fs().
+ *
+ * @note The ops are compared by pointer, so this only works for an FS registered
+ *       with ESP_VFS_FLAG_STATIC. Without that flag, VFS stores its own copy of the ops.
+ *
+ * @param base_path  path prefix previously passed to esp_vfs_register_fs()
+ * @param vfs        ops pointer previously passed to esp_vfs_register_fs()
+ * @param flags      flags previously passed to esp_vfs_register_fs()
+ * @param ctx        context pointer previously passed to esp_vfs_register_fs()
+ *
+ * @return  ESP_OK if successful,
+ *          ESP_ERR_INVALID_ARG if base_path or vfs is NULL, or the FS at base_path was registered
+ *          with different ops, flags or ctx,
+ *          ESP_ERR_INVALID_STATE if no FS is registered at base_path,
+ *          ESP_ERR_NOT_SUPPORTED if the FS at base_path was not registered with ESP_VFS_FLAG_STATIC.
+ */
+esp_err_t esp_vfs_unregister_fs_checked(const char *base_path, const esp_vfs_fs_ops_t *vfs, int flags, void *ctx);
 
 /**
  * Alias for esp_vfs_unregister_with_id for naming consistency

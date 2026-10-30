@@ -27,6 +27,10 @@ examples/protocols/esp_http_client:
 
 examples/protocols/esp_http_client_mutual_auth:
   <<: *default_rules
+  disable+:
+    - if: IDF_BUILD_V2 == "1"
+      temporary: true
+      reason: 'depends on a managed component that uses the unsupported BUILD_COMPONENTS build property under Build system v2 (TODO: IDF-16157)'
   disable_test:
     - if: IDF_TARGET != "esp32c3"
   depends_components+:

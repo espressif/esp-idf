@@ -37,16 +37,7 @@ static esp_err_t emac_hal_flush_trans_fifo(emac_hal_context_t *hal)
 
 void emac_hal_init(emac_hal_context_t *hal)
 {
-    hal->dma_regs = &EMAC_DMA;
-    hal->mac_regs = &EMAC_MAC;
-#if SOC_IS(ESP32)
-    hal->ext_regs = &EMAC_EXT;
-#else
-    hal->ext_regs = NULL;
-#endif
-#if SOC_EMAC_IEEE1588V2_SUPPORTED
-    hal->ptp_regs = &EMAC_PTP;
-#endif
+    *hal = emac_hal_get_context();
 }
 
 esp_err_t emac_hal_ref_clock_select(emac_hal_context_t *hal, int sel)

@@ -180,7 +180,7 @@ static esp_err_t mcpwm_select_periph_clock_unsafe(mcpwm_group_t *group, soc_modu
     }
 
     group->clk_src = clk_src;
-    ESP_GOTO_ON_ERROR(esp_clk_tree_acquire_src((soc_module_clk_t)clk_src),
+    ESP_GOTO_ON_ERROR(esp_clk_tree_acquire_src((soc_module_clk_t)clk_src, NULL),
                       err, TAG, "clock source enable failed");
 #if CONFIG_PM_ENABLE
     // to make the mcpwm works reliable, the source clock must stay alive and unchanged

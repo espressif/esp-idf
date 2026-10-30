@@ -41,13 +41,25 @@ ESP_BLE_AUDIO_BAP_LC3_BROADCAST_PRESET_16_2_1_DEFINE(preset_active,
 static struct broadcast_source_stream {
     esp_ble_audio_bap_stream_t stream;
     uint16_t seq_num;
+    example_audio_tx_count_t tx_count;
     uint8_t *data;
-    example_audio_tx_scheduler_t scheduler;
+    bool tx_on;
 } streams[STREAM_COUNT];
+
+/* One scheduler for the BIG, running while any stream sends: each tick sends
+ * one SDU on every stream.
+ */
+static example_audio_tx_scheduler_t tx_scheduler;
+static size_t tx_stream_count;
+#if CONFIG_EXAMPLE_AUDIO_TX_TIMESTAMP
+static example_audio_tx_sync_t tx_sync;
+#endif /* CONFIG_EXAMPLE_AUDIO_TX_TIMESTAMP */
 
 static esp_ble_audio_bap_broadcast_source_t *broadcast_source;
 
+#if !CONFIG_EXAMPLE_AUDIO_TX_TIMESTAMP
 static void broadcast_source_tx(struct broadcast_source_stream *source_stream);
+#endif /* !CONFIG_EXAMPLE_AUDIO_TX_TIMESTAMP */
 
 static int stream_index(const esp_ble_audio_bap_stream_t *stream)
 {
@@ -83,17 +95,65 @@ static void stream_started_cb(esp_ble_audio_bap_stream_t *stream)
         }
     }
 
-    source_stream->seq_num = 0;
-    example_audio_tx_scheduler_reset(&source_stream->scheduler);
-
-    /* Note: esp timer is not accurate enough */
-    err = example_audio_tx_scheduler_start(&source_stream->scheduler, preset_active.qos.interval);
-    if (err) {
-        ESP_LOGE(TAG, "[SRC #%d] Scheduler start failed, err %d", idx, err);
+    if (source_stream->tx_on) {
         return;
     }
 
+#if CONFIG_EXAMPLE_AUDIO_TX_TIMESTAMP
+    err = example_audio_tx_sync_start(&tx_sync, stream);
+    if (err) {
+        ESP_LOGE(TAG, "[SRC #%d] Timestamp TX start failed, err %d", idx, err);
+        return;
+    }
+#endif /* CONFIG_EXAMPLE_AUDIO_TX_TIMESTAMP */
+
+    if (tx_stream_count == 0) {
+        example_audio_tx_scheduler_reset(&tx_scheduler);
+
+        /* Note: esp timer is not accurate enough */
+        err = example_audio_tx_scheduler_start(&tx_scheduler, preset_active.qos.interval);
+        if (err) {
+            ESP_LOGE(TAG, "Scheduler start failed, err %d", err);
+#if CONFIG_EXAMPLE_AUDIO_TX_TIMESTAMP
+            example_audio_tx_sync_stop(&tx_sync, stream);
+#endif /* CONFIG_EXAMPLE_AUDIO_TX_TIMESTAMP */
+            return;
+        }
+    }
+
+    source_stream->tx_on = true;
+    source_stream->tx_count = (example_audio_tx_count_t){0};
+    tx_stream_count++;
+
+    ESP_LOGI(TAG, "[SRC #%d] Starting TX %s timestamps", idx,
+             IS_ENABLED(CONFIG_EXAMPLE_AUDIO_TX_TIMESTAMP) ? "with" : "without");
+
+#if !CONFIG_EXAMPLE_AUDIO_TX_TIMESTAMP
+    source_stream->seq_num = 0;
     broadcast_source_tx(source_stream);
+#endif /* !CONFIG_EXAMPLE_AUDIO_TX_TIMESTAMP */
+}
+
+/* Called on both stopped and disconnected; the other streams keep sending. */
+static void stream_tx_stop(struct broadcast_source_stream *source_stream)
+{
+    esp_err_t err;
+
+    if (!source_stream->tx_on) {
+        return;
+    }
+
+    source_stream->tx_on = false;
+#if CONFIG_EXAMPLE_AUDIO_TX_TIMESTAMP
+    example_audio_tx_sync_stop(&tx_sync, &source_stream->stream);
+#endif /* CONFIG_EXAMPLE_AUDIO_TX_TIMESTAMP */
+
+    if (--tx_stream_count == 0) {
+        err = example_audio_tx_scheduler_stop(&tx_scheduler);
+        if (err) {
+            ESP_LOGE(TAG, "Scheduler stop failed, err %d", err);
+        }
+    }
 }
 
 static void stream_stopped_cb(esp_ble_audio_bap_stream_t *stream, uint8_t reason)
@@ -101,15 +161,10 @@ static void stream_stopped_cb(esp_ble_audio_bap_stream_t *stream, uint8_t reason
     struct broadcast_source_stream *source_stream = CONTAINER_OF(stream,
                                                                  struct broadcast_source_stream,
                                                                  stream);
-    int idx = stream_index(stream);
-    esp_err_t err;
 
-    ESP_LOGI(TAG, "[SRC #%d] Stream stopped, reason 0x%02x", idx, reason);
+    ESP_LOGI(TAG, "[SRC #%d] Stream stopped, reason 0x%02x", stream_index(stream), reason);
 
-    err = example_audio_tx_scheduler_stop(&source_stream->scheduler);
-    if (err) {
-        ESP_LOGE(TAG, "[SRC #%d] Scheduler stop failed, err %d", idx, err);
-    }
+    stream_tx_stop(source_stream);
 }
 
 static void stream_disconnected_cb(esp_ble_audio_bap_stream_t *stream, uint8_t reason)
@@ -117,15 +172,10 @@ static void stream_disconnected_cb(esp_ble_audio_bap_stream_t *stream, uint8_t r
     struct broadcast_source_stream *source_stream = CONTAINER_OF(stream,
                                                                  struct broadcast_source_stream,
                                                                  stream);
-    int idx = stream_index(stream);
-    esp_err_t err;
 
-    ESP_LOGI(TAG, "[SRC #%d] ISO disconnected, reason 0x%02x", idx, reason);
+    ESP_LOGI(TAG, "[SRC #%d] ISO disconnected, reason 0x%02x", stream_index(stream), reason);
 
-    err = example_audio_tx_scheduler_stop(&source_stream->scheduler);
-    if (err) {
-        ESP_LOGE(TAG, "[SRC #%d] Scheduler stop failed, err %d", idx, err);
-    }
+    stream_tx_stop(source_stream);
 }
 
 static void stream_sent_cb(esp_ble_audio_bap_stream_t *stream, void *user_data)
@@ -136,7 +186,8 @@ static void stream_sent_cb(esp_ble_audio_bap_stream_t *stream, void *user_data)
     char name[24];
 
     snprintf(name, sizeof(name), "SRC #%d", stream_index(stream));
-    example_audio_tx_scheduler_on_sent(&source_stream->scheduler, user_data, TAG, name);
+    example_audio_tx_scheduler_on_sent(&tx_scheduler, user_data, &source_stream->tx_count,
+                                       TAG, name);
 }
 
 static esp_ble_audio_bap_stream_ops_t stream_ops = {
@@ -146,6 +197,7 @@ static esp_ble_audio_bap_stream_ops_t stream_ops = {
     .disconnected = stream_disconnected_cb,
 };
 
+#if !CONFIG_EXAMPLE_AUDIO_TX_TIMESTAMP
 static bool stream_is_streaming(const esp_ble_audio_bap_stream_t *stream)
 {
     esp_ble_audio_bap_ep_info_t ep_info = {0};
@@ -195,16 +247,50 @@ static void broadcast_source_tx(struct broadcast_source_stream *source_stream)
 
     source_stream->seq_num++;
 }
+#else /* !CONFIG_EXAMPLE_AUDIO_TX_TIMESTAMP */
+static int tx_send_cb(esp_ble_audio_bap_stream_t *stream, uint16_t seq_num,
+                      uint32_t timestamp, bool ts_valid)
+{
+    struct broadcast_source_stream *source_stream = CONTAINER_OF(stream,
+                                                                 struct broadcast_source_stream,
+                                                                 stream);
+    int err;
+
+    memset(source_stream->data, (uint8_t)seq_num, stream->qos->sdu);
+    /* The timestamp, 0 without one, tells the receiver which SDUs of the
+     * streams belong together, e.g. the left and right audio of one frame.
+     */
+    if (!ts_valid) {
+        timestamp = 0;
+    }
+    memcpy(source_stream->data, &timestamp, MIN(sizeof(timestamp), stream->qos->sdu));
+
+    if (ts_valid) {
+        err = esp_ble_audio_bap_stream_send_ts(stream, source_stream->data, stream->qos->sdu,
+                                               seq_num, timestamp);
+    } else {
+        err = esp_ble_audio_bap_stream_send(stream, source_stream->data, stream->qos->sdu,
+                                            seq_num);
+    }
+    if (err) {
+        ESP_LOGW(TAG, "[SRC #%d] Send failed, err %d", stream_index(stream), err);
+    }
+
+    return err;
+}
+#endif /* !CONFIG_EXAMPLE_AUDIO_TX_TIMESTAMP */
 
 static void tx_scheduler_cb(void *arg)
 {
-    struct broadcast_source_stream *source_stream = arg;
-
-    if (source_stream == NULL) {
-        return;
+#if CONFIG_EXAMPLE_AUDIO_TX_TIMESTAMP
+    example_audio_tx_sync_send_next(&tx_sync);
+#else /* CONFIG_EXAMPLE_AUDIO_TX_TIMESTAMP */
+    for (size_t i = 0; i < ARRAY_SIZE(streams); i++) {
+        if (streams[i].tx_on) {
+            broadcast_source_tx(&streams[i]);
+        }
     }
-
-    broadcast_source_tx(source_stream);
+#endif /* CONFIG_EXAMPLE_AUDIO_TX_TIMESTAMP */
 }
 
 static void source_started_cb(esp_ble_audio_bap_broadcast_source_t *source)
@@ -444,14 +530,13 @@ void app_main(void)
         return;
     }
 
-    for (size_t i = 0; i < ARRAY_SIZE(streams); i++) {
-        err = example_audio_tx_scheduler_init(&streams[i].scheduler,
-                                              tx_scheduler_cb,
-                                              &streams[i]);
-        if (err) {
-            ESP_LOGE(TAG, "[SRC #%zu] Scheduler init failed, err %d", i, err);
-            return;
-        }
+#if CONFIG_EXAMPLE_AUDIO_TX_TIMESTAMP
+    tx_sync.send = tx_send_cb;
+#endif /* CONFIG_EXAMPLE_AUDIO_TX_TIMESTAMP */
+    err = example_audio_tx_scheduler_init(&tx_scheduler, tx_scheduler_cb, NULL);
+    if (err) {
+        ESP_LOGE(TAG, "Scheduler init failed, err %d", err);
+        return;
     }
 
     err = broadcast_start();

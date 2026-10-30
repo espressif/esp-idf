@@ -26,6 +26,23 @@ components/ulp/test_apps/lp_core/lp_core_basic_tests:
     - esp_hal_gpspi
     - esp_hal_pmu
     - esp_hw_support
+    - esp_sleep
+
+
+components/ulp/test_apps/lp_core/lp_core_deep_sleep_tests:
+  enable:
+    - if: (SOC_LP_CORE_SUPPORTED == 1) and (SOC_DEEP_SLEEP_SUPPORTED == 1)
+  depends_components:
+    - ulp
+    - esp_driver_gpio
+    - esp_driver_i2c
+    - esp_driver_uart
+    - esp_hal_gpio
+    - esp_hal_i2c
+    - esp_hal_uart
+    - esp_hal_pmu
+    - esp_hw_support
+    - esp_sleep
 
 
 components/ulp/test_apps/lp_core/lp_core_gpio_wakeup_tests:
@@ -37,6 +54,7 @@ components/ulp/test_apps/lp_core/lp_core_gpio_wakeup_tests:
     - esp_hal_gpio
     - esp_hal_pmu
     - esp_hw_support
+    - esp_sleep
 
 
 components/ulp/test_apps/lp_core/lp_core_hp_mem:
@@ -67,6 +85,7 @@ components/ulp/test_apps/ulp_fsm:
     - soc
     - esp_hal_pmu
     - esp_hw_support
+    - esp_sleep
 
 
 components/ulp/test_apps/ulp_riscv:
@@ -77,3 +96,4 @@ components/ulp/test_apps/ulp_riscv:
     - soc
     - esp_hal_pmu
     - esp_hw_support
+    - esp_sleep

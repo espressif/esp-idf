@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -65,24 +65,30 @@ static const spi_flash_host_driver_t esp_flash_gpspi_host = {};
 #endif
 #endif
 
-esp_err_t memspi_host_init_pointers(memspi_host_inst_t *host, const memspi_host_config_t *cfg)
+static esp_err_t memspi_host_init_driver(memspi_host_inst_t *host, const memspi_host_config_t *cfg, const spi_flash_host_driver_t *driver)
 {
-    if (!esp_ptr_internal(host) && cfg->host_id == SPI1_HOST) {
+    host->inst.driver = driver;
+    return spi_flash_hal_init(host, cfg);
+}
+
+esp_err_t memspi_host_init_spi1_pointers(memspi_host_inst_t *host, const memspi_host_config_t *cfg)
+{
+    if (!esp_ptr_internal(host)) {
         return ESP_ERR_INVALID_ARG;
     }
+    return memspi_host_init_driver(host, cfg, &esp_flash_default_host);
+}
 
-#if SOC_MEMSPI_IS_INDEPENDENT
+esp_err_t memspi_host_init_pointers(memspi_host_inst_t *host, const memspi_host_config_t *cfg)
+{
     if (cfg->host_id == SPI1_HOST) {
-        host->inst.driver = &esp_flash_default_host;
-    } else {
-        host->inst.driver = &esp_flash_gpspi_host;
+        return memspi_host_init_spi1_pointers(host, cfg);
     }
+#if SOC_MEMSPI_IS_INDEPENDENT
+    return memspi_host_init_driver(host, cfg, &esp_flash_gpspi_host);
 #else
-    host->inst.driver = &esp_flash_default_host;
+    return memspi_host_init_driver(host, cfg, &esp_flash_default_host);
 #endif
-
-    esp_err_t err = spi_flash_hal_init(host, cfg);
-    return err;
 }
 
 #ifndef CONFIG_SPI_FLASH_ROM_IMPL

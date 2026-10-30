@@ -22,6 +22,7 @@ components/esp_driver_uart/test_apps/uart:
     - esp_hal_uart
     - esp_driver_gpio
     - esp_hw_support
+    - esp_sleep
     - soc
 
 components/esp_driver_uart/test_apps/uart_vfs:

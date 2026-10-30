@@ -11,7 +11,7 @@ if(NOT BOOTLOADER_BUILD)
     list(APPEND srcs "sar_periph_ctrl.c"
                      "pmu_param.c"
                      "pmu_init.c"
-                     "pmu_sleep.c"
+                     "ocode_init.c"
         )
 endif()
 

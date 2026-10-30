@@ -25,6 +25,7 @@
 .openthread_sleep_dependencies: &openthread_sleep_dependencies
   depends_components+:
     - esp_hw_support
+    - esp_sleep
     - esp_pm
 
 examples/openthread/ot_br:

@@ -112,12 +112,13 @@ class PublicHeaderChecker:
         # - components/esp_adc/**
         # - components/esp_driver_*/**
         # - components/esp_hw_support/**
+        # - components/esp_sleep/**
         # - components/sdmmc/**
         # - components/ieee802154/**
         # - components/esp_eth/**
         # - components/esp_lcd/**
         self.freertos_scope = re.compile(
-            r'^(components/(esp_adc|esp_hw_support|sdmmc|ieee802154|esp_eth|esp_lcd)/|components/esp_driver_[^/]+/)'
+            r'^(components/(esp_adc|esp_hw_support|esp_sleep|sdmmc|ieee802154|esp_eth|esp_lcd)/|components/esp_driver_[^/]+/)'
         )
         self.assembly_nocode = r'^\s*(\.file|\.text|\.ident|\.option|\.attribute|(\.section)?).*$'
         self.check_threads: list[Thread] = []

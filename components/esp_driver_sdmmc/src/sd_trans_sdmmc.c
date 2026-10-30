@@ -593,7 +593,13 @@ esp_err_t sd_host_slot_sdmmc_do_transaction(sd_host_slot_handle_t slot, sdmmc_co
 out:
 #if CONFIG_PM_ENABLE
     if (slot_ctx->ctlr->pm_lock) {
-        ESP_RETURN_ON_ERROR(esp_pm_lock_release(slot_ctx->ctlr->pm_lock), TAG, "release pm_lock failed");
+        esp_err_t pm_ret = esp_pm_lock_release(slot_ctx->ctlr->pm_lock);
+        if (pm_ret != ESP_OK) {
+            ESP_LOGE(TAG, "release pm_lock failed: 0x%x", pm_ret);
+            if (ret == ESP_OK) {
+                ret = pm_ret;
+            }
+        }
     }
 #endif
     xSemaphoreGive(slot_ctx->ctlr->mutex);

@@ -7,3 +7,4 @@
 #pragma once
 
 #include "../../common/btdm_le_vs.h"
+#include "../../common/btdm_common_vs.h"

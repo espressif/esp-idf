@@ -134,6 +134,10 @@ typedef int (*http_cb) (http_parser*);
   XX(32, UNLINK,      UNLINK)       \
   XX(33, QUERY,       QUERY)        /* RFC 10008 */
 
+/* HTTP_QUERY is an enumerator, not a #define. Downstream may use
+ * #if defined(HTTP_PARSER_HAS_QUERY) for compile-time detection. */
+#define HTTP_PARSER_HAS_QUERY 1
+
 enum http_method
   {
 #define XX(num, name, string) HTTP_##name = num,

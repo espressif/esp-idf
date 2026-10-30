@@ -1030,11 +1030,14 @@ typedef union {
          *  SPI LDO 1.8 V multiplier
          */
         uint32_t spi_ldo_1v8_mul:3;
-        /** reserved_2_145 : R; bitpos: [31:17]; default: 0;
-         *  reserved
-         *  This field is only for internal debugging purposes. Do not use it in applications.
+        /** adc1_weight_bit16 : R; bitpos: [26:17]; default: 0;
+         *  ADC1 bit 16 weight (BIT16*10 - 20480)
          */
-        uint32_t reserved_2_145:15;
+        uint32_t adc1_weight_bit16:10;
+        /** adc1_weight_bit15 : R; bitpos: [31:27]; default: 0;
+         *  ADC1 bit 15 weight (BIT15*10 - 10240)
+         */
+        uint32_t adc1_weight_bit15:5;
     };
     uint32_t val;
 } efuse_rd_sys_part1_data4_reg_t;
@@ -1044,11 +1047,26 @@ typedef union {
  */
 typedef union {
     struct {
-        /** sys_data_part1_5 : RO; bitpos: [31:0]; default: 0;
-         *  Represents the zeroth 32-bit of first part of system data.
-         *  This field is only for internal debugging purposes. Do not use it in applications.
+        /** adc1_weight_bit15_1 : R; bitpos: [3:0]; default: 0;
+         *  ADC1 bit 15 weight (BIT15*10 - 10240)
          */
-        uint32_t sys_data_part1_5:32;
+        uint32_t adc1_weight_bit15_1:4;
+        /** adc1_weight_bit14 : R; bitpos: [11:4]; default: 0;
+         *  ADC1 bit 14 weight (BIT14*10 - 5120)
+         */
+        uint32_t adc1_weight_bit14:8;
+        /** adc1_weight_bit13 : R; bitpos: [19:12]; default: 0;
+         *  ADC1 bit 13 weight (BIT13*10 - 2560)
+         */
+        uint32_t adc1_weight_bit13:8;
+        /** adc1_weight_bit12 : R; bitpos: [27:20]; default: 0;
+         *  ADC1 bit 12 weight (BIT12*10 - 2560)
+         */
+        uint32_t adc1_weight_bit12:8;
+        /** adc1_weight_bit11 : R; bitpos: [31:28]; default: 0;
+         *  ADC1 bit 11 weight (BIT11*10 - 1280)
+         */
+        uint32_t adc1_weight_bit11:4;
     };
     uint32_t val;
 } efuse_rd_sys_part1_data5_reg_t;
@@ -1058,11 +1076,26 @@ typedef union {
  */
 typedef union {
     struct {
-        /** sys_data_part1_6 : RO; bitpos: [31:0]; default: 0;
-         *  Represents the zeroth 32-bit of first part of system data.
-         *  This field is only for internal debugging purposes. Do not use it in applications.
+        /** adc1_weight_bit11_1 : R; bitpos: [1:0]; default: 0;
+         *  ADC1 bit 11 weight (BIT11*10 - 1280)
          */
-        uint32_t sys_data_part1_6:32;
+        uint32_t adc1_weight_bit11_1:2;
+        /** adc1_weight_bit10 : R; bitpos: [6:2]; default: 0;
+         *  ADC1 bit 10 weight (BIT10*10 - 640)
+         */
+        uint32_t adc1_weight_bit10:5;
+        /** adc2_weight_bit16 : R; bitpos: [16:7]; default: 0;
+         *  ADC2 bit 16 weight (BIT16*10 - 20480)
+         */
+        uint32_t adc2_weight_bit16:10;
+        /** adc2_weight_bit15 : R; bitpos: [25:17]; default: 0;
+         *  ADC2 bit 15 weight (BIT15*10 - 10240)
+         */
+        uint32_t adc2_weight_bit15:9;
+        /** adc2_weight_bit14 : R; bitpos: [31:26]; default: 0;
+         *  ADC2 bit 14 weight (BIT14*10 - 5120)
+         */
+        uint32_t adc2_weight_bit14:6;
     };
     uint32_t val;
 } efuse_rd_sys_part1_data6_reg_t;
@@ -1072,11 +1105,31 @@ typedef union {
  */
 typedef union {
     struct {
-        /** sys_data_part1_7 : RO; bitpos: [31:0]; default: 0;
-         *  Represents the zeroth 32-bit of first part of system data.
+        /** adc2_weight_bit14_1 : R; bitpos: [1:0]; default: 0;
+         *  ADC2 bit 14 weight (BIT14*10 - 5120)
+         */
+        uint32_t adc2_weight_bit14_1:2;
+        /** adc2_weight_bit13 : R; bitpos: [9:2]; default: 0;
+         *  ADC2 bit 13 weight (BIT13*10 - 2560)
+         */
+        uint32_t adc2_weight_bit13:8;
+        /** adc2_weight_bit12 : R; bitpos: [17:10]; default: 0;
+         *  ADC2 bit 12 weight (BIT12*10 - 2560)
+         */
+        uint32_t adc2_weight_bit12:8;
+        /** adc2_weight_bit11 : R; bitpos: [23:18]; default: 0;
+         *  ADC2 bit 11 weight (BIT11*10 - 1280)
+         */
+        uint32_t adc2_weight_bit11:6;
+        /** adc2_weight_bit10 : R; bitpos: [28:24]; default: 0;
+         *  ADC2 bit 10 weight (BIT10*10 - 640)
+         */
+        uint32_t adc2_weight_bit10:5;
+        /** reserved_2_253 : R; bitpos: [31:29]; default: 0;
+         *  reserved
          *  This field is only for internal debugging purposes. Do not use it in applications.
          */
-        uint32_t sys_data_part1_7:32;
+        uint32_t reserved_2_253:3;
     };
     uint32_t val;
 } efuse_rd_sys_part1_data7_reg_t;

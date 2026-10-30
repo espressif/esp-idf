@@ -77,6 +77,16 @@ include(ExternalProject)
 .. cmakev2:variable:: IDF_BUILD_VER_TAG
 
     The build system version tag, ``v2`` for v2.
+
+.. cmakev2:variable:: IDF_COMPONENT_SCOPE_ISOLATION
+
+    Set to ``NO`` to disable the scope isolation of components. The isolation
+    hides the variables and directory properties of the requiring component
+    from a component. The default is ``YES``. It is read
+    as a CMake variable, for example set with
+    ``idf.py -DIDF_COMPONENT_SCOPE_ISOLATION=NO``, or as an environment
+    variable. It exists to diagnose a problem with the isolation. It will be
+    removed once the isolation is established.
 #]]
 
 #[[
@@ -372,6 +382,22 @@ function(__init_toolchain)
 endfunction()
 
 #[[
+    __init_isolation()
+
+    Resolve the IDF_COMPONENT_SCOPE_ISOLATION setting into the
+    __COMPONENT_SCOPE_ISOLATION build property. The isolation is described at
+    __idf_component_add_subdirectory() in component.cmake. It can be disabled
+    to diagnose a problem, for example with
+    idf.py -DIDF_COMPONENT_SCOPE_ISOLATION=NO.
+#]]
+function(__init_isolation)
+    __get_default_value(VARIABLE IDF_COMPONENT_SCOPE_ISOLATION
+                        DEFAULT YES
+                        OUTPUT isolation)
+    idf_build_set_property(__COMPONENT_SCOPE_ISOLATION "${isolation}")
+endfunction()
+
+#[[
     __init_compiler_launchers()
 
     Build the compiler launcher chain and apply it to
@@ -468,6 +494,19 @@ endfunction()
 function(__init_components)
     idf_build_get_property(idf_path IDF_PATH)
     idf_build_get_property(prefix PREFIX)
+
+    # Add the names from the EXCLUDE_COMPONENTS environment or CMake variable to
+    # the EXCLUDE_COMPONENTS build property. Read the variable here, not when
+    # idf.cmake is included. A project may set it after include(project.cmake)
+    # and before project(), as in build system v1. The list may be separated by
+    # spaces or semicolons.
+    __get_default_value(VARIABLE EXCLUDE_COMPONENTS
+                        DEFAULT ""
+                        OUTPUT exclude_components)
+    spaces2list(exclude_components)
+    if(exclude_components)
+        idf_build_set_property(EXCLUDE_COMPONENTS "${exclude_components}" APPEND)
+    endif()
 
     idf_build_get_property(project_components_source PROJECT_COMPONENTS_SOURCE)
     if(NOT project_components_source)
@@ -745,6 +784,18 @@ endfunction()
 
     How :cmakev2:ref:`idf_component_optional_requires` is resolved, ``IMMEDIATE`` or ``DEFERRED``.
 
+.. cmakev2:build_property:: EXCLUDE_COMPONENTS
+
+    List of component names to skip during component discovery. An excluded
+    component has no interface target. Its Kconfig files are not collected and
+    its ``project_include.cmake`` is not included. A component that requires
+    an excluded component fails with ``Failed to resolve component``. Set the
+    property before ``idf_project_init()``. Names in the ``EXCLUDE_COMPONENTS``
+    environment or CMake variable are added to the property. This keeps
+    ``idf.py -DEXCLUDE_COMPONENTS=<name>`` and a variable set before
+    ``project()`` working. Unlike build system v1, a dependency does not add
+    an excluded component back, see :ref:`cmakev2-exclude-components`.
+
 .. cmakev2:build_property:: PROJECT_DEFAULT_EXTRA_COMPONENTS
 
     Internal list of additional components to include in the executable
@@ -806,6 +857,9 @@ __init_toolchain()
 
 # Set up the compiler launcher chain (esp-idf-configdep, ccache) if requested.
 __init_compiler_launchers()
+
+# Resolve the IDF_COMPONENT_SCOPE_ISOLATION setting.
+__init_isolation()
 
 #[[
 

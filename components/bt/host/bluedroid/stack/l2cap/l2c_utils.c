@@ -38,6 +38,10 @@
 #include "bt_common.h"
 #include "osi/allocator.h"
 #include "osi/list.h"
+#if (C2H_FLOW_CONTROL_INCLUDED == TRUE)
+#include "hci/hci_layer.h"
+#include "stack/c2h_credit.h"
+#endif
 
 #if BT_SDP_BQB_INCLUDED
 extern BOOLEAN l2cap_bqb_ertm_mode_included_flag;
@@ -162,6 +166,65 @@ void l2cu_update_lcb_4_bonding (BD_ADDR p_bd_addr, BOOLEAN is_bonding)
 
 /*******************************************************************************
 **
+** Function         l2cu_return_tx_credits
+**
+** Description      Give this link's outstanding controller credits back to the
+**                  shared transmit window. The old ACL will not report Number
+**                  of Completed Packets for them. The counter is cleared so a
+**                  second call is a no-op.
+**
+** Returns          void
+**
+*******************************************************************************/
+void l2cu_return_tx_credits (tL2C_LCB *p_lcb)
+{
+    if (p_lcb->sent_not_acked == 0) {
+        return;
+    }
+#if (BLE_INCLUDED == TRUE)
+    if (p_lcb->transport == BT_TRANSPORT_LE) {
+        l2cb.controller_le_xmit_window += p_lcb->sent_not_acked;
+        if (l2cb.controller_le_xmit_window > l2cb.num_lm_ble_bufs) {
+            l2cb.controller_le_xmit_window = l2cb.num_lm_ble_bufs;
+        }
+    } else
+#endif
+    {
+        l2cb.controller_xmit_window += p_lcb->sent_not_acked;
+        if (l2cb.controller_xmit_window > l2cb.num_lm_acl_bufs) {
+            l2cb.controller_xmit_window = l2cb.num_lm_acl_bufs;
+        }
+    }
+    p_lcb->sent_not_acked = 0;
+}
+
+/*******************************************************************************
+**
+** Function         l2cu_flush_link_xmit_data_q
+**
+** Description      Free packets queued for this link. The queue itself is kept
+**                  so the LCB can be reused.
+**
+** Returns          void
+**
+*******************************************************************************/
+void l2cu_flush_link_xmit_data_q (tL2C_LCB *p_lcb)
+{
+    BT_HDR *p_buf;
+
+    if (p_lcb->link_xmit_data_q == NULL) {
+        return;
+    }
+    while (!list_is_empty(p_lcb->link_xmit_data_q)) {
+        p_buf = list_front(p_lcb->link_xmit_data_q);
+        list_remove(p_lcb->link_xmit_data_q, p_buf);
+        p_buf->event = 0;
+        osi_free(p_buf);
+    }
+}
+
+/*******************************************************************************
+**
 ** Function         l2cu_release_lcb
 **
 ** Description      Release an LCB. All timers will be stopped, channels
@@ -186,6 +249,14 @@ void l2cu_release_lcb (tL2C_LCB *p_lcb)
 
     L2CAP_TRACE_DEBUG("%s handle=%u bda="MACSTR"",
         __func__, p_lcb->handle, MAC2STR(p_lcb->remote_bd_addr));
+
+#if (C2H_FLOW_CONTROL_INCLUDED == TRUE)
+    if (p_lcb->handle != HCI_INVALID_HANDLE) {
+        /* Partial ACL reassembly lives on the HCI thread; post a flush there. */
+        hci_drop_inbound_acl_reassembly(p_lcb->handle);
+        btu_c2h_credit_flush_and_purge(p_lcb->handle);
+    }
+#endif
 
     p_lcb->in_use     = FALSE;
     p_lcb->is_bonding = FALSE;
@@ -228,22 +299,7 @@ void l2cu_release_lcb (tL2C_LCB *p_lcb)
     }
 #endif
 
-    if (p_lcb->sent_not_acked > 0) {
-#if (BLE_INCLUDED == TRUE)
-        if (p_lcb->transport == BT_TRANSPORT_LE) {
-            l2cb.controller_le_xmit_window += p_lcb->sent_not_acked;
-            if (l2cb.controller_le_xmit_window > l2cb.num_lm_ble_bufs) {
-                l2cb.controller_le_xmit_window = l2cb.num_lm_ble_bufs;
-            }
-        } else
-#endif
-        {
-            l2cb.controller_xmit_window += p_lcb->sent_not_acked;
-            if (l2cb.controller_xmit_window > l2cb.num_lm_acl_bufs) {
-                l2cb.controller_xmit_window = l2cb.num_lm_acl_bufs;
-            }
-        }
-    }
+    l2cu_return_tx_credits(p_lcb);
 
 #if (BLE_INCLUDED == TRUE)
     // Reset BLE connecting flag only if the address matches
@@ -270,14 +326,9 @@ void l2cu_release_lcb (tL2C_LCB *p_lcb)
 #endif
     }
 
-    /* Release any held buffers */
     if (p_lcb->link_xmit_data_q) {
-        while (!list_is_empty(p_lcb->link_xmit_data_q)) {
-            BT_HDR *p_buf = list_front(p_lcb->link_xmit_data_q);
-            list_remove(p_lcb->link_xmit_data_q, p_buf);
-            p_buf->event = 0;
-            osi_free(p_buf);
-        }
+        /* Release any held buffers */
+        l2cu_flush_link_xmit_data_q(p_lcb);
         list_free(p_lcb->link_xmit_data_q);
         p_lcb->link_xmit_data_q = NULL;
     }
@@ -2363,6 +2414,12 @@ void l2cu_process_our_cfg_rsp (tL2C_CCB *p_ccb, tL2CAP_CFG_INFO *p_cfg)
 *******************************************************************************/
 void l2cu_device_reset (void)
 {
+#if (C2H_FLOW_CONTROL_INCLUDED == TRUE)
+    /* Controller is resetting; discard stale credits and do not flush them. */
+    btu_c2h_credit_set_enabled(FALSE);
+    btu_c2h_credit_reset();
+#endif
+
     list_node_t *p_node = NULL;
     tL2C_LCB    *p_lcb  = NULL;
     for (p_node = list_begin(l2cb.p_lcb_pool); p_node; p_node = list_next(p_node)) {
@@ -2373,6 +2430,11 @@ void l2cu_device_reset (void)
     }
 #if (BLE_INCLUDED == TRUE)
     l2cb.is_ble_connecting = FALSE;
+#endif
+#if (C2H_FLOW_CONTROL_INCLUDED == TRUE)
+    /* Re-evaluate pause from current ACL queue before accepting new credits. */
+    btu_c2h_credit_pause_if_congested();
+    btu_c2h_credit_set_enabled(TRUE);
 #endif
 }
 

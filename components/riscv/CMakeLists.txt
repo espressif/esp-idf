@@ -43,6 +43,10 @@ else()
     else()
         list(APPEND srcs "interrupt_intc.c" "vectors_intc.S")
     endif()
+
+    if(CONFIG_SOC_RISCV_SV32_SUPPORTED)
+        list(APPEND srcs "sv32.c")
+    endif()
 endif()
 
 idf_component_register(SRCS "${srcs}"

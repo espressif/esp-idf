@@ -767,17 +767,45 @@ UINT8 PAN_SetTraceLevel(UINT8 new_level)
  *
  * Parameters:      none
  *
- * Returns          none
+ * Returns          status
  *
  ******************************************************************************/
-void PAN_Init(void)
+bt_status_t PAN_Init(void)
 {
+#if PAN_DYNAMIC_MEMORY == TRUE
+    pan_cb_ptr = (tPAN_CB *)osi_malloc(sizeof(tPAN_CB));
+    if (!pan_cb_ptr) {
+        return BT_STATUS_NOMEM;
+    }
+#endif
+
     memset(&pan_cb, 0, sizeof(tPAN_CB));
 
 #if defined(PAN_INITIAL_TRACE_LEVEL)
     pan_cb.trace_level = PAN_INITIAL_TRACE_LEVEL;
 #else
     pan_cb.trace_level = BT_TRACE_LEVEL_NONE; /* No traces */
+#endif
+    return BT_STATUS_SUCCESS;
+}
+
+/*******************************************************************************
+ *
+ * Function         PAN_Deinit
+ *
+ * Description      This function is called to deinitialize the control block
+ *                  for this layer.
+ *
+ * Returns          void
+ *
+ ******************************************************************************/
+void PAN_Deinit(void)
+{
+#if PAN_DYNAMIC_MEMORY == TRUE
+    if (pan_cb_ptr) {
+        osi_free(pan_cb_ptr);
+        pan_cb_ptr = NULL;
+    }
 #endif
 }
 

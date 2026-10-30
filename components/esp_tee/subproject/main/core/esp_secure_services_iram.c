@@ -199,7 +199,9 @@ esp_err_t _ss_esp_tee_sec_storage_ecdsa_sign(const esp_tee_sec_storage_key_cfg_t
 
     esp_tee_sec_storage_key_cfg_t cfg_local = *cfg;
     char id_buf[NVS_KEY_NAME_MAX_SIZE];
-    tee_snapshot_ree_str(&cfg_local.id, id_buf, sizeof(id_buf));
+    if (!tee_snapshot_ree_str(&cfg_local.id, id_buf, sizeof(id_buf))) {
+        return ESP_ERR_INVALID_ARG;
+    }
 
     bool valid_arg = (esp_tee_buf_in_ree(hash, hlen) &&
                       esp_tee_buf_in_ree(out_sign, sizeof(esp_tee_sec_storage_ecdsa_sign_t)) &&
@@ -220,7 +222,9 @@ esp_err_t _ss_esp_tee_sec_storage_ecdsa_get_pubkey(const esp_tee_sec_storage_key
 
     esp_tee_sec_storage_key_cfg_t cfg_local = *cfg;
     char id_buf[NVS_KEY_NAME_MAX_SIZE];
-    tee_snapshot_ree_str(&cfg_local.id, id_buf, sizeof(id_buf));
+    if (!tee_snapshot_ree_str(&cfg_local.id, id_buf, sizeof(id_buf))) {
+        return ESP_ERR_INVALID_ARG;
+    }
 
     bool valid_arg = (esp_tee_buf_in_ree(out_pubkey, sizeof(esp_tee_sec_storage_ecdsa_pubkey_t)) &&
                       !esp_tee_sec_storage_is_key_tee_owned(cfg_local.id));
@@ -240,7 +244,9 @@ esp_err_t _ss_esp_tee_sec_storage_aead_encrypt(const esp_tee_sec_storage_aead_ct
 
     esp_tee_sec_storage_aead_ctx_t ctx_local = *ctx;
     char id_buf[NVS_KEY_NAME_MAX_SIZE];
-    tee_snapshot_ree_str(&ctx_local.key_id, id_buf, sizeof(id_buf));
+    if (!tee_snapshot_ree_str(&ctx_local.key_id, id_buf, sizeof(id_buf))) {
+        return ESP_ERR_INVALID_ARG;
+    }
 
     bool valid_arg = (esp_tee_buf_in_ree(ctx_local.input, ctx_local.input_len) &&
                       esp_tee_buf_in_ree(iv, iv_len) &&
@@ -268,7 +274,9 @@ esp_err_t _ss_esp_tee_sec_storage_aead_decrypt(const esp_tee_sec_storage_aead_ct
 
     esp_tee_sec_storage_aead_ctx_t ctx_local = *ctx;
     char id_buf[NVS_KEY_NAME_MAX_SIZE];
-    tee_snapshot_ree_str(&ctx_local.key_id, id_buf, sizeof(id_buf));
+    if (!tee_snapshot_ree_str(&ctx_local.key_id, id_buf, sizeof(id_buf))) {
+        return ESP_ERR_INVALID_ARG;
+    }
 
     bool valid_arg = (esp_tee_buf_in_ree(ctx_local.input, ctx_local.input_len) &&
                       esp_tee_buf_in_ree(iv, iv_len) &&

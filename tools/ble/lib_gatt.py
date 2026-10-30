@@ -1,23 +1,11 @@
 #!/usr/bin/env python
 #
-# Copyright 2019 Espressif Systems (Shanghai) PTE LTD
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+# SPDX-FileCopyrightText: 2019-2026 Espressif Systems (Shanghai) CO LTD
+# SPDX-License-Identifier: Apache-2.0
 #
 
 # Creating GATT Application which then becomes available to remote devices.
 
-from __future__ import print_function
 
 import sys
 
@@ -28,7 +16,10 @@ except ImportError as e:
     if 'linux' not in sys.platform:
         raise e
     print(e)
-    print('Install packages `libgirepository1.0-dev gir1.2-gtk-3.0 libcairo2-dev libdbus-1-dev libdbus-glib-1-dev` for resolving the issue')
+    print(
+        'Install packages `libgirepository1.0-dev gir1.2-gtk-3.0 libcairo2-dev libdbus-1-dev libdbus-glib-1-dev` '
+        'for resolving the issue'
+    )
     print('Run `pip install -r $IDF_PATH/tools/ble/requirements.txt` for resolving the issue')
     raise
 
@@ -40,19 +31,15 @@ GATT_CHRC_IFACE = 'org.bluez.GattCharacteristic1'
 GATT_DESC_IFACE = 'org.bluez.GattDescriptor1'
 
 
-SERVICE_UUIDS = {
-    'ALERT_NOTIF_SVC_UUID': '00001811-0000-1000-8000-00805f9b34fb'
-}
+SERVICE_UUIDS = {'ALERT_NOTIF_SVC_UUID': '00001811-0000-1000-8000-00805f9b34fb'}
 
 CHAR_UUIDS = {
     'SUPPORT_NEW_ALERT_UUID': '00002A47-0000-1000-8000-00805f9b34fb',
     'ALERT_NOTIF_UUID': '00002A44-0000-1000-8000-00805f9b34fb',
-    'UNREAD_ALERT_STATUS_UUID': '00002A45-0000-1000-8000-00805f9b34fb'
+    'UNREAD_ALERT_STATUS_UUID': '00002A45-0000-1000-8000-00805f9b34fb',
 }
 
-DESCR_UUIDS = {
-    'CCCD_UUID': '00002902-0000-1000-8000-00805f9b34fb'
-}
+DESCR_UUIDS = {'CCCD_UUID': '00002902-0000-1000-8000-00805f9b34fb'}
 
 
 class InvalidArgsException(dbus.exceptions.DBusException):
@@ -102,9 +89,10 @@ class Application(dbus.service.Object):
 
 
 class AlertNotificationApp(Application):
-    '''
-        Alert Notification Application
-    '''
+    """
+    Alert Notification Application
+    """
+
     def __init__(self, bus, path):
         Application.__init__(self, bus, path)
         self.service = AlertNotificationService(bus, '0001')
@@ -115,6 +103,7 @@ class Service(dbus.service.Object):
     """
     org.bluez.GattService1 interface implementation
     """
+
     PATH_BASE = '/org/bluez/hci0/service'
 
     def __init__(self, bus, index, uuid, primary=False):
@@ -130,9 +119,7 @@ class Service(dbus.service.Object):
             GATT_SERVICE_IFACE: {
                 'UUID': self.uuid,
                 'Primary': self.primary,
-                'Characteristics': dbus.Array(
-                    self.get_characteristic_paths(),
-                    signature='o')
+                'Characteristics': dbus.Array(self.get_characteristic_paths(), signature='o'),
             }
         }
 
@@ -151,9 +138,7 @@ class Service(dbus.service.Object):
     def get_characteristics(self):
         return self.characteristics
 
-    @dbus.service.method(DBUS_PROP_IFACE,
-                         in_signature='s',
-                         out_signature='a{sv}')
+    @dbus.service.method(DBUS_PROP_IFACE, in_signature='s', out_signature='a{sv}')
     def GetAll(self, interface):
         if interface != GATT_SERVICE_IFACE:
             raise InvalidArgsException()
@@ -164,6 +149,7 @@ class Characteristic(dbus.service.Object):
     """
     org.bluez.GattCharacteristic1 interface implementation
     """
+
     def __init__(self, bus, index, uuid, flags, service):
         self.path = service.path + '/char' + str(index)
         self.bus = bus
@@ -181,8 +167,7 @@ class Characteristic(dbus.service.Object):
                 'UUID': self.uuid,
                 'Flags': self.flags,
                 'Value': self.value,
-                'Descriptors': dbus.Array(self.get_descriptor_paths(), signature='o')
-
+                'Descriptors': dbus.Array(self.get_descriptor_paths(), signature='o'),
             }
         }
 
@@ -227,8 +212,7 @@ class Characteristic(dbus.service.Object):
         print('Default StopNotify called, returning error')
         raise NotSupportedException()
 
-    @dbus.service.signal(DBUS_PROP_IFACE,
-                         signature='sa{sv}as')
+    @dbus.service.signal(DBUS_PROP_IFACE, signature='sa{sv}as')
     def PropertiesChanged(self, interface, changed, invalidated):
         pass
         # print('\nProperties Changed')
@@ -238,6 +222,7 @@ class Descriptor(dbus.service.Object):
     """
     org.bluez.GattDescriptor1 interface implementation
     """
+
     def __init__(self, bus, index, uuid, flags, characteristic):
         self.path = characteristic.path + '/desc' + str(index)
         self.bus = bus
@@ -258,9 +243,7 @@ class Descriptor(dbus.service.Object):
     def get_path(self):
         return dbus.ObjectPath(self.path)
 
-    @dbus.service.method(DBUS_PROP_IFACE,
-                         in_signature='s',
-                         out_signature='a{sv}')
+    @dbus.service.method(DBUS_PROP_IFACE, in_signature='s', out_signature='a{sv}')
     def GetAll(self, interface):
         if interface != GATT_DESC_IFACE:
             raise InvalidArgsException()
@@ -276,8 +259,7 @@ class Descriptor(dbus.service.Object):
         print('Default WriteValue called, returning error')
         raise NotSupportedException()
 
-    @dbus.service.signal(DBUS_PROP_IFACE,
-                         signature='sa{sv}as')
+    @dbus.service.signal(DBUS_PROP_IFACE, signature='sa{sv}as')
     def PropertiesChanged(self, interface, changed, invalidated):
         pass
         # print('\nProperties Changed')
@@ -300,11 +282,7 @@ class AlertNotificationService(Service):
 
 class SupportedNewAlertCategoryCharacteristic(Characteristic):
     def __init__(self, bus, index, service):
-        Characteristic.__init__(
-            self, bus, index,
-            CHAR_UUIDS['SUPPORT_NEW_ALERT_UUID'],
-            ['read'],
-            service)
+        Characteristic.__init__(self, bus, index, CHAR_UUIDS['SUPPORT_NEW_ALERT_UUID'], ['read'], service)
         self.value = [dbus.Byte(2)]
         self.status = []
 
@@ -320,11 +298,7 @@ class SupportedNewAlertCategoryCharacteristic(Characteristic):
 
 class AlertNotificationControlPointCharacteristic(Characteristic):
     def __init__(self, bus, index, service):
-        Characteristic.__init__(
-            self, bus, index,
-            CHAR_UUIDS['ALERT_NOTIF_UUID'],
-            ['read', 'write'],
-            service)
+        Characteristic.__init__(self, bus, index, CHAR_UUIDS['ALERT_NOTIF_UUID'], ['read', 'write'], service)
         self.value = [dbus.Byte(0)]
         self.status = []
 
@@ -355,10 +329,8 @@ class AlertNotificationControlPointCharacteristic(Characteristic):
 class UnreadAlertStatusCharacteristic(Characteristic):
     def __init__(self, bus, index, service):
         Characteristic.__init__(
-            self, bus, index,
-            CHAR_UUIDS['UNREAD_ALERT_STATUS_UUID'],
-            ['read', 'write', 'notify'],
-            service)
+            self, bus, index, CHAR_UUIDS['UNREAD_ALERT_STATUS_UUID'], ['read', 'write', 'notify'], service
+        )
         self.value = [dbus.Byte(0)]
         self.cccd_obj = ClientCharacteristicConfigurationDescriptor(bus, '0001', self)
         self.add_descriptor(self.cccd_obj)
@@ -410,11 +382,7 @@ class UnreadAlertStatusCharacteristic(Characteristic):
 class ClientCharacteristicConfigurationDescriptor(Descriptor):
     def __init__(self, bus, index, characteristic):
         self.value = [dbus.Byte(1)]
-        Descriptor.__init__(
-            self, bus, index,
-            DESCR_UUIDS['CCCD_UUID'],
-            ['read', 'write'],
-            characteristic)
+        Descriptor.__init__(self, bus, index, DESCR_UUIDS['CCCD_UUID'], ['read', 'write'], characteristic)
 
     def ReadValue(self, options=None):
         return self.value

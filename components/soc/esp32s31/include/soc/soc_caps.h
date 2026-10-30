@@ -133,6 +133,7 @@
 #define SOC_USB_OTG_PERIPH_NUM          (1U)
 #define SOC_USB_FSLS_PHY_NUM            (0U)
 #define SOC_USB_UTMI_PHY_NUM            (1U)
+#define SOC_USB_OTG_PSRAM_DMA_CAPABLE   (1)                 /*!< USB OTG Peripheral's internal DMA can access PSRAM */
 #define SOC_PM_SUPPORT_USB_WAKEUP        1
 
 #define SOC_PHY_SUPPORTED                1
@@ -213,6 +214,7 @@
 #define SOC_AHB_GDMA_VERSION                2
 #define SOC_GDMA_SUPPORT_ETM                1
 #define SOC_GDMA_SUPPORT_SLEEP_RETENTION    1
+#define SOC_GDMA_SUPPORT_WEIGHTED_ARBITRATION   1
 
 /*-------------------------- MODEM CAPS --------------------------------------*/
 #define SOC_MODEM_SUPPORT_ETM               1
@@ -319,6 +321,7 @@
 #define SOC_PCNT_SUPPORT_STEP_NOTIFY          1
 
 /*-------------------------- MMU CAPS ----------------------------------------*/
+#define SOC_RISCV_SV32_SUPPORTED               (1) /*!< CPU supports RISC-V Sv32 address translation */
 #define SOC_MMU_PAGE_SIZE_CONFIGURABLE        (1)
 #define SOC_MMU_PERIPH_NUM                    (2U)
 #define SOC_MMU_LINEAR_ADDRESS_REGION_NUM     (2U)
@@ -353,14 +356,17 @@
 #define SOC_SPI_MEM_SUPPORT_IDLE_INTR                     (1)
 #define SOC_SPI_MEM_SUPPORT_SW_SUSPEND                    (1)
 #define SOC_SPI_MEM_SUPPORT_CHECK_SUS                     (1)
-#define SOC_SPI_MEM_SUPPORT_TIMING_TUNING         (1)
-#define SOC_MEMSPI_TIMING_TUNING_BY_DQS           (1)
+#define SOC_SPI_MEM_SUPPORT_TIMING_TUNING                 (1)
+#define SOC_MEMSPI_TIMING_TUNING_BY_DQS                   (1)
+#define SOC_MEMSPI_TIMING_TUNING_BY_FLASH_DELAY           (1)
 #define SOC_SPI_MEM_SUPPORT_CACHE_32BIT_ADDR_MAP          (1)
 #define SOC_SPI_MEM_SUPPORT_TSUS_TRES_SEPERATE_CTR        (1)
 
 #define SOC_PSRAM_HAS_DEDICATED_LDO               1
 #define SOC_MEMSPI_IS_INDEPENDENT                 1
 #define SOC_PSRAM_MEMSPI_IS_INDEPENDENT           1
+
+#define SOC_SPI_MEM_FLASH_SUPPORT_HPM                     (1) /*!< Support High Performance Mode */
 
 #define SOC_MEMSPI_ENCRYPTION_ALIGNMENT           16    /*!< 16-byte alignment restriction to mem addr and size if encryption is enabled */
 

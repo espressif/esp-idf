@@ -86,6 +86,7 @@ if(arch STREQUAL "linux")
         "${kernel_impl}/portable/${arch}/utils/linux_port_coop_syscalls.c")
     if(kernel_impl STREQUAL "FreeRTOS-Kernel")
         list(APPEND srcs
+            "app_startup.c"
             "${kernel_impl}/portable/${arch}/port_idf.c")
     endif()
 else()
@@ -176,6 +177,11 @@ idf_component_register(SRCS ${srcs}
                     PRIV_INCLUDE_DIRS ${private_include_dirs}
                     LDFRAGMENTS ${ldfragments}
                     PRIV_REQUIRES ${private_requirements})
+
+# Allows users to provide their own vApplicationPassiveIdleHook().
+if(CONFIG_FREERTOS_USE_PASSIVE_IDLE_HOOK)
+    target_link_options(${COMPONENT_LIB} INTERFACE "-Wl,--wrap=vApplicationPassiveIdleHook")
+endif()
 
 if(arch STREQUAL "linux")
     target_compile_definitions(${COMPONENT_LIB} PUBLIC "projCOVERAGE_TEST=0")

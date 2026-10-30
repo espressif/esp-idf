@@ -330,7 +330,7 @@ esp_err_t adc_continuous_start(adc_continuous_handle_t handle)
     }
 
 #if !CONFIG_IDF_TARGET_ESP32
-    ESP_ERROR_CHECK(esp_clk_tree_acquire_src((soc_module_clk_t)(handle->hal_digi_ctrlr_cfg.clk_src)));
+    ESP_ERROR_CHECK(esp_clk_tree_acquire_src((soc_module_clk_t)(handle->hal_digi_ctrlr_cfg.clk_src), NULL));
 #endif
     adc_hal_digi_init(&handle->hal);
     adc_hal_digi_controller_config(&handle->hal, &handle->hal_digi_ctrlr_cfg);

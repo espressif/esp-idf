@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -16,8 +16,6 @@
 #define APP_BUTTON (GPIO_NUM_0) // Use BOOT signal by default
 static const char *TAG = "example";
 
-/* Flag to indicate if the host has suspended the USB bus */
-static bool suspended = false;
 /* Flag of possibility to Wakeup Host via Remote Wakeup feature */
 static bool wakeup_host = false;
 
@@ -157,22 +155,26 @@ static void app_send_hid_demo(void)
     }
 }
 
-void tud_suspend_cb(bool remote_wakeup_en)
+static void device_event_handler(tinyusb_event_t *event, void *arg)
 {
-    ESP_LOGI(TAG, "USB device suspended");
-    suspended = true;
-    if (remote_wakeup_en) {
-        ESP_LOGI(TAG, "Remote wakeup available, press the button to wake up the Host");
-        wakeup_host = true;
-    } else {
-        ESP_LOGI(TAG, "Remote wakeup not available");
-    }
-}
+    (void) arg;
 
-void tud_resume_cb(void)
-{
-    ESP_LOGI(TAG, "USB device resumed");
-    suspended = false;
+    switch (event->id) {
+    case TINYUSB_EVENT_SUSPENDED:
+        ESP_LOGI(TAG, "USB device suspended");
+        if (event->suspended.remote_wakeup) {
+            ESP_LOGI(TAG, "Remote wakeup available, press the button to wake up the Host");
+            wakeup_host = true;
+        } else {
+            ESP_LOGI(TAG, "Remote wakeup not available");
+        }
+        break;
+    case TINYUSB_EVENT_RESUMED:
+        ESP_LOGI(TAG, "USB device resumed");
+        break;
+    default:
+        break;
+    }
 }
 
 void app_main(void)
@@ -188,7 +190,7 @@ void app_main(void)
     ESP_ERROR_CHECK(gpio_config(&boot_button_config));
 
     ESP_LOGI(TAG, "USB initialization");
-    tinyusb_config_t tusb_cfg = TINYUSB_DEFAULT_CONFIG();
+    tinyusb_config_t tusb_cfg = TINYUSB_DEFAULT_CONFIG(device_event_handler);
 
     tusb_cfg.descriptor.device = NULL;
     tusb_cfg.descriptor.full_speed_config = hid_configuration_descriptor;
@@ -205,12 +207,12 @@ void app_main(void)
         if (tud_mounted()) {
             static bool send_hid_data = true;
             if (send_hid_data) {
-                if (!suspended) {
+                if (!tud_suspended()) {
                     app_send_hid_demo();
                 } else {
                     if (wakeup_host) {
                         ESP_LOGI(TAG, "Waking up the Host");
-                        tud_remote_wakeup();
+                        tinyusb_remote_wakeup();
                         wakeup_host = false;
                     } else {
                         ESP_LOGI(TAG, "USB Host remote wakeup is not available.");

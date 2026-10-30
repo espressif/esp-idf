@@ -56,6 +56,7 @@ components_not_formatted_temporary:
     - "/components/esp_https_ota/"
     - "/components/esp_https_server/"
     - "/components/esp_hw_support/"
+    - "/components/esp_sleep/"
     - "/components/esp_local_ctrl/"
     - "/components/esp_netif/"
     - "/components/esp_partition/"

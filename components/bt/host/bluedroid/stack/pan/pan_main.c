@@ -39,7 +39,11 @@
 #include "stack/sdp_api.h"
 #include "stack/sdpdefs.h"
 
+#if PAN_DYNAMIC_MEMORY == FALSE
 tPAN_CB pan_cb;
+#else
+tPAN_CB *pan_cb_ptr;
+#endif
 
 #define UUID_CONSTANT_PART 12
 UINT8 constant_pan_uuid[UUID_CONSTANT_PART] = {

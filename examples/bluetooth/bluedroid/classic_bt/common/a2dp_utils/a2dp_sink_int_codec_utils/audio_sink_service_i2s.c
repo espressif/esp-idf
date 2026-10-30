@@ -88,7 +88,7 @@ static void audio_sink_srv_i2s_task_handler(void *arg)
 void audio_sink_srv_open(void)
 {
     if (s_i2s_cb.chan_st != CHANNEL_STATUS_IDLE) {
-        ESP_LOGW(AUDIO_SNK_SRV_I2S_TAG, "Service already open, skipping initialization");
+        ESP_LOGD(AUDIO_SNK_SRV_I2S_TAG, "Service already open, skipping initialization");
         return;
     }
     i2s_chan_config_t chan_cfg = I2S_CHANNEL_DEFAULT_CONFIG(I2S_NUM_0, I2S_ROLE_MASTER);
@@ -140,6 +140,11 @@ void audio_sink_srv_close(void)
 
 void audio_sink_srv_start(void)
 {
+    if (s_i2s_cb.chan_st == CHANNEL_STATUS_ENABLED) {
+        /* Second A2DP source CONNECTED while I2S is already running. */
+        ESP_LOGD(AUDIO_SNK_SRV_I2S_TAG, "%s, TX channel already enabled", __func__);
+        return;
+    }
     if (s_i2s_cb.chan_st != CHANNEL_STATUS_OPENED) {
         ESP_LOGE(AUDIO_SNK_SRV_I2S_TAG, "%s, TX channel wrong state: %d", __func__, s_i2s_cb.chan_st);
         return;

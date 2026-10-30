@@ -333,6 +333,11 @@ static void btc_thread_handler(void *arg)
 
 static bt_status_t btc_task_post(btc_msg_t *msg, uint32_t timeout)
 {
+    if (btc_thread == NULL) {
+        BTC_TRACE_WARNING("%s btc_thread is NULL\n", __func__);
+        return BT_STATUS_NOT_READY;
+    }
+
     if (osi_thread_post(btc_thread, btc_thread_handler, msg, 0, timeout) == false) {
         return BT_STATUS_BUSY;
     }
@@ -477,6 +482,14 @@ static void btc_deinit_mem(void) {
     }
 #endif
 
+#if BTC_PAN_INCLUDED == TRUE && PAN_DYNAMIC_MEMORY == TRUE
+    if (btc_pan_local_param_ptr) {
+        btc_pan_free_cfg_strings();
+        osi_free(btc_pan_local_param_ptr);
+        btc_pan_local_param_ptr = NULL;
+    }
+#endif
+
 #if BTC_AV_INCLUDED == TRUE && AVRC_DYNAMIC_MEMORY == TRUE
     if (btc_rc_cb_ptr) {
         osi_free(btc_rc_cb_ptr);
@@ -543,11 +556,18 @@ static bt_status_t btc_init_mem(void) {
     memset((void *)hf_client_local_param_ptr, 0, sizeof(hf_client_local_param_t));
 #endif
 
-#if BTC_AV_INCLUDED == TRUE && AVRC_DYNAMIC_MEMORY == TRUE
-    if ((btc_rc_cb_ptr = (btc_rc_cb_t *)osi_malloc(sizeof(btc_rc_cb_t))) == NULL) {
+#if BTC_PAN_INCLUDED == TRUE && PAN_DYNAMIC_MEMORY == TRUE
+    if ((btc_pan_local_param_ptr = (btc_pan_local_param_t *)osi_malloc(sizeof(btc_pan_local_param_t))) == NULL) {
         goto error_exit;
     }
-    memset((void *)btc_rc_cb_ptr, 0, sizeof(btc_rc_cb_t));
+    memset((void *)btc_pan_local_param_ptr, 0, sizeof(btc_pan_local_param_t));
+#endif
+
+#if BTC_AV_INCLUDED == TRUE && AVRC_DYNAMIC_MEMORY == TRUE
+    if ((btc_rc_cb_ptr = (btc_rc_cb_t *)osi_malloc(sizeof(btc_rc_cb_t) * BTC_RC_MAX_CONN)) == NULL) {
+        goto error_exit;
+    }
+    memset((void *)btc_rc_cb_ptr, 0, sizeof(btc_rc_cb_t) * BTC_RC_MAX_CONN);
     if ((bta_av_co_cb_ptr = (tBTA_AV_CO_CB *)osi_malloc(sizeof(tBTA_AV_CO_CB))) == NULL) {
         goto error_exit;
     }

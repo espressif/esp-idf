@@ -163,7 +163,7 @@ void pvt_auto_dbias_enable(bool enable)
             if (pvt_enable_flag == true) {
                 return;
             }
-            esp_clk_tree_acquire_src(SOC_MOD_CLK_BBPLL);
+            esp_clk_tree_acquire_src(SOC_MOD_CLK_BBPLL, NULL);
             pvt_auto_dbias_init();
             charge_pump_init();
             pvt_func_enable(true);

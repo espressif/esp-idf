@@ -1016,6 +1016,22 @@ void bta_av_do_disc_a2d (tBTA_AV_SCB *p_scb, tBTA_AV_DATA *p_data)
     bta_av_a2d_sdp_cback(FALSE, NULL);
 }
 
+/* A BTA SCB can register more than one codec SEP (e.g. AAC + SBC). Only one
+ * of them can be streaming. Mark the idle siblings in-use so a second phone's
+ * AVDT Discover/SetConfig does not land on this SCB (OPEN would reject it). */
+static void bta_av_mark_other_seps_in_use(tBTA_AV_SCB *p_scb, UINT8 keep_handle, BOOLEAN in_use)
+{
+    int xx;
+
+    for (xx = 0; xx < BTA_AV_MAX_SEPS; xx++) {
+        if (p_scb->seps[xx].av_handle != 0 && p_scb->seps[xx].av_handle != keep_handle) {
+            APPL_TRACE_DEBUG("bta_av_mark_other_seps_in_use hdl %d in_use=%d (keep %d)",
+                             p_scb->seps[xx].av_handle, in_use, keep_handle);
+            AVDT_SetSepInUse(p_scb->seps[xx].av_handle, in_use);
+        }
+    }
+}
+
 /*******************************************************************************
 **
 ** Function         bta_av_cleanup
@@ -1033,6 +1049,7 @@ void bta_av_cleanup(tBTA_AV_SCB *p_scb, tBTA_AV_DATA *p_data)
     UNUSED(p_data);
 
     APPL_TRACE_DEBUG("bta_av_cleanup");
+    bta_av_mark_other_seps_in_use(p_scb, p_scb->avdt_handle, FALSE);
 
     /* free any buffers */
     utl_freebuf((void **) &p_scb->p_cap);
@@ -1189,6 +1206,7 @@ void bta_av_config_ind (tBTA_AV_SCB *p_scb, tBTA_AV_DATA *p_data)
         p_scb->num_seps  = 1;
         p_scb->sep_info_idx = 0;
         APPL_TRACE_DEBUG("bta_av_config_ind: SEID: %d use_rc: %d cur_psc_mask:0x%x", p_info->seid, p_scb->use_rc, p_scb->cur_psc_mask);
+        bta_av_mark_other_seps_in_use(p_scb, p_msg->handle, TRUE);
         /*  in case of A2DP SINK this is the first time peer data is being sent to co functions */
         if (local_sep == AVDT_TSEP_SNK) {
             p_scb->p_cos->setcfg(p_scb->hndl, p_scb->codec_type,
@@ -1393,6 +1411,7 @@ void bta_av_str_opened (tBTA_AV_SCB *p_scb, tBTA_AV_DATA *p_data)
     msg.is_up = TRUE;
     bdcpy(msg.peer_addr, p_scb->peer_addr);
     p_scb->l2c_cid      = AVDT_GetL2CapChannel(p_scb->avdt_handle);
+    bta_av_mark_other_seps_in_use(p_scb, p_scb->avdt_handle, TRUE);
     bta_av_conn_chg((tBTA_AV_DATA *) &msg);
     /* set the congestion flag, so AV would not send media packets by accident */
     p_scb->cong = TRUE;
@@ -2390,7 +2409,7 @@ void bta_av_start_ok (tBTA_AV_SCB *p_scb, tBTA_AV_DATA *p_data)
     }
 
     if (p_scb->wait) {
-        APPL_TRACE_ERROR("wait:x%x q_tag:%d- not started", p_scb->wait, p_scb->q_tag);
+        APPL_TRACE_WARNING("wait:x%x q_tag:%d- not started", p_scb->wait, p_scb->q_tag);
         /* Clear first bit of p_scb->wait and not to return from this point else
          * HAL layer gets blocked. And if there is delay in Get Capability response as
          * first bit of p_scb->wait is cleared hence it ensures bt_av_start_ok is not called
@@ -2952,7 +2971,8 @@ void bta_av_chk_2nd_start (tBTA_AV_SCB *p_scb, tBTA_AV_DATA *p_data)
     BOOLEAN new_started = FALSE;
     UNUSED(p_data);
 
-    if ((p_scb->chnl == BTA_AV_CHNL_AUDIO) && (bta_av_cb.audio_open_cnt >= 2)) {
+    if ((p_scb->chnl == BTA_AV_CHNL_AUDIO) && BTA_AV_LOCAL_IS_SRC(p_scb) &&
+            (bta_av_cb.audio_open_cnt >= 2)) {
         /* more than one audio channel is connected */
         if (!(p_scb->role & BTA_AV_ROLE_SUSPEND_OPT)) {
             /* this channel does not need to be reconfigured.

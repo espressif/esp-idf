@@ -179,6 +179,11 @@ function(__setup_ulp_project app_name project_path prefix prefix_append_bin_name
                 -DCMAKE_MODULE_PATH=${ulp_subproject_dir})
         endif()
 
+        # Only components/ulp/subproject reads CCACHE_ENABLE.
+        if(project_path STREQUAL ulp_subproject_dir)
+            list(APPEND extra_cmake_args -DCCACHE_ENABLE=${CCACHE_ENABLE})
+        endif()
+
         externalproject_add(${app_name}
             SOURCE_DIR ${project_path}
             BINARY_DIR ${ulp_binary_dir}

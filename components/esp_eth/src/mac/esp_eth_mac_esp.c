@@ -62,17 +62,15 @@ static const char *TAG = "esp.emac";
 #define ETH_EMAC_PHY_REF_CLK_SRC        (EMAC_UNDEFINED_PLL_CLK)
 #endif
 
-#if SOC_EMAC_SUPPORT_1000M
-#if CONFIG_ETH_EMAC_RGMII_TX_CLK_SRC_CPLL
-#define ETH_EMAC_RGMII_TX_CLK_SRC       ((soc_module_clk_t)EMAC_CLK_OUT_SRC_CPLL)
-#elif CONFIG_ETH_EMAC_RGMII_TX_CLK_SRC_APLL
-#define ETH_EMAC_RGMII_TX_CLK_SRC       ((soc_module_clk_t)EMAC_CLK_OUT_SRC_APLL)
-#elif CONFIG_ETH_EMAC_RGMII_TX_CLK_SRC_MPLL
-#define ETH_EMAC_RGMII_TX_CLK_SRC       ((soc_module_clk_t)EMAC_CLK_OUT_SRC_MPLL)
+#if CONFIG_ETH_EMAC_INTERNAL_OUT_CLK_SRC_CPLL
+#define ETH_EMAC_INTERNAL_OUT_CLK_SRC       ((soc_module_clk_t)EMAC_CLK_OUT_SRC_CPLL)
+#elif CONFIG_ETH_EMAC_INTERNAL_OUT_CLK_SRC_APLL
+#define ETH_EMAC_INTERNAL_OUT_CLK_SRC       ((soc_module_clk_t)EMAC_CLK_OUT_SRC_APLL)
+#elif CONFIG_ETH_EMAC_INTERNAL_OUT_CLK_SRC_MPLL
+#define ETH_EMAC_INTERNAL_OUT_CLK_SRC       ((soc_module_clk_t)EMAC_CLK_OUT_SRC_MPLL)
 #else
-#define ETH_EMAC_RGMII_TX_CLK_SRC       (EMAC_UNDEFINED_PLL_CLK)
+#define ETH_EMAC_INTERNAL_OUT_CLK_SRC       (EMAC_UNDEFINED_PLL_CLK)
 #endif
-#endif // SOC_EMAC_SUPPORT_1000M
 
 #define EMAC_USED_PLL_DEFAULT_IDX            (0)
 #define EMAC_USED_PLL_PHY_REF_CLK_DERIVED_IDX    (1)
@@ -294,7 +292,7 @@ static esp_err_t emac_enable_ref_out_clock(emac_esp32_t *emac, const emac_clk_in
 #if !SOC_EMAC_RMII_CLK_OUT_INTERNAL_LOOPBACK
 static esp_err_t emac_config_phy_ref_clk_clock(emac_esp32_t *emac, soc_module_clk_t phy_ref_src, soc_module_clk_t upstream_src)
 {
-    ESP_RETURN_ON_ERROR(esp_clk_tree_acquire_src(phy_ref_src), TAG, "PHY_REF_CLK enable failed");
+    ESP_RETURN_ON_ERROR(esp_clk_tree_acquire_src(phy_ref_src, NULL), TAG, "PHY_REF_CLK enable failed");
     esp_err_t up_ret = esp_clk_tree_src_select_upstream(phy_ref_src, upstream_src);
     if (up_ret == ESP_ERR_INVALID_STATE) {
         ESP_LOGW(TAG, "PHY_REF_CLK upstream is already selected by another peripheral; reusing existing routing");
@@ -337,7 +335,7 @@ static esp_err_t emac_config_pll_clock(emac_esp32_t *emac, const emac_clk_info_t
             }
             ESP_LOGD(TAG, "info->clk_id: %i, info->clk_name: %s, pll_expt_freq: %" PRIu32 " Hz", info->clk_id, info->clk_name, pll_expt_freq);
             ESP_RETURN_ON_FALSE(pll_expt_freq > 0, ESP_ERR_NOT_SUPPORTED, TAG, "No %s on %" PRIi32 " Hz grid divides %" PRIu32 " Hz", info->clk_name, info->step_hz, *freq_hz);
-            ESP_RETURN_ON_ERROR(esp_clk_tree_acquire_src(info->clk_id), TAG, "%s enable failed", info->clk_name);
+            ESP_RETURN_ON_ERROR(esp_clk_tree_acquire_src(info->clk_id, NULL), TAG, "%s enable failed", info->clk_name);
             esp_err_t ret = esp_clk_tree_src_set_freq_hz(info->clk_id, pll_expt_freq, &real_freq);
             ESP_LOGD(TAG, "Clock set frequency: %" PRIu32 " Hz", real_freq);
             if (ret == ESP_ERR_INVALID_STATE) {
@@ -981,7 +979,7 @@ static esp_err_t emac_esp_config_data_interface(const eth_esp32_emac_config_t *e
                     emac_hal_enable_phy_ref_clock_output(&emac->hal);
                 }
             } else if (emac_clk_internal.clk_count > 0) { // target also supports EMAC internal clock for REF CLK
-                soc_module_clk_t ref_inter_src = EMAC_UNDEFINED_PLL_CLK;
+                soc_module_clk_t ref_inter_src = ETH_EMAC_INTERNAL_OUT_CLK_SRC;
                 ESP_GOTO_ON_ERROR(emac_config_pll_clock(emac, emac_clk_internal.clk_src, emac_clk_internal.clk_count, &ref_inter_src, &pll_freq),
                               err, TAG, "Configure PLL for RMII failed");
                 emac->pll_clk_used[EMAC_USED_PLL_DEFAULT_IDX] = ref_inter_src;
@@ -1033,7 +1031,7 @@ static esp_err_t emac_esp_config_data_interface(const eth_esp32_emac_config_t *e
 #endif // SOC_EMAC_USE_MULTI_IO_MUX
         ESP_GOTO_ON_ERROR(emac_esp_iomux_init_rgmii(rgmii_data_gpio), err, TAG, "invalid EMAC RGMII data plane GPIO");
         ESP_GOTO_ON_ERROR(emac_esp_iomux_rgmii_clk_input(esp32_emac_config->clock_config.rgmii.clock_rx_gpio), err, TAG, "invalid EMAC RGMII clock input GPIO");
-        soc_module_clk_t tx_clk_src = ETH_EMAC_RGMII_TX_CLK_SRC;
+        soc_module_clk_t tx_clk_src = ETH_EMAC_INTERNAL_OUT_CLK_SRC;
         ESP_GOTO_ON_ERROR(emac_config_pll_clock(emac, emac_clk_internal.clk_src, emac_clk_internal.clk_count,
                                                 &tx_clk_src, &pll_freq), err, TAG, "Configure PLL for RGMII failed");
         emac->pll_clk_used[EMAC_USED_PLL_DEFAULT_IDX] = tx_clk_src;
@@ -1212,8 +1210,8 @@ esp_eth_mac_t *esp_eth_mac_new_esp32(const eth_esp32_emac_config_t *esp32_config
         emac_ll_enable_bus_clock(0, true);
         emac_ll_reset_register(0);
     }
-    /* initialize hal layer driver */
-    emac_hal_init(&emac->hal);
+    /* set hal layer context */
+    emac->hal = emac_hal_get_context();
 
     /* alloc interrupt */
     int isr_flags = 0;

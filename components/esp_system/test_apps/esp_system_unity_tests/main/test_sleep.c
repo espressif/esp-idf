@@ -184,7 +184,7 @@ TEST_CASE("light sleep and frequency switching", "[lightsleep]")
 #elif SOC_UART_SUPPORT_XTAL_CLK
     clk_source = UART_SCLK_XTAL;
 #endif
-    esp_clk_tree_acquire_src((soc_module_clk_t)clk_source);
+    esp_clk_tree_acquire_src((soc_module_clk_t)clk_source, NULL);
     PERIPH_RCC_ATOMIC() {
         uart_ll_set_sclk(UART_LL_GET_HW(CONFIG_ESP_CONSOLE_UART_NUM), (soc_module_clk_t)clk_source);
     }
@@ -481,7 +481,7 @@ static void check_wake_stub(void)
 {
     TEST_ASSERT_EQUAL(ESP_RST_DEEPSLEEP, esp_reset_reason());
     TEST_ASSERT_EQUAL_HEX32((uint32_t) &wake_stub, s_wake_stub_var);
-#if !CONFIG_IDF_TARGET_ESP32S3 && !CONFIG_IDF_TARGET_ESP32C6 && !CONFIG_IDF_TARGET_ESP32H2
+#if !SOC_PM_SUPPORT_DEEPSLEEP_CHECK_STUB_ONLY
     /* ROM code clears wake stub entry address */
     TEST_ASSERT_NULL(esp_get_deep_sleep_wake_stub());
 #endif

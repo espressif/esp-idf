@@ -20,3 +20,7 @@ components/esp_system/test_apps/esp_system_unity_tests:
 components/esp_system/test_apps/linux_apis:
   enable:
     - if: IDF_TARGET == "linux"
+
+components/esp_system/test_apps/linux_wdt:
+  enable:
+    - if: IDF_TARGET == "linux"

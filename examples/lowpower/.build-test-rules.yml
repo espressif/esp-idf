@@ -5,7 +5,7 @@ examples/lowpower/power_management:
     - if: CONFIG_NAME == "pd_top" and SOC_PM_SUPPORT_TOP_PD != 1
     - if: SOC_PM_SUPPORTED != 1
       temporary: true
-      reason: not supported yet # TODO: [ESP32H21] IDF-11522, [ESP32H4] IDF-12286 [ESP32S31] IDF-14645
+      reason: not supported yet
   depends_components:
     - esp_pm
 
@@ -18,3 +18,7 @@ examples/lowpower/vbat:
     - if: IDF_TARGET in ["esp32h2"]
       temporary: true
       reason: not supported yet
+
+examples/lowpower/vddbat:
+  enable:
+    - if: SOC_VDDBAT_PROTECT_SUPPORTED == 1

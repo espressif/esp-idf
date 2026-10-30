@@ -87,7 +87,7 @@ class BLEUARTBridge:
         self._disconnected_event.clear()
         try:
             await asyncio.wait_for(self._client.disconnect(), timeout=DEFAULT_DISCONNECTION_TIMEOUT)
-        except asyncio.TimeoutError:
+        except TimeoutError:
             logger.warning(f'Failed to request disconnect from {self._device_id} in {DEFAULT_DISCONNECTION_TIMEOUT}s!')
             self.reset()
             return
@@ -99,7 +99,7 @@ class BLEUARTBridge:
         # Wait for _handle_disconnect callback to execute
         try:
             await asyncio.wait_for(self._disconnected_event.wait(), timeout=DEFAULT_DISCONNECTION_TIMEOUT)
-        except asyncio.TimeoutError:
+        except TimeoutError:
             logger.warning(f'Failed to disconnect from {self._device_id} in {DEFAULT_DISCONNECTION_TIMEOUT}s!')
             self.reset()
 
@@ -254,7 +254,7 @@ class BLEUARTBridge:
             except asyncio.CancelledError:
                 await self._cleanup_connection()
                 raise
-            except asyncio.TimeoutError:
+            except TimeoutError:
                 logger.error(f'Failed to write chunk to {self._device_id} in {DEFAULT_WRITE_CHUNK_TIMEOUT}s!')
                 await self._cleanup_connection()
                 return False

@@ -475,14 +475,6 @@ BOOLEAN l2c_link_hci_disc_comp (UINT16 handle, UINT8 reason)
             if (p_lcb->transport == BT_TRANSPORT_LE) {
                 l2cb.is_ble_connecting = FALSE;
                 btm_acl_removed (p_lcb->remote_bd_addr, p_lcb->transport);
-                /* Release any held buffers */
-                BT_HDR *p_buf;
-                while (!list_is_empty(p_lcb->link_xmit_data_q)) {
-                    p_buf = list_front(p_lcb->link_xmit_data_q);
-                    list_remove(p_lcb->link_xmit_data_q, p_buf);
-                    p_buf->event = 0;
-                    osi_free(p_buf);
-                }
             } else
 #endif
             {
@@ -506,6 +498,44 @@ BOOLEAN l2c_link_hci_disc_comp (UINT16 handle, UINT8 reason)
                 }
 #endif
             }
+            /* Pending connect during disconnect. A close may have set idle_timeout to 0; restore the
+             * default so SDP closing does not drop the new ACL. Retry-only channels and LE keep theirs. */
+            if (p_lcb->p_pending_ccb != NULL
+#if (BLE_INCLUDED == TRUE)
+                    && (p_lcb->transport != BT_TRANSPORT_LE)
+#endif
+               ) {
+                p_lcb->idle_timeout = l2cb.idle_timeout;
+            }
+
+            /* LCB is reused, so release_lcb does not run. Return credits the old ACL will not complete, and
+             * drop the handle so a late Number of Completed Packets is not applied to the new connection. */
+            if (p_lcb->link_xmit_quota == 0 && p_lcb->sent_not_acked > 0) {
+#if (BLE_INCLUDED == TRUE)
+                if (p_lcb->transport == BT_TRANSPORT_LE) {
+                    if (l2cb.ble_round_robin_unacked > p_lcb->sent_not_acked) {
+                        l2cb.ble_round_robin_unacked -= p_lcb->sent_not_acked;
+                    } else {
+                        l2cb.ble_round_robin_unacked = 0;
+                    }
+                } else
+#endif
+                {
+                    if (l2cb.round_robin_unacked > p_lcb->sent_not_acked) {
+                        l2cb.round_robin_unacked -= p_lcb->sent_not_acked;
+                    } else {
+                        l2cb.round_robin_unacked = 0;
+                    }
+                }
+            }
+
+            l2cu_return_tx_credits(p_lcb);
+            l2cu_flush_link_xmit_data_q(p_lcb);
+            btu_stop_timer(&p_lcb->info_timer_entry);
+            p_lcb->partial_segment_being_sent = FALSE;
+            p_lcb->w4_info_rsp = FALSE;
+            p_lcb->handle = HCI_INVALID_HANDLE;
+
             /* l2cu_create_conn must not release the LCB on failure */
             if (l2cu_create_conn(p_lcb, transport)) {
                 lcb_is_free = FALSE;    /* still using this lcb */
@@ -1006,22 +1036,17 @@ void l2c_link_process_num_bufs (UINT16 num_lm_acl_bufs)
 **
 ** Function         l2c_link_pkts_rcvd
 **
-** Description      This function is called from the HCI transport when it is time
-**                  tto send a "Host ready for packets" command. This is only when
-**                  host to controller flow control is used. If fills in the arrays
-**                  of numbers of packets and handles.
+** Description      Legacy L2CAP entry for Host_Number_Of_Completed_Packets.
+**                  C2H credits are owned by c2h_credit; this stub returns 0.
 **
 ** Returns          count of number of entries filled in
 **
 *******************************************************************************/
 UINT8 l2c_link_pkts_rcvd (UINT16 *num_pkts, UINT16 *handles)
 {
-    UINT8       num_found = 0;
-
     UNUSED(num_pkts);
     UNUSED(handles);
-
-    return (num_found);
+    return (0);
 }
 
 #if (CLASSIC_BT_INCLUDED == TRUE)

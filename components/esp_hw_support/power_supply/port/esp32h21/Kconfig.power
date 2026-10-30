@@ -1,18 +1,34 @@
 menu "Power Supplier"
 
-    menu "Brownout Detector"
+    choice ESP_HP_VOLTAGE_PROTECT
+        prompt "Under-voltage protection"
+        default ESP_BROWNOUT_DET if !IDF_ENV_FPGA
+        help
+            Brownout reset and VDDBAT under-voltage interrupt share the
+            VDDBAT_VGOOD comparator, so only one can be selected.
+
         config ESP_BROWNOUT_DET
-            bool "Hardware brownout detect & reset"
+            bool "Brownout reset"
             depends on !IDF_ENV_FPGA
-            default y
             help
-                The ESP32-H21 has a built-in brownout detector which can detect if the voltage is lower than
-                a specific value. If this happens, it will reset the chip in order to prevent unintended
-                behaviour.
+                When the comparator detects VDDBAT below ~2.96V, the chip is reset to prevent
+                unintended behaviour.
+
+        config ESP_VDDBAT_UNDER_VOLT_PROTECT
+            bool "VDDBAT under-voltage interrupt"
+            depends on SOC_VDDBAT_PROTECT_SUPPORTED
+            help
+                When the comparator detects VDDBAT below ~2.96V, an interrupt is raised instead of
+                a reset. The application installs the VDDBAT driver, registers a callback and
+                enables detection, then decides how to handle the under-voltage.
+
+    endchoice
+
+    menu "Brownout Detector"
+        depends on ESP_BROWNOUT_DET
 
         choice ESP_BROWNOUT_DET_LVL_SEL
             prompt "Brownout voltage level"
-            depends on ESP_BROWNOUT_DET
             default ESP_BROWNOUT_DET_LVL_SEL_7
             help
                 Only level 7 is supported on ESP32-H21 (~2.96V). Other values would also
@@ -35,6 +51,19 @@ menu "Power Supplier"
                 This is because for some special workflow, the chip needs do more things when brownout happens
                 before restart instead of restarting directly. This part needs to be done in callback function
                 of interrupt.
+
+    endmenu
+
+    menu "Battery Under-voltage Protection"
+        depends on ESP_VDDBAT_UNDER_VOLT_PROTECT
+
+        config ESP_VDDBAT_UNDER_VOLT_PROTECT_ISR_CACHE_SAFE
+            bool "Under voltage ISR IRAM-Safe"
+            depends on ESP_VDDBAT_UNDER_VOLT_PROTECT
+            default y
+            help
+                Ensure the under voltage interrupt is IRAM-Safe by allowing the interrupt handler and
+                esp_vddbat_protect_disable() to be executable when the cache is disabled.
 
     endmenu
 

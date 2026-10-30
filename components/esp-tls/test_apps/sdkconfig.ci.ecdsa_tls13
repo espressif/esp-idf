@@ -1,0 +1,3 @@
+# Build-only: ECDSA peripheral with TLS 1.3 (covers curve-based ciphersuite selection in esp-tls)
+CONFIG_MBEDTLS_HARDWARE_ECDSA_SIGN=y
+CONFIG_MBEDTLS_SSL_PROTO_TLS1_3=y

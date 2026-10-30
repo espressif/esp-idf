@@ -1,15 +1,31 @@
 Ethernet
 ========
 
-{IDF_TARGET_SOC_DMA_DESC_SIZE:default="", esp32="32 bytes", esp32p4=" 32 bytes (64 bytes in fact due to the need for proper memory alignment)"}
-{IDF_TARGET_SOC_REF_CLK_IN_GPIO:default="", esp32="GPIO0", esp32p4="GPIO32, GPIO44 and GPIO50"}
-{IDF_TARGET_SOC_REF_CLK_OUT_GPIO:default="", esp32="GPIO0, GPIO16 and GPIO17", esp32p4="GPIO23 and GPIO39"}
-{IDF_TARGET_SOC_RMII_TX_EN:default="", esp32="GPIO21", esp32p4="GPIO33, GPIO40 and GPIO49"}
-{IDF_TARGET_SOC_RMII_TXD0:default="", esp32="GPIO19", esp32p4="GPIO34 and GPIO41"}
-{IDF_TARGET_SOC_RMII_TXD1:default="", esp32="GPIO22", esp32p4="GPIO35 and GPIO42"}
-{IDF_TARGET_SOC_RMII_CRS_DV:default="", esp32="GPIO27", esp32p4="GPIO28, GPIO45 and GPIO51"}
-{IDF_TARGET_SOC_RMII_RXD0:default="", esp32="GPIO25", esp32p4="GPIO29, GPIO46 and GPIO52"}
-{IDF_TARGET_SOC_RMII_RXD1:default="", esp32="GPIO26", esp32p4="GPIO30, GPIO47 and GPIO53"}
+{IDF_TARGET_SOC_DMA_DESC_SIZE:default="", esp32="32 bytes", esp32p4=" 32 bytes (64 bytes in fact due to the need for proper memory alignment)", esp32s31="32 bytes"}
+{IDF_TARGET_SOC_REF_CLK_IN_GPIO:default="", esp32="GPIO0", esp32p4="GPIO32, GPIO44 or GPIO50", esp32s31="GPIO13 or GPIO43"}
+{IDF_TARGET_SOC_REF_CLK_OUT_GPIO:default="", esp32="GPIO0, GPIO16 or GPIO17", esp32p4="", esp32s31="GPIO13 or GPIO43"}
+{IDF_TARGET_SOC_INTERNAL_CLK_OUT_SRC:default="", esp32s31="MPLL, CPLL or APLL"}
+{IDF_TARGET_SOC_RMII_TX_EN:default="", esp32="GPIO21", esp32p4="GPIO33, GPIO40 or GPIO49", esp32s31="GPIO12 or GPIO37"}
+{IDF_TARGET_SOC_RMII_TXD0:default="", esp32="GPIO19", esp32p4="GPIO34 or GPIO41", esp32s31="GPIO8 or GPIO44"}
+{IDF_TARGET_SOC_RMII_TXD1:default="", esp32="GPIO22", esp32p4="GPIO35 or GPIO42", esp32s31="GPIO9 or GPIO45"}
+{IDF_TARGET_SOC_RMII_CRS_DV:default="", esp32="GPIO27", esp32p4="GPIO28, GPIO45 or GPIO51", esp32s31="GPIO15 or GPIO36"}
+{IDF_TARGET_SOC_RMII_RXD0:default="", esp32="GPIO25", esp32p4="GPIO29, GPIO46 or GPIO52", esp32s31="GPIO19"}
+{IDF_TARGET_SOC_RMII_RXD1:default="", esp32="GPIO26", esp32p4="GPIO30, GPIO47 or GPIO53", esp32s31="GPIO18 or GPIO40"}
+{IDF_TARGET_SOC_RGMII_TX_CLK:default="", esp32s31="GPIO13 or GPIO43"}
+{IDF_TARGET_SOC_RGMII_TX_CTL:default="", esp32s31="GPIO12 or GPIO37"}
+{IDF_TARGET_SOC_RGMII_TXD0:default="", esp32s31="GPIO8 or GPIO44"}
+{IDF_TARGET_SOC_RGMII_TXD1:default="", esp32s31="GPIO9 or GPIO45"}
+{IDF_TARGET_SOC_RGMII_TXD2:default="", esp32s31="GPIO10 or GPIO46"}
+{IDF_TARGET_SOC_RGMII_TXD3:default="", esp32s31="GPIO11 or GPIO47"}
+{IDF_TARGET_SOC_RGMII_RX_CLK:default="", esp32s31="GPIO14 or GPIO42"}
+{IDF_TARGET_SOC_RGMII_RX_CTL:default="", esp32s31="GPIO15 or GPIO36"}
+{IDF_TARGET_SOC_RGMII_RXD0:default="", esp32s31="GPIO19"}
+{IDF_TARGET_SOC_RGMII_RXD1:default="", esp32s31="GPIO18 or GPIO40"}
+{IDF_TARGET_SOC_RGMII_RXD2:default="", esp32s31="GPIO17 or GPIO39"}
+{IDF_TARGET_SOC_RGMII_RXD3:default="", esp32s31="GPIO16 or GPIO38"}
+{IDF_TARGET_SOC_PHY_REF_CLK_GPIO:default="", esp32p4="GPIO23 or GPIO39", esp32s31="GPIO35"}
+{IDF_TARGET_SOC_PHY_REF_CLK_SRC:default="", esp32p4="MPLL", esp32s31="CPLL or MPLL"}
+{IDF_TARGET_SOC_CNNT_GPIO_RANGE:default="", esp32s31="GPIO13 to GPIO19"}
 
 
 :link_to_translation:`zh_CN:[中文]`
@@ -130,8 +146,27 @@ The Ethernet driver is composed of two parts: MAC and PHY.
 
     One of the obvious differences between MII and RMII is signal consumption. MII usually costs up to 18 signals, while the RMII interface can reduce the consumption to 9.
 
-    .. note::
-        ESP-IDF only supports the RMII interface. Therefore, always set :cpp:member:`eth_esp32_emac_config_t::interface` to :cpp:enumerator:`eth_data_interface_t::EMAC_DATA_INTERFACE_RMII`.
+    .. only:: not SOC_EMAC_SUPPORT_1000M
+
+        .. note::
+            ESP-IDF only supports the RMII interface. Therefore, always set :cpp:member:`eth_esp32_emac_config_t::interface` to :cpp:enumerator:`eth_data_interface_t::EMAC_DATA_INTERFACE_RMII`.
+
+    .. only:: SOC_EMAC_SUPPORT_1000M
+
+        {IDF_TARGET_NAME} additionally supports **RGMII** (Reduced Gigabit Media Independent Interface), which is required to operate at 1000 Mbps. Set :cpp:member:`eth_esp32_emac_config_t::interface` to :cpp:enumerator:`eth_data_interface_t::EMAC_DATA_INTERFACE_RMII` or :cpp:enumerator:`eth_data_interface_t::EMAC_DATA_INTERFACE_RGMII` based on your board design. See :ref:`rgmii-interface` for the RGMII specific configuration.
+
+        .. note::
+            The MII interface is not supported by ESP-IDF.
+
+    .. only:: esp32s31
+
+        .. note::
+            {IDF_TARGET_SOC_CNNT_GPIO_RANGE} belong to the CNNT power domain and require group-wide IO MUX handling. If any GPIO in this range is selected for an RMII or RGMII signal, all GPIOs in the range are routed to EMAC, including those not explicitly selected. Therefore, do not assign the remaining GPIOs in this range to non-EMAC functions.
+
+    .. _rmii-interface:
+
+    RMII Interface
+    ^^^^^^^^^^^^^^^
 
     In RMII mode, both the receiver and transmitter signals are referenced to the ``REF_CLK``. ``REF_CLK`` **must be stable during any access to PHY and MAC**. Generally, there are three ways to generate the ``REF_CLK`` depending on the PHY device in your design:
 
@@ -146,7 +181,7 @@ The Ethernet driver is composed of two parts: MAC and PHY.
         .. warning::
             If the RMII clock mode is configured to :cpp:enumerator:`emac_rmii_clock_mode_t::EMAC_CLK_OUT`, internal Audio PLL clock is used as a source of 50 MHz clock. Hence be sure it is not in collision with I2S bus configuration.
 
-            When internal clock is selected, then ``GPIO0`` can be used to output the ``REF_CLK`` signal. However, the clock is outputted directly to the GPIO in this particular case and so it does not have direct relationship with EMAC peripheral. Sometimes this configuration may not work well with your PHY chip. If you are not using PSRAM in your design, GPIO16 and GPIO17 are also available to output the reference clock signal. The source of clock is the same (APLL) but these signals are routed from EMAC peripheral.
+            When internal clock is selected, then ``GPIO0`` can be used to output the ``REF_CLK`` signal. However, the clock is outputted directly to the GPIO in this particular case and so it does not have direct relationship with EMAC peripheral. Sometimes this configuration may not work well with your PHY chip. If you are not using PSRAM in your design, GPIO16 or GPIO17 are also available to output the reference clock signal. The source of clock is the same (APLL) but these signals are routed from EMAC peripheral.
 
             If the RMII clock mode is configured to :cpp:enumerator:`emac_rmii_clock_mode_t::EMAC_CLK_EXT_IN`, then ``GPIO0`` is the only choice to input the ``REF_CLK`` signal. Please note that ``GPIO0`` is also an important strapping GPIO on ESP32. If GPIO0 samples a low level during power-up, ESP32 will go into download mode. The system will get halted until a manually reset. The workaround for this issue is disabling the ``REF_CLK`` in hardware by default so that the strapping pin is not interfered by other signals in the boot stage. Then, re-enable the ``REF_CLK`` in the Ethernet driver installation stage.
 
@@ -163,30 +198,35 @@ The Ethernet driver is composed of two parts: MAC and PHY.
     .. only:: not esp32
 
         .. note::
-            If the RMII clock mode is configured to :cpp:enumerator:`emac_rmii_clock_mode_t::EMAC_CLK_OUT`, {IDF_TARGET_SOC_REF_CLK_OUT_GPIO} can be selected as output pin of the ``REF_CLK`` signal via IO_MUX.
+            If the RMII clock mode is configured to :cpp:enumerator:`emac_rmii_clock_mode_t::EMAC_CLK_OUT`, {IDF_TARGET_SOC_PHY_REF_CLK_GPIO} can be selected as output pin of the ``REF_CLK`` signal via IO_MUX. The clock is derived from a PLL ({IDF_TARGET_SOC_PHY_REF_CLK_SRC}) which is not directly associated with EMAC.
 
             If the RMII clock mode is configured to :cpp:enumerator:`emac_rmii_clock_mode_t::EMAC_CLK_EXT_IN`, {IDF_TARGET_SOC_REF_CLK_IN_GPIO} can be selected as input pin for the ``REF_CLK`` signal via IO_MUX.
 
-    .. only:: esp32p4
+            .. only:: SOC_EMAC_SUPPORT_1000M
 
-        .. warning::
-            If the RMII clock mode is configured to :cpp:enumerator:`emac_rmii_clock_mode_t::EMAC_CLK_OUT`, the EMAC derives the 50 MHz RMII reference clock from the MPLL via an integer divider. When PSRAM is also enabled, both peripherals share the MPLL, and PSRAM locks it to a frequency determined by its speed configuration. If PSRAM speed is configured to 80 MHz (:menuitem:`CONFIG_SPIRAM_SPEED`), the MPLL runs at 320 MHz, and no integer divisor of 320 MHz can produce 50 MHz within the required ±50 ppm tolerance (the closest candidate is 320 / 6 ≈ 53.33 MHz). EMAC initialization will fail in this configuration.
-
-            If you must use 80 MHz PSRAM speed, provide the ``REF_CLK`` from an external source (PHY or oscillator) and configure :cpp:enumerator:`emac_rmii_clock_mode_t::EMAC_CLK_EXT_IN` instead.
+                As an alternative on devices supporting 1000 Mbps operation, {IDF_TARGET_SOC_REF_CLK_OUT_GPIO} can be selected as output pin of the ``REF_CLK`` signal via IO_MUX. The clock is then derived from a PLL ({IDF_TARGET_SOC_INTERNAL_CLK_OUT_SRC}) which is directly associated with EMAC and so the ``REF_CLK`` is available to the EMAC internally (no need for external loopback). While this internal clock path is needed to generate the link-speed-dependent RGMII ``TX_CLK``, it is also available here in RMII mode.
 
     .. only:: not SOC_EMAC_RMII_CLK_OUT_INTERNAL_LOOPBACK
 
         .. warning::
-            If the RMII clock mode is configured to :cpp:enumerator:`emac_rmii_clock_mode_t::EMAC_CLK_OUT`, the ``REF_CLK`` output signal must be looped back to the EMAC externally. You have to configure :cpp:member:`eth_mac_clock_config_t::clock_mode` of :cpp:member:`eth_esp32_emac_config_t::clock_config_out_in` to :cpp:enumerator:`emac_rmii_clock_mode_t::EMAC_CLK_EXT_IN` and select GPIO number associated with ``REF_CLK`` input GPIO's ({IDF_TARGET_SOC_REF_CLK_IN_GPIO}).
+            If the RMII clock mode is configured to :cpp:enumerator:`emac_rmii_clock_mode_t::EMAC_CLK_OUT` and {IDF_TARGET_SOC_PHY_REF_CLK_GPIO} is selected, the ``REF_CLK`` output signal must be looped back to the EMAC externally. You have to configure :cpp:member:`eth_mac_clock_config_t::clock_mode` of :cpp:member:`eth_esp32_emac_config_t::clock_config_out_in` to :cpp:enumerator:`emac_rmii_clock_mode_t::EMAC_CLK_EXT_IN` and select GPIO number associated with ``REF_CLK`` input GPIO's ({IDF_TARGET_SOC_REF_CLK_IN_GPIO}).
 
-            .. only:: esp32p4
 
-                .. figure:: ../../../_static/rmii_ref_clk_esp32p4.png
-                    :scale: 95 %
-                    :alt: RMII REF_CKL Output Loopback
-                    :figclass: align-center
+            .. figure:: ../../../_static/rmii_ref_clk.png
+                :scale: 95 %
+                :alt: RMII REF_CLK Output Loopback
+                :figclass: align-center
 
-                    RMII REF_CKL Output Loopback
+                RMII REF_CLK Output Loopback
+
+    .. only:: not esp32
+
+        .. warning::
+            If the RMII clock mode is configured to :cpp:enumerator:`emac_rmii_clock_mode_t::EMAC_CLK_OUT`, the EMAC derives the 50 MHz RMII reference clock from an internal PLL clock source via an integer divider. This PLL clock source can be shared with other peripherals, whose configuration can constrain its frequency. The available clock sources and sharing arrangements vary by chip target.
+
+            If a shared PLL is fixed to a frequency that cannot be divided to 50 MHz within the required ±50 ppm tolerance, EMAC initialization will fail. For example, a PSRAM configuration can fix a shared MPLL to 320 MHz; no integer divisor of 320 MHz can produce 50 MHz within the required tolerance (the closest candidate is 320 / 6 ≈ 53.33 MHz).
+
+            In this case, configure the peripheral sharing the PLL to use a compatible clock frequency, if possible. Otherwise, provide the ``REF_CLK`` from an external source (PHY or oscillator) and configure :cpp:enumerator:`emac_rmii_clock_mode_t::EMAC_CLK_EXT_IN` instead.
 
     **No matter which RMII clock mode you select, you really need to take care of the signal integrity of REF_CLK in your hardware design!** Keep the trace as short as possible. Keep it away from RF devices and inductor elements.
 
@@ -197,93 +237,169 @@ The Ethernet driver is composed of two parts: MAC and PHY.
 
     .. only:: SOC_EMAC_USE_MULTI_IO_MUX
 
-        .. note::
-            Signals used in the data plane can be configured to predefined set of GPIOs via IO_MUX for the RMII, see below table. The data plane GPIO configuration is performed by the driver based on content of :cpp:member:`eth_esp32_emac_config_t::emac_dataif_gpio`. Signals used in the control plane can be routed to any free GPIOs via GPIO Matrix.
+        Signals used in the data plane can be configured to predefined set of GPIOs via IO_MUX for the RMII, see below table. The data plane GPIO configuration is performed by the driver based on content of :cpp:member:`eth_esp32_emac_config_t::emac_dataif_gpio`. Signals used in the control plane can be routed to any free GPIOs via GPIO Matrix.
 
-            .. list-table:: {IDF_TARGET_NAME} RMII Data Plane GPIO
-                :header-rows: 1
-                :widths: 50 50
-                :align: center
+        .. list-table:: {IDF_TARGET_NAME} RMII Data Plane GPIO
+            :header-rows: 1
+            :widths: 50 50
+            :align: center
 
-                * - Pin Name
-                  - GPIO Number
+            * - Pin Name
+              - GPIO Number
 
-                * - TX_EN
-                  - {IDF_TARGET_SOC_RMII_TX_EN}
+            * - TX_EN
+              - {IDF_TARGET_SOC_RMII_TX_EN}
 
-                * - TXD0
-                  - {IDF_TARGET_SOC_RMII_TXD0}
+            * - TXD0
+              - {IDF_TARGET_SOC_RMII_TXD0}
 
-                * - TXD1
-                  - {IDF_TARGET_SOC_RMII_TXD1}
+            * - TXD1
+              - {IDF_TARGET_SOC_RMII_TXD1}
 
-                * - CRS_DV
-                  - {IDF_TARGET_SOC_RMII_CRS_DV}
+            * - CRS_DV
+              - {IDF_TARGET_SOC_RMII_CRS_DV}
 
-                * - RXD0
-                  - {IDF_TARGET_SOC_RMII_RXD0}
+            * - RXD0
+              - {IDF_TARGET_SOC_RMII_RXD0}
 
-                * - RXD1
-                  - {IDF_TARGET_SOC_RMII_RXD1}
+            * - RXD1
+              - {IDF_TARGET_SOC_RMII_RXD1}
+
+    .. only:: SOC_EMAC_SUPPORT_1000M
+
+        .. _rgmii-interface:
+
+        RGMII Interface
+        ^^^^^^^^^^^^^^^
+
+        At 1000 Mbps, RGMII uses a four-bit-wide data path clocked at 125 MHz in both directions with data transferred on both clock edges. At 100 Mbps and 10 Mbps, the clocks run at 25 MHz and 2.5 MHz, respectively. Compared to RMII, RGMII adds ``TXD2``, ``TXD3``, ``RXD2`` and ``RXD3``, and replaces ``TX_EN``/``CRS_DV`` with ``TX_CTL``/``RX_CTL``.
+
+        Unlike RMII, the two clocks are not shared:
+
+        * ``RX_CLK`` is always sourced by the PHY and is an input to the {IDF_TARGET_NAME} EMAC. Configure the GPIO it is connected to in :cpp:member:`eth_mac_clock_config_t::clock_rx_gpio` of :cpp:member:`eth_esp32_emac_config_t::clock_config`.
+
+        * ``TX_CLK`` is generated internally by the EMAC and output to the PHY. Configure the GPIO in :cpp:member:`eth_mac_clock_config_t::clock_tx_gpio`. The driver derives it from a PLL ({IDF_TARGET_SOC_INTERNAL_CLK_OUT_SRC}) and re-configures the divider whenever the link speed changes, so that it outputs 125 MHz at 1000 Mbps, 25 MHz at 100 Mbps and 2.5 MHz at 10 Mbps. The PLL used as its source is selected by :menuitem:`CONFIG_ETH_EMAC_INTERNAL_OUT_CLK_SRC` and defaults to letting the driver choose.
+
+        Optionally, the EMAC can also output a 50 MHz ``PHY_REF_CLK`` so that the PHY does not need its own crystal. Set :cpp:member:`eth_mac_clock_config_t::clock_phy_ref_gpio` to the GPIO number {IDF_TARGET_SOC_PHY_REF_CLK_GPIO} to enable it, or to ``-1`` to leave it disabled. Its PLL source ({IDF_TARGET_SOC_PHY_REF_CLK_SRC}) is selected by :menuitem:`CONFIG_ETH_EMAC_PHY_REF_CLK_SRC`.
+
+        The RGMII data plane and clock signals can be assigned to the following GPIOs via IO_MUX. Configure the data and control signals through :cpp:member:`eth_esp32_emac_config_t::emac_dataif_gpio`, and configure ``TX_CLK``, ``RX_CLK`` and ``PHY_REF_CLK`` through :cpp:member:`eth_esp32_emac_config_t::clock_config` as described above.
+
+        .. list-table:: {IDF_TARGET_NAME} RGMII Data Plane and Clock GPIO
+            :header-rows: 1
+            :widths: 50 50
+            :align: center
+
+            * - Pin Name
+              - GPIO Number
+
+            * - TX_CLK
+              - {IDF_TARGET_SOC_RGMII_TX_CLK}
+
+            * - TX_CTL
+              - {IDF_TARGET_SOC_RGMII_TX_CTL}
+
+            * - TXD0
+              - {IDF_TARGET_SOC_RGMII_TXD0}
+
+            * - TXD1
+              - {IDF_TARGET_SOC_RGMII_TXD1}
+
+            * - TXD2
+              - {IDF_TARGET_SOC_RGMII_TXD2}
+
+            * - TXD3
+              - {IDF_TARGET_SOC_RGMII_TXD3}
+
+            * - RX_CLK
+              - {IDF_TARGET_SOC_RGMII_RX_CLK}
+
+            * - RX_CTL
+              - {IDF_TARGET_SOC_RGMII_RX_CTL}
+
+            * - RXD0
+              - {IDF_TARGET_SOC_RGMII_RXD0}
+
+            * - RXD1
+              - {IDF_TARGET_SOC_RGMII_RXD1}
+
+            * - RXD2
+              - {IDF_TARGET_SOC_RGMII_RXD2}
+
+            * - RXD3
+              - {IDF_TARGET_SOC_RGMII_RXD3}
+
+            * - PHY_REF_CLK
+              - {IDF_TARGET_SOC_PHY_REF_CLK_GPIO}
+
+Configuration Parameters
+------------------------
 
 You need to set up the necessary parameters for MAC and PHY respectively based on your Ethernet board design, and then combine the two together to complete the driver installation.
 
-Basic common configuration for MAC layer is described in :cpp:class:`eth_mac_config_t`, including:
+MAC Configuration
+^^^^^^^^^^^^^^^^^
 
-.. list::
-
-    * :cpp:member:`eth_mac_config_t::sw_reset_timeout_ms`: software reset timeout value, in milliseconds. Typically, MAC reset should be finished within 100 ms.
-
-    * :cpp:member:`eth_mac_config_t::rx_task_stack_size` and :cpp:member:`eth_mac_config_t::rx_task_prio`: the MAC driver creates a dedicated task to process incoming packets. These two parameters are used to set the stack size and priority of the task.
-
-    * :cpp:member:`eth_mac_config_t::flags`: specifying extra features that the MAC driver should have, it could be useful in some special situations. The value of this field can be OR'd with macros prefixed with ``ETH_MAC_FLAG_``. For example, if the MAC driver should work when the cache is disabled, then you should configure this field with :c:macro:`ETH_MAC_FLAG_WORK_WITH_CACHE_DISABLE`.
-
-.. only:: SOC_EMAC_SUPPORTED
-
-    Specific configuration for **internal MAC module** is described in :cpp:class:`eth_esp32_emac_config_t`, including:
+    Basic common configuration for MAC layer is described in :cpp:class:`eth_mac_config_t`, including:
 
     .. list::
 
-        * :cpp:member:`eth_esp32_emac_config_t::smi_mdc_gpio_num` and :cpp:member:`eth_esp32_emac_config_t::smi_mdio_gpio_num`: the GPIO number used to connect the SMI signals.
+        * :cpp:member:`eth_mac_config_t::sw_reset_timeout_ms`: software reset timeout value, in milliseconds. Typically, MAC reset should be finished within 100 ms.
 
-        * :cpp:member:`eth_esp32_emac_config_t::interface`: configuration of MAC Data interface to PHY (MII/RMII).
+        * :cpp:member:`eth_mac_config_t::rx_task_stack_size` and :cpp:member:`eth_mac_config_t::rx_task_prio`: the MAC driver creates a dedicated task to process incoming packets. These two parameters are used to set the stack size and priority of the task.
 
-        * :cpp:member:`eth_esp32_emac_config_t::clock_config`: configuration of EMAC Interface clock (``REF_CLK`` mode and GPIO number in case of RMII).
+        * :cpp:member:`eth_mac_config_t::flags`: specifying extra features that the MAC driver should have, it could be useful in some special situations. The value of this field can be OR'd with macros prefixed with ``ETH_MAC_FLAG_``. For example, if the MAC driver should work when the cache is disabled, then you should configure this field with :c:macro:`ETH_MAC_FLAG_WORK_WITH_CACHE_DISABLE`.
 
-        * :cpp:member:`eth_esp32_emac_config_t::intr_priority`: sets the priority of the MAC interrupt. If it is set to ``0`` or a negative value, the driver will allocate an interrupt with a default priority. Otherwise, the driver will use the given priority. Note that *Low* and *Medium* interrupt priorities (1 to 3) can be set since these can be handled in C.
+    .. only:: SOC_EMAC_SUPPORTED
 
-        :SOC_EMAC_USE_MULTI_IO_MUX: * :cpp:member:`eth_esp32_emac_config_t::emac_dataif_gpio`: configuration of EMAC MII/RMII data plane GPIO numbers.
+        Specific configuration for **internal MAC module** is described in :cpp:class:`eth_esp32_emac_config_t`, including:
 
-        :not SOC_EMAC_RMII_CLK_OUT_INTERNAL_LOOPBACK: * :cpp:member:`eth_esp32_emac_config_t::clock_config_out_in`: configuration of EMAC input interface clock when ``REF_CLK`` signal is generated internally and is looped back to the EMAC externally. The mode must be always configured to :cpp:enumerator:`emac_rmii_clock_mode_t::EMAC_CLK_EXT_IN`. This option is valid only when configuration of :cpp:member:`eth_esp32_emac_config_t::clock_config` is set to :cpp:enumerator:`emac_rmii_clock_mode_t::EMAC_CLK_OUT`.
+        .. list::
 
-    Memory Considerations when Using Internal MAC
-    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+            * :cpp:member:`eth_esp32_emac_config_t::smi_mdc_gpio_num` and :cpp:member:`eth_esp32_emac_config_t::smi_mdio_gpio_num`: the GPIO number used to connect the SMI signals.
 
-    The internal MAC subsystem transfers data to and from the CPU domain via DMA using a linked list of descriptors. There are two types of descriptors: Transmit and Receive. Based on its type, a descriptor holds status information about the received or transmitted frame or provides controls for transmission. Each descriptor also contains pointers to the current data buffer and the next descriptor. As such, a single EMAC DMA descriptor has size of {IDF_TARGET_SOC_DMA_DESC_SIZE} in DMA-capable memory.
+            :not SOC_EMAC_SUPPORT_1000M: * :cpp:member:`eth_esp32_emac_config_t::interface`: configuration of MAC Data interface to PHY (MII/RMII).
+            :SOC_EMAC_SUPPORT_1000M: * :cpp:member:`eth_esp32_emac_config_t::interface`: configuration of MAC Data interface to PHY (RMII/RGMII).
 
-    The default configuration should cover most use cases. However, certain scenarios may require configuring the Ethernet DMA memory utilization to suit specific needs. Typical problems may arise in the following situations:
+            :not SOC_EMAC_SUPPORT_1000M: * :cpp:member:`eth_esp32_emac_config_t::clock_config`: configuration of EMAC Interface clock (``REF_CLK`` mode and GPIO number in case of RMII).
+            :SOC_EMAC_SUPPORT_1000M: * :cpp:member:`eth_esp32_emac_config_t::clock_config`: configuration of EMAC Interface clock (``REF_CLK`` mode and GPIO number in case of RMII, or ``RX_CLK``, ``TX_CLK`` and optional ``PHY_REF_CLK`` GPIO numbers in case of RGMII).
+
+            * :cpp:member:`eth_esp32_emac_config_t::intr_priority`: sets the priority of the MAC interrupt. If it is set to ``0`` or a negative value, the driver will allocate an interrupt with a default priority. Otherwise, the driver will use the given priority. Note that *Low* and *Medium* interrupt priorities (1 to 3) can be set since these can be handled in C.
+
+            :SOC_EMAC_USE_MULTI_IO_MUX and not SOC_EMAC_SUPPORT_1000M: * :cpp:member:`eth_esp32_emac_config_t::emac_dataif_gpio`: configuration of EMAC MII/RMII data plane GPIO numbers.
+            :SOC_EMAC_USE_MULTI_IO_MUX and SOC_EMAC_SUPPORT_1000M: * :cpp:member:`eth_esp32_emac_config_t::emac_dataif_gpio`: configuration of EMAC RMII/RGMII data plane GPIO numbers.
+
+            :not SOC_EMAC_RMII_CLK_OUT_INTERNAL_LOOPBACK: * :cpp:member:`eth_esp32_emac_config_t::clock_config_out_in`: configuration of EMAC input interface clock when ``REF_CLK`` signal is generated internally by the ESP chip and is looped back to the EMAC externally. The mode must be always configured to :cpp:enumerator:`emac_rmii_clock_mode_t::EMAC_CLK_EXT_IN`. This option is valid only when configuration of :cpp:member:`eth_esp32_emac_config_t::clock_config` is set to :cpp:enumerator:`emac_rmii_clock_mode_t::EMAC_CLK_OUT` and internal clock and GPIO which is not directly associated with EMAC is used. See :ref:`rmii-interface` for RMII clock configuration and hardware requirements.
+
+        Memory Considerations when Using Internal MAC
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+        The internal MAC subsystem transfers data to and from the CPU domain via DMA using a linked list of descriptors. There are two types of descriptors: Transmit and Receive. Based on its type, a descriptor holds status information about the received or transmitted frame or provides controls for transmission. Each descriptor also contains pointers to the current data buffer and the next descriptor. As such, a single EMAC DMA descriptor has size of {IDF_TARGET_SOC_DMA_DESC_SIZE} in DMA-capable memory.
+
+        The default configuration should cover most use cases. However, certain scenarios may require configuring the Ethernet DMA memory utilization to suit specific needs. Typical problems may arise in the following situations:
+
+        .. list::
+
+            * **Short and frequent frames dominate network traffic**: If your network traffic primarily consists of very short and frequently transmitted/received frames, you may observe issues such as lower-than-expected throughput (despite the rated 100 Mbps) and missed frames during reception. On transmission, the socket send API may return ``errno`` equal to ``ENOMEM``, accompanied by the `insufficient TX buffer size` message (if debug log level is enabled). This is because the default memory configuration is optimized for larger frames; :menuitem:`CONFIG_ETH_DMA_BUFFER_SIZE` is set to 512 bytes by default to ensure a better *data buffer* to *descriptor* size overhead ratio. The solution is to increase :menuitem:`CONFIG_ETH_DMA_RX_BUFFER_NUM` or :menuitem:`CONFIG_ETH_DMA_TX_BUFFER_NUM`. Additionally, consider decreasing :menuitem:`CONFIG_ETH_DMA_BUFFER_SIZE` to match the typical frame size in your network to maintain a reasonable memory footprint of the Ethernet driver.
+
+            * **High throughput leads to buffer exhaustion**: If the socket send API intermittently returns ``errno`` equal to ``ENOMEM``, accompanied by the `insufficient TX buffer size` message (if debug log level is enabled), and the throughput is close to the rated 100 Mbps, this likely indicates nearing hardware limitations. In such case, the hardware cannot keep up with the transmission requests. The solution is to increase :menuitem:`CONFIG_ETH_DMA_TX_BUFFER_NUM` to buffer more frames and mitigate temporary peaks in transmission requests. However, this will not help if the requested traffic consistently exceeds the rated throughput. In such situations, the only solution is to limit the bandwidth by software means at the application level.
+
+PHY Configuration
+^^^^^^^^^^^^^^^^^
+    Configuration for PHY is described in :cpp:class:`eth_phy_config_t`, including:
 
     .. list::
 
-        * **Short and frequent frames dominate network traffic**: If your network traffic primarily consists of very short and frequently transmitted/received frames, you may observe issues such as lower-than-expected throughput (despite the rated 100 Mbps) and missed frames during reception. On transmission, the socket send API may return ``errno`` equal to ``ENOMEM``, accompanied by the `insufficient TX buffer size` message (if debug log level is enabled). This is because the default memory configuration is optimized for larger frames; :menuitem:`CONFIG_ETH_DMA_BUFFER_SIZE` is set to 512 bytes by default to ensure a better *data buffer* to *descriptor* size overhead ratio. The solution is to increase :menuitem:`CONFIG_ETH_DMA_RX_BUFFER_NUM` or :menuitem:`CONFIG_ETH_DMA_TX_BUFFER_NUM`. Additionally, consider decreasing :menuitem:`CONFIG_ETH_DMA_BUFFER_SIZE` to match the typical frame size in your network to maintain a reasonable memory footprint of the Ethernet driver.
+        * :cpp:member:`eth_phy_config_t::phy_addr`: multiple PHY devices can share the same SMI bus, so each PHY needs a unique address. Usually, this address is configured during hardware design by pulling up/down some PHY strapping pins. You can set the value from ``0`` to ``15`` based on your Ethernet board. Especially, if the SMI bus is shared by only one PHY device, setting this value to ``-1`` can enable the driver to detect the PHY address automatically.
 
-        * **High throughput leads to buffer exhaustion**: If the socket send API intermittently returns ``errno`` equal to ``ENOMEM``, accompanied by the `insufficient TX buffer size` message (if debug log level is enabled), and the throughput is close to the rated 100 Mbps, this likely indicates nearing hardware limitations. In such case, the hardware cannot keep up with the transmission requests. The solution is to increase :menuitem:`CONFIG_ETH_DMA_TX_BUFFER_NUM` to buffer more frames and mitigate temporary peaks in transmission requests. However, this will not help if the requested traffic consistently exceeds the rated throughput. In such situations, the only solution is to limit the bandwidth by software means at the application level.
+        * :cpp:member:`eth_phy_config_t::reset_timeout_ms`: reset timeout value, in milliseconds. Typically, PHY reset should be finished within 100 ms.
 
-Configuration for PHY is described in :cpp:class:`eth_phy_config_t`, including:
+        * :cpp:member:`eth_phy_config_t::autonego_timeout_ms`: auto-negotiation timeout value, in milliseconds. The Ethernet driver starts negotiation with the peer Ethernet node automatically, to determine to duplex and speed mode. This value usually depends on the ability of the PHY device on your board.
 
-.. list::
+        * :cpp:member:`eth_phy_config_t::reset_gpio_num`: if your board also connects the PHY reset pin to one of the GPIO, then set it here. Otherwise, set this field to ``-1``.
 
-    * :cpp:member:`eth_phy_config_t::phy_addr`: multiple PHY devices can share the same SMI bus, so each PHY needs a unique address. Usually, this address is configured during hardware design by pulling up/down some PHY strapping pins. You can set the value from ``0`` to ``15`` based on your Ethernet board. Especially, if the SMI bus is shared by only one PHY device, setting this value to ``-1`` can enable the driver to detect the PHY address automatically.
+        * :cpp:member:`eth_phy_config_t::hw_reset_assert_time_us`: Time the PHY reset pin is asserted in usec. Set this field to ``0`` to use chip specific default timing.
 
-    * :cpp:member:`eth_phy_config_t::reset_timeout_ms`: reset timeout value, in milliseconds. Typically, PHY reset should be finished within 100 ms.
-
-    * :cpp:member:`eth_phy_config_t::autonego_timeout_ms`: auto-negotiation timeout value, in milliseconds. The Ethernet driver starts negotiation with the peer Ethernet node automatically, to determine to duplex and speed mode. This value usually depends on the ability of the PHY device on your board.
-
-    * :cpp:member:`eth_phy_config_t::reset_gpio_num`: if your board also connects the PHY reset pin to one of the GPIO, then set it here. Otherwise, set this field to ``-1``.
-
-    * :cpp:member:`eth_phy_config_t::hw_reset_assert_time_us`: Time the PHY reset pin is asserted in usec. Set this field to ``0`` to use chip specific default timing.
-
-    * :cpp:member:`eth_phy_config_t::post_hw_reset_delay_ms`: Time to wait after the PHY hardware reset is done in msec. Set this field to ``0`` to use chip specific default timing. Set this field to ``-1`` to not wait after the PHY hardware reset.
+        * :cpp:member:`eth_phy_config_t::post_hw_reset_delay_ms`: Time to wait after the PHY hardware reset is done in msec. Set this field to ``0`` to use chip specific default timing. Set this field to ``-1`` to not wait after the PHY hardware reset.
 
 ESP-IDF provides a default configuration for MAC and PHY in macro :c:macro:`ETH_MAC_DEFAULT_CONFIG` and :c:macro:`ETH_PHY_DEFAULT_CONFIG`.
 
@@ -319,23 +435,44 @@ The Ethernet driver is implemented in an Object-Oriented style. Any operation on
     .. tip::
         Espressif provides drivers for several specific Ethernet PHY chips in the `esp-eth-drivers <https://github.com/espressif/esp-eth-drivers>`_ repository. Drivers are distributed as components and are available in the `ESP Component Registry <https://components.espressif.com/>`_.
 
-    Optional Runtime MAC Clock Configuration
-    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    Runtime MAC Clock Configuration
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-    EMAC ``REF_CLK`` can be optionally configured from the user application code.
+    EMAC ``REF_CLK`` is configured from the user application code.
 
-    .. highlight:: c
+    .. only:: esp32
 
-    ::
+        .. code-block:: c
 
-        eth_esp32_emac_config_t esp32_emac_config = ETH_ESP32_EMAC_DEFAULT_CONFIG(); // apply default vendor-specific MAC configuration
+            eth_esp32_emac_config_t esp32_emac_config = ETH_ESP32_EMAC_DEFAULT_CONFIG();
+            esp32_emac_config.interface = EMAC_DATA_INTERFACE_RMII;
+            esp32_emac_config.clock_config.rmii.clock_mode = EMAC_CLK_OUT;
+            esp32_emac_config.clock_config.rmii.clock_gpio = 17;
+            esp_eth_mac_t *mac = esp_eth_mac_new_esp32(&esp32_emac_config, &mac_config);
 
-        // ...
+    .. only:: esp32p4
 
-        esp32_emac_config.interface = EMAC_DATA_INTERFACE_RMII;                      // alter EMAC Data Interface
-        esp32_emac_config.clock_config.rmii.clock_mode = EMAC_CLK_OUT;               // select EMAC REF_CLK mode
-        esp32_emac_config.clock_config.rmii.clock_gpio = 17;                         // select GPIO number used to input/output EMAC REF_CLK
-        esp_eth_mac_t *mac = esp_eth_mac_new_esp32(&esp32_emac_config, &mac_config); // create MAC instance
+        On ESP32-P4, the internally generated clock output must be looped back to an RMII clock input externally.
+
+        .. code-block:: c
+
+            eth_esp32_emac_config_t esp32_emac_config = ETH_ESP32_EMAC_DEFAULT_CONFIG();
+            esp32_emac_config.interface = EMAC_DATA_INTERFACE_RMII;
+            esp32_emac_config.clock_config.rmii.clock_mode = EMAC_CLK_OUT;
+            esp32_emac_config.clock_config.rmii.clock_gpio = 23;
+            esp32_emac_config.clock_config_out_in.rmii.clock_mode = EMAC_CLK_EXT_IN;
+            esp32_emac_config.clock_config_out_in.rmii.clock_gpio = 32;
+            esp_eth_mac_t *mac = esp_eth_mac_new_esp32(&esp32_emac_config, &mac_config);
+
+    .. only:: esp32s31
+
+        .. code-block:: c
+
+            eth_esp32_emac_config_t esp32_emac_config = ETH_ESP32_EMAC_DEFAULT_CONFIG();
+            esp32_emac_config.interface = EMAC_DATA_INTERFACE_RMII;
+            esp32_emac_config.clock_config.rmii.clock_mode = EMAC_CLK_OUT;
+            esp32_emac_config.clock_config.rmii.clock_gpio = 13;
+            esp_eth_mac_t *mac = esp_eth_mac_new_esp32(&esp32_emac_config, &mac_config);
 
 
 SPI-Ethernet Module

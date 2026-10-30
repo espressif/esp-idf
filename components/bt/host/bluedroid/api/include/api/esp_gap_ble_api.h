@@ -3921,7 +3921,7 @@ esp_err_t esp_ble_remove_bond_device(esp_bd_addr_t bd_addr);
 *                  It will return the device bonded number immediately.
 *
 * @return          - >= 0 : bonded devices number.
-*                  - ESP_FAIL  : failed
+*                  - < 0 : failed
 *
 */
 int esp_ble_get_bond_device_num(void);

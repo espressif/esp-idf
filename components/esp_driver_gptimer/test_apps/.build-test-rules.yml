@@ -7,4 +7,5 @@ components/esp_driver_gptimer/test_apps/gptimer:
     - esp_driver_gptimer
     - esp_hal_timg
     - esp_hw_support
+    - esp_sleep
     - soc

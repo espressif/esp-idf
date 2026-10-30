@@ -172,7 +172,7 @@ static esp_err_t sdm_group_install(sdm_group_t *group, soc_module_clk_t clk_src)
     }
 #endif // SDM_USE_RETENTION_LINK
 
-    ESP_GOTO_ON_ERROR(esp_clk_tree_acquire_src(clk_src), err, TAG, "enable clock source failed for group %d", group_id);
+    ESP_GOTO_ON_ERROR(esp_clk_tree_acquire_src(clk_src, NULL), err, TAG, "enable clock source failed for group %d", group_id);
     group->clk_src = clk_src;
     // SDM clock comes from IO MUX, but IO MUX clock might be shared with other submodules as well
     ESP_GOTO_ON_ERROR(io_mux_acquire_clock_source(clk_src), err, TAG, "acquire IO MUX clock source failed for group %d", group_id);

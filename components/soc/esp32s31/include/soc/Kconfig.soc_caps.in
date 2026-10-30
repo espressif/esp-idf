@@ -407,6 +407,10 @@ config SOC_USB_UTMI_PHY_NUM
     int
     default 1
 
+config SOC_USB_OTG_PSRAM_DMA_CAPABLE
+    bool
+    default y
+
 config SOC_PM_SUPPORT_USB_WAKEUP
     bool
     default y
@@ -620,6 +624,10 @@ config SOC_GDMA_SUPPORT_ETM
     default y
 
 config SOC_GDMA_SUPPORT_SLEEP_RETENTION
+    bool
+    default y
+
+config SOC_GDMA_SUPPORT_WEIGHTED_ARBITRATION
     bool
     default y
 
@@ -851,6 +859,10 @@ config SOC_PCNT_SUPPORT_STEP_NOTIFY
     bool
     default y
 
+config SOC_RISCV_SV32_SUPPORTED
+    bool
+    default y
+
 config SOC_MMU_PAGE_SIZE_CONFIGURABLE
     bool
     default y
@@ -959,6 +971,10 @@ config SOC_MEMSPI_TIMING_TUNING_BY_DQS
     bool
     default y
 
+config SOC_MEMSPI_TIMING_TUNING_BY_FLASH_DELAY
+    bool
+    default y
+
 config SOC_SPI_MEM_SUPPORT_CACHE_32BIT_ADDR_MAP
     bool
     default y
@@ -976,6 +992,10 @@ config SOC_MEMSPI_IS_INDEPENDENT
     default y
 
 config SOC_PSRAM_MEMSPI_IS_INDEPENDENT
+    bool
+    default y
+
+config SOC_SPI_MEM_FLASH_SUPPORT_HPM
     bool
     default y
 

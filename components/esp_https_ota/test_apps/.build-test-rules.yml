@@ -1,0 +1,9 @@
+# Documentation: .gitlab/ci/README.md#manifest-file-to-control-the-buildtest-apps
+
+components/esp_https_ota/test_apps:
+  enable:
+    - if: IDF_TARGET == "esp32c3"
+      reason: The cases stop before any connection and use no target-specific code, so one target is enough
+  depends_components:
+    - esp_https_ota
+    - esp_http_client

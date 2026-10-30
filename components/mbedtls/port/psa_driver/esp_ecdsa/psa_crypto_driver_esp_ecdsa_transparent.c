@@ -44,6 +44,21 @@ static const char *TAG = "psa_crypto_driver_esp_ecdsa";
  * failing for a given input */
 #define ESP_ECDSA_SIGN_MAX_ATTEMPTS     16
 
+/* The peripheral derives the deterministic nonce with its own variant of
+ * RFC 6979. The signatures match RFC 6979 on SECP256R1 (checked against the
+ * RFC 6979 test vectors), but not on SECP384R1. Only SECP256R1 is accepted, so
+ * that deterministic requests on any other curve fall back to the builtin
+ * RFC 6979 implementation. */
+static bool esp_ecdsa_transparent_det_sign_supported(esp_ecdsa_curve_t curve)
+{
+#if SOC_ECDSA_SUPPORT_DETERMINISTIC_MODE && SOC_ECDSA_SUPPORT_HW_DETERMINISTIC_LOOP
+    return ecdsa_ll_is_deterministic_mode_supported() && curve == ESP_ECDSA_CURVE_SECP256R1;
+#else
+    (void) curve;
+    return false;
+#endif /* SOC_ECDSA_SUPPORT_DETERMINISTIC_MODE && SOC_ECDSA_SUPPORT_HW_DETERMINISTIC_LOOP */
+}
+
 psa_status_t esp_ecdsa_transparent_sign_hash_start(
     esp_ecdsa_transparent_sign_hash_operation_t *operation,
     const psa_key_attributes_t *attributes,
@@ -81,19 +96,13 @@ psa_status_t esp_ecdsa_transparent_sign_hash_start(
         return PSA_ERROR_NOT_SUPPORTED;
     }
 
-    if (PSA_ALG_ECDSA_IS_DETERMINISTIC(alg)) {
-#if SOC_ECDSA_SUPPORT_DETERMINISTIC_MODE && SOC_ECDSA_SUPPORT_HW_DETERMINISTIC_LOOP
-        if (!ecdsa_ll_is_deterministic_mode_supported()) {
-            return PSA_ERROR_NOT_SUPPORTED;
-        }
-#else
-        return PSA_ERROR_NOT_SUPPORTED;
-#endif /* SOC_ECDSA_SUPPORT_DETERMINISTIC_MODE && SOC_ECDSA_SUPPORT_HW_DETERMINISTIC_LOOP */
-    }
-
     size_t key_len = PSA_BITS_TO_BYTES(psa_get_key_bits(attributes));
     esp_ecdsa_curve_t curve = esp_ecdsa_bits_to_curve(key_len);
     if (curve == ESP_ECDSA_CURVE_MAX) {
+        return PSA_ERROR_NOT_SUPPORTED;
+    }
+
+    if (PSA_ALG_ECDSA_IS_DETERMINISTIC(alg) && !esp_ecdsa_transparent_det_sign_supported(curve)) {
         return PSA_ERROR_NOT_SUPPORTED;
     }
 

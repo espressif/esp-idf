@@ -196,6 +196,9 @@ examples/peripherals/i2s/i2s_advance/i2s_usb:
     - if: IDF_TARGET in ["esp32h4", "esp32s31"]
       temporary: true
       reason: usb_device_uac does not support esp32h4 or esp32s31
+    - if: IDF_BUILD_V2 == "1"
+      temporary: true
+      reason: 'depends on a managed component that uses the unsupported BUILD_COMPONENTS build property under Build system v2 (TODO: IDF-16158)'
   depends_components:
     - esp_driver_i2s
     - esp_driver_dma
@@ -454,7 +457,7 @@ examples/peripherals/mcpwm/mcpwm_capture_hc_sr04:
     - esp_hal_mcpwm
     - soc
 
-examples/peripherals/mcpwm/mcpwm_foc_svpwm_open_loop:
+examples/peripherals/mcpwm/mcpwm_foc_open_loop:
   disable:
     - if: SOC_MCPWM_SUPPORTED != 1
   depends_components:
@@ -462,7 +465,7 @@ examples/peripherals/mcpwm/mcpwm_foc_svpwm_open_loop:
     - esp_driver_mcpwm
     - soc
   disable_test:
-    - if: IDF_TARGET != "esp32s3"
+    - if: IDF_TARGET != "esp32p4"
       temporary: true
       reason: lack of runners
 
@@ -766,6 +769,7 @@ examples/peripherals/touch_sensor/touch_sens_sleep:
     - esp_driver_touch_sens
     - esp_hal_touch_sens
     - esp_hw_support
+    - esp_sleep
     - soc
 
 examples/peripherals/twai/cybergear:
@@ -829,12 +833,9 @@ examples/peripherals/uart/uart_dma_ota:
   disable:
     - if: SOC_UHCI_SUPPORTED != 1
   disable_test:
-    - if: IDF_TARGET in ["esp32s31"]
+    - if: IDF_TARGET in ["esp32h4", "esp32h21"] # IDF-16462
       temporary: true
-      reason: Lack runners
-    - if: IDF_TARGET in ["esp32h4", "esp32h21"] # TODO: IDFCI-10703, IDF-16200
-      temporary: true
-      reason: lack of usj runner
+      reason: cannot pass
   depends_components:
     - esp_driver_uart
     - esp_driver_dma

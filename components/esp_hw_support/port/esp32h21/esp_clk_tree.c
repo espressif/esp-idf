@@ -47,14 +47,14 @@ static void esp_clk_tree_parent_xtal_x2(bool enable)
     esp_clk_tree_enable_power(SOC_ROOT_CIRCUIT_CLK_XTAL_X2, enable);
 }
 
-// static void esp_clk_tree_parent_rc_fast(bool enable)
-// {
-//     if (enable) {
-//         rtc_dig_clk8m_enable();
-//     } else {
-//         rtc_dig_clk8m_disable();
-//     }
-// }
+static void esp_clk_tree_gate_rc_fast(bool enable)
+{
+    if (enable) {
+        rtc_dig_clk8m_enable();
+    } else {
+        rtc_dig_clk8m_disable();
+    }
+}
 
 DEFINE_CRIT_SECTION_LOCK_STATIC(s_clk_tree_spinlock);
 
@@ -203,15 +203,15 @@ void esp_clk_tree_initialize(void)
     s_clk_tree_initialized = true;
 #if CONFIG_USJ_ENABLE_USB_SERIAL_JTAG || CONFIG_ESP_CONSOLE_USB_SERIAL_JTAG_ENABLED
     /* Bootloader / USJ may keep PLL_F48M on; declare a permanent hold. */
-    esp_clk_tree_acquire_src(SOC_MOD_CLK_PLL_F48M);
+    esp_clk_tree_acquire_src(SOC_MOD_CLK_PLL_F48M, NULL);
 #endif
     /* Flash + CPU: sync clk_tree refs with HW already selected at boot.
      * Flash uses gated F64M; CPU holds the ungated XTAL_X2 / PLL root, not the F64M / F96M gates. */
-    esp_clk_tree_acquire_src(SOC_MOD_CLK_XTAL_X2_F64M);
+    esp_clk_tree_acquire_src(SOC_MOD_CLK_XTAL_X2_F64M, NULL);
     if (cpu_src == SOC_CPU_CLK_SRC_PLL) {
-        esp_clk_tree_acquire_src(SOC_MOD_CLK_BBPLL);
+        esp_clk_tree_acquire_src(SOC_MOD_CLK_BBPLL, NULL);
     } else if (cpu_src == SOC_CPU_CLK_SRC_XTAL_X2) {
-        esp_clk_tree_acquire_src(SOC_MOD_CLK_XTAL_X2);
+        esp_clk_tree_acquire_src(SOC_MOD_CLK_XTAL_X2, NULL);
     }
 }
 
@@ -263,7 +263,7 @@ typedef enum {
 } esp_clk_tree_gated_clk_id_t;
 
 static const esp_clk_tree_gated_clk_t s_gated_ref_clks[] = {
-    // [ESP_CLK_TREE_GATED_CLK_RC_FAST]       = { SOC_MOD_CLK_RC_FAST,       NULL,                        esp_clk_tree_parent_rc_fast }, // TODO: PM-859
+    [ESP_CLK_TREE_GATED_CLK_RC_FAST]       = { SOC_MOD_CLK_RC_FAST,       esp_clk_tree_gate_rc_fast,   NULL /* TODO: PM-859 */ },
     [ESP_CLK_TREE_GATED_CLK_PLL_F48M]      = { SOC_MOD_CLK_PLL_F48M,      _clk_gate_ll_ref_48m_clk_en, esp_clk_tree_parent_bbpll },
     [ESP_CLK_TREE_GATED_CLK_XTAL_X2_F64M]  = { SOC_MOD_CLK_XTAL_X2_F64M,  _clk_gate_ll_ref_64m_clk_en, esp_clk_tree_parent_xtal_x2 },
     [ESP_CLK_TREE_GATED_CLK_PLL_F96M]      = { SOC_MOD_CLK_PLL_F96M,      _clk_gate_ll_ref_96m_clk_en, esp_clk_tree_parent_bbpll },
@@ -312,8 +312,10 @@ FORCE_INLINE_ATTR esp_err_t esp_clk_tree_enable_gated_clk(const esp_clk_tree_gat
     return ESP_OK;
 }
 
-esp_err_t esp_clk_tree_manage_src(soc_module_clk_t clk_src, bool acquire)
+esp_err_t esp_clk_tree_manage_src(soc_module_clk_t clk_src, bool acquire,
+                                  const esp_clk_tree_src_config_t *config)
 {
+    (void)config;
     if (clk_src < 1 || clk_src >= SOC_MOD_CLK_INVALID || clk_src == SOC_MOD_CLK_XTAL) {
         /* Not managed by esp_clk_tree */
         return ESP_OK;
@@ -331,7 +333,7 @@ esp_err_t esp_clk_tree_manage_src(soc_module_clk_t clk_src, bool acquire)
     case SOC_MOD_CLK_BBPLL:
         esp_clk_tree_enable_power(SOC_ROOT_CIRCUIT_CLK_BBPLL, acquire);
         return ESP_OK;
-    // case SOC_MOD_CLK_RC_FAST:       gated_clk_id = ESP_CLK_TREE_GATED_CLK_RC_FAST;       break;
+    case SOC_MOD_CLK_RC_FAST:       gated_clk_id = ESP_CLK_TREE_GATED_CLK_RC_FAST;       break;
     case SOC_MOD_CLK_PLL_F48M:      gated_clk_id = ESP_CLK_TREE_GATED_CLK_PLL_F48M;      break;
     case SOC_MOD_CLK_XTAL_X2_F64M:  gated_clk_id = ESP_CLK_TREE_GATED_CLK_XTAL_X2_F64M;  break;
     case SOC_MOD_CLK_PLL_F96M:      gated_clk_id = ESP_CLK_TREE_GATED_CLK_PLL_F96M;      break;

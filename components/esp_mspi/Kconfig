@@ -16,7 +16,7 @@ menu "MSPI Flash configuration"
         config SPI_FLASH_BROWNOUT_RESET
             bool
             default y
-            select ESP_BROWNOUT_USE_INTR
+            select ESP_BROWNOUT_USE_INTR if ESP_BROWNOUT_DET
             help
                 When brownout happens during flash erase/write operations,
                 send reset command to stop the flash operations to improve stability.
@@ -54,9 +54,9 @@ menu "MSPI Flash configuration"
 
         config SPI_FLASH_HPM_ON
             bool
-            # For ESP32-S3, it's enabled by default. For later chips it should be disabled by default
+            # For ESP32-S3/P4, it's enabled by default. For later chips it should be disabled by default
             default y if (IDF_TARGET_ESP32S3 || IDF_TARGET_ESP32P4) && ((SPI_FLASH_HPM_ENA || SPI_FLASH_HPM_AUTO)) || \
-                (!IDF_TARGET_ESP32S3 && SPI_FLASH_HPM_ENA)
+                (!IDF_TARGET_ESP32S3 && !IDF_TARGET_ESP32P4 && SPI_FLASH_HPM_ENA)
             help
                 This option is invisible, and will be selected automatically
                 when ``ESPTOOLPY_FLASHFREQ_120M`` is selected.

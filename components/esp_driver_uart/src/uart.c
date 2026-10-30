@@ -164,7 +164,7 @@ typedef struct {
     RingbufHandle_t tx_ring_buf;        /*!< TX ring buffer handler*/
     SemaphoreHandle_t rx_mux;           /*!< UART RX data mutex*/
     SemaphoreHandle_t tx_mux;           /*!< UART TX mutex*/
-    SemaphoreHandle_t tx_fifo_sem;      /*!< UART TX FIFO semaphore*/
+    SemaphoreHandle_t tx_space_sem;     /*!< UART TX space available semaphore (HW FIFO or TX ring buffer)*/
     SemaphoreHandle_t tx_done_sem;      /*!< UART TX done semaphore*/
     SemaphoreHandle_t tx_brk_sem;       /*!< UART TX send break done semaphore*/
 #if PROTECT_APB
@@ -213,18 +213,99 @@ static portMUX_TYPE uart_selectlock = portMUX_INITIALIZER_UNLOCKED;
 static esp_err_t uart_create_sleep_retention_link_cb(void *arg);
 #endif
 
-static bool uart_module_enable(uart_port_t uart_num)
+static esp_err_t uart_acquire_residual_sclk(uart_port_t uart_num)
 {
-    if (uart_num >= UART_NUM_MAX) {
-        return false;
+    // Skip clock sources already managed by the UART driver or console
+    if (uart_context[uart_num].sclk_sel != -1 || uart_num == CONFIG_ESP_CONSOLE_UART_NUM) {
+        return ESP_OK;
     }
-    bool newly_enabled = false;
+
+    soc_module_clk_t current_sclk = -1;
+    if (uart_num < SOC_UART_HP_NUM) {
+        uart_ll_get_sclk(uart_context[uart_num].hal.dev, &current_sclk);
+    }
+#if (SOC_UART_LP_NUM >= 1)
+    else {
+        lp_uart_ll_get_sclk(uart_context[uart_num].hal.dev, &current_sclk);
+    }
+#endif
+    // Keep the residual source active until the caller switches to its target source
+    ESP_RETURN_ON_FALSE(current_sclk != -1, ESP_ERR_INVALID_STATE, UART_TAG,
+                        "invalid residual source clock");
+    ESP_RETURN_ON_ERROR(esp_clk_tree_acquire_src(current_sclk, NULL), UART_TAG,
+                        "failed to acquire residual source clock");
+    uart_context[uart_num].sclk_sel = current_sclk;
+    return ESP_OK;
+}
+
+static esp_err_t uart_switch_sclk(uart_port_t uart_num, soc_module_clk_t target_sclk,
+                                  uint32_t target_sclk_freq, int baud_rate)
+{
+    // A baud rate of -1 requests only a source clock switch
+    esp_err_t ret;
+    ESP_RETURN_ON_ERROR(esp_clk_tree_acquire_src(target_sclk, NULL), UART_TAG,
+                        "failed to acquire target source clock");
+
+    soc_module_clk_t old_sclk;
+    bool success = true;
+    UART_ENTER_CRITICAL(&(uart_context[uart_num].spinlock));
+    old_sclk = uart_context[uart_num].sclk_sel;
+
+    if (baud_rate != -1) {
+        if (uart_num < SOC_UART_HP_NUM) {
+            PERIPH_RCC_ATOMIC() {
+                success = uart_hal_set_baudrate(&(uart_context[uart_num].hal), baud_rate, target_sclk_freq);
+            }
+        }
+#if (SOC_UART_LP_NUM >= 1)
+        else {
+            success = lp_uart_ll_set_baudrate(uart_context[uart_num].hal.dev, baud_rate, target_sclk_freq);
+        }
+#endif
+    }
+    // The mux is still on the old source. A failed baud rate only has to drop the target source.
+    if (!success) {
+        UART_EXIT_CRITICAL(&(uart_context[uart_num].spinlock));
+        ESP_GOTO_ON_FALSE(success, ESP_FAIL, err, UART_TAG, "baud rate unachievable");
+    }
+
+    if (uart_num < SOC_UART_HP_NUM) {
+        PERIPH_RCC_ATOMIC() {
+            uart_hal_set_sclk(&(uart_context[uart_num].hal), target_sclk);
+        }
+    }
+#if (SOC_UART_LP_NUM >= 1)
+    else {
+        PERIPH_RCC_ATOMIC() {
+            lp_uart_ll_set_source_clk(uart_context[uart_num].hal.dev, (soc_periph_lp_uart_clk_src_t)target_sclk);
+        }
+    }
+#endif
+    uart_context[uart_num].sclk_sel = target_sclk;
+    UART_EXIT_CRITICAL(&(uart_context[uart_num].spinlock));
+
+    if (old_sclk != -1) {
+        esp_clk_tree_release_src(old_sclk);
+    }
+    return ESP_OK;
+
+err:
+    esp_clk_tree_release_src(target_sclk);
+    return ret;
+}
+
+static esp_err_t uart_module_enable(uart_port_t uart_num, bool *newly_enabled)
+{
+    esp_err_t ret = ESP_OK;
+    *newly_enabled = false;
     _lock_acquire(&(uart_context[uart_num].mutex));
     if (uart_context[uart_num].hw_enabled != true) {
         if (uart_num < SOC_UART_HP_NUM) {
             PERIPH_RCC_ATOMIC() {
                 uart_ll_enable_bus_clock(uart_num, true);
             }
+            ESP_GOTO_ON_ERROR(uart_acquire_residual_sclk(uart_num), err, UART_TAG,
+                              "failed to enable source clock");
             uart_ll_mem_set_low_power_mode(uart_num, UART_LL_MEM_LP_MODE_SHUT_DOWN);
             uart_ll_mem_power_by_pmu(uart_num);
             if (uart_num != CONFIG_ESP_CONSOLE_UART_NUM) {
@@ -239,7 +320,6 @@ static bool uart_module_enable(uart_port_t uart_num)
                     uart_ll_sclk_enable(uart_context[uart_num].hal.dev);
                 }
             }
-
 #if CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP // for targets that is !SOC_UART_SUPPORT_SLEEP_RETENTION, retention module should still be inited to avoid TOP PD
             // Initialize sleep retention module for HP UART
             if (uart_num != CONFIG_ESP_CONSOLE_UART_NUM) { // Console uart retention has been taken care in sleep_sys_periph_stdout_console_uart_retention_init
@@ -277,16 +357,36 @@ static bool uart_module_enable(uart_port_t uart_num)
             lp_uart_ll_mem_power_by_pmu();
             PERIPH_RCC_ATOMIC() {
                 lp_uart_ll_enable_bus_clock(TO_LP_UART_NUM(uart_num), true);
+            }
+            ESP_GOTO_ON_ERROR(uart_acquire_residual_sclk(uart_num), err, UART_TAG,
+                              "failed to enable source clock");
+            PERIPH_RCC_ATOMIC() {
                 lp_uart_ll_reset_register(TO_LP_UART_NUM(uart_num));
             }
             lp_uart_ll_sclk_enable(TO_LP_UART_NUM(uart_num));
         }
 #endif
         uart_context[uart_num].hw_enabled = true;
-        newly_enabled = true;
+        *newly_enabled = true;
     }
     _lock_release(&(uart_context[uart_num].mutex));
-    return newly_enabled;
+    return ESP_OK;
+
+err:
+    if (uart_num < SOC_UART_HP_NUM) {
+        PERIPH_RCC_ATOMIC() {
+            uart_ll_enable_bus_clock(uart_num, false);
+        }
+    }
+#if (SOC_UART_LP_NUM >= 1)
+    else {
+        PERIPH_RCC_ATOMIC() {
+            lp_uart_ll_enable_bus_clock(TO_LP_UART_NUM(uart_num), false);
+        }
+    }
+#endif
+    _lock_release(&(uart_context[uart_num].mutex));
+    return ret;
 }
 
 static void uart_module_disable(uart_port_t uart_num)
@@ -317,6 +417,11 @@ static void uart_module_disable(uart_port_t uart_num)
             }
         }
 #endif
+        // Release the source clock owned by this port. Console clock stays with the console.
+        if (uart_num != CONFIG_ESP_CONSOLE_UART_NUM) {
+            esp_clk_tree_release_src(uart_context[uart_num].sclk_sel);
+            uart_context[uart_num].sclk_sel = -1;
+        }
         uart_context[uart_num].hw_enabled = false;
     }
     _lock_release(&(uart_context[uart_num].mutex));
@@ -1076,8 +1181,6 @@ esp_err_t uart_param_config(uart_port_t uart_num, const uart_config_t *uart_conf
 #endif
 #endif
 
-    uart_module_enable(uart_num);
-
     soc_module_clk_t uart_sclk_sel = 0; // initialize to an invalid module clock ID
     if (uart_num < SOC_UART_HP_NUM) {
         uart_sclk_sel = (soc_module_clk_t)((uart_config->source_clk) ? uart_config->source_clk : UART_SCLK_DEFAULT); // if no specifying the clock source (soc_module_clk_t starts from 1), then just use the default clock
@@ -1090,26 +1193,14 @@ esp_err_t uart_param_config(uart_port_t uart_num, const uart_config_t *uart_conf
     uint32_t sclk_freq;
     ESP_RETURN_ON_ERROR(esp_clk_tree_src_get_freq_hz(uart_sclk_sel, ESP_CLK_TREE_SRC_FREQ_PRECISION_CACHED, &sclk_freq), UART_TAG, "invalid src_clk");
 
-    // Enable the newly selected clock source
-    esp_clk_tree_acquire_src(uart_sclk_sel);
+    bool newly_enabled;
+    ESP_RETURN_ON_ERROR(uart_module_enable(uart_num, &newly_enabled), UART_TAG, "failed to enable UART module");
+    esp_err_t ret;
+    ESP_GOTO_ON_ERROR(uart_switch_sclk(uart_num, uart_sclk_sel, sclk_freq, uart_config->baud_rate), err,
+                      UART_TAG, "baud rate unachievable");
 
-    bool success = false;
     UART_ENTER_CRITICAL(&(uart_context[uart_num].spinlock));
     uart_hal_init(&(uart_context[uart_num].hal), uart_num);
-    if (uart_num < SOC_UART_HP_NUM) {
-        PERIPH_RCC_ATOMIC() {
-            uart_hal_set_sclk(&(uart_context[uart_num].hal), uart_sclk_sel);
-            success = uart_hal_set_baudrate(&(uart_context[uart_num].hal), uart_config->baud_rate, sclk_freq);
-        }
-    }
-#if (SOC_UART_LP_NUM >= 1)
-    else {
-        PERIPH_RCC_ATOMIC() {
-            lp_uart_ll_set_source_clk(uart_context[uart_num].hal.dev, (soc_periph_lp_uart_clk_src_t)uart_sclk_sel);
-        }
-        success = lp_uart_ll_set_baudrate(uart_context[uart_num].hal.dev, uart_config->baud_rate, sclk_freq);
-    }
-#endif
     uart_hal_set_glitch_filt_thrd(&(uart_context[uart_num].hal), uart_config->rx_glitch_filt_thresh, sclk_freq);
     uart_hal_enable_glitch_filt(&(uart_context[uart_num].hal), uart_config->rx_glitch_filt_thresh > 0);
 
@@ -1121,18 +1212,6 @@ esp_err_t uart_param_config(uart_port_t uart_num, const uart_config_t *uart_conf
     UART_EXIT_CRITICAL(&(uart_context[uart_num].spinlock));
     uart_hal_rxfifo_rst(&(uart_context[uart_num].hal));
     uart_hal_txfifo_rst(&(uart_context[uart_num].hal));
-    // Disable the previously selected clock source, and update the new source in context
-    soc_module_clk_t uart_old_sclk_sel = uart_context[uart_num].sclk_sel;
-    esp_clk_tree_release_src(uart_old_sclk_sel);
-    if (success) {
-        uart_context[uart_num].sclk_sel = uart_sclk_sel;
-    } else {
-        uart_context[uart_num].sclk_sel = -1;
-        esp_clk_tree_release_src(uart_sclk_sel);
-        ESP_LOGE(UART_TAG, "baud rate unachievable");
-        return ESP_FAIL;
-    }
-
 #if SOC_UART_SUPPORT_SLEEP_RETENTION && CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP
     // Create sleep retention link if desired
     if (uart_num != CONFIG_ESP_CONSOLE_UART_NUM && uart_num < SOC_UART_HP_NUM) {
@@ -1160,6 +1239,12 @@ esp_err_t uart_param_config(uart_port_t uart_num, const uart_config_t *uart_conf
     }
 #endif
     return ESP_OK;
+
+err:
+    if (newly_enabled && uart_num != CONFIG_ESP_CONSOLE_UART_NUM) {
+        uart_module_disable(uart_num);
+    }
+    return ret;
 }
 
 esp_err_t uart_intr_config(uart_port_t uart_num, const uart_intr_config_t *intr_conf)
@@ -1249,10 +1334,10 @@ static void UART_ISR_ATTR uart_rx_intr_handler_default(void *param)
             if (p_uart->tx_waiting_brk) {
                 continue;
             }
-            //TX semaphore will only be used when tx_buf_size is zero.
+            //For hardware FIFO only mode: unblock uart_tx_all waiting for HW FIFO space.
             if (p_uart->tx_waiting_fifo == true && p_uart->tx_buf_size == 0) {
                 p_uart->tx_waiting_fifo = false;
-                xSemaphoreGiveFromISR(p_uart->tx_fifo_sem, &HPTaskAwoken);
+                xSemaphoreGiveFromISR(p_uart->tx_space_sem, &HPTaskAwoken);
                 need_yield |= (HPTaskAwoken == pdTRUE);
             } else {
                 //We don't use TX ring buffer, because the size is zero.
@@ -1281,6 +1366,8 @@ static void UART_ISR_ATTR uart_rx_intr_handler_default(void *param)
                                 //We have saved the data description from the 1st item, return buffer.
                                 vRingbufferReturnItemFromISR(p_uart->tx_ring_buf, p_uart->tx_head, &HPTaskAwoken);
                                 need_yield |= (HPTaskAwoken == pdTRUE);
+                                xSemaphoreGiveFromISR(p_uart->tx_space_sem, &HPTaskAwoken);
+                                need_yield |= (HPTaskAwoken == pdTRUE);
                             } else if (p_uart->tx_ptr == NULL) {
                                 //Update the TX item pointer, we will need this to return item to buffer.
                                 p_uart->tx_ptr = (uint8_t *)p_uart->tx_head;
@@ -1303,6 +1390,8 @@ static void UART_ISR_ATTR uart_rx_intr_handler_default(void *param)
                         if (p_uart->trans_chunk_remaining_len == 0) {
                             //Return item to ring buffer.
                             vRingbufferReturnItemFromISR(p_uart->tx_ring_buf, p_uart->tx_head, &HPTaskAwoken);
+                            need_yield |= (HPTaskAwoken == pdTRUE);
+                            xSemaphoreGiveFromISR(p_uart->tx_space_sem, &HPTaskAwoken);
                             need_yield |= (HPTaskAwoken == pdTRUE);
                             p_uart->tx_head = NULL;
                             p_uart->tx_ptr = NULL;
@@ -1664,17 +1753,21 @@ static int uart_tx_all(uart_port_t uart_num, const char *src, size_t size, bool 
         while (size > 0) {
             size_t free_size = xRingbufferGetCurFreeSize(p_uart_obj[uart_num]->tx_ring_buf);
             size_t send_size = MIN(size, free_size);
-            if (send_size > 0) {
-                xRingbufferSend(p_uart_obj[uart_num]->tx_ring_buf, (void *)(src + offset), send_size, portMAX_DELAY);
-                size -= send_size;
-                offset += send_size;
+            if (send_size == 0) {
+                // Ring buffer is full. Block until the TX ISR returns an item.
                 uart_enable_tx_intr(uart_num, 1, -1);
+                xSemaphoreTake(p_uart_obj[uart_num]->tx_space_sem, (TickType_t)portMAX_DELAY);
+                continue;
             }
+            xRingbufferSend(p_uart_obj[uart_num]->tx_ring_buf, (void *)(src + offset), send_size, portMAX_DELAY);
+            size -= send_size;
+            offset += send_size;
+            uart_enable_tx_intr(uart_num, 1, -1);
         }
     } else {
         while (size) {
-            //semaphore for tx_fifo available
-            if (pdTRUE == xSemaphoreTake(p_uart_obj[uart_num]->tx_fifo_sem, (TickType_t)portMAX_DELAY)) {
+            //semaphore for TX FIFO space available
+            if (pdTRUE == xSemaphoreTake(p_uart_obj[uart_num]->tx_space_sem, (TickType_t)portMAX_DELAY)) {
                 uint32_t sent = uart_enable_tx_write_fifo(uart_num, (const uint8_t *) src, size);
                 if (sent < size) {
                     p_uart_obj[uart_num]->tx_waiting_fifo = true;
@@ -1692,7 +1785,7 @@ static int uart_tx_all(uart_port_t uart_num, const char *src, size_t size, bool 
             UART_EXIT_CRITICAL(&(uart_context[uart_num].spinlock));
             xSemaphoreTake(p_uart_obj[uart_num]->tx_brk_sem, (TickType_t)portMAX_DELAY);
         }
-        xSemaphoreGive(p_uart_obj[uart_num]->tx_fifo_sem);
+        xSemaphoreGive(p_uart_obj[uart_num]->tx_space_sem);
     }
 #if PROTECT_APB
     esp_pm_lock_release(p_uart_obj[uart_num]->pm_lock);
@@ -1927,8 +2020,8 @@ esp_err_t uart_flush_input(uart_port_t uart_num)
 
 static void uart_free_driver_obj(uart_obj_t *uart_obj)
 {
-    if (uart_obj->tx_fifo_sem) {
-        vSemaphoreDeleteWithCaps(uart_obj->tx_fifo_sem);
+    if (uart_obj->tx_space_sem) {
+        vSemaphoreDeleteWithCaps(uart_obj->tx_space_sem);
     }
     if (uart_obj->tx_done_sem) {
         vSemaphoreDeleteWithCaps(uart_obj->tx_done_sem);
@@ -1988,9 +2081,9 @@ static uart_obj_t *uart_alloc_driver_obj(uart_port_t uart_num, int event_queue_s
     uart_obj->rx_mux = xSemaphoreCreateMutexWithCaps(UART_MALLOC_CAPS);
     uart_obj->tx_brk_sem = xSemaphoreCreateBinaryWithCaps(UART_MALLOC_CAPS);
     uart_obj->tx_done_sem = xSemaphoreCreateBinaryWithCaps(UART_MALLOC_CAPS);
-    uart_obj->tx_fifo_sem = xSemaphoreCreateBinaryWithCaps(UART_MALLOC_CAPS);
+    uart_obj->tx_space_sem = xSemaphoreCreateBinaryWithCaps(UART_MALLOC_CAPS);
     if (!uart_obj->rx_ring_buf || !uart_obj->rx_mux || !uart_obj->tx_mux || !uart_obj->tx_brk_sem ||
-            !uart_obj->tx_done_sem || !uart_obj->tx_fifo_sem) {
+            !uart_obj->tx_done_sem || !uart_obj->tx_space_sem) {
         goto err;
     }
 #if PROTECT_APB
@@ -2052,7 +2145,7 @@ esp_err_t uart_driver_install(uart_port_t uart_num, int rx_buffer_size, int tx_b
         p_uart_obj[uart_num]->rx_int_usr_mask = UART_INTR_RXFIFO_FULL | UART_INTR_RXFIFO_TOUT;
         p_uart_obj[uart_num]->tx_buf_size = tx_buffer_size;
         p_uart_obj[uart_num]->uart_select_notif_callback = NULL;
-        xSemaphoreGive(p_uart_obj[uart_num]->tx_fifo_sem);
+        xSemaphoreGive(p_uart_obj[uart_num]->tx_space_sem);
         uart_pattern_queue_reset(uart_num, UART_PATTERN_DET_QLEN_DEFAULT);
         if (uart_queue) {
             *uart_queue = p_uart_obj[uart_num]->event_queue;
@@ -2063,7 +2156,9 @@ esp_err_t uart_driver_install(uart_port_t uart_num, int rx_buffer_size, int tx_b
         return ESP_FAIL;
     }
 
-    uart_module_enable(uart_num);
+    bool newly_enabled;
+    ESP_GOTO_ON_ERROR(uart_module_enable(uart_num, &newly_enabled), err, UART_TAG, "failed to enable UART module");
+    (void)newly_enabled;
     uart_hal_disable_intr_mask(&(uart_context[uart_num].hal), UART_LL_INTR_MASK);
     uart_hal_clr_intsts_mask(&(uart_context[uart_num].hal), UART_LL_INTR_MASK);
 
@@ -2077,36 +2172,6 @@ esp_err_t uart_driver_install(uart_port_t uart_num, int rx_buffer_size, int tx_b
               &p_uart_obj[uart_num]->intr_handle
           );
     ESP_GOTO_ON_ERROR(ret, err, UART_TAG, "Could not allocate an interrupt for UART");
-
-    // Make sure uart sclk at least exist first (following code touchs hardware, and requires sclk to be enabled)
-    if (uart_context[uart_num].sclk_sel == -1 && uart_num != CONFIG_ESP_CONSOLE_UART_NUM) {
-        // set to a default clock source
-        soc_module_clk_t default_sclk = -1;
-        if (uart_num < SOC_UART_HP_NUM) {
-            default_sclk = UART_SCLK_DEFAULT;
-        }
-#if (SOC_UART_LP_NUM >= 1)
-        else {
-            default_sclk = LP_UART_SCLK_DEFAULT;
-        }
-#endif
-        esp_clk_tree_acquire_src(default_sclk);
-        UART_ENTER_CRITICAL(&(uart_context[uart_num].spinlock));
-        if (uart_num < SOC_UART_HP_NUM) {
-            PERIPH_RCC_ATOMIC() {
-                uart_hal_set_sclk(&(uart_context[uart_num].hal), default_sclk);
-            }
-        }
-#if (SOC_UART_LP_NUM >= 1)
-        else {
-            PERIPH_RCC_ATOMIC() {
-                lp_uart_ll_set_source_clk(uart_context[uart_num].hal.dev, (soc_periph_lp_uart_clk_src_t)default_sclk);
-            }
-        }
-#endif
-        uart_context[uart_num].sclk_sel = default_sclk;
-        UART_EXIT_CRITICAL(&(uart_context[uart_num].spinlock));
-    }
 
     uart_intr_config_t uart_intr = {
         .intr_enable_mask = UART_INTR_CONFIG_FLAG,
@@ -2141,11 +2206,6 @@ esp_err_t uart_driver_delete(uart_port_t uart_num)
     uart_pattern_link_free(uart_num);
     uart_free_driver_obj(p_uart_obj[uart_num]);
     p_uart_obj[uart_num] = NULL;
-
-    if (uart_num != CONFIG_ESP_CONSOLE_UART_NUM) {
-        esp_clk_tree_release_src(uart_context[uart_num].sclk_sel);
-        uart_context[uart_num].sclk_sel = -1;
-    }
 
 #if SOC_UART_SUPPORT_SLEEP_RETENTION && CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP
     // Free sleep retention link for HP UART
@@ -2338,19 +2398,18 @@ esp_err_t uart_detect_bitrate_start(uart_port_t uart_num, const uart_bitrate_det
 
     esp_err_t ret = ESP_OK;
     soc_module_clk_t uart_sclk_sel = 0;
-    if (uart_module_enable(uart_num)) { // if a newly acquired port, do following configurations
+    bool newly_enabled = false;
+    ESP_GOTO_ON_ERROR(uart_module_enable(uart_num, &newly_enabled), err, UART_TAG, "failed to enable UART module");
+    if (newly_enabled) { // if a newly acquired port, do following configurations
         ESP_GOTO_ON_FALSE(config && GPIO_IS_VALID_GPIO(config->rx_io_num), ESP_ERR_INVALID_ARG, err, UART_TAG, "invalid arg");
 
         uart_sclk_sel = (soc_module_clk_t)((config->source_clk) ? config->source_clk : UART_SCLK_DEFAULT); // if no specifying the clock source (soc_module_clk_t starts from 1), then just use the default clock
         uint32_t sclk_freq = 0;
         ESP_GOTO_ON_ERROR(esp_clk_tree_src_get_freq_hz(uart_sclk_sel, ESP_CLK_TREE_SRC_FREQ_PRECISION_CACHED, &sclk_freq), err, UART_TAG, "invalid source_clk");
-        esp_clk_tree_acquire_src(uart_sclk_sel);
+        // set to any baudrate
+        ESP_GOTO_ON_ERROR(uart_switch_sclk(uart_num, uart_sclk_sel, sclk_freq, 57600), err,
+                          UART_TAG, "failed to configure source clock");
         UART_ENTER_CRITICAL(&(uart_context[uart_num].spinlock));
-        PERIPH_RCC_ATOMIC() {
-            uart_hal_set_sclk(&(uart_context[uart_num].hal), uart_sclk_sel);
-            uart_hal_set_baudrate(&(uart_context[uart_num].hal), 57600, sclk_freq); // set to any baudrate
-        }
-        uart_context[uart_num].sclk_sel = uart_sclk_sel;
 
 #if CONFIG_IDF_TARGET_ESP32 || CONFIG_IDF_TARGET_ESP32S2
         // On such targets, the reference tick for filter is APB clock, regardless the UART func clock sel
@@ -2426,10 +2485,6 @@ esp_err_t uart_detect_bitrate_stop(uart_port_t uart_num, bool deinit, uart_bitra
 
     if (deinit) { // release the port
         uart_release_pin(uart_num, true, true, true, true, true, true);
-        if (uart_num != CONFIG_ESP_CONSOLE_UART_NUM) {
-            esp_clk_tree_release_src(uart_context[uart_num].sclk_sel);
-            uart_context[uart_num].sclk_sel = -1;
-        }
         uart_module_disable(uart_num);
     }
     return ret;

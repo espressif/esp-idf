@@ -5,4 +5,5 @@ components/esp_driver_twai/test_apps/test_twai:
     - esp_driver_twai
     - esp_hal_twai
     - esp_hw_support
+    - esp_sleep
     - soc

@@ -8,23 +8,22 @@ def action_extensions(base_actions, project_path=os.getcwd()):
         print('!!! From test_subcommand')
 
     def test_global_callback(ctx, global_args, tasks):
-        print('!!! From test global callback: %s' % global_args.test_extension_option)
+        print(f'!!! From test global callback: {global_args.test_extension_option}')
 
     return {
-        'global_options': [{
-            'names': ['--test-extension-option'],
-            'help': 'Help for option --test-extension-option',
-            'default': 'test',
-        }],
+        'global_options': [
+            {
+                'names': ['--test-extension-option'],
+                'help': 'Help for option --test-extension-option',
+                'default': 'test',
+            }
+        ],
         'global_action_callbacks': [test_global_callback],
         'actions': {
             'test_subcommand': {
                 'callback': test_callback,
                 'help': 'Help for test subcommand.',
             },
-            'hidden_one': {
-                'callback': test_callback,
-                'hidden': True
-            }
-        }
+            'hidden_one': {'callback': test_callback, 'hidden': True},
+        },
     }

@@ -21,6 +21,7 @@
 #include "ble_log_lbm_v2.h"
 #include "ble_log_prph_test.h"
 #include "ble_log_rt.h"
+#include "ble_log_sync.h"
 #include "ble_log_task_registry.h"
 #include "test_ble_log_main.h"
 #if CONFIG_BLE_HOST_COMPRESSED_LOG_ENABLE
@@ -355,7 +356,6 @@ TEST_CASE("BLE Log periodic tick reports build and chip versions", "[ble_log]")
                                           TEST_READER_STACK_SIZE, &ctx,
                                           TEST_READER_PRIO, &reader));
     TEST_ASSERT_TRUE(ble_log_enable(true));
-    TEST_ASSERT_TRUE(ble_log_sync_enable(true));
 
     /* Each periodic tick submits one consolidated Internal Snapshot containing
      * the version, statistics, utilization, and optional TS sample. */
@@ -410,7 +410,6 @@ TEST_CASE("BLE Log periodic tick reports build and chip versions", "[ble_log]")
     TEST_ASSERT_EQUAL_UINT16((uint16_t)chip_info.model, vi->chip_model);
     TEST_ASSERT_EQUAL_UINT16(chip_info.revision, vi->chip_revision);
 
-    (void)ble_log_sync_enable(false);
     vSemaphoreDelete(ctx.done);
 }
 
@@ -2102,7 +2101,7 @@ TEST_CASE("BLE Log periodic snapshot ignores producer gate and fails fast when b
           "[ble_log][lbm]")
 {
     ble_log_ts_info_t ts_info;
-    ble_log_rt_ts_sample(&ts_info, false);
+    ble_log_sync_sample(&ts_info);
 
     TEST_ASSERT_TRUE(ble_log_enable(true));
     ble_log_lbm_flush_open_trans();

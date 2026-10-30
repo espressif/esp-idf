@@ -57,7 +57,7 @@ esp_err_t dac_cosine_new_channel(const dac_cosine_config_t *cos_cfg, dac_cosine_
 
     /* Acquire the generator clock and resolve its frequency */
     uint32_t clk_freq = 0;
-    ESP_GOTO_ON_ERROR(esp_clk_tree_acquire_src((soc_module_clk_t)handle->cfg.clk_src), err_handle, TAG, "enable clock failed");
+    ESP_GOTO_ON_ERROR(esp_clk_tree_acquire_src((soc_module_clk_t)handle->cfg.clk_src, NULL), err_handle, TAG, "enable clock failed");
     ESP_GOTO_ON_ERROR(esp_clk_tree_src_get_freq_hz((soc_module_clk_t)handle->cfg.clk_src, ESP_CLK_TREE_SRC_FREQ_PRECISION_CACHED, &clk_freq),
                       err_clk, TAG, "get clock frequency failed");
 

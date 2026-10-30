@@ -80,33 +80,37 @@ void tinyusb_cdc_line_state_changed_callback(int itf, cdcacm_event_t *event)
     ESP_LOGI(TAG, "Line state changed on channel %d: DTR:%d, RTS:%d", itf, dtr, rts);
 }
 
-void tud_suspend_cb(bool remote_wakeup_en)
+static void device_event_handler(tinyusb_event_t *event, void *arg)
 {
-    (void) remote_wakeup_en;
+    (void) arg;
 
-    ESP_LOGI(TAG, "USB suspended, entering light sleep");
-    usb_phy_set_otg_suspend_state(true);
+    switch (event->id) {
+    case TINYUSB_EVENT_SUSPENDED:
+        ESP_LOGI(TAG, "USB suspended, entering light sleep");
+        usb_phy_set_otg_suspend_state(true);
 
-    esp_rom_output_tx_wait_idle(CONFIG_ESP_CONSOLE_UART_NUM);
+        esp_rom_output_tx_wait_idle(CONFIG_ESP_CONSOLE_UART_NUM);
 
-    esp_err_t err = esp_light_sleep_start();
-    if (err != ESP_OK) {
-        ESP_LOGW(TAG, "Light sleep rejected: %s", esp_err_to_name(err));
-    } else {
-        uint32_t causes = esp_sleep_get_wakeup_causes();
-        if (causes & BIT(ESP_SLEEP_WAKEUP_UNDEFINED)) {
-            ESP_LOGW(TAG, "Woke up from an unknown source: 0x%lx", causes);
-        } else if (causes & BIT(ESP_SLEEP_WAKEUP_USB)) {
-            ESP_LOGI(TAG, "Woke up from: USB");
+        esp_err_t err = esp_light_sleep_start();
+        if (err != ESP_OK) {
+            ESP_LOGW(TAG, "Light sleep rejected: %s", esp_err_to_name(err));
+        } else {
+            uint32_t causes = esp_sleep_get_wakeup_causes();
+            if (causes & BIT(ESP_SLEEP_WAKEUP_UNDEFINED)) {
+                ESP_LOGW(TAG, "Woke up from an unknown source: 0x%lx", causes);
+            } else if (causes & BIT(ESP_SLEEP_WAKEUP_USB)) {
+                ESP_LOGI(TAG, "Woke up from: USB");
+            }
         }
+        usb_phy_set_otg_suspend_state(false);
+        usb_phy_clear_otg_wakeup_status();
+        break;
+    case TINYUSB_EVENT_RESUMED:
+        ESP_LOGI(TAG, "USB resumed");
+        break;
+    default:
+        break;
     }
-    usb_phy_set_otg_suspend_state(false);
-    usb_phy_clear_otg_wakeup_status();
-}
-
-void tud_resume_cb(void)
-{
-    ESP_LOGI(TAG, "USB resumed");
 }
 
 void app_main(void)
@@ -121,7 +125,7 @@ void app_main(void)
     ESP_ERROR_CHECK(esp_sleep_pd_config(ESP_PD_DOMAIN_CNNT, ESP_PD_OPTION_ON));
 
     ESP_LOGI(TAG, "USB initialization");
-    const tinyusb_config_t tusb_cfg = TINYUSB_DEFAULT_CONFIG();
+    const tinyusb_config_t tusb_cfg = TINYUSB_DEFAULT_CONFIG(device_event_handler);
     ESP_ERROR_CHECK(tinyusb_driver_install(&tusb_cfg));
 
     tinyusb_config_cdcacm_t acm_cfg = {

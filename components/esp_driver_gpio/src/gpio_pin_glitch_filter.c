@@ -8,7 +8,9 @@
 #include <stdbool.h>
 #include "freertos/FreeRTOS.h"
 #include "esp_check.h"
+#if CONFIG_PM_ENABLE
 #include "esp_pm.h"
+#endif
 #include "glitch_filter_priv.h"
 #include "hal/gpio_ll.h"
 #include "esp_clk_tree.h"
@@ -103,7 +105,7 @@ esp_err_t gpio_new_pin_glitch_filter(const gpio_pin_glitch_filter_config_t *conf
     filter->io_mux_clk_acquired = false;
 
     soc_module_clk_t clk_src = config->clk_src ? config->clk_src : GLITCH_FILTER_CLK_SRC_DEFAULT;
-    ESP_GOTO_ON_ERROR(esp_clk_tree_acquire_src(clk_src), err, TAG, "enable IOMUX clock source failed");
+    ESP_GOTO_ON_ERROR(esp_clk_tree_acquire_src(clk_src, NULL), err, TAG, "enable IOMUX clock source failed");
     filter->clk_src = clk_src;
     ESP_GOTO_ON_ERROR(io_mux_acquire_clock_source(clk_src), err, TAG, "acquire IOMUX clock source failed");
     filter->io_mux_clk_acquired = true;

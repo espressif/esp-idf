@@ -77,7 +77,7 @@ HTTPS 服务器证书选择钩子
 
 ESP HTTPS 服务器组件提供了设置服务器证书选择钩子的选项。启用此功能后，在服务器握手过程中，可以配置并使用证书选择回调函数。该回调函数会根据客户端 hello 消息中提供的 TLS 扩展（如 ALPN 和 SNI），动态选择合适的证书发送给客户端。
 
-要启用此功能，请先在 ESP HTTPS 服务器的 menuconfig 中启用 :menuitem:`CONFIG_ESP_HTTPS_SERVER_CERT_SELECT_HOOK`。请注意，只有当 Mbedtls 被用作 ESP-TLS 的 TLS 协议栈（默认行为）时，ESP-TLS 选项才可使用。
+要启用此功能，请先在 ESP HTTPS 服务器的 menuconfig 中启用 :menuitem:`CONFIG_ESP_HTTPS_SERVER_CERT_SELECT_HOOK`。请注意，只有当 MbedTLS 被用作 ESP-TLS 的 TLS 协议栈（默认行为）时，ESP-TLS 选项才可使用。
 
 启用此功能后，请使用 :cpp:type:`httpd_ssl_config_t` 结构体中的 :cpp:member:`httpd_ssl_config::cert_select_cb` 成员，设置证书选择回调函数。
 
@@ -90,9 +90,25 @@ ESP HTTPS 服务器组件提供了设置服务器证书选择钩子的选项。�
     }
 
     httpd_ssl_config_t cfg = {
-        cert_select_cb = cert_section_callback,
+        .cert_select_cb = cert_selection_callback,
     };
 
+
+TLS 加密套件与支持组
+--------------------
+
+可在 :cpp:type:`httpd_ssl_config_t` 中设置服务器的加密套件和支持组。两个列表都仅适用于当前服务器实例。更多信息，请参考 :doc:`/api-reference/protocols/esp_tls` 中的 **TLS 加密套件** 和 **TLS 支持组** 章节。
+
+服务器仅保存各数组的指针，不会复制数组。每个数组必须以 0 结尾，并且在服务器的整个生命周期内始终有效。
+
+.. code-block:: c
+
+    static const int ciphersuites_list[] = {MBEDTLS_TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256, 0};
+    static const uint16_t groups_list[] = {MBEDTLS_SSL_IANA_TLS_GROUP_X25519, MBEDTLS_SSL_IANA_TLS_GROUP_SECP256R1, 0};
+
+    httpd_ssl_config_t cfg = HTTPD_SSL_CONFIG_DEFAULT();
+    cfg.ciphersuites_list = ciphersuites_list;
+    cfg.groups_list = groups_list;
 
 API 参考
 ---------

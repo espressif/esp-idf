@@ -30,6 +30,7 @@ static inline trace_dev_t *riscv_trace_ll_get_hw(int core)
  * Clock and reset
  *--------------------------------------------------------------------------*/
 
+__attribute__((always_inline))
 static inline void _riscv_trace_ll_enable_bus_clock(bool enable)
 {
     PCR.trace_conf.trace_clk_en = enable;
@@ -40,11 +41,13 @@ static inline void _riscv_trace_ll_enable_bus_clock(bool enable)
     _riscv_trace_ll_enable_bus_clock(__VA_ARGS__); \
 } while (0)
 
+__attribute__((always_inline))
 static inline bool riscv_trace_ll_is_bus_clock_enabled(void)
 {
     return PCR.trace_conf.trace_clk_en && PCR.trace_conf.trace1_clk_en;
 }
 
+__attribute__((always_inline))
 static inline void _riscv_trace_ll_reset_register(int core)
 {
     if (core == 0) {

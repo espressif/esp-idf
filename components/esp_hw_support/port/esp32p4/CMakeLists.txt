@@ -9,12 +9,7 @@ set(srcs "rtc_clk_init.c"
 
 if(NOT BOOTLOADER_BUILD)
     list(APPEND srcs "pmu_init.c"
-                     "pmu_sleep.c"
                      "sar_periph_ctrl.c")
-
-    if(CONFIG_PM_SLEEP_CLK_ICG_ENABLE AND NOT CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP)
-        list(APPEND srcs "pmu_sleep_clock_icg.c")
-    endif()
 endif()
 
 if(NOT BOOTLOADER_BUILD AND CONFIG_ESP_ENABLE_PVT)

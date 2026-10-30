@@ -116,7 +116,11 @@ static inline void bootloader_ana_reset_config(void)
     //Enable super WDT reset.
     bootloader_ana_super_wdt_reset_config(true);
     //Enable BOD reset
+#if CONFIG_ESP_BROWNOUT_DET
+    brownout_ll_set_threshold(BROWNOUT_DETECTOR_LL_THRESHOLD_VAL);
+    brownout_ll_enable_bod_source(true);
     brownout_ll_ana_reset_enable(true);
+#endif
 }
 
 static inline void bootloader_config_dcache(void)

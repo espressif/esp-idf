@@ -186,6 +186,13 @@ static void _ledc_fade_hw_acquire(ledc_mode_t mode, ledc_channel_t channel)
         ledc_ll_enable_interrupt(p_ledc_obj[mode]->ledc_hal.dev, LEDC_LL_EVENT_CHANNEL_DUTY_CHANGE_END(mode, channel), false);
         portEXIT_CRITICAL(&ledc_spinlock);
     }
+#if !SOC_LEDC_SUPPORT_FADE_STOP
+    // On such target, re-configure fade parameters while last update is still in progress is not allowed
+    // And the wait should be out of any spinlock
+    while (!ledc_ll_is_duty_update_done(p_ledc_obj[mode]->ledc_hal.dev, mode, channel)) {
+        vTaskDelay(1);
+    }
+#endif
 }
 
 static void _ledc_fade_hw_release(ledc_mode_t mode, ledc_channel_t channel)
@@ -701,7 +708,7 @@ static esp_err_t ledc_set_timer_div(ledc_mode_t speed_mode, ledc_timer_t timer_n
         if (p_ledc_obj[speed_mode]->glb_clk != glb_clk) {
             // TODO: release old glb_clk (if not UNINIT), and acquire new glb_clk [clk_tree]
             p_ledc_obj[speed_mode]->glb_clk = glb_clk;
-            ESP_RETURN_ON_ERROR(esp_clk_tree_acquire_src((soc_module_clk_t)glb_clk), LEDC_TAG, "clock source enable failed");
+            ESP_RETURN_ON_ERROR(esp_clk_tree_acquire_src((soc_module_clk_t)glb_clk, NULL), LEDC_TAG, "clock source enable failed");
             PERIPH_RCC_ATOMIC() {
                 ledc_hal_set_slow_clk_sel(&(p_ledc_obj[speed_mode]->ledc_hal), glb_clk);
             }
@@ -901,7 +908,7 @@ esp_err_t ledc_channel_config(const ledc_channel_config_t *ledc_conf)
     else if (new_speed_mode_ctx_created) {
         portENTER_CRITICAL(&ledc_spinlock);
         if (p_ledc_obj[speed_mode]->glb_clk == LEDC_SLOW_CLK_UNINIT) {
-            esp_clk_tree_acquire_src((soc_module_clk_t)LEDC_LL_GLOBAL_CLK_DEFAULT);
+            esp_clk_tree_acquire_src((soc_module_clk_t)LEDC_LL_GLOBAL_CLK_DEFAULT, NULL);
             ledc_hal_set_slow_clk_sel(&(p_ledc_obj[speed_mode]->ledc_hal), LEDC_LL_GLOBAL_CLK_DEFAULT);
         }
         portEXIT_CRITICAL(&ledc_spinlock);

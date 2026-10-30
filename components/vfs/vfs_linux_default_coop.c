@@ -136,7 +136,7 @@ ESP_SYSTEM_INIT_FN(init_vfs_linux_coop, CORE, BIT(0), 99)
 
     /* Register the Linux host FS with VFS (id-based, no path prefix) */
     esp_err_t err = esp_vfs_register_fs_with_id(&s_linux_host_ops,
-                                                 ESP_VFS_FLAG_CONTEXT_PTR,
+                                                 ESP_VFS_FLAG_STATIC | ESP_VFS_FLAG_CONTEXT_PTR,
                                                  NULL,
                                                  &s_linux_host_vfs_id);
     if (err != ESP_OK) {

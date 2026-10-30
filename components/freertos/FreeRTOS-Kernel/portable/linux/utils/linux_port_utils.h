@@ -14,7 +14,6 @@ extern "C" {
 typedef struct thread *thread_hdl;
 
 void linux_port_setup_backtrace_signal(void);
-void linux_port_print_backtrace(void);
 pthread_t linux_port_get_scheduled_task_pthread(void);
 
 #ifdef __cplusplus

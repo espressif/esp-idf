@@ -216,7 +216,7 @@ MCPWM 将计数器转换为时序精确的输出边沿。当 LEDC 的简单 PWM 
     - :example:`peripherals/mcpwm/mcpwm_bldc_hall_control`：使用霍尔传感器反馈进行 BLDC 换相。
     - :example:`peripherals/mcpwm/mcpwm_capture_hc_sr04`：使用 HC-SR04 测量脉宽。
     - :example:`peripherals/mcpwm/mcpwm_sync`：GPIO、定时器和软件同步。
-    - :example:`peripherals/mcpwm/mcpwm_foc_svpwm_open_loop`：开环 FOC 的三对互补 PWM。
+    - :example:`peripherals/mcpwm/mcpwm_foc_open_loop`：带转子预定位和频率爬升的开环 FOC。
 
 API 参考
 ========

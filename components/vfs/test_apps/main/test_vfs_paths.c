@@ -271,6 +271,63 @@ TEST_CASE("vfs checks mount point path", "[vfs]")
     test_register_fail("/234567890123456");
 }
 
+TEST_CASE("vfs rejects duplicate mount points", "[vfs]")
+{
+    dummy_vfs_t inst_a, inst_b;
+    TEST_ESP_OK(esp_vfs_register_fs("/dup", &s_dummy_vfs, ESP_VFS_FLAG_CONTEXT_PTR, &inst_a));
+    TEST_ESP_ERR(ESP_ERR_INVALID_STATE,
+                 esp_vfs_register_fs("/dup", &s_dummy_vfs, ESP_VFS_FLAG_CONTEXT_PTR, &inst_b));
+    TEST_ESP_ERR(ESP_ERR_INVALID_STATE,
+                 esp_vfs_register_fs("/dup", &s_dummy_vfs, ESP_VFS_FLAG_CONTEXT_PTR | ESP_VFS_FLAG_STATIC, &inst_b));
+
+    /* Prefixes that only share a common start are distinct mount points */
+    TEST_ESP_OK(esp_vfs_register_fs("/dup2", &s_dummy_vfs, ESP_VFS_FLAG_CONTEXT_PTR, &inst_b));
+    TEST_ESP_OK(esp_vfs_unregister("/dup2"));
+    TEST_ESP_OK(esp_vfs_register_fs("/dup/sub", &s_dummy_vfs, ESP_VFS_FLAG_CONTEXT_PTR, &inst_b));
+    TEST_ESP_OK(esp_vfs_unregister("/dup/sub"));
+
+    TEST_ESP_OK(esp_vfs_unregister("/dup"));
+    TEST_ESP_OK(esp_vfs_register_fs("/dup", &s_dummy_vfs, ESP_VFS_FLAG_CONTEXT_PTR, &inst_b));
+    TEST_ESP_OK(esp_vfs_unregister("/dup"));
+
+    TEST_ESP_OK(esp_vfs_register_fs("", &s_dummy_vfs, ESP_VFS_FLAG_CONTEXT_PTR, &inst_a));
+    TEST_ESP_ERR(ESP_ERR_INVALID_STATE,
+                 esp_vfs_register_fs("", &s_dummy_vfs, ESP_VFS_FLAG_CONTEXT_PTR, &inst_b));
+    TEST_ESP_OK(esp_vfs_unregister(""));
+}
+
+TEST_CASE("vfs checked unregister only removes matching FS", "[vfs]")
+{
+    static const esp_vfs_fs_ops_t other_vfs = {
+        .open_p = &dummy_open,
+        .close_p = &dummy_close,
+    };
+    const int flags = ESP_VFS_FLAG_CONTEXT_PTR | ESP_VFS_FLAG_STATIC;
+    dummy_vfs_t inst = { 0 }, other_inst = { 0 };
+
+    TEST_ESP_ERR(ESP_ERR_INVALID_ARG, esp_vfs_unregister_fs_checked(NULL, &s_dummy_vfs, flags, &inst));
+    TEST_ESP_ERR(ESP_ERR_INVALID_ARG, esp_vfs_unregister_fs_checked("/ops", NULL, flags, &inst));
+    TEST_ESP_ERR(ESP_ERR_INVALID_STATE, esp_vfs_unregister_fs_checked("/ops", &s_dummy_vfs, flags, &inst));
+
+    TEST_ESP_OK(esp_vfs_register_fs("/ops", &s_dummy_vfs, flags, &inst));
+    TEST_ESP_ERR(ESP_ERR_INVALID_ARG, esp_vfs_unregister_fs_checked("/ops", &other_vfs, flags, &inst));
+    TEST_ESP_ERR(ESP_ERR_INVALID_ARG, esp_vfs_unregister_fs_checked("/ops", &s_dummy_vfs, flags, &other_inst));
+    TEST_ESP_ERR(ESP_ERR_INVALID_ARG, esp_vfs_unregister_fs_checked("/ops", &s_dummy_vfs, flags, NULL));
+    TEST_ESP_ERR(ESP_ERR_INVALID_ARG, esp_vfs_unregister_fs_checked("/ops", &s_dummy_vfs, ESP_VFS_FLAG_STATIC, &inst));
+    TEST_ESP_OK(esp_vfs_unregister_fs_checked("/ops", &s_dummy_vfs, flags, &inst));
+    TEST_ESP_ERR(ESP_ERR_INVALID_STATE, esp_vfs_unregister("/ops"));
+
+    TEST_ESP_OK(esp_vfs_register_fs("/ops", &s_dummy_vfs, ESP_VFS_FLAG_STATIC, NULL));
+    TEST_ESP_OK(esp_vfs_unregister_fs_checked("/ops", &s_dummy_vfs, ESP_VFS_FLAG_STATIC, NULL));
+
+    TEST_ESP_OK(esp_vfs_register_fs("/ops", &s_dummy_vfs, ESP_VFS_FLAG_CONTEXT_PTR, &inst));
+    TEST_ESP_ERR(ESP_ERR_NOT_SUPPORTED, esp_vfs_unregister_fs_checked("/ops", &s_dummy_vfs, ESP_VFS_FLAG_CONTEXT_PTR, &inst));
+    TEST_ESP_ERR(ESP_ERR_NOT_SUPPORTED, esp_vfs_unregister_fs_checked("/ops", &s_dummy_vfs, flags, &inst));
+    TEST_ESP_OK(esp_vfs_unregister("/ops"));
+
+    TEST_ESP_ERR(ESP_ERR_INVALID_ARG, esp_vfs_unregister(NULL));
+}
+
 /* Regression test for a slot-accounting bug in esp_vfs_register_fs_common().
  *
  * The registration code used to keep an ever-increasing counter (s_vfs_count/s_vfs_upper_bound)

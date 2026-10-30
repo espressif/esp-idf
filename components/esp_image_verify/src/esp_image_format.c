@@ -72,9 +72,9 @@ static bool should_load(uint32_t load_addr);
 /* Return true if load_addr is an address the bootloader should map via flash cache */
 static bool should_map(uint32_t load_addr);
 
-static esp_err_t process_segments(esp_image_metadata_t *data, bool silent, bool do_load, bootloader_sha256_handle_t sha_handle, uint32_t *checksum);
+static esp_err_t process_segments(esp_image_metadata_t *data, uint32_t part_len, bool silent, bool do_load, bootloader_sha256_handle_t sha_handle, uint32_t *checksum);
 /* Load or verify a segment */
-static esp_err_t process_segment(int index, uint32_t flash_addr, esp_image_segment_header_t *header, bool silent, bool do_load, bootloader_sha256_handle_t sha_handle, uint32_t *checksum, esp_image_metadata_t *metadata);
+static esp_err_t process_segment(int index, uint32_t flash_addr, uint32_t part_len, esp_image_segment_header_t *header, bool silent, bool do_load, bootloader_sha256_handle_t sha_handle, uint32_t *checksum, esp_image_metadata_t *metadata);
 
 typedef struct {
     int segment;
@@ -248,7 +248,7 @@ static esp_err_t image_load(esp_image_load_mode_t mode, const esp_partition_pos_
 
     bootloader_sha256_handle_t *p_sha_handle = &sha_handle;
     CHECK_ERR(process_image_header(data, part->offset, (verify_sha) ? p_sha_handle : NULL, do_verify, silent));
-    CHECK_ERR(process_segments(data, silent, do_load, sha_handle, checksum));
+    CHECK_ERR(process_segments(data, part->size, silent, do_load, sha_handle, checksum));
     bool skip_check_checksum = !do_verify || esp_cpu_dbgr_is_attached();
     CHECK_ERR(process_checksum(sha_handle, checksum_word, data, silent, skip_check_checksum));
     CHECK_ERR(process_appended_hash_and_sig(data, part->offset, part->size, do_verify, silent));
@@ -408,7 +408,7 @@ esp_err_t esp_image_get_metadata(const esp_partition_pos_t *part, esp_image_meta
     bool do_verify = false;
     bool do_load = false;
     CHECK_ERR(process_image_header(metadata, part->offset, NULL, do_verify, silent));
-    CHECK_ERR(process_segments(metadata, silent, do_load, NULL, NULL));
+    CHECK_ERR(process_segments(metadata, part->size, silent, do_load, NULL, NULL));
     bool skip_check_checksum = true;
     CHECK_ERR(process_checksum(NULL, 0, metadata, silent, skip_check_checksum));
     CHECK_ERR(process_appended_hash_and_sig(metadata, part->offset, part->size, true, silent));
@@ -622,7 +622,7 @@ err:
     return err;
 }
 
-static esp_err_t process_segments(esp_image_metadata_t *data, bool silent, bool do_load, bootloader_sha256_handle_t sha_handle, uint32_t *checksum)
+static esp_err_t process_segments(esp_image_metadata_t *data, uint32_t part_len, bool silent, bool do_load, bootloader_sha256_handle_t sha_handle, uint32_t *checksum)
 {
     esp_err_t err = ESP_OK;
     uint32_t start_segments = data->start_addr + data->image_len;
@@ -630,7 +630,7 @@ static esp_err_t process_segments(esp_image_metadata_t *data, bool silent, bool 
     for (int i = 0; i < data->image.segment_count; i++) {
         esp_image_segment_header_t *header = &data->segments[i];
         ESP_LOGV(TAG, "loading segment header %d at offset 0x%"PRIx32, i, next_addr);
-        CHECK_ERR(process_segment(i, next_addr, header, silent, do_load, sha_handle, checksum, data));
+        CHECK_ERR(process_segment(i, next_addr, part_len, header, silent, do_load, sha_handle, checksum, data));
         next_addr += sizeof(esp_image_segment_header_t);
         data->segment_data[i] = next_addr;
         next_addr += header->data_len;
@@ -651,9 +651,16 @@ err:
     return err;
 }
 
-static esp_err_t process_segment(int index, uint32_t flash_addr, esp_image_segment_header_t *header, bool silent, bool do_load, bootloader_sha256_handle_t sha_handle, uint32_t *checksum, esp_image_metadata_t *metadata)
+static esp_err_t process_segment(int index, uint32_t flash_addr, uint32_t part_len, esp_image_segment_header_t *header, bool silent, bool do_load, bootloader_sha256_handle_t sha_handle, uint32_t *checksum, esp_image_metadata_t *metadata)
 {
-    esp_err_t err;
+    esp_err_t err = ESP_ERR_IMAGE_INVALID;
+
+    /* Segment header must lie inside the partition */
+    const uint32_t seg_offs = flash_addr - metadata->start_addr;
+    if (seg_offs > part_len || part_len - seg_offs < sizeof(esp_image_segment_header_t)) {
+        FAIL_LOAD("segment %d header at 0x%"PRIx32" exceeds partition size 0x%"PRIx32, index, flash_addr, part_len);
+    }
+    const uint32_t max_data_len = part_len - seg_offs - sizeof(esp_image_segment_header_t);
 
     /* read segment header */
     err = bootloader_flash_read(flash_addr, header, sizeof(esp_image_segment_header_t), true);
@@ -670,6 +677,12 @@ static esp_err_t process_segment(int index, uint32_t flash_addr, esp_image_segme
     uint32_t data_addr = flash_addr + sizeof(esp_image_segment_header_t);
 
     ESP_LOGV(TAG, "segment data length 0x%"PRIx32" data starts 0x%"PRIx32, data_len, data_addr);
+
+    /* Reject segment data extending past the partition before hashing it,
+       otherwise a corrupted data_len makes the loop below walk up to 4GB of flash */
+    if (data_len > max_data_len) {
+        FAIL_LOAD("segment %d length 0x%"PRIx32" exceeds partition size 0x%"PRIx32, index, data_len, part_len);
+    }
 
     CHECK_ERR(verify_segment_header(index, header, data_addr, metadata, silent));
 

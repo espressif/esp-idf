@@ -3,16 +3,38 @@ idf_build_get_property(esp_tee_build ESP_TEE_BUILD)
 
 # On Linux, we only support a few features, hence this simple component registration
 if(${target} STREQUAL "linux")
-    idf_component_register(SRCS "esp_system.c"
-                        "esp_err.c"
-                        "esp_sys_event.c"
-                        "port/soc/linux/reset_reason.c"
-                        "port/soc/linux/system_internal.c"
-                        "port/esp_system_linux.c"
-                        "freertos_hooks.c"
-                        "startup.c"
+    set(linux_srcs "esp_system.c"
+                   "esp_err.c"
+                   "esp_sys_event.c"
+                   "port/soc/linux/reset_reason.c"
+                   "port/soc/linux/system_internal.c"
+                   "port/soc/linux/wdt_simulator.c"
+                   "port/esp_system_linux.c"
+                   "freertos_hooks.c"
+                   "startup.c")
+    set(linux_priv_requires spi_flash esp_timer esp_mspi)
+
+    if(CONFIG_ESP_TASK_WDT_EN)
+        list(APPEND linux_srcs "task_wdt/task_wdt.c"
+                               "task_wdt/task_wdt_impl_esp_timer.c")
+    endif()
+
+    idf_component_register(SRCS ${linux_srcs}
                         INCLUDE_DIRS "include"
-                        PRIV_REQUIRES esp_mspi)
+                        PRIV_REQUIRES ${linux_priv_requires})
+
+    if(CONFIG_ESP_INT_WDT)
+        # Force-link wdt_simulator.o so its PRE_SCHEDULER registration is pulled
+        # in from the component archive (mirrors the non-Linux branch).
+        target_link_libraries(${COMPONENT_LIB} INTERFACE "-u esp_int_wdt_init")
+    endif()
+
+    if(CONFIG_ESP_TASK_WDT_INIT)
+        # Force-link task_wdt.o so its PRE_APP_MAIN registration (init_task_wdt)
+        # is pulled in from the component archive. This also transitively links
+        # the esp_timer backend that the task WDT relies on.
+        target_link_libraries(${COMPONENT_LIB} INTERFACE "-u esp_task_wdt_init")
+    endif()
 
     # Add custom ld file (used to place system init functions).
     # Mach-O (Apple) does not support linker scripts; section bounds are resolved
@@ -180,6 +202,17 @@ else()
                         PROCESS "${CMAKE_CURRENT_BINARY_DIR}/ld/sections.ld")
 endif()
 
+if(CONFIG_ESP_SYSTEM_USE_EH_FRAME)
+    idf_build_set_property(COMPILE_OPTIONS "-fasynchronous-unwind-tables" APPEND)
+endif()
+
+if(CONFIG_ESP_SYSTEM_USE_FRAME_POINTER)
+    idf_build_set_property(COMPILE_OPTIONS "-fno-omit-frame-pointer" APPEND)
+    if(CMAKE_C_COMPILER_ID MATCHES "GNU")
+        idf_build_set_property(COMPILE_OPTIONS "-mno-omit-leaf-frame-pointer" APPEND)
+    endif()
+endif()
+
 if(CONFIG_IDF_ENV_FPGA OR CONFIG_ESP_BRINGUP_BYPASS_CPU_CLK_SETTING)
     # Forces the linker to include fpga stubs from this component
     target_link_libraries(${COMPONENT_LIB} INTERFACE "-u esp_common_include_fpga_overrides_clk")
@@ -241,6 +274,10 @@ endif()
 # For P4, since P4 REV2, the SRAM is contiguous
 if(CONFIG_ESP32P4_SELECTS_REV_LESS_V3)
     target_link_options(${COMPONENT_LIB} INTERFACE "-Wl,--enable-non-contiguous-regions")
+endif()
+
+if(CONFIG_ESP_SYSTEM_USE_EH_FRAME)
+    target_link_options(${COMPONENT_LIB} INTERFACE "-Wl,--eh-frame-hdr")
 endif()
 
 if(CONFIG_ESP_DEBUG_INCLUDE_OCD_STUB_BINS)

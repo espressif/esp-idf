@@ -88,8 +88,10 @@ bool esp_clk_tree_enable_power(soc_root_clk_circuit_t clk_circuit, bool enable)
     return false; // TODO: PM-653
 }
 
-esp_err_t esp_clk_tree_manage_src(soc_module_clk_t clk_src, bool acquire)
+esp_err_t esp_clk_tree_manage_src(soc_module_clk_t clk_src, bool acquire,
+                                  const esp_clk_tree_src_config_t *config)
 {
+    (void)config;
     if (clk_src < 1 || clk_src >= SOC_MOD_CLK_INVALID) {
         // some conditions is legal, e.g. -1 means external clock source
         return ESP_OK;

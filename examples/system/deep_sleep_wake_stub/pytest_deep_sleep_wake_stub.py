@@ -6,6 +6,7 @@ import time
 import pytest
 from pytest_embedded import Dut
 from pytest_embedded_idf.utils import idf_parametrize
+from pytest_embedded_idf.utils import soc_filtered_targets
 
 
 @pytest.mark.generic
@@ -18,7 +19,7 @@ from pytest_embedded_idf.utils import idf_parametrize
 )
 @idf_parametrize(
     'target',
-    ['esp32', 'esp32s2', 'esp32s3', 'esp32c3', 'esp32c6', 'esp32c5', 'esp32h2', 'esp32h21'],
+    soc_filtered_targets('ESP_ROM_SUPPORT_DEEP_SLEEP_WAKEUP_STUB == 1'),
     indirect=['target'],
 )
 def test_deep_sleep_wake_stub(config: str, dut: Dut) -> None:

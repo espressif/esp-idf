@@ -200,7 +200,7 @@ TEST_CASE("async_crc multiple requests", "[async_crc]")
 {
     async_crc_config_t config = {
         .backlog = TEST_ASYNC_CRC_BENCH_COUNTS,
-        .dma_burst_size = 32,
+        .dma_burst_size = 16,
     };
     async_crc_handle_t driver = NULL;
 #if SOC_HAS(AHB_GDMA)

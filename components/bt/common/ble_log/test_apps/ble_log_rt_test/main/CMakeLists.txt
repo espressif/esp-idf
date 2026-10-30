@@ -5,7 +5,7 @@
 idf_component_register(
     SRCS "test_ble_log_main.c" "test_ble_log_runtime.c"
     INCLUDE_DIRS "."
-    PRIV_REQUIRES unity bt esp_hw_support esp_timer
+    PRIV_REQUIRES unity bt esp_hw_support esp_timer esp_driver_uart
     WHOLE_ARCHIVE
 )
 

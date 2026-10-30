@@ -643,7 +643,7 @@ void l2c_free(void);
 
 extern void     l2c_process_timeout (TIMER_LIST_ENT *p_tle);
 extern UINT8    l2c_data_write (UINT16 cid, BT_HDR *p_data, UINT16 flag);
-extern void     l2c_rcv_acl_data (BT_HDR *p_msg);
+extern BOOLEAN  l2c_rcv_acl_data (BT_HDR *p_msg, UINT16 *p_credit_handle);
 extern void     l2c_process_held_packets (BOOLEAN timed_out);
 
 /* Functions provided by l2c_utils.c
@@ -651,6 +651,8 @@ extern void     l2c_process_held_packets (BOOLEAN timed_out);
 */
 extern tL2C_LCB *l2cu_allocate_lcb (BD_ADDR p_bd_addr, BOOLEAN is_bonding, tBT_TRANSPORT transport);
 extern BOOLEAN  l2cu_start_post_bond_timer (UINT16 handle);
+extern void     l2cu_return_tx_credits (tL2C_LCB *p_lcb);
+extern void     l2cu_flush_link_xmit_data_q (tL2C_LCB *p_lcb);
 extern void     l2cu_release_lcb (tL2C_LCB *p_lcb);
 extern tL2C_LCB *l2cu_find_lcb_by_bd_addr (BD_ADDR p_bd_addr, tBT_TRANSPORT transport);
 extern tL2C_LCB *l2cu_find_lcb_by_handle (UINT16 handle);

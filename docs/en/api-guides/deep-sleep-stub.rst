@@ -147,7 +147,7 @@ The second approach is advisable when incorporating strings or more complex code
 
 You can enable the Kconfig option :menuitem:`CONFIG_BOOTLOADER_SKIP_VALIDATE_IN_DEEP_SLEEP` to reduce wake-up time. See more information in :doc:`Fast boot from Deep-sleep <bootloader>`.
 
-All of the above functions are declared in :component_file:`esp_hw_support/include/esp_sleep.h`.
+All of the above functions are declared in :component_file:`esp_sleep/include/esp_sleep.h`.
 
 Application Examples
 --------------------

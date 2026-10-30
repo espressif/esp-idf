@@ -11,6 +11,7 @@ Bluedroid
     - :component_file:`/bt/host/bluedroid/api/include/api/esp_hf_defs.h`
 
         - Type ``esp_hf_wbs_config_t`` is replaced by ``esp_hf_codec_mode_t``. The new type identifies the negotiated codec (CVSD, mSBC, or LC3-SWB), not a Wideband Speech on/off flag. ``esp_hf_wbs_config_t`` is kept as a deprecated alias of ``esp_hf_codec_mode_t``.
+
         - Enumerators are renamed. Numeric values 0 / 1 / 2 are unchanged. The old ``ESP_HF_WBS_*`` names remain as macros that alias the new enumerators:
 
             .. list-table::
@@ -50,6 +51,31 @@ Bluedroid
         - ``ESP_HF_WBS_RESPONSE_EVT`` (``wbs_rep``): field ``codec`` is now ``esp_hf_codec_mode_t``. The field name ``codec`` is unchanged. A ``status`` field (``esp_bt_status_t``) is added to report whether the request succeeded.
 
         - ``ESP_HF_BCS_RESPONSE_EVT`` (``bcs_rep``): field ``mode`` is now ``esp_hf_codec_mode_t``. The field name ``mode`` is unchanged.
+
+    - :component_file:`/bt/host/bluedroid/api/include/api/esp_a2dp_api.h`
+
+        - ``ESP_A2D_MEDIA_CTRL_ACK_EVT`` (``media_ctrl_stat``) now includes ``conn_hdl``, the A2DP connection handle of the command being acknowledged.
+
+        - Disconnect and media control can target a connection by handle. The handle is the ``conn_hdl`` reported in ``ESP_A2D_CONNECTION_STATE_EVT``. The previous address-based and handle-less APIs remain, and are deprecated:
+
+            .. list-table::
+               :header-rows: 1
+               :widths: 50 50
+
+               * - Deprecated API
+                 - Replacement
+               * - ``esp_a2d_sink_disconnect()``
+                 - ``esp_a2d_sink_disconnect_by_handle()``
+               * - ``esp_a2d_source_disconnect()``
+                 - ``esp_a2d_source_disconnect_by_handle()``
+               * - ``esp_a2d_media_ctrl()``
+                 - ``esp_a2d_media_ctrl_by_handle()``
+
+        - A handle that does not match the active A2DP connection is not applied. Media control reports ``ESP_A2D_MEDIA_CTRL_ACK_FAILURE``. Disconnect is ignored.
+
+    - :component_file:`/bt/host/bluedroid/api/include/api/esp_avrc_api.h`
+
+        - The ``*_by_handle`` AVRCP Controller send APIs accept transaction labels ``0`` through ``ESP_USER_AVRC_TRANS_LABEL_MAX`` (13). Labels ``14`` and ``15`` are reserved for the stack (A2DP sink active-device Play/Pause). Passing 14 or 15 to those APIs returns ``ESP_ERR_INVALID_ARG``. The deprecated send APIs still accept ``0`` through ``ESP_AVRC_TRANS_LABEL_MAX`` (15).
 
     Suggested replacements:
 

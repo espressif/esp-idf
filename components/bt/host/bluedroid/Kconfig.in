@@ -128,14 +128,36 @@ config BT_A2DP_CODEC_AAC_ENABLED
         Currently, only the A2DP sink supports AAC codec.
 
 config BT_A2DP_SEP_NUM_MAX
-    int "Maximum number of Stream End Points that can be registered for A2DP"
+    int "Maximum number of Stream End Points registered per A2DP connection"
     depends on BT_A2DP_USE_EXTERNAL_CODEC
     default 2 if BT_A2DP_CODEC_AAC_ENABLED
     default 1
     range 1 3
     help
-        The maximum number of Stream End Points (SEPs) that can be registered for A2DP.
-        The default value is 2. If you need to register more SEPs, you can increase this value.
+        Number of Stream End Points (SEPs) that can be registered on a single
+        A2DP connection, i.e. how many codecs one peer can see (SBC only = 1,
+        SBC + AAC = 2). This is not the system-wide SEP pool.
+
+        The AVDTP pool is sized automatically as
+        BT_A2DP_SEP_NUM_MAX * BT_A2DP_SINK_MAX_CONN. Two simultaneous sink
+        connections with SBC and AAC therefore use 4 SEPs without raising
+        this option to 4.
+
+config BT_A2DP_SINK_MAX_CONN
+    int "Maximum number of simultaneous A2DP sink connections"
+    depends on BT_A2DP_ENABLE
+    default 1
+    range 1 2
+    help
+        The maximum number of A2DP source devices that can be connected to the local
+        sink at the same time. When set to 2, the local device behaves like a common
+        Bluetooth speaker: both sources stay connected, but only one of them is the
+        active stream and gets rendered. Media packets of the inactive stream are
+        discarded. Once the active stream is suspended, stopped or closed, the other
+        stream takes over without needing to reconnect.
+
+        Note this requires CONFIG_BT_ACL_CONNECTIONS and the controller BR/EDR ACL
+        connection number to be at least 2.
 
 config BT_AVRCP_ENABLED
     bool

@@ -58,6 +58,38 @@ config BT_ISO_SYNC_RECEIVER
 
 if BT_ISO
 
+    config BT_ISO_NOTICE_ADDR_LSB_FIRST
+        bool "Show the build notice about LSB-first event addresses"
+        default y
+        help
+            The addresses carried by esp_ble_iso and esp_ble_audio GAP
+            application events (ext_scan_recv, pa_sync, pa_sync_past,
+            acl_connect, security_change, identity_resolve and bond_delete) and
+            esp_ble_iso_ext_adv_info_t.addr are LSB-first on both hosts. Earlier
+            ESP-IDF releases delivered them MSB-first under Bluedroid.
+
+            One order on both hosts means the application code that handles
+            these addresses is the same for Bluedroid and NimBLE. It is also the
+            order of everything else the stack holds: the on-air address, BASS
+            PDUs, and bt_addr_le_t values such as connection peers, bonds,
+            periodic advertising syncs and Broadcast Receive States. An event
+            address can therefore be compared with or copied into those as is,
+            where the old order needed a reversal there under Bluedroid - which
+            is where address bugs used to appear. The only conversion left is
+            at a call into a Bluedroid native API.
+
+            Bluedroid APIs (esp_ble_gap_*, esp_ble_gattc_*) still take MSB-first
+            addresses, so an event address has to be reversed before it is
+            passed to one of them. NimBLE APIs take LSB-first and need no
+            change. Code written for the old order still compiles and fails
+            only at run time: a periodic advertising sync that never
+            establishes, or a connection, pairing or disconnect aimed at a
+            device that is not there.
+
+            While this option is enabled, a boxed NOTE about this change is
+            printed at the end of the build. Disable it once the application
+            has been checked.
+
     config BT_ISO_MAX_CHAN
         int "Maximum number of simultaneous ISO channels"
         default 1

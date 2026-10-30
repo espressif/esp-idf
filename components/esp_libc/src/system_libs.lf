@@ -6,8 +6,42 @@ entries:
         _divsf3 (noflash)
     if IDF_TARGET_ARCH_RISCV:
         save-restore (noflash)
+    # Targets without ROM libgcc. The compiler emits 64-bit integer helpers for
+    # uint64_t arithmetic, including from code that runs with the flash cache
+    # disabled, so those helpers always stay in internal RAM. Division and
+    # count-leading-zeros helpers load __clz_tab from _clz.o, so that table
+    # stays in DRAM with them. Everything else stays in flash unless
+    # CONFIG_LIBC_LIBGCC_IN_IRAM is enabled.
     if !ESP_ROM_HAS_LIBGCC:
-        * (noflash)
+        if LIBC_LIBGCC_IN_IRAM = y:
+            * (noflash)
+        else:
+            _absvdi2 (noflash)
+            _addvdi3 (noflash)
+            _ashldi3 (noflash)
+            _ashrdi3 (noflash)
+            _bswapdi2 (noflash)
+            _clrsbdi2 (noflash)
+            _clzdi2 (noflash)
+            _cmpdi2 (noflash)
+            _ctzdi2 (noflash)
+            _divdi3 (noflash)
+            _divmoddi4 (noflash)
+            _ffsdi2 (noflash)
+            _lshrdi3 (noflash)
+            _moddi3 (noflash)
+            _mulvdi3 (noflash)
+            _negdi2 (noflash)
+            _negvdi2 (noflash)
+            _paritydi2 (noflash)
+            _popcountdi2 (noflash)
+            _subvdi3 (noflash)
+            _ucmpdi2 (noflash)
+            _udivdi3 (noflash)
+            _udivmoddi4 (noflash)
+            _umoddi3 (noflash)
+            muldi3 (noflash)
+            _clz (noflash)
 
 [mapping:clang_rt_builtins]
 archive: libclang_rt.builtins.a
@@ -17,6 +51,36 @@ entries:
     if IDF_TARGET_ARCH_RISCV:
         save (noflash)
         restore (noflash)
+    # compiler-rt has no __clz_tab. The 64-bit helpers are self-contained.
+    if !ESP_ROM_HAS_LIBGCC:
+        if LIBC_LIBGCC_IN_IRAM = y:
+            * (noflash)
+        else:
+            absvdi2 (noflash)
+            addvdi3 (noflash)
+            ashldi3 (noflash)
+            ashrdi3 (noflash)
+            bswapdi2 (noflash)
+            clzdi2 (noflash)
+            cmpdi2 (noflash)
+            ctzdi2 (noflash)
+            divdi3 (noflash)
+            divmoddi4 (noflash)
+            ffsdi2 (noflash)
+            lshrdi3 (noflash)
+            moddi3 (noflash)
+            muldi3 (noflash)
+            mulodi4 (noflash)
+            mulvdi3 (noflash)
+            negdi2 (noflash)
+            negvdi2 (noflash)
+            paritydi2 (noflash)
+            popcountdi2 (noflash)
+            subvdi3 (noflash)
+            ucmpdi2 (noflash)
+            udivdi3 (noflash)
+            udivmoddi4 (noflash)
+            umoddi3 (noflash)
 
 [mapping:gcov]
 archive: libgcov.a

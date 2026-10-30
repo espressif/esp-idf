@@ -89,7 +89,7 @@ void avrc_metadata_srv_md_req(void)
                         ESP_AVRC_MD_ATTR_GENRE;
 
     /* send metadata request */
-    esp_avrc_ct_send_metadata_cmd(bt_avrc_common_alloc_tl(), attr_mask);
+    esp_avrc_ct_send_metadata_cmd_by_handle(bt_avrc_common_ct_get_conn_hdl(), bt_avrc_common_alloc_tl(), attr_mask);
 }
 
 void avrc_metadata_srv_md_save(avrc_metadata_srv_param_t *param)

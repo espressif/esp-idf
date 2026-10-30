@@ -27,7 +27,8 @@
 
 const static char *TAG = "i2s_std";
 
-static esp_err_t i2s_std_calculate_clock(i2s_chan_handle_t handle, const i2s_std_clk_config_t *clk_cfg, i2s_hal_clock_info_t *clk_info)
+static esp_err_t i2s_std_calculate_clock(i2s_chan_handle_t handle, const i2s_std_clk_config_t *clk_cfg,
+                                         i2s_apll_operation_t *apll_operation, i2s_hal_clock_info_t *clk_info)
 {
     uint32_t rate = clk_cfg->sample_rate_hz;
     i2s_std_slot_config_t *slot_cfg = &((i2s_std_config_t *)(handle->mode_info))->slot_cfg;
@@ -63,11 +64,21 @@ static esp_err_t i2s_std_calculate_clock(i2s_chan_handle_t handle, const i2s_std
     }
 #if SOC_I2S_HW_VERSION_2
     handle->is_external = clk_cfg->clk_src == I2S_CLK_SRC_EXTERNAL;
-    clk_info->sclk = handle->is_external ? clk_cfg->ext_clk_freq_hz :
-                     i2s_get_source_clk_freq(clk_cfg->clk_src, clk_info->mclk);
+    if (handle->is_external) {
+        if (clk_cfg->flags.clk_src_adjustable) {
+            ESP_LOGW(TAG, "adjustable clock source is only supported for APLL; ignoring");
+        }
+        clk_info->sclk = clk_cfg->ext_clk_freq_hz;
+    } else {
+        ESP_RETURN_ON_ERROR(i2s_resolve_source_clk_freq(handle, clk_cfg->clk_src, clk_cfg->flags.clk_src_adjustable,
+                                                        clk_info->mclk, apll_operation, &clk_info->sclk),
+                            TAG, "source clock frequency get failed");
+    }
     float min_mclk_div = handle->is_external ? 0.99 : 1.99;
 #else
-    clk_info->sclk = i2s_get_source_clk_freq(clk_cfg->clk_src, clk_info->mclk);
+    ESP_RETURN_ON_ERROR(i2s_resolve_source_clk_freq(handle, clk_cfg->clk_src, clk_cfg->flags.clk_src_adjustable,
+                                                    clk_info->mclk, apll_operation, &clk_info->sclk),
+                        TAG, "source clock frequency get failed");
     float min_mclk_div = 1.99;
 #endif
     clk_info->mclk_div = clk_info->sclk / clk_info->mclk;
@@ -96,11 +107,34 @@ static esp_err_t i2s_std_set_clock(i2s_chan_handle_t handle, const i2s_std_clk_c
 #endif
 
     i2s_hal_clock_info_t clk_info;
-    // Calculate clock parameters before enabling clock source
-    ESP_RETURN_ON_ERROR(i2s_std_calculate_clock(handle, clk_cfg, &clk_info), TAG, "clock calculate failed");
-    ESP_RETURN_ON_ERROR(esp_clk_tree_acquire_src((soc_module_clk_t)clk_src), TAG, "clock source enable failed");
+    i2s_apll_operation_t apll_operation = {};
+    bool reuse_apll = false;
+    bool target_acquired = false;
+    const esp_clk_tree_src_config_t *resource_config = NULL;
+#if SOC_I2S_SUPPORTS_APLL
+    esp_clk_tree_src_config_t apll_resource_config = {
+        .flags.adjustable = clk_cfg->flags.clk_src_adjustable,
+    };
+    if (clk_src == I2S_CLK_SRC_APLL) {
+        reuse_apll = handle->state != I2S_CHAN_STATE_REGISTER && handle->clk_src == I2S_CLK_SRC_APLL;
+        resource_config = &apll_resource_config;
+    }
+#endif
+    if (!reuse_apll) {
+        ESP_GOTO_ON_ERROR(esp_clk_tree_acquire_src((soc_module_clk_t)clk_src, resource_config),
+                          err, TAG, "clock source acquire failed");
+        target_acquired = true;
+    }
+
+    // Calculate clock parameters after reserving the selected clock source
+    ESP_GOTO_ON_ERROR(i2s_std_calculate_clock(handle, clk_cfg, &apll_operation, &clk_info),
+                      err, TAG, "clock calculation failed");
 
     hal_utils_clk_div_t ret_mclk_div = {};
+    i2s_hal_calc_mclk_precise_division(clk_info.sclk, clk_info.mclk, &ret_mclk_div);
+    uint64_t tmp_div = (uint64_t)ret_mclk_div.integer * ret_mclk_div.denominator + ret_mclk_div.numerator;
+    ESP_GOTO_ON_FALSE(tmp_div != 0 && ret_mclk_div.denominator != 0, ESP_ERR_INVALID_ARG, err, TAG, "invalid mclk division result");
+
     portENTER_CRITICAL(&g_i2s.spinlock);
     /* Set clock configurations in HAL*/
     PERIPH_RCC_ATOMIC() {
@@ -111,10 +145,9 @@ static esp_err_t i2s_std_set_clock(i2s_chan_handle_t handle, const i2s_std_clk_c
         }
     }
     portEXIT_CRITICAL(&g_i2s.spinlock);
-    uint64_t tmp_div = (uint64_t)ret_mclk_div.integer * ret_mclk_div.denominator + ret_mclk_div.numerator;
-    ESP_GOTO_ON_FALSE(tmp_div != 0 && ret_mclk_div.denominator != 0, ESP_ERR_INVALID_ARG, err, TAG, "invalid mclk division result");
 
     /* Update the mode info: clock configuration */
+    i2s_apll_operation_finish(handle, &apll_operation, true);
     memcpy(&(std_cfg->clk_cfg), clk_cfg, sizeof(i2s_std_clk_config_t));
     handle->clk_src = clk_cfg->clk_src;
     handle->sclk_hz = clk_info.sclk;
@@ -128,7 +161,13 @@ static esp_err_t i2s_std_set_clock(i2s_chan_handle_t handle, const i2s_std_clk_c
     return ret;
 
 err:
-    esp_clk_tree_release_src((soc_module_clk_t)clk_src);
+    i2s_apll_operation_finish(handle, &apll_operation, false);
+    if (target_acquired) {
+        esp_err_t release_ret = esp_clk_tree_release_src((soc_module_clk_t)clk_src);
+        if (release_ret != ESP_OK) {
+            return release_ret;
+        }
+    }
     return ret;
 }
 
@@ -414,8 +453,19 @@ esp_err_t i2s_channel_reconfig_std_clock(i2s_chan_handle_t handle, const i2s_std
 
     ESP_GOTO_ON_ERROR(i2s_std_set_clock(handle, clk_cfg), err, TAG, "update clock failed");
 
-    // disable old clock source after new clock is successfully configured
-    ESP_GOTO_ON_ERROR(esp_clk_tree_release_src((soc_module_clk_t)old_clk_src), err, TAG, "clock source disable failed");
+    bool reuse_apll = false;
+#if SOC_I2S_SUPPORTS_APLL
+    reuse_apll = old_clk_src == I2S_CLK_SRC_APLL && clk_cfg->clk_src == I2S_CLK_SRC_APLL;
+#endif
+    // APLL keeps its existing ownership, while other sources were acquired again during reconfiguration.
+    if (!reuse_apll) {
+        ESP_GOTO_ON_ERROR(esp_clk_tree_release_src((soc_module_clk_t)old_clk_src), err, TAG, "clock source disable failed");
+    }
+#if SOC_I2S_SUPPORTS_APLL
+    if (old_clk_src == I2S_CLK_SRC_APLL && clk_cfg->clk_src != I2S_CLK_SRC_APLL) {
+        handle->apll_adjustable = false;
+    }
+#endif
 
 #ifdef CONFIG_PM_ENABLE
     // Create/Re-create power management lock
@@ -473,7 +523,12 @@ esp_err_t i2s_channel_reconfig_std_slot(i2s_chan_handle_t handle, const i2s_std_
 #endif
         ESP_GOTO_ON_ERROR(i2s_std_set_clock(handle, &std_cfg->clk_cfg), err, TAG, "update clock failed");
         // disable old clock source after new clock is successfully configured
-        ESP_GOTO_ON_ERROR(esp_clk_tree_release_src((soc_module_clk_t)old_clk_src), err, TAG, "clock source disable failed");
+#if SOC_I2S_SUPPORTS_APLL
+        if (old_clk_src != I2S_CLK_SRC_APLL)
+#endif
+        {
+            ESP_GOTO_ON_ERROR(esp_clk_tree_release_src((soc_module_clk_t)old_clk_src), err, TAG, "clock source disable failed");
+        }
     }
 
     xSemaphoreGive(handle->mutex);

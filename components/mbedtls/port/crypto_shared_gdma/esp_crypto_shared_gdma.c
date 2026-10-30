@@ -15,15 +15,7 @@
 #include "esp_crypto_lock.h"
 #include "soc/soc_caps.h"
 #include "sdkconfig.h"
-
-#if SOC_AXI_GDMA_SUPPORTED
-#include "hal/axi_dma_ll.h"
 #include "hal/gdma_ll.h"
-#elif SOC_AHB_GDMA_VERSION == 1
-#include "hal/gdma_ll.h"
-#elif SOC_AHB_GDMA_VERSION == 2
-#include "hal/ahb_dma_ll.h"
-#endif /* SOC_AHB_GDMA_VERSION */
 
 #define NEW_CHANNEL_TIMEOUT_MS  1000
 #define NEW_CHANNEL_DELAY_MS    100

@@ -101,22 +101,6 @@ In v2 the option is visible even when ``vfs`` is not in the build, so the condit
 
     This change applies not only to a component's ``CMakeLists.txt`` but also to its source files. The component's code can no longer assume that another component's functionality is available simply because its Kconfig variables are set. For example, if ``CONFIG_VFS_SUPPORT_IO`` is set and the component's code depends on the functionality of the ``vfs`` component, it cannot merely check ``CONFIG_VFS_SUPPORT_IO`` in the source code. It must ensure that the ``vfs`` component is included in the build and that the component declares a dependency on ``vfs`` in its ``CMakeLists.txt``.
 
-.. _cmakev2-recursive-evaluation:
-
-Recursive Evaluation of Components
-==================================
-
-In v1, the components participating in the build are collected in the ``BUILD_COMPONENTS`` build property during the early evaluation phase, prior to their evaluation with ``add_subdirectory``. This means v1 is aware of all components participating in the build and their dependencies before CMake evaluates them, which allows v1 to evaluate components non-recursively and within a relatively predictable environment with minimal variables set. In contrast, v2 does not perform early component evaluation, and components are added based on the requirements observed during their evaluation. This means a component can be evaluated recursively within the scope of another component's variables if it is a dependency of that component. In other words, if component A requires component B, then when B is evaluated it can access the variables of A. It is therefore important to ensure that all variables used by a component are properly initialized before use. A typical problem involves CMake lists and the ``APPEND`` operation.
-
-.. code-block:: cmake
-
-    # Wrong
-    list(APPEND srcs main.c)
-
-    # Correct
-    set(srcs)
-    list(APPEND srcs main.c)
-
 .. _cmakev2-project-include-order:
 
 The ``project_include.cmake`` Files are Included in a Non-Specific Order
@@ -162,5 +146,16 @@ If you do not use :cmakev2:ref:`idf_project_default` and instead call :cmakev2:r
     # ... rest of your project ...
 
 Do **not** set ``IDF_COMPONENT_OPTIONAL_REQUIRES_MODE`` to ``DEFERRED`` if you build multiple libraries; the build will error. Keep the default IMMEDIATE in that case.
+
+.. _cmakev2-exclude-components:
+
+The Behavior of ``EXCLUDE_COMPONENTS`` has Changed
+==================================================
+
+In v1, ``EXCLUDE_COMPONENTS`` only removes the listed names from the ``COMPONENTS`` list, the initial set of components to build. The listed components stay known to the build system. Dependency resolution adds such a component back when another component requires it, without a warning. As a result, v1 excludes only components that no other component in the build requires.
+
+In v2, a component named in ``EXCLUDE_COMPONENTS`` is not discovered. It has no interface target, its Kconfig files are not collected and its ``project_include.cmake`` is not included. The build system treats it as if it did not exist. A component that requires it fails with the error ``Failed to resolve component``. :cmakev2:ref:`idf_component_optional_requires` and :cmakev2:ref:`idf_component_include` with ``OPTIONAL`` skip it silently.
+
+A project that excludes a component no other component requires behaves the same under v1 and v2. A project that relied on v1 adding an excluded component back has to remove the name from ``EXCLUDE_COMPONENTS``, or make the dependency optional.
 
 .. _Local Directory Dependencies: https://docs.espressif.com/projects/idf-component-manager/en/latest/reference/manifest_file.html#local-directory-dependencies

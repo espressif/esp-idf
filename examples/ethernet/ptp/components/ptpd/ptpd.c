@@ -286,7 +286,7 @@ static void ptp_create_eth_frame(struct ptp_state_s *state,
                                  uint16_t ptp_msg_len)
 {
   struct eth_hdr eth_hdr = {
-    .dest.addr = {0x01, 0x80, 0xC2, 0x00, 0x00, 0x0E},
+    .dest.addr = {0x01, 0x1B, 0x19, 0x00, 0x00, 0x00}, // currently only E2E is supported
     .type = htons(ETHERTYPE_PTP)
   };
   memcpy(&eth_hdr.src.addr, state->intf_hw_addr, ETH_ADDR_LEN);

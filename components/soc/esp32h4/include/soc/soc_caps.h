@@ -75,9 +75,10 @@
 #define SOC_FLASH_ENC_SUPPORTED         1
 #define SOC_SECURE_BOOT_SUPPORTED       0
 #define SOC_BOD_SUPPORTED               1
+#define SOC_VDDBAT_PROTECT_SUPPORTED    1
 // #define SOC_APM_SUPPORTED               1    // TODO: [ESP32H4] IDF-12256
 #define SOC_RISCV_TRACE_SUPPORTED       1
-#define SOC_PMU_SUPPORTED               1    // TODO: [ESP32H4] IDF-12286
+#define SOC_PMU_SUPPORTED               1
 #define SOC_PAU_SUPPORTED               1
 #define SOC_RTC_TIMER_SUPPORTED         1
 #define SOC_LP_AON_SUPPORTED            1
@@ -193,6 +194,7 @@
 #define SOC_AHB_GDMA_VERSION                2
 #define SOC_GDMA_SUPPORT_ETM                1  // Support ETM submodule
 #define SOC_GDMA_SUPPORT_SLEEP_RETENTION    1
+#define SOC_GDMA_SUPPORT_WEIGHTED_ARBITRATION   1
 
 /*-------------------------- MODEM CAPS --------------------------------------*/
 #define SOC_MODEM_SUPPORT_ETM               1
@@ -479,7 +481,6 @@
 /*--------------- PHY REGISTER AND MEMORY SIZE CAPS --------------------------*/
 #define SOC_PHY_DIG_REGS_MEM_SIZE       (21*4)
 
-// TODO: IDF-12286 (inherit from verify code, need check)
 /*-------------------------- Power Management CAPS ----------------------------*/
 #define SOC_PM_SUPPORT_BT_WAKEUP        (1)
 #define SOC_PM_SUPPORT_EXT1_WAKEUP      (1)

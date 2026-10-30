@@ -10,7 +10,7 @@ extern "C" {
 
 #include "esp_efuse.h"
 
-// md5_digest_table 8d84cb2601fb980390d26ebbb13062f5
+// md5_digest_table 6183bb2364f684633bf2b6aa1ee00621
 // This file was generated from the file esp_efuse_table.csv. DO NOT CHANGE THIS FILE MANUALLY.
 // If you want to change some fields, you need to change esp_efuse_table.csv file
 // then run `efuse_common_table` or `efuse_custom_table` command it will generate this file.
@@ -86,8 +86,27 @@ extern const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_WAFER_VERSION_MINOR[];
 extern const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_WAFER_VERSION_MAJOR[];
 extern const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_DISABLE_WAFER_VERSION_MAJOR[];
 extern const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_PKG_VERSION[];
+extern const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_OCODE[];
+extern const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_DCDC_OCODE[];
 extern const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_SYS_DATA_PART1[];
 extern const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_OPTIONAL_UNIQUE_ID[];
+extern const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_SPI_LDO_1V2_ADJ[];
+extern const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_SPI_LDO_1V8_ADJ[];
+extern const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_PVT_DRVB[];
+extern const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_TEMP_CALI[];
+extern const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_ADC1_AVE_INITCODE_ATTEN0[];
+extern const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_ADC1_AVE_INITCODE_ATTEN1[];
+extern const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_ADC1_AVE_INITCODE_ATTEN2[];
+extern const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_ADC1_AVE_INITCODE_ATTEN3[];
+extern const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_ADC1_HI_DOUT_ATTEN0[];
+extern const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_ADC1_HI_DOUT_ATTEN1[];
+extern const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_ADC1_HI_DOUT_ATTEN2[];
+extern const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_ADC1_HI_DOUT_ATTEN3[];
+extern const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_ADC1_CH0_ATTEN0_INITCODE_DIFF[];
+extern const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_ADC1_CH1_ATTEN0_INITCODE_DIFF[];
+extern const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_ADC1_CH2_ATTEN0_INITCODE_DIFF[];
+extern const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_ADC1_CH3_ATTEN0_INITCODE_DIFF[];
+extern const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_VDD_3V4_DOUT[];
 extern const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_BLOCK_USR_DATA[];
 #define ESP_EFUSE_WR_DIS_USER_DATA ESP_EFUSE_WR_DIS_BLOCK_USR_DATA
 extern const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_CUSTOM_MAC[];
@@ -107,6 +126,13 @@ extern const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_BLOCK_KEY5[];
 #define ESP_EFUSE_WR_DIS_KEY5 ESP_EFUSE_WR_DIS_BLOCK_KEY5
 extern const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_BLOCK_SYS_DATA2[];
 #define ESP_EFUSE_WR_DIS_SYS_DATA_PART2 ESP_EFUSE_WR_DIS_BLOCK_SYS_DATA2
+extern const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_ACTIVE_DCDC_1V25[];
+extern const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_ACTIVE_DCDC_1V55[];
+extern const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_SLP_DCDC[];
+extern const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_LSLP_HP_DRVB[];
+extern const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_RXIQ_VERSION[];
+extern const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_RXIQ_0[];
+extern const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_RXIQ_1[];
 extern const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_USB_EXCHG_PINS[];
 extern const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_VDD_SPI_AS_GPIO[];
 extern const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_SOFT_DIS_JTAG[];
@@ -123,8 +149,6 @@ extern const esp_efuse_desc_t* ESP_EFUSE_RD_DIS_BLOCK_KEY4[];
 #define ESP_EFUSE_RD_DIS_KEY4 ESP_EFUSE_RD_DIS_BLOCK_KEY4
 extern const esp_efuse_desc_t* ESP_EFUSE_RD_DIS_BLOCK_KEY5[];
 #define ESP_EFUSE_RD_DIS_KEY5 ESP_EFUSE_RD_DIS_BLOCK_KEY5
-extern const esp_efuse_desc_t* ESP_EFUSE_RD_DIS_BLOCK_SYS_DATA2[];
-#define ESP_EFUSE_RD_DIS_SYS_DATA_PART2 ESP_EFUSE_RD_DIS_BLOCK_SYS_DATA2
 extern const esp_efuse_desc_t* ESP_EFUSE_PVT_GLITCH_EN[];
 extern const esp_efuse_desc_t* ESP_EFUSE_DIS_ICACHE[];
 extern const esp_efuse_desc_t* ESP_EFUSE_DIS_USB_JTAG[];
@@ -200,7 +224,26 @@ extern const esp_efuse_desc_t* ESP_EFUSE_WAFER_VERSION_MINOR[];
 extern const esp_efuse_desc_t* ESP_EFUSE_WAFER_VERSION_MAJOR[];
 extern const esp_efuse_desc_t* ESP_EFUSE_DISABLE_WAFER_VERSION_MAJOR[];
 extern const esp_efuse_desc_t* ESP_EFUSE_PKG_VERSION[];
+extern const esp_efuse_desc_t* ESP_EFUSE_OCODE[];
+extern const esp_efuse_desc_t* ESP_EFUSE_DCDC_OCODE[];
 extern const esp_efuse_desc_t* ESP_EFUSE_OPTIONAL_UNIQUE_ID[];
+extern const esp_efuse_desc_t* ESP_EFUSE_SPI_LDO_1V2_ADJ[];
+extern const esp_efuse_desc_t* ESP_EFUSE_SPI_LDO_1V8_ADJ[];
+extern const esp_efuse_desc_t* ESP_EFUSE_PVT_DRVB[];
+extern const esp_efuse_desc_t* ESP_EFUSE_TEMP_CALI[];
+extern const esp_efuse_desc_t* ESP_EFUSE_ADC1_AVE_INITCODE_ATTEN0[];
+extern const esp_efuse_desc_t* ESP_EFUSE_ADC1_AVE_INITCODE_ATTEN1[];
+extern const esp_efuse_desc_t* ESP_EFUSE_ADC1_AVE_INITCODE_ATTEN2[];
+extern const esp_efuse_desc_t* ESP_EFUSE_ADC1_AVE_INITCODE_ATTEN3[];
+extern const esp_efuse_desc_t* ESP_EFUSE_ADC1_HI_DOUT_ATTEN0[];
+extern const esp_efuse_desc_t* ESP_EFUSE_ADC1_HI_DOUT_ATTEN1[];
+extern const esp_efuse_desc_t* ESP_EFUSE_ADC1_HI_DOUT_ATTEN2[];
+extern const esp_efuse_desc_t* ESP_EFUSE_ADC1_HI_DOUT_ATTEN3[];
+extern const esp_efuse_desc_t* ESP_EFUSE_ADC1_CH0_ATTEN0_INITCODE_DIFF[];
+extern const esp_efuse_desc_t* ESP_EFUSE_ADC1_CH1_ATTEN0_INITCODE_DIFF[];
+extern const esp_efuse_desc_t* ESP_EFUSE_ADC1_CH2_ATTEN0_INITCODE_DIFF[];
+extern const esp_efuse_desc_t* ESP_EFUSE_ADC1_CH3_ATTEN0_INITCODE_DIFF[];
+extern const esp_efuse_desc_t* ESP_EFUSE_VDD_3V4_DOUT[];
 extern const esp_efuse_desc_t* ESP_EFUSE_USER_DATA[];
 #define ESP_EFUSE_BLOCK_USR_DATA ESP_EFUSE_USER_DATA
 extern const esp_efuse_desc_t* ESP_EFUSE_USER_DATA_MAC_CUSTOM[];
@@ -218,8 +261,13 @@ extern const esp_efuse_desc_t* ESP_EFUSE_KEY4[];
 #define ESP_EFUSE_BLOCK_KEY4 ESP_EFUSE_KEY4
 extern const esp_efuse_desc_t* ESP_EFUSE_KEY5[];
 #define ESP_EFUSE_BLOCK_KEY5 ESP_EFUSE_KEY5
-extern const esp_efuse_desc_t* ESP_EFUSE_SYS_DATA_PART2[];
-#define ESP_EFUSE_BLOCK_SYS_DATA2 ESP_EFUSE_SYS_DATA_PART2
+extern const esp_efuse_desc_t* ESP_EFUSE_ACTIVE_DCDC_1V25[];
+extern const esp_efuse_desc_t* ESP_EFUSE_ACTIVE_DCDC_1V55[];
+extern const esp_efuse_desc_t* ESP_EFUSE_SLP_DCDC[];
+extern const esp_efuse_desc_t* ESP_EFUSE_LSLP_HP_DRVB[];
+extern const esp_efuse_desc_t* ESP_EFUSE_RXIQ_VERSION[];
+extern const esp_efuse_desc_t* ESP_EFUSE_RXIQ_0[];
+extern const esp_efuse_desc_t* ESP_EFUSE_RXIQ_1[];
 
 #ifdef __cplusplus
 }

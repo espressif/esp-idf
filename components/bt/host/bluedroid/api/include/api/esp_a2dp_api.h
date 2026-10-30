@@ -27,6 +27,8 @@ extern "C" {
 
 typedef uint16_t esp_a2d_conn_hdl_t;            /*!< Connection handle, associate with specific device that connected */
 
+#define ESP_A2D_INVALID_CONN_HDL    (0)         /*!< Invalid A2DP connection handle */
+
 /* Media codec types supported by A2DP. */
 #define ESP_A2D_MCT_SBC         (0)             /*!< SBC */
 #define ESP_A2D_MCT_M12         (0x01)          /*!< MPEG-1, 2 Audio */
@@ -294,6 +296,8 @@ typedef enum {
     ESP_A2D_REPORT_SNK_CODEC_CAPS_EVT,         /*!< report currently selected sink codec capabilities, only used for A2DP SRC */
     ESP_A2D_SRC_SET_PREF_MCC_EVT,              /*!< indicate a2dp source set preferred media codec configuration status, only used for A2DP SRC */
     ESP_A2D_REPORT_SNK_ALL_CODEC_CAPS_EVT,     /*!< report all supported sink codec capabilities, only used for A2DP SRC */
+    ESP_A2D_SNK_ACTIVE_DEVICE_EVT,             /*!< rendered device changed while more than one source is connected,
+                                                    or the result of get/set active device, only used for A2DP SINK */
 } esp_a2d_cb_event_t;
 
 /**
@@ -346,6 +350,7 @@ typedef union {
     struct media_ctrl_stat_param {
         esp_a2d_media_ctrl_t cmd;              /*!< media control commands to acknowledge */
         esp_a2d_media_ctrl_ack_t status;       /*!< acknowledgement to media control commands */
+        esp_a2d_conn_hdl_t conn_hdl;           /*!< connection handle */
     } media_ctrl_stat;                         /*!< status in acknowledgement to media control commands */
 
     /**
@@ -419,6 +424,28 @@ typedef union {
                                                      @note The memory will be released after the callback function ends */
         uint8_t sep_num;                        /*!< number of A2DP sink SEP information */
     } a2d_report_snk_all_codec_caps_stat;       /*!< A2DP source received all sink codec capabilities */
+
+    /**
+     * @brief ESP_A2D_SNK_ACTIVE_DEVICE_EVT
+     *
+     * Reported when the rendered device changes and at least two sources are
+     * connected, and as the result of esp_a2d_sink_get_active_device() or
+     * esp_a2d_sink_set_active_device(). A single connection does not emit this
+     * event on stream start or stop. A get that finds no selection reports
+     * active = false and status = ESP_BT_STATUS_SUCCESS.
+     */
+    struct a2d_snk_active_device_param {
+        bool active;                            /*!< false when no connected device is selected,
+                                                     in which case remote_bda and conn_hdl are meaningless.
+                                                     Ignored when status is not ESP_BT_STATUS_SUCCESS */
+        esp_bd_addr_t remote_bda;               /*!< selected device when the connection handle is known */
+        esp_a2d_conn_hdl_t conn_hdl;            /*!< connection handle of the selected device, or of a failed
+                                                     esp_a2d_sink_set_active_device() request */
+        esp_bt_status_t status;                 /*!< ESP_BT_STATUS_SUCCESS, or the reason set-active failed.
+                                                     A non-success status is only an acknowledgement of
+                                                     esp_a2d_sink_set_active_device() and does not change
+                                                     the current selection */
+    } a2d_snk_active_device;                    /*!< A2DP sink active device information */
 
 } esp_a2d_cb_param_t;
 
@@ -573,8 +600,28 @@ esp_err_t esp_a2d_sink_connect(esp_bd_addr_t remote_bda);
  *                  - ESP_ERR_INVALID_STATE: if bluetooth stack is not yet enabled
  *                  - ESP_FAIL: others
  *
+ * @deprecated      Please use esp_a2d_sink_disconnect_by_handle() instead.
  */
-esp_err_t esp_a2d_sink_disconnect(esp_bd_addr_t remote_bda);
+esp_err_t esp_a2d_sink_disconnect(esp_bd_addr_t remote_bda)
+__attribute__((deprecated("Please use esp_a2d_sink_disconnect_by_handle() instead")));
+
+/**
+ *
+ * @brief           Disconnect from the remote A2DP source device identified by connection handle.
+ *                  This API must be called after esp_a2d_sink_init() and before esp_a2d_sink_deinit().
+ *
+ * @param[in]       conn_hdl: connection handle, reported in ESP_A2D_CONNECTION_STATE_EVT
+ *
+ * @note            If @p conn_hdl does not match a connected A2DP peer, the request is ignored.
+ *
+ * @return
+ *                  - ESP_OK: disconnect request is sent to lower layer successfully
+ *                  - ESP_ERR_INVALID_STATE: if bluetooth stack is not yet enabled
+ *                  - ESP_ERR_INVALID_ARG: invalid connection handle
+ *                  - ESP_FAIL: others
+ *
+ */
+esp_err_t esp_a2d_sink_disconnect_by_handle(esp_a2d_conn_hdl_t conn_hdl);
 
 /**
  *
@@ -608,6 +655,51 @@ esp_err_t esp_a2d_sink_get_delay_value(void);
 
 /**
  *
+ * @brief           Get the device selected for rendering. When several source devices
+ *                  are connected, only one of them is rendered at a time, media packets of the others
+ *                  are discarded. The selected device may still be idle (connected, not streaming)
+ *                  after esp_a2d_sink_set_active_device(). The result is reported asynchronously in
+ *                  ESP_A2D_SNK_ACTIVE_DEVICE_EVT (param->a2d_snk_active_device). This API must be
+ *                  called after esp_a2d_sink_init() and before esp_a2d_sink_deinit().
+ *
+ * @return
+ *                  - ESP_OK: if the request is sent successfully
+ *                  - ESP_ERR_INVALID_STATE: if bluetooth stack is not yet enabled
+ *                  - ESP_FAIL: others
+ *
+ */
+esp_err_t esp_a2d_sink_get_active_device(void);
+
+/**
+ *
+ * @brief           Choose which connected device gets rendered. The device only has to be
+ *                  connected; it does not have to be streaming. Any previously rendered stream is
+ *                  suspended. If the target is idle, AVRCP Play is sent so it can start.
+ *                  ESP_A2D_SNK_ACTIVE_DEVICE_EVT is reported on both success and failure:
+ *                  check param->a2d_snk_active_device.status. This API must be called
+ *                  after esp_a2d_sink_init() and before esp_a2d_sink_deinit().
+ *
+ * @param[in]       conn_hdl: connection handle of the device to render, reported in
+ *                  ESP_A2D_CONNECTION_STATE_EVT
+ *
+ * @note            With more than one source connected, this API uses AVRCP Controller
+ *                  passthrough commands (Pause on the previously rendered device, Play on an
+ *                  idle target) so the phones stop and start their players. Initialize AVRCP
+ *                  with esp_avrc_ct_init()  before esp_a2d_sink_init(). If AVRCP is not initialized,
+ *                  those commands are silently skipped and only a local A2DP Suspend is sent;
+ *                  the previously streaming phone may looks like still playing.
+ *
+ * @return
+ *                  - ESP_OK: if the request is sent successfully
+ *                  - ESP_ERR_INVALID_ARG: invalid connection handle
+ *                  - ESP_ERR_INVALID_STATE: if bluetooth stack is not yet enabled
+ *                  - ESP_FAIL: others
+ *
+ */
+esp_err_t esp_a2d_sink_set_active_device(esp_a2d_conn_hdl_t conn_hdl);
+
+/**
+ *
  * @brief           Media control commands. This API can be used for both A2DP sink and source
  *                  and must be called after esp_a2d_sink_init() and before esp_a2d_sink_deinit().
  *
@@ -618,8 +710,31 @@ esp_err_t esp_a2d_sink_get_delay_value(void);
  *                  - ESP_ERR_INVALID_STATE: if bluetooth stack is not yet enabled
  *                  - ESP_FAIL: others
  *
+ * @deprecated      Please use esp_a2d_media_ctrl_by_handle() instead.
  */
-esp_err_t esp_a2d_media_ctrl(esp_a2d_media_ctrl_t ctrl);
+esp_err_t esp_a2d_media_ctrl(esp_a2d_media_ctrl_t ctrl)
+__attribute__((deprecated("Please use esp_a2d_media_ctrl_by_handle() instead")));
+
+/**
+ *
+ * @brief           Media control commands for the A2DP connection identified by connection handle.
+ *                  This API can be used for both A2DP sink and source and must be called after
+ *                  esp_a2d_sink_init() or esp_a2d_source_init(), and before the corresponding deinit.
+ *
+ * @param[in]       conn_hdl: connection handle, reported in ESP_A2D_CONNECTION_STATE_EVT
+ * @param[in]       ctrl: control commands for A2DP data channel
+ *
+ * @note            If @p conn_hdl does not match a connected A2DP peer, the command is
+ *                  rejected with ESP_A2D_MEDIA_CTRL_ACK_FAILURE.
+ *
+ * @return
+ *                  - ESP_OK: control command is sent to lower layer successfully
+ *                  - ESP_ERR_INVALID_STATE: if bluetooth stack is not yet enabled
+ *                  - ESP_ERR_INVALID_ARG: invalid connection handle or control command
+ *                  - ESP_FAIL: others
+ *
+ */
+esp_err_t esp_a2d_media_ctrl_by_handle(esp_a2d_conn_hdl_t conn_hdl, esp_a2d_media_ctrl_t ctrl);
 
 /**
  * @brief       This function is used to get the status of A2DP
@@ -754,8 +869,28 @@ esp_err_t esp_a2d_source_connect(esp_bd_addr_t remote_bda);
  *                  - ESP_ERR_INVALID_STATE: if bluetooth stack is not yet enabled
  *                  - ESP_FAIL: others
  *
+ * @deprecated      Please use esp_a2d_source_disconnect_by_handle() instead.
  */
-esp_err_t esp_a2d_source_disconnect(esp_bd_addr_t remote_bda);
+esp_err_t esp_a2d_source_disconnect(esp_bd_addr_t remote_bda)
+__attribute__((deprecated("Please use esp_a2d_source_disconnect_by_handle() instead")));
+
+/**
+ *
+ * @brief           Disconnect from the remote A2DP sink device identified by connection handle.
+ *                  This API must be called after esp_a2d_source_init() and before esp_a2d_source_deinit().
+ *
+ * @param[in]       conn_hdl: connection handle, reported in ESP_A2D_CONNECTION_STATE_EVT
+ *
+ * @note            If @p conn_hdl does not match a connected A2DP peer, the request is ignored.
+ *
+ * @return
+ *                  - ESP_OK: disconnect request is sent to lower layer
+ *                  - ESP_ERR_INVALID_STATE: if bluetooth stack is not yet enabled
+ *                  - ESP_ERR_INVALID_ARG: invalid connection handle
+ *                  - ESP_FAIL: others
+ *
+ */
+esp_err_t esp_a2d_source_disconnect_by_handle(esp_a2d_conn_hdl_t conn_hdl);
 
 #ifdef __cplusplus
 }

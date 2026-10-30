@@ -1677,6 +1677,10 @@ void btm_acl_role_changed (UINT8 hci_status, BD_ADDR bd_addr, UINT8 new_role)
         if (new_role == BTM_ROLE_MASTER) {
             BTM_SetLinkSuperTout (p->remote_addr, p->link_super_tout);
         }
+        /* Max slots go back to 1 after a role switch: re-apply the packet types,
+         * or the link stays on 1-slot packets */
+        btm_set_packet_types (p, p->pkt_types_mask ? p->pkt_types_mask
+                                                   : btm_cb.btm_acl_pkt_types_supported);
     } else {
         /* so the BTM_BL_ROLE_CHG_EVT uses the old role */
         new_role = p->link_role;
@@ -1724,7 +1728,7 @@ void btm_acl_role_changed (UINT8 hci_status, BD_ADDR bd_addr, UINT8 new_role)
             BTM_TRACE_WARNING("btm_acl_role_changed -> Issuing delayed HCI_Disconnect!!!\n");
             btsnd_hcic_disconnect(p_dev_rec->hci_handle, HCI_ERR_PEER_USER);
         }
-        BTM_TRACE_ERROR("tBTM_SEC_DEV:0x%x rs_disc_pending=%d\n",
+        BTM_TRACE_DEBUG("tBTM_SEC_DEV:0x%x rs_disc_pending=%d\n",
                         (UINT32)p_dev_rec, p_dev_rec->rs_disc_pending);
         p_dev_rec->rs_disc_pending = BTM_SEC_RS_NOT_PENDING;     /* reset flag */
     }

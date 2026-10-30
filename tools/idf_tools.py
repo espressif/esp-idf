@@ -27,13 +27,13 @@
 #   the PATH to point to the installed tools and set up other environment variables
 #   needed by the tools.
 import argparse
-import contextlib
 import copy
 import datetime
 import errno
 import fnmatch
 import functools
 import hashlib
+import http.client
 import json
 import os
 import platform
@@ -69,8 +69,10 @@ from typing import IO
 from typing import Any
 from typing import Optional
 from urllib.error import ContentTooShortError
+from urllib.error import HTTPError
 from urllib.parse import urljoin
 from urllib.parse import urlparse
+from urllib.request import Request
 from urllib.request import urlopen
 from urllib.response import addinfourl
 
@@ -94,6 +96,13 @@ VERSION_REGEX_REPLACE_DEFAULT = r'\1'
 IDF_MAINTAINER = os.environ.get('IDF_MAINTAINER') or False
 TODO_MESSAGE = 'TODO'
 DOWNLOAD_RETRY_COUNT = 3
+# Without a timeout a stalled connection blocks forever. The timeout applies to each socket operation, so a slow
+# download which keeps receiving data is not interrupted.
+DOWNLOAD_TIMEOUT = 60  # seconds
+# Counts only resume attempts in a row which receive no data, so a connection which drops repeatedly can still finish
+# a large archive.
+DOWNLOAD_RESUME_COUNT = 5
+DOWNLOAD_RESUME_MAX_DELAY = 10  # seconds
 URL_PREFIX_MAP_SEPARATOR = ','
 IDF_TOOLS_INSTALL_CMD = os.environ.get('IDF_TOOLS_INSTALL_CMD')
 IDF_TOOLS_EXPORT_CMD = os.environ.get('IDF_TOOLS_INSTALL_CMD')
@@ -580,6 +589,7 @@ def urlretrieve_ctx(
 ) -> tuple[str, addinfourl]:
     """
     Retrieve data from given URL. An alternative version of urlretrieve which takes SSL context as an argument.
+    An interrupted HTTP(S) download of known size is resumed with a Range request to the original URL.
     """
     url_type, path = splittype(url)
 
@@ -587,7 +597,9 @@ def urlretrieve_ctx(
     extra_urlopen_args = {}
     if context:
         extra_urlopen_args['context'] = context
-    with contextlib.closing(urlopen(url, data, **extra_urlopen_args)) as fp:  # type: ignore
+    # fp is replaced on each resume, so a with block would close only the first response.
+    fp = urlopen(url, data, DOWNLOAD_TIMEOUT, **extra_urlopen_args)  # type: ignore
+    try:
         headers = fp.info()
 
         # Just return the local path and the "headers" for file://
@@ -604,22 +616,89 @@ def urlretrieve_ctx(
             size = int(headers.get('content-length', -1))
             read = 0
             blocknum = 0
+            # The size is needed to notice a body that ends early and to check the resumed response. Range is defined
+            # for GET requests over HTTP(S) only, and file:// mirrors ignore it.
+            resumable = size >= 0 and data is None and url_type in ('http', 'https')
+            etag = headers.get('ETag')
+            failures = 0
+            reason = 'connection closed'
 
             if reporthook:
                 reporthook(blocknum, bs, size)
 
             while True:
-                block = fp.read(bs)
-                if not block:
+                if fp is None:
+                    try:
+                        # GitHub redirects to a signed URL which expires, so the original URL is requested again.
+                        req = Request(url, headers={'Range': f'bytes={read}-'})
+                        fp = urlopen(req, None, DOWNLOAD_TIMEOUT, **extra_urlopen_args)  # type: ignore
+                    except (OSError, http.client.HTTPException) as e:
+                        reason = repr(e)
+                        # Python 3.14 reports an error response which is left open as a ResourceWarning.
+                        if isinstance(e, HTTPError):
+                            e.close()
+                    else:
+                        resumed_headers = fp.info()
+                        # Appending anything other than the rest of the same file would corrupt it. Content-Length
+                        # is checked because http.client stops reading there, and a longer body would be appended in
+                        # full. The ETag is compared because GitHub ignores If-Range. A missing ETag cannot be
+                        # compared, and then the total size in Content-Range is the only check.
+                        if (
+                            fp.getcode() != 206
+                            or resumed_headers.get('Content-Range') != f'bytes {read}-{size - 1}/{size}'
+                            or resumed_headers.get('Content-Length') != str(size - read)
+                            or (etag is not None and resumed_headers.get('ETag', etag) != etag)
+                        ):
+                            raise ContentTooShortError(
+                                f'retrieval incomplete: got only {read} out of {size} bytes and the server did not '
+                                'send the rest of the same file',
+                                result,
+                            )
+
+                block = b''
+                if fp is not None:
+                    # Resets, timeouts and TLS errors are all OSError. socket.timeout is not a TimeoutError before
+                    # Python 3.10. The write below stays outside the try, so a local disk error is not retried as a
+                    # network error.
+                    try:
+                        block = fp.read(bs)
+                    except (OSError, http.client.HTTPException) as e:
+                        if not resumable:
+                            raise
+                        reason = repr(e)
+                if block:
+                    read += len(block)
+                    tfp.write(block)
+                    blocknum += 1
+                    failures = 0
+                    if reporthook:
+                        reporthook(blocknum, bs, size)
+                    continue
+
+                if fp is not None:
+                    fp.close()
+                    fp = None
+                # http.client returns b'' instead of raising IncompleteRead when the connection closes early, so the
+                # size is the only way to notice the truncation.
+                if not resumable or read >= size:
                     break
-                read += len(block)
-                tfp.write(block)
-                blocknum += 1
-                if reporthook:
-                    reporthook(blocknum, bs, size)
+                # The progress line has no line ending yet and the warning would continue it. The flush keeps the order
+                # when stdout and stderr go to the same pipe.
+                if reporthook and failures == 0 and not g.quiet:
+                    sys.stdout.write('\n')
+                    sys.stdout.flush()
+                failures += 1
+                if failures > DOWNLOAD_RESUME_COUNT:
+                    break
+                warn(f'Download interrupted after {read} of {size} bytes ({reason}), resuming')
+                reason = 'connection closed'
+                time.sleep(min(2**failures, DOWNLOAD_RESUME_MAX_DELAY))
+    finally:
+        if fp is not None:
+            fp.close()
 
     if size >= 0 and read < size:
-        raise ContentTooShortError(f'retrieval incomplete: got only {read} out of {size} bytes', result)
+        raise ContentTooShortError(f'retrieval incomplete: got only {read} out of {size} bytes ({reason})', result)
 
     return result
 
@@ -2723,7 +2802,8 @@ def get_constraints(idf_version: str, online: bool = True) -> str:
 
     for _ in range(DOWNLOAD_RETRY_COUNT):
         err = download(constraint_url, temp_path)
-        if not os.path.isfile(temp_path):
+        # A truncated file would be reused until the end of the day, and the constraints file has no checksum.
+        if err is not None or not os.path.isfile(temp_path):
             warn(f'Download failure: {err}')
             warn(f'Failed to download {constraint_url} to {temp_path}')
             continue
@@ -2777,8 +2857,9 @@ def action_install_python_env(args):  # type: ignore
     else:
         virtualenv_options = []
         info(f'Creating a new Python environment in {idf_python_env_path}')
-        try:
-            environ_idf_python_env_path = os.environ['IDF_PYTHON_ENV_PATH']
+        environ_idf_python_env_path = os.environ.get('IDF_PYTHON_ENV_PATH')
+        # An empty value selects the default path in get_python_env_path(), so the checks below are skipped as well
+        if environ_idf_python_env_path:
             correct_env_path = environ_idf_python_env_path.endswith(
                 PYTHON_VENV_DIR_TEMPLATE.format(idf_version, PYTHON_VER_MAJOR_MINOR)
             )
@@ -2798,16 +2879,14 @@ def action_install_python_env(args):  # type: ignore
                 PYTHON_VENV_DIR_TEMPLATE.format(r'\d+\.\d+', r'\d+\.\d+'), environ_idf_python_env_path
             ):
                 virtualenv_options.append('--clear')  # delete environment if already exists
-            elif os.listdir(environ_idf_python_env_path):  # show the message only if the directory is not empty
+            # The directory may not exist yet (first install or after --reinstall); venv creates it with its parents
+            elif os.path.isdir(environ_idf_python_env_path) and os.listdir(environ_idf_python_env_path):
                 info(
                     f'IDF_PYTHON_ENV_PATH is set to {environ_idf_python_env_path}, '
                     'but it does not appear to be an ESP-IDF Python virtual environment directory. '
                     'Existing data in this folder will be preserved to prevent unintentional data loss.'
                 )
 
-        except KeyError:
-            # if IDF_PYTHON_ENV_PATH not defined then the above checks can be skipped
-            pass
         subprocess.check_call(
             [sys.executable, '-m', 'venv', *virtualenv_options, idf_python_env_path],
             stdout=sys.stdout,
@@ -2816,10 +2895,10 @@ def action_install_python_env(args):  # type: ignore
         try:
             with open(os.path.join(idf_python_env_path, VENV_VER_FILE), 'w', encoding='utf-8') as f:
                 f.write(idf_version)
-        except OSError:
+        except OSError as e:
             warn(
                 'The following issue occurred while generating the '
-                'ESP-IDF version file in the Python environment: {e}. '
+                f'ESP-IDF version file in the Python environment: {e}. '
                 '(Diagnostic information. It can be ignored.)'
             )
 

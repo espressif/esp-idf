@@ -15,16 +15,15 @@
 #include "esp_tee_crypto_shared_gdma.h"
 #include "esp_aes_dma_priv.h"
 #include "esp_sha_dma_priv.h"
+#include "hal/gdma_ll.h"
 
 #define TEE_CRYPTO_GDMA_CH  (GDMA_LL_AHB_PAIRS_PER_GROUP - 1)
 
 #if SOC_AHB_GDMA_VERSION == 2
-#include "hal/ahb_dma_ll.h"
 #include "soc/ahb_dma_struct.h"
 #define DMA_DEV (AHB_DMA)
 #define DMA_LL_FUNC(func) ahb_dma_ll_##func
 #elif SOC_AHB_GDMA_VERSION == 1
-#include "hal/gdma_ll.h"
 #include "soc/gdma_struct.h"
 #define DMA_DEV (GDMA)
 #define DMA_LL_FUNC(func) gdma_ll_##func

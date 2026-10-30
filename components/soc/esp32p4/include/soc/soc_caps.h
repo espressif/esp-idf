@@ -232,6 +232,7 @@
 #define SOC_GDMA_SUPPORT_CRC                1
 #define SOC_GDMA_SUPPORT_ETM                1
 #define SOC_GDMA_SUPPORT_SLEEP_RETENTION    1
+#define SOC_GDMA_SUPPORT_WEIGHTED_ARBITRATION   1
 
 /*-------------------------- GPIO CAPS ---------------------------------------*/
 // ESP32-P4 has 1 GPIO peripheral
@@ -426,6 +427,7 @@
 // USB OTG Caps
 #define SOC_USB_OTG_PERIPH_NUM          (2U)
 #define SOC_USB_FSLS_PHY_NUM            (1U)
+#define SOC_USB_OTG_PSRAM_DMA_CAPABLE   (1)                 /*!< USB OTG Peripheral's internal DMA can access PSRAM */
 #define SOC_USB_OTG_NEED_SOFTWARE_SUSPEND_BEFORE_SLEEP (1)
 
 // USB PHY Caps

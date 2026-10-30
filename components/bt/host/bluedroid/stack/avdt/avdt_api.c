@@ -113,6 +113,13 @@ void AVDT_Register(tAVDT_REG *p_reg, tAVDT_CTRL_CBACK *p_cback)
     if (p_reg == NULL || p_cback == NULL) {
         return;
     }
+
+#if defined(AVDT_INITIAL_TRACE_LEVEL)
+    avdt_cb.trace_level = AVDT_INITIAL_TRACE_LEVEL;
+#else
+    avdt_cb.trace_level = BT_TRACE_LEVEL_NONE;
+#endif
+
     /* register PSM with L2CAP */
     L2CA_Register(AVDT_PSM, (tL2CAP_APPL_INFO *) &avdt_l2c_appl);
 
@@ -220,6 +227,16 @@ void AVDT_SINK_Deactivate(void)
             p_scb->in_use = TRUE;
             break;
         }
+    }
+}
+
+void AVDT_SetSepInUse(UINT8 handle, BOOLEAN in_use)
+{
+    tAVDT_SCB *p_scb = avdt_scb_by_hdl(handle);
+
+    if (p_scb != NULL) {
+        AVDT_TRACE_DEBUG("AVDT_SetSepInUse hdl=%d in_use=%d", handle, in_use);
+        p_scb->in_use = in_use;
     }
 }
 

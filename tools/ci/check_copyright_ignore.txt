@@ -885,9 +885,6 @@ examples/wifi/scan/main/scan.c
 examples/wifi/smart_config/main/smartconfig_main.c
 examples/wifi/wifi_easy_connect/dpp-enrollee/main/dpp_enrollee_main.c
 examples/wifi/wps/main/wps.c
-tools/ble/lib_ble_client.py
-tools/ble/lib_gap.py
-tools/ble/lib_gatt.py
 tools/ldgen/samples/template.ld
 tools/ldgen/test/data/linker_script.ld
 tools/test_apps/build_system/embed_test/main/test_main.c
@@ -903,6 +900,5 @@ tools/test_apps/system/bootloader_sections/main/test_main.c
 tools/test_apps/system/cxx_no_except/main/main.cpp
 tools/test_apps/system/gdb_loadable_elf/main/hello_world_main.c
 tools/test_apps/system/longjmp_test/main/hello_world_main.c
-tools/test_apps/system/no_embedded_paths/check_for_file_paths.py
 tools/test_apps/system/no_embedded_paths/main/test_no_embedded_paths_main.c
 tools/test_apps/system/startup/main/test_startup_main.c

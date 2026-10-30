@@ -89,8 +89,7 @@ static esp_err_t emac_esp_iomux_init(gpio_num_t gpio_num, const emac_iomux_info_
             ESP_RETURN_ON_FALSE((esp_gpio_reserve(BIT64(iomux_info->gpio_num)) & BIT64(iomux_info->gpio_num)) == 0, ESP_ERR_INVALID_STATE,
                                 TAG, "GPIO %i is already reserved", iomux_info->gpio_num);
             s_emac_esp_used_gpio_mask |= BIT64(iomux_info->gpio_num);
-            emac_hal_context_t hal;
-            emac_hal_init(&hal);
+            emac_hal_context_t hal = emac_hal_get_context();
             PERIPH_RCC_ATOMIC() {
                 emac_hal_gpio_init(&hal, gpio_num);
             }
@@ -336,10 +335,14 @@ esp_err_t emac_esp_gpio_matrix_init_ptp_pps(int num)
 
 esp_err_t emac_esp_gpio_deinit_all(void)
 {
+    emac_hal_context_t hal = emac_hal_get_context();
     for (int gpio_num = 0; gpio_num < 64; gpio_num++) {
         if (BIT64(gpio_num) & s_emac_esp_used_gpio_mask) {
             gpio_reset_pin(gpio_num);
             esp_gpio_revoke(BIT64(gpio_num));
+            PERIPH_RCC_ATOMIC() {
+                emac_hal_gpio_deinit(&hal, gpio_num);
+            }
         }
         s_emac_esp_used_gpio_mask &= ~BIT64(gpio_num);
     }

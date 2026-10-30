@@ -29,6 +29,10 @@ writers retain reserve access and fail-fast behavior.
 The Internal Snapshot and UART0 redirection transports are not members of the
 bitmap pool.
 
+`ble_log_sync` owns clock sampling and optional external markers. Runtime
+schedules periodic work; LBM allocates snapshot IDs and transports, then uses
+the sync sampling result to assemble each snapshot.
+
 Periodic flushing scans the whole bounded pool, not just OPEN bitmap hints:
 writers temporarily remove their hints while writing or holding a claim. A
 failed try-lock leaves `pending_seal`; the next claim seals the old buffer
@@ -52,9 +56,10 @@ paths:
   it. Each callback drains the queue depth captured at entry and schedules
   another fixed defer only for arrivals left behind, so it does not
   continuously monopolize the shared ESP Timer task.
-- USB builds drain the queue from a dedicated task that blocks on it: the 1 ms
-  defer cadence caps throughput well below the USB bulk endpoint (see
-  `CONFIG_BLE_LOG_PRPH_USB`). Deinit stops that task through the gate it
+- Copy-FIFO builds (TinyUSB CDC and USB Serial/JTAG) drain the queue from a
+  dedicated task that blocks on it: the 1 ms defer cadence caps throughput
+  well below the USB bulk endpoint (see `CONFIG_BLE_LOG_PRPH_COPY_FIFO`).
+  Deinit stops that task through the gate it
   already owns: it closes `rt_inited` and posts a NULL stop token, which that
   one receive reads as "stop"; the queue reserves a slot for the token, so the
   post never waits for room. The task then recycles what the closed gate left
@@ -225,19 +230,93 @@ bool ble_log_ts_sync_io_toggle_enable(bool enable);
 bool ble_log_sync_enable(bool enable);  /* compatibility shim */
 ```
 
-`ble_log_enable()` gates public producers only. Periodic system output remains
-active while that gate is closed.
+`ble_log_enable(false)` stops new public log writes, but does not stop periodic
+system output. Buffered logs continue to be flushed so partially filled buffers
+do not retain old data indefinitely. Periodic snapshots and task-binding
+broadcasts also continue, keeping clock samples, diagnostic statistics and task
+mappings available while business logging is paused. External sync markers,
+when configured and available, follow the periodic snapshots and remain active
+until deinitialization.
 
-`ble_log_ts_sync_io_toggle_enable()` controls only the optional external
-analyzer GPIO, which starts disabled and low. Disabling it leaves the IO low
-after a final falling edge;
-periodic clock sampling, OPEN transport flushing, and Internal Snapshots
-continue. When the GPIO feature is not built, the call remains a
-lifecycle-checked no-op. `ble_log_sync_enable()` is the backward-compatible
-name for the same behavior.
+When `CONFIG_BLE_LOG_TS_SYNC_TOGGLE_IO_ENABLED` is enabled, set
+`CONFIG_BLE_LOG_SYNC_IO_NUM` to the sync output GPIO. Output starts at BLE Log
+initialization and stops at deinitialization, independently of
+`ble_log_enable()`. UART1 is reserved for sync and must not be used by the
+console, log transport or application. UART0 remains available to the console.
+
+If sync initialization fails, BLE Log continues logging and producing periodic
+clock snapshots without external markers (`io_level` is zero). A `BLE-Log-Sync`
+error identifies the cause: an invalid GPIO, UART1 occupied by the console,
+log transport or an installed driver, or a failed driver/GPIO operation with
+its error code. A `BLE-Log` warning confirms that external sync is unavailable.
+Free UART1 or correct the reported configuration/resource error, then
+deinitialize and initialize BLE Log again to retry sync initialization.
+
+`io_level` records the sampled pin level, or zero when sync is unavailable.
+Sampling after falling T0 also records zero; this field does not indicate
+whether a complete external marker was emitted.
+
+`ble_log_ts_sync_io_toggle_enable()` and its compatibility name
+`ble_log_sync_enable()` ignore their argument and return whether BLE Log is
+initialized; they do not start or stop sync output.
+
+### Sync wire format
+
+The pin idles high. Each marker consists of a GPIO falling edge (T0), a low
+BREAK, a high separator, and seven non-inverted UART bytes at **1 Mbaud, 8N1**:
+
+```text
+high >= 64 us | GPIO falling T0 | high >= 2 us | 7 UART bytes | high idle
+             | low >= 12 us    | separator    | 70 us total  |
+             | BREAK + sample |              | count + ESP  |
+```
+
+UART1 drives the pin throughout. TX inversion produces T0, followed by LC,
+ESP and OS clock sampling in the same critical section. Normal TX polarity
+is restored outside that section before sending the label. T0 is the start
+of BREAK, not the first UART payload start bit. BREAK and separator durations
+may be extended by scheduling.
+
+| Byte offsets | Value | Encoding |
+| --- | --- | --- |
+| 0..2 | Snapshot `anchor_count` | 24-bit little-endian |
+| 3..6 | The same snapshot's raw `esp_ts` | 32-bit little-endian, microseconds |
+
+Count `0x123456` and ESP time `0x78563412` produce `56 34 12 12 34 56 78`.
+There is no header or CRC. The snapshot payload layout is unchanged.
+
+Only periodic snapshots emit markers, after acquiring their transport and
+count. INIT and FLUSH do not. A skipped marker leaves ordinary sampling intact;
+a failed label send after T0 preserves the original sample.
+
+### Decoding and channel matching
+
+- Find high idle >=64 us followed by falling T0, continuous low BREAK >=12 us,
+  and high separator >=2 us. Decode exactly seven consecutive 8N1 bytes at
+  1 Mbaud, checking start/stop bits and byte spacing. Emit
+  `(T0, count24, esp_ts32)`.
+- Discard incomplete or malformed groups and isolated BREAKs. Do not join them
+  to a later marker's payload. A separator >=64 us is ambiguous and must not
+  be paired without additional evidence. A capture starting inside a group
+  waits for the next complete marker; a reset pulse alone is not a label.
+- Match `(count24, esp_ts32)` against periodic snapshots to associate a channel
+  with a device's log. Confirm with multiple matches, then use the full
+  snapshot clocks for synchronization. Compare raw 32-bit ESP time, which
+  wraps every 2^32 us, rather than an unwrapped timestamp. If more than one
+  device or restart period matches, retain the ambiguity until further
+  records resolve it.
+
+For a generic UART decoder, select 1 Mbaud, 8N1, no inversion. BREAK may appear
+as a framing error or an extra zero byte; it is not part of the seven-byte
+payload.
+
+### Flush and record writes
 
 `ble_log_flush()` is an ordinary FreeRTOS task API. Do not call it from an ISR,
 critical section, or the shared ESP Timer task.
+The shutdown handler uses it to drain logs before a software restart. Normal
+operation, including example initialization, relies on periodic OPEN flushing;
+startup statistics continue from INIT without an extra FLUSH snapshot or reset.
 
 A public or LL record that cannot fit completely in one pool transport is
 rejected and counted as lost; BLE Log never emits a truncated record.
@@ -302,11 +381,13 @@ still emitted.
 | `CONFIG_BLE_LOG_LL_ENABLED` | target dependent | Controller LL logging |
 | `CONFIG_BLE_LOG_HCI_LOG_ENABLED` | y | HCI capture from Host or Controller, selected by transport |
 | `CONFIG_BLE_LOG_TASK_ID_MAX` | 16 | Task-id registry size, range 2..32; 16 bytes of RAM per entry |
-| `CONFIG_BLE_LOG_TS_SYNC_TOGGLE_IO_ENABLED` | n | Build the optional analyzer GPIO toggle |
-| `CONFIG_BLE_LOG_TS_ENABLED` | n | Deprecated compatibility entry selecting the GPIO toggle |
+| `CONFIG_BLE_LOG_TS_SYNC_TOGGLE_IO_ENABLED` | n | Build the optional UART1 sync label output |
+| `CONFIG_BLE_LOG_TS_ENABLED` | n | Deprecated compatibility entry selecting sync label output |
 | `CONFIG_BLE_LOG_PRPH_USB` | n | Use the USB OTG device as transport (see below) |
+| `CONFIG_BLE_LOG_PRPH_USB_SERIAL_JTAG` | n | Use USB Serial/JTAG as transport (see USB Serial/JTAG transport) |
 | `CONFIG_BLE_LOG_USB_CDC_TX_BUFSIZE` | 2048 | CDC TX FIFO size; must equal `CONFIG_TINYUSB_CDC_TX_BUFSIZE` |
 | `CONFIG_BLE_LOG_USB_CDC_EP_BUFSIZE` | 512 | CDC endpoint packet buffer. Keep 512 (the High-Speed bulk MPS) on High-Speed; on Full-Speed raise it to 1024, where the 64-byte MPS costs roughly half the achievable rate (see Buffer sizing) |
+| `CONFIG_BLE_LOG_USJ_TX_BUFSIZE` | 2048 | USB Serial/JTAG driver TX ring; must be >= `CONFIG_BLE_LOG_POOL_TRANS_SIZE` |
 
 Old multi-LBM sizing options remain hidden only so existing sdkconfig files can
 be parsed; they no longer control allocation.
@@ -371,6 +452,176 @@ Full-Speed one 64-byte packet per submission is far too slow, so raise
 effect on throughput; keep it at its `EP_BUFSIZE` minimum. `TX_BUFSIZE` buys
 little below 2048 and nothing above it.
 
+## USB Serial/JTAG transport
+
+On a chip with only USB Serial/JTAG (C3, C5, C6, C61, H2, H21), or when you
+want the USJ jack instead of the USB OTG jack (H4, S3), BLE Log can copy each
+sealed transport into the USB-Serial-JTAG driver TX ring. The hardware FIFO
+is 64 bytes and is not configurable. The device stays the ROM USB
+Serial/JTAG identity (VID 0x303A PID 0x1001). The host opens that CDC-ACM
+port. It does not match PID 0x10B1 or the product string `BLE-Log-Port`.
+
+### First write waits for the host port open
+
+The signal is the `SET_LINE_CODE` / `DTR_CHG` / `RTS_CHG` bits of
+`USB_SERIAL_JTAG.int_raw`. The host sets them when it programs the port, and a
+chip reset clears them. A transport produced before that first open
+is dropped through the not-connected path, so it does not raise the
+FIFO-full counter.
+
+The latch proves the port was opened at least once since the chip reset,
+not that it is open now. Re-enumeration without a chip reset (unplug and
+replug, host reboot) leaves the latch set, so a commit can still land in the
+new enumeration window. Not reproduced on hardware.
+
+A second failure mode is independent of the gate.
+`EP1_CONF.SERIAL_IN_EP_DATA_FREE` can read 0 from boot and never recover. The
+driver ring then accepts transports that no interrupt drains, and the port
+stays silent until the chip is reset. Observed in 1 of 8 boots.
+
+ESP32-C3 and ESP32-S3 do not have those three interrupt bits. On those two
+targets the transport writes as soon as the SOF-based
+`usb_serial_jtag_is_connected()` reports connected, which is the behaviour
+from before the gate.
+
+On C6 the BLE Log peripheral default stays UART DMA (`SOC_UHCI_SUPPORTED`).
+USJ is opt-in. On H4, OTG TinyUSB and USJ are two choice members because
+they are two ports with two host identities.
+
+### Console and other FIFO owners
+
+The 64-byte USJ FIFO has one software owner. BLE Log will not steal it.
+
+A default sdkconfig on a USJ chip turns on
+`CONFIG_ESP_CONSOLE_SECONDARY_USB_SERIAL_JTAG`, which sets
+`CONFIG_ESP_CONSOLE_USB_SERIAL_JTAG_ENABLED`. That secondary console already
+owns the FIFO. Hidden `CONFIG_BLE_LOG_USJ_BUS_BUSY` is then y, and the BLE
+Log USJ choice is not in the menu. The same hide applies when
+`CONFIG_ESP_TRACE_TRANSPORT_USB_SERIAL_JTAG` or
+`CONFIG_OPENTHREAD_RCP_USB_SERIAL_JTAG` is on, or when
+`CONFIG_USJ_ENABLE_USB_SERIAL_JTAG` is off.
+
+The hide is one-way. BLE Log does not `select` the console off. A reverse
+`depends` from the console onto BLE Log caused a Kconfig loop, so the
+operator has to release the port:
+
+1. Console: primary `ESP_CONSOLE_UART_DEFAULT` (or `ESP_CONSOLE_NONE`),
+   secondary `ESP_CONSOLE_SECONDARY_NONE`. Keep UART as the console if you
+   still want `ESP_LOG` / REPL; `idf.py monitor` then uses the UART-bridge
+   COM port, not the USJ ACM node.
+2. esp_trace: transport not "USB Serial JTAG".
+3. OpenThread RCP: transport not "USB RCP".
+4. Leave `CONFIG_USJ_ENABLE_USB_SERIAL_JTAG` on.
+5. `Component config -> Bluetooth -> Common Options -> Enable BT Log Async
+   Output` -> peripheral `Utilize USB Serial/JTAG as transport`.
+6. Leave `CONFIG_BLE_LOG_USJ_TX_BUFSIZE` at 2048 unless
+   `CONFIG_BLE_LOG_POOL_TRANS_SIZE` is larger than 2048.
+7. No `esp_tinyusb` manifest entry. That requirement belongs only to
+   `CONFIG_BLE_LOG_PRPH_USB`.
+
+If another caller already ran `usb_serial_jtag_driver_install`,
+`ble_log_init` returns false. That is a failed install, not a stolen
+console. `BLE_LOG_PRPH_USB_SERIAL_JTAG` depends on `!BLE_LOG_USJ_BUS_BUSY`,
+so menuconfig cannot enable both. If `sdkconfig.defaults` sets the USJ
+transport while the console still owns the FIFO, Kconfig turns the
+choice off. CMake still `FATAL_ERROR`s if both symbols are y. That only
+happens from a hand-edited sdkconfig that bypasses Kconfig.
+
+### ROM dual-write on C3 and S3
+
+`SECONDARY_NONE` is necessary but not sufficient on C3 and S3.
+
+Those ROMs define `ESP_ROM_CONSOLE_OUTPUT_SECONDARY`: `uart_tx_one_char`
+also writes each console byte to USJ. `cpu_start` then calls
+`esp_rom_install_uart_printf()`, which forces ROM `g_usb_print` back to
+true (the `ESP_ROM_HAS_ETS_PRINTF_BUG` workaround so IDF `esp_rom_printf`
+still works after an eFuse/RTC ROM-log disable). Channel 2 of
+`ets_printf` is the ROM secondary USB putc and stays installed when the
+primary console is UART.
+
+The result: UART console characters still appear on the same CDC-ACM node
+as BLE Log, and they corrupt binary frames.
+
+A successful `ble_log_prph_init` therefore:
+
+- sets `g_usb_print = false` on `ESP_ROM_HAS_ETS_PRINTF_BUG` chips (C3, S3);
+- calls `esp_rom_install_channel_putc(2, NULL)` on every USJ target.
+
+`g_uart_print` is left true, so the UART console still prints. The mute is
+not restored on deinit: restoring it would resume stuffing the FIFO after
+the driver is gone. ROM paths that ignore `g_usb_print` (rare direct
+`usb_serial_device_tx_one_char` calls) cannot be silenced from IDF.
+
+C5, C6, and later USJ chips do not have that `g_usb_print` leak. Channel 2
+is still uninstalled so `ets_printf` cannot use a leftover USB putc.
+
+### Teardown
+
+`ble_log_deinit` seals leftover transports and copies each one into the
+USJ TX ring, or drops it if the ring cannot hold it. It then uninstalls
+the driver. Bytes still in the ring are discarded. There is no
+`usb_serial_jtag_wait_tx_done` call. An unbounded wait can hang when SOF
+packets continue but the host is not reading the ACM port.
+
+TinyUSB CDC uses the same COPY_FIFO contract. UART DMA waits for hardware
+TX because that wait does not depend on a host reader.
+
+### Light sleep
+
+`CONFIG_USJ_NO_AUTO_LS_ON_CONNECTION` depends on
+`ESP_CONSOLE_USB_SERIAL_JTAG_ENABLED`. BLE Log USJ keeps the console on
+UART, so that option is hidden. BLE Log does not take an
+`ESP_PM_NO_LIGHT_SLEEP` lock. If the application enables automatic light
+sleep (`PM_ENABLE`), USJ output stops while the chip sleeps. Do not
+combine BLE Log USJ with automatic light sleep. Take that lock in the
+application if USJ must stay up during automatic light sleep.
+
+### Which USB connector
+
+The host identity is ROM USJ: `lsusb` shows `303a:1001` and Linux creates
+`/dev/ttyACM*`. Open that ACM node. Do not open the JTAG interface.
+
+`10c4:ea60` (CP210x) or `1a86:7523` (CH340) is a USB-UART bridge on UART0,
+not USJ. BLE Log USJ cannot use that port. Official ESP32-C3-DevKitM-1 /
+DevKitC-02 Type-C is USJ (GPIO18 D-, GPIO19 D+). UART0 is on the header
+pins. Third-party C3 boards often wire the only USB connector to a UART
+bridge and leave GPIO18/19 unconnected.
+
+### Resource occupancy (ESP32-C5 @ 240 MHz)
+
+Measured on `ble_log_usj_test` with `idf.py size-files` / `--archives`
+against `ble_log_usj_test.map`. Flash and static SRAM are link-map bytes.
+Heap rows are the buffers this path allocates at `ble_log_init`, not
+map `.bss`.
+
+| Item | Flash | Static SRAM | Heap at init | Notes |
+| --- | --- | --- | --- | --- |
+| `ble_log_prph_usb_serial_jtag.c` | 614 B | 9 B | 0 | USJ peripheral only. |
+| `libesp_driver_usb_serial_jtag.a` | 1949 B | 111 B | TX 2048 B + RX 128 B, plus the driver object, TX stash (64 B), mutex, idle semaphore, and USJ ISR | Pulled in because console is UART; BLE Log is the driver owner. |
+| USJ-specific subtotal | 2563 B | 120 B | ~2.2 KB rings, plus driver object / synch / ISR | Incremental cost of choosing USJ vs a dummy peripheral that does not link the driver. |
+| BLE Log COPY_FIFO (shared with TinyUSB CDC) | (in `ble_log_rt.c` / `ble_log_lbm_v2.c`) | | Dispatch task stack 1024 B (RISC-V; 2048 B on Xtensa); pool 8 x 640 B = 5120 B plus transport structs and the runtime queue | Same COPY_FIFO path as `CONFIG_BLE_LOG_PRPH_USB`. Not USJ-only. |
+
+CPU: 6.3% of one core (FreeRTOS IDLE delta) while the USJ driver was
+written at its drop-rate load on C5 @ 240 MHz. That measurement called
+`usb_serial_jtag_write_bytes` directly (`timeout` 0, whole 640-byte frame
+or none, TX ring 2048). It is not `ble_log_write_hex` occupancy. BLE Log
+uses the same write contract, so the driver portion of CPU is that figure;
+pool encode and dispatch sit on top. C6 is unmeasured. There is no DMA.
+
+### Throughput
+
+The TX ring is burst absorption. Overflow drops a whole sealed transport
+and recycles the pool buffer. The dispatcher does not block, and a larger
+ring does not increase the link rate.
+
+| Fact | Value | Label |
+| --- | --- | --- |
+| Signaling | USB 2.0 Full Speed, 12 Mbit/s | Datasheet. Not a delivered-byte rate. |
+| Hardware FIFO | 64 bytes TX and RX | `usb_serial_jtag.c` `USB_SER_JTAG_ENDP_SIZE`. |
+| FS bulk ceiling | 19 x 64 B/ms = 1.216 MB/s | USB spec inference. |
+| Driver drop rate | 750 KiB/s device, 726 KiB/s host | ESP32-C5 @ 240 MHz, n=5, 3 s, host-paced ACM reader. Same write contract as BLE Log (`write_bytes` timeout 0, whole 640-byte frame or none, TX ring 2048). The measurement called the driver directly, not `ble_log_write_hex`. CPU occupancy 6.3% (FreeRTOS IDLE delta). No DMA. C6 is unmeasured. |
+| Software ring default | 2048 bytes | Same knee as the TinyUSB CDC TX FIFO, and esp_trace's USJ minimum. |
+
 ## Validation apps
 
 ```bash
@@ -386,6 +637,9 @@ idf.py build
 
 cd ../ble_log_usb_test
 idf.py build
+
+cd ../ble_log_usj_test
+idf.py build
 ```
 
 `ble_log_test` validates golden v8 bytes, the consolidated Internal Snapshot,
@@ -395,5 +649,7 @@ snapshot busy loss, stale claims, and enable/disable/deinit races.
 and repeated deinit races.
 `ble_log_usb_test` is the USB OTG smoke / throughput / raw-pipe app (host-side
 meters), and carries the dispatcher teardown interleaving check in
-`CONFIG_BLE_LOG_USB_TEST_LIFECYCLE_MODE`. Like the other three it is built
-manually: no BLE Log test runner exists yet.
+`CONFIG_BLE_LOG_USB_TEST_LIFECYCLE_MODE`.
+`ble_log_usj_test` is the USB Serial/JTAG smoke / throughput app (ROM identity
+0x303A:0x1001). Like the other four it is built manually: no BLE Log test
+runner exists yet.

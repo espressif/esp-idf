@@ -942,6 +942,44 @@ macro(register_component)
 endmacro()
 
 #[[
+.. cmakev2:function:: component_compile_options
+
+    .. code-block:: cmake
+
+        component_compile_options(<option>...)
+
+    *option[in]*
+
+        Compile options added to the component library.
+
+    Backward-compatible shim for the legacy ``component_compile_options()``
+    function. Adds the options to ``COMPONENT_LIB`` as ``PRIVATE`` compile
+    options.
+#]]
+function(component_compile_options)
+    target_compile_options(${COMPONENT_LIB} PRIVATE ${ARGV})
+endfunction()
+
+#[[
+.. cmakev2:function:: component_compile_definitions
+
+    .. code-block:: cmake
+
+        component_compile_definitions(<definition>...)
+
+    *definition[in]*
+
+        Preprocessor definitions added to the component library.
+
+    Backward-compatible shim for the legacy ``component_compile_definitions()``
+    function. Adds the definitions to ``COMPONENT_LIB`` as ``PRIVATE`` compile
+    definitions.
+#]]
+function(component_compile_definitions)
+    target_compile_definitions(${COMPONENT_LIB} PRIVATE ${ARGV})
+endfunction()
+
+#[[
 .. cmakev2:function:: idf_build_component
 
     .. code-block:: cmake

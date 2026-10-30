@@ -38,20 +38,27 @@ static bool acl_connected;
 
 static esp_ble_iso_cig_t *out_cig;
 
-/* Each CIS is streamed independently: it comes up at its own time and carries
- * its own sequence numbering, so it gets its own timer and TX counters instead
- * of sharing one scheduler (which would report both under a single name). */
 struct cis_ctx {
     esp_ble_iso_chan_t         chan;
-    example_iso_tx_scheduler_t scheduler;
     uint16_t                   seq_num;
+    example_iso_tx_count_t     tx_count;
     uint8_t                    data[CIS_SDU_SIZE];
     char                       name[8];
+    bool                       tx_on;
 };
 
 static struct cis_ctx cis_ctxs[CIS_COUNT];
 
-static void iso_chan_send(struct cis_ctx *ctx);
+/* One scheduler for the CIG, running while any CIS sends: each tick sends one
+ * SDU on every CIS.
+ */
+static example_iso_tx_scheduler_t tx_scheduler;
+static size_t tx_cis_count;
+#if CONFIG_EXAMPLE_ISO_TX_TIMESTAMP
+static example_iso_tx_sync_t tx_sync;
+#else /* CONFIG_EXAMPLE_ISO_TX_TIMESTAMP */
+static int iso_chan_send(struct cis_ctx *ctx);
+#endif /* CONFIG_EXAMPLE_ISO_TX_TIMESTAMP */
 
 static struct cis_ctx *ctx_by_chan(const esp_ble_iso_chan_t *chan)
 {
@@ -81,17 +88,36 @@ static void iso_connected_cb(esp_ble_iso_chan_t *chan)
         return;
     }
 
-    ctx->seq_num = 0;
-    example_iso_tx_scheduler_reset(&ctx->scheduler);
-
-    /* Note: esp timer is not accurate enough */
-    err = example_iso_tx_scheduler_start(&ctx->scheduler, CIG_SDU_INTERVAL_US);
+#if CONFIG_EXAMPLE_ISO_TX_TIMESTAMP
+    err = example_iso_tx_sync_start(&tx_sync, chan, CIG_SDU_INTERVAL_US);
     if (err) {
-        ESP_LOGE(TAG, "[%s] Scheduler start failed, err %d", ctx->name, err);
+        ESP_LOGE(TAG, "[%s] Timestamp TX start failed, err %d", ctx->name, err);
         return;
     }
+#endif /* CONFIG_EXAMPLE_ISO_TX_TIMESTAMP */
 
+    if (tx_cis_count == 0) {
+        example_iso_tx_scheduler_reset(&tx_scheduler);
+
+        /* Note: esp timer is not accurate enough */
+        err = example_iso_tx_scheduler_start(&tx_scheduler, CIG_SDU_INTERVAL_US);
+        if (err) {
+            ESP_LOGE(TAG, "Scheduler start failed, err %d", err);
+            return;
+        }
+    }
+
+    ctx->tx_on = true;
+    ctx->tx_count = (example_iso_tx_count_t){0};
+    tx_cis_count++;
+
+    ESP_LOGI(TAG, "[%s] Starting TX %s timestamps", ctx->name,
+             IS_ENABLED(CONFIG_EXAMPLE_ISO_TX_TIMESTAMP) ? "with" : "without");
+
+#if !CONFIG_EXAMPLE_ISO_TX_TIMESTAMP
+    ctx->seq_num = 0;
     iso_chan_send(ctx);
+#endif /* !CONFIG_EXAMPLE_ISO_TX_TIMESTAMP */
 }
 
 static void iso_disconnected_cb(esp_ble_iso_chan_t *chan, uint8_t reason)
@@ -101,9 +127,19 @@ static void iso_disconnected_cb(esp_ble_iso_chan_t *chan, uint8_t reason)
 
     ESP_LOGI(TAG, "[%s] Disconnected, reason 0x%02x", ctx->name, reason);
 
-    err = example_iso_tx_scheduler_stop(&ctx->scheduler);
-    if (err) {
-        ESP_LOGE(TAG, "[%s] Scheduler stop failed, err %d", ctx->name, err);
+#if CONFIG_EXAMPLE_ISO_TX_TIMESTAMP
+    example_iso_tx_sync_stop(&tx_sync, chan);
+#endif /* CONFIG_EXAMPLE_ISO_TX_TIMESTAMP */
+
+    /* Other CIS keep sending. */
+    if (ctx->tx_on) {
+        ctx->tx_on = false;
+        if (--tx_cis_count == 0) {
+            err = example_iso_tx_scheduler_stop(&tx_scheduler);
+            if (err) {
+                ESP_LOGE(TAG, "Scheduler stop failed, err %d", err);
+            }
+        }
     }
 
     /* Per BT Core 6.0 §7.7.5: a CIS on the Central retains its handle and
@@ -122,7 +158,7 @@ static void iso_sent_cb(esp_ble_iso_chan_t *chan, void *user_data)
 {
     struct cis_ctx *ctx = ctx_by_chan(chan);
 
-    example_iso_tx_scheduler_on_sent(&ctx->scheduler, user_data, TAG, ctx->name);
+    example_iso_tx_scheduler_on_sent(&tx_scheduler, user_data, &ctx->tx_count, TAG, ctx->name);
 }
 
 static esp_ble_iso_chan_ops_t iso_ops = {
@@ -186,7 +222,8 @@ connect:
     }
 }
 
-static void iso_chan_send(struct cis_ctx *ctx)
+#if !CONFIG_EXAMPLE_ISO_TX_TIMESTAMP
+static int iso_chan_send(struct cis_ctx *ctx)
 {
     int err;
 
@@ -198,17 +235,53 @@ static void iso_chan_send(struct cis_ctx *ctx)
                                 ctx->seq_num);
     if (err) {
         ESP_LOGD(TAG, "[%s] Send failed, err %d", ctx->name, err);
-        return;
+        return err;
     }
 
     ctx->seq_num++;
-}
 
-/* Each CIS has its own timer, so the scheduler only ever feeds its own channel;
- * a CIS that is not established yet has no timer running and is never sent to. */
+    return 0;
+}
+#else /* !CONFIG_EXAMPLE_ISO_TX_TIMESTAMP */
+static int tx_send_cb(esp_ble_iso_chan_t *chan, uint16_t seq_num,
+                      uint32_t timestamp, bool ts_valid)
+{
+    struct cis_ctx *ctx = ctx_by_chan(chan);
+    int err;
+
+    memset(ctx->data, (uint8_t)seq_num, sizeof(ctx->data));
+    /* The timestamp, 0 without one, tells the receiver which SDUs of the
+     * channels belong together, e.g. the left and right audio of one frame.
+     */
+    if (!ts_valid) {
+        timestamp = 0;
+    }
+    memcpy(ctx->data, &timestamp, sizeof(timestamp));
+
+    if (ts_valid) {
+        err = esp_ble_iso_chan_send_ts(chan, ctx->data, sizeof(ctx->data), seq_num, timestamp);
+    } else {
+        err = esp_ble_iso_chan_send(chan, ctx->data, sizeof(ctx->data), seq_num);
+    }
+    if (err) {
+        ESP_LOGW(TAG, "[%s] Send failed, err %d", ctx->name, err);
+    }
+
+    return err;
+}
+#endif /* !CONFIG_EXAMPLE_ISO_TX_TIMESTAMP */
+
 static void tx_scheduler_cb(void *arg)
 {
-    iso_chan_send(arg);
+#if CONFIG_EXAMPLE_ISO_TX_TIMESTAMP
+    example_iso_tx_sync_send_next(&tx_sync);
+#else /* CONFIG_EXAMPLE_ISO_TX_TIMESTAMP */
+    for (size_t i = 0; i < ARRAY_SIZE(cis_ctxs); i++) {
+        if (cis_ctxs[i].tx_on) {
+            iso_chan_send(&cis_ctxs[i]);
+        }
+    }
+#endif /* CONFIG_EXAMPLE_ISO_TX_TIMESTAMP */
 }
 
 static bool data_cb(uint8_t type, const uint8_t *data,
@@ -369,21 +442,19 @@ void app_main(void)
         return;
     }
 
-    /* All CIS share the callbacks and TX QoS; each keeps its own timer, fed
-     * with its own context so the scheduler knows which channel to send on. */
     for (size_t i = 0; i < ARRAY_SIZE(cis_ctxs); i++) {
         cis_ctxs[i].chan.ops = &iso_ops;
         cis_ctxs[i].chan.qos = &iso_qos;
         snprintf(cis_ctxs[i].name, sizeof(cis_ctxs[i].name), "CIS #%zu", i);
+    }
 
-        err = example_iso_tx_scheduler_init(&cis_ctxs[i].scheduler,
-                                            tx_scheduler_cb,
-                                            &cis_ctxs[i]);
-        if (err) {
-            ESP_LOGE(TAG, "[%s] Failed to init tx scheduler, err %d",
-                     cis_ctxs[i].name, err);
-            return;
-        }
+#if CONFIG_EXAMPLE_ISO_TX_TIMESTAMP
+    tx_sync.send = tx_send_cb;
+#endif /* CONFIG_EXAMPLE_ISO_TX_TIMESTAMP */
+    err = example_iso_tx_scheduler_init(&tx_scheduler, tx_scheduler_cb, NULL);
+    if (err) {
+        ESP_LOGE(TAG, "Failed to init tx scheduler, err %d", err);
+        return;
     }
 
     err = set_device_name();

@@ -60,9 +60,19 @@ Clock Source
     :SOC_I2S_SUPPORTS_PLL_F120M: - :cpp:enumerator:`i2s_clock_src_t::I2S_CLK_SRC_PLL_120M`: 120 MHz PLL clock.
     :SOC_I2S_SUPPORTS_PLL_F96M: - :cpp:enumerator:`i2s_clock_src_t::I2S_CLK_SRC_PLL_96M`: 96 MHz PLL clock.
     :SOC_I2S_SUPPORTS_PLL_F240M: - :cpp:enumerator:`i2s_clock_src_t::I2S_CLK_SRC_PLL_240M`: 240 MHz PLL clock.
-    :SOC_I2S_SUPPORTS_APLL: - :cpp:enumerator:`i2s_clock_src_t::I2S_CLK_SRC_APLL`: Audio PLL clock. Its frequency is configurable according to the sample rate, which makes it more precise in high sample rate applications. However, if APLL has been occupied by EMAC or other channels, the APLL frequency cannot be changed, and the driver will try to work under this APLL frequency. If this frequency cannot meet the requirements of I2S, the clock configuration will fail.
+    :SOC_I2S_SUPPORTS_APLL: - :cpp:enumerator:`i2s_clock_src_t::I2S_CLK_SRC_APLL`: Audio PLL clock. Its frequency is configurable according to the sample rate, which makes it more precise in high sample rate applications. I2S can use APLL in fixed shareable mode or exclusive adjustable mode.
     :SOC_I2S_SUPPORTS_RC_FAST: - :cpp:enumerator:`i2s_clock_src_t::I2S_CLK_SRC_RC_FAST`: RC_FAST clock source.
     :SOC_I2S_SUPPORTS_EXTERNAL: - :cpp:enumerator:`i2s_clock_src_t::I2S_CLK_SRC_EXTERNAL`: External clock source.
+
+.. only:: SOC_I2S_SUPPORTS_APLL
+
+    APLL Access Mode
+    ^^^^^^^^^^^^^^^^
+
+    After selecting :cpp:enumerator:`i2s_clock_src_t::I2S_CLK_SRC_APLL`, use ``flags.clk_src_adjustable`` in the STD, TDM, PDM TX, and PDM RX clock configuration structures to select the APLL access mode:
+
+    - ``false`` (default): Use APLL in fixed mode, allowing it to be shared by multiple peripherals. When APLL is used for the first time and has not yet been configured, I2S selects an appropriate APLL frequency according to the sample rate. If APLL is already configured, I2S reuses the existing frequency and adjusts its own divider. The configuration fails if the existing frequency cannot produce a valid I2S clock.
+    - ``true``: Use APLL exclusively in adjustable mode. I2S can adjust the APLL frequency during clock reconfiguration or :cpp:func:`i2s_channel_tune_rate` to obtain finer clock division, while other peripherals cannot acquire APLL at the same time. Because duplex channels acquire APLL separately, they cannot both use adjustable mode.
 
 Clock Terminology
 ^^^^^^^^^^^^^^^^^
@@ -91,19 +101,21 @@ I2S Communication Mode
 Overview of All Modes
 ^^^^^^^^^^^^^^^^^^^^^
 
-=========  ========  ============  ============  =========  ========  ========  ==========
- Target    Standard   PCM-to-PDM    PDM-to-PCM      PDM       TDM     ADC/DAC   LCD/Camera
-=========  ========  ============  ============  =========  ========  ========  ==========
-ESP32      I2S 0/1      I2S 0          I2S 0      I2S 0/1     none      I2S 0      I2S 0
-ESP32-S2    I2S 0       none           none        none       none      none       I2S 0
-ESP32-S3   I2S 0/1      I2S 0          I2S 0      I2S 0/1    I2S 0/1    none       none
-ESP32-P4   I2S 0~2      I2S 0          I2S 0      I2S 0~2    I2S 0~2    none       none
-others      I2S 0       I2S 0          none        I2S 0      I2S 0     none       none
-=========  ========  ============  ============  =========  ========  ========  ==========
+The I2S on {IDF_TARGET_NAME} supports the following communication modes:
 
-.. note::
+.. list::
 
-    If you are using PDM mode, note that not all I2S ports support conversion between raw PDM and PCM formats, because these ports do not have PCM-to-PDM data format converter in TX direction, or PDM-to-PCM data format converter in RX direction. Ports without the converter can only read/write raw PDM data. To read/write PCM format data on these ports, you may need an extra software filter for PDM-to-PCM conversion.
+    - **Standard (STD) mode**: Supported on all I2S ports.
+    :SOC_I2S_SUPPORTS_TDM: - **TDM mode**: Supported on all I2S ports.
+    :SOC_I2S_SUPPORTS_PDM: - **PDM mode**: All I2S ports can transmit and receive raw PDM data.
+    :SOC_I2S_SUPPORTS_PCM2PDM: - **PCM-to-PDM**: Only the TX direction of I2S0 can convert PCM data to PDM before transmission.
+    :SOC_I2S_SUPPORTS_PDM2PCM: - **PDM-to-PCM**: Only the RX direction of I2S0 can convert received PDM data to PCM.
+
+.. only:: SOC_I2S_SUPPORTS_PDM and not SOC_I2S_SUPPORTS_PDM2PCM
+
+    .. note::
+
+        This chip has no PDM-to-PCM converter in the RX direction, so it can only read raw PDM data. Convert the data in software if PCM format is required.
 
 Standard Mode
 ^^^^^^^^^^^^^
@@ -224,20 +236,6 @@ In standard mode, there are always two sound channels, i.e., the left and right 
     - **PCM Long Format**: Data has one-bit shift and the WS signal lasts one-slot bit width for every frame. For example, the duty of WS will be 25% if there are four slots enabled, and 20% if there are five slots.
 
     .. wavedrom:: /../_static/diagrams/i2s/tdm_pcm_long.json
-
-.. only:: esp32 or esp32s2
-
-    LCD/Camera Mode
-    ^^^^^^^^^^^^^^^
-
-    LCD/Camera mode is only supported on I2S0 over a parallel bus. For LCD mode, I2S0 should work at master TX mode. For camera mode, I2S0 should work at slave RX mode. These two modes are not implemented by the I2S driver. Please refer to :doc:`/api-reference/peripherals/lcd/i80_lcd` for details about the LCD implementation. For more information, see **{IDF_TARGET_NAME} Technical Reference Manual** > **I2S Controller (I2S)** > LCD Mode [`PDF <{IDF_TARGET_TRM_EN_URL}#camlcdctrl>`__].
-
-.. only:: esp32
-
-    ADC/DAC Mode
-    ^^^^^^^^^^^^
-
-    ADC and DAC modes only exist on ESP32 and are only supported on I2S0. Actually, they are two sub-modes of LCD/Camera mode. I2S0 can be routed directly to the internal analog-to-digital converter (ADC) and digital-to-analog converter (DAC). In other words, ADC and DAC peripherals can read or write continuously via I2S0 DMA. As they are not actual communication modes, the I2S driver does not implement them.
 
 Functional Overview
 -------------------

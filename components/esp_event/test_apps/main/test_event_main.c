@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -27,7 +27,7 @@ void setUp(void)
     unity_utils_set_leak_level(0);
     unity_utils_record_free_mem();
 
-#if SOC_WDT_SUPPORTED
+#if CONFIG_ESP_TASK_WDT_EN
     esp_task_wdt_add(NULL);
     esp_task_wdt_reset();
 #endif
@@ -37,7 +37,7 @@ void setUp(void)
 void tearDown(void)
 {
 
-#if SOC_WDT_SUPPORTED
+#if CONFIG_ESP_TASK_WDT_EN
     esp_task_wdt_reset();
     esp_task_wdt_delete(NULL);
 #endif
@@ -52,7 +52,7 @@ void tearDown(void)
 
 void app_main(void)
 {
-#if SOC_WDT_SUPPORTED
+#if CONFIG_ESP_TASK_WDT_EN
     // Configure the task watchdog timer to catch any tests that hang
     esp_task_wdt_config_t config = {
         .timeout_ms = 25 * 1000, // 25 seconds, smaller than the default pytest timeout
@@ -61,7 +61,7 @@ void app_main(void)
     };
 
     esp_task_wdt_init(&config);
-#endif // SOC_WDT_SUPPORTED
+#endif // CONFIG_ESP_TASK_WDT_EN
 
     ESP_LOGI(TAG, "Running esp-event test app");
     // rand() seems to do a one-time allocation. Call it here so that the memory it allocates

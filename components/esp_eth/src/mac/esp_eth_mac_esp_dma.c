@@ -635,7 +635,7 @@ esp_err_t emac_esp_new_dma(const emac_esp_dma_config_t *config, emac_esp_dma_han
         emac_esp_dma->tx_buf[i] = heap_caps_aligned_calloc(EMAC_LL_DMA_MEM_ALIGNMENT, 1, CONFIG_ETH_DMA_BUFFER_SIZE, EMAC_DMA_BUF_MALLOC_CAPS);
         ESP_GOTO_ON_FALSE(emac_esp_dma->tx_buf[i], ESP_ERR_NO_MEM, err, TAG, "no mem for TX DMA buffers");
     }
-    emac_hal_init(&emac_esp_dma->hal);
+    emac_esp_dma->hal = emac_hal_get_context();
     *ret_handle = emac_esp_dma;
     return ESP_OK;
 err:

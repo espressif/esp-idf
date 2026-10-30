@@ -14,8 +14,7 @@ set(crypto_port_inc_dirs "${COMPONENT_DIR}/port/aes/include"
 # Supporting headers
 list(APPEND crypto_port_inc_dirs "${heap_dir}/include")
 
-idf_component_register(SRCS "${srcs}"
-                       INCLUDE_DIRS "${include_dirs}" "${crypto_port_inc_dirs}"
+idf_component_register(INCLUDE_DIRS "${include_dirs}" "${crypto_port_inc_dirs}"
                        PRIV_REQUIRES "${priv_requires}")
 
 # Only build mbedtls libraries

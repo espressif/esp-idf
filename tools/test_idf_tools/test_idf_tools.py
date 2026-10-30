@@ -2,13 +2,21 @@
 #
 # SPDX-FileCopyrightText: 2019-2026 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
+import errno
 import json
 import os
 import re
 import shutil
+import socket
+import ssl
+import struct
 import sys
 import tempfile
+import threading
+import time
 import unittest
+from http.server import BaseHTTPRequestHandler
+from http.server import ThreadingHTTPServer
 from subprocess import STDOUT
 from subprocess import check_call
 from unittest.mock import patch
@@ -1450,6 +1458,208 @@ class TestArmDetection(unittest.TestCase):
             with patch('sys.executable', TestArmDetection.ELF_HEADERS[exec_platform]):
                 for platform in TestArmDetection.ARM_PLATFORMS:
                     self.assertEqual(idf_tools.Platforms.detect_linux_arm_platform(platform), exec_platform)
+
+
+DOWNLOAD_PAYLOAD = bytes(range(256)) * 4096
+DOWNLOAD_CUT = 300000
+
+
+class DownloadHandler(BaseHTTPRequestHandler):
+    def do_GET(self):
+        self.server.paths.append(self.path)
+        self.server.ranges.append(self.headers.get('Range'))
+        behaviours = self.server.behaviours
+        # Requests after the last behaviour repeat it, so one behaviour can answer every resume attempt.
+        behaviours[min(len(self.server.ranges), len(behaviours)) - 1](self)
+
+    def respond(self, sent=None, resume=True, status=206, offset_error=0, length=True, length_error=0, etag='"1"'):
+        start = 0
+        requested = self.headers.get('Range')
+        if resume and requested:
+            start = int(requested[len('bytes=') : -1]) + offset_error
+            self.send_response(status)
+            self.send_header('Content-Range', f'bytes {start}-{len(DOWNLOAD_PAYLOAD) - 1}/{len(DOWNLOAD_PAYLOAD)}')
+        else:
+            self.send_response(200)
+        if length:
+            self.send_header('Content-Length', str(len(DOWNLOAD_PAYLOAD) - start + length_error))
+        if etag:
+            self.send_header('ETag', etag)
+        self.end_headers()
+        self.wfile.write(DOWNLOAD_PAYLOAD[start:][:sent])
+
+    def redirect(self):
+        # Stands for a signed GitHub URL, which expires and must not be requested again by a resume.
+        self.send_response(302)
+        self.send_header('Location', f'/signed/{len(self.server.paths)}')
+        self.send_header('Content-Length', '0')
+        self.end_headers()
+
+    def reset(self):
+        self.respond(sent=DOWNLOAD_CUT)
+        # On some systems a reset discards data the client has not read yet. The delay lets the client read the
+        # headers first, because a failure before them is not resumed.
+        time.sleep(0.2)
+        self.connection.setsockopt(socket.SOL_SOCKET, socket.SO_LINGER, struct.pack('ii', 1, 0))
+        self.connection.close()
+
+    def stall(self, length=True):
+        self.respond(sent=DOWNLOAD_CUT, length=length)
+        # Holds the connection open until the test ends, so the client always times out first.
+        self.server.release.wait(10)
+
+    def log_message(self, *args):
+        pass
+
+
+class TestDownloadResume(unittest.TestCase):
+    def setUp(self):
+        self.server = ThreadingHTTPServer(('127.0.0.1', 0), DownloadHandler)
+        # Rejected responses are closed unread and some tests reset connections. The server would print a traceback
+        # for each resulting BrokenPipeError or ConnectionResetError.
+        self.server.handle_error = lambda request, client_address: None
+        self.server.release = threading.Event()
+        # The default poll interval would make shutdown() add half a second to each test.
+        threading.Thread(target=self.server.serve_forever, args=(0.01,), daemon=True).start()
+        self.addCleanup(self.server.server_close)
+        self.addCleanup(self.server.shutdown)
+        self.addCleanup(self.server.release.set)
+        self.url = f'http://127.0.0.1:{self.server.server_port}/dl/archive.tar.gz'
+        self.temp_dir = tempfile.mkdtemp()
+        self.addCleanup(shutil.rmtree, self.temp_dir)
+        self.destination = os.path.join(self.temp_dir, 'archive.tar.gz')
+        for patcher in (
+            # A proxy set in the environment must not intercept requests to the local server.
+            patch.dict(os.environ, {'no_proxy': '*'}),
+            patch.object(idf_tools, 'DOWNLOAD_RESUME_COUNT', 2),
+            patch.object(idf_tools, 'DOWNLOAD_RESUME_MAX_DELAY', 0),
+            patch.object(idf_tools.g, '_quiet', False),
+            # Progress output is enabled to cover the line break printed before the resume warning.
+            patch.object(idf_tools.g, '_non_interactive', False),
+        ):
+            patcher.start()
+            self.addCleanup(patcher.stop)
+
+    def serve(self, *behaviours):
+        self.server.paths = []
+        self.server.ranges = []
+        self.server.behaviours = behaviours
+
+    def download(self, *behaviours):
+        self.serve(*behaviours)
+        # One buffer for both streams keeps the order of progress output and warnings.
+        output = StringIO()
+        with redirect_stdout(output), redirect_stderr(output):
+            err = idf_tools.download(self.url, self.destination)
+        self.output = output.getvalue()
+        return err
+
+    def assert_downloaded(self, err):
+        self.assertIsNone(err)
+        with open(self.destination, 'rb') as f:
+            self.assertEqual(f.read(), DOWNLOAD_PAYLOAD)
+
+    def test_resume_after_connection_closed(self):
+        err = self.download(lambda h: h.respond(sent=DOWNLOAD_CUT), DownloadHandler.respond)
+        self.assert_downloaded(err)
+        self.assertEqual(self.server.ranges, [None, f'bytes={DOWNLOAD_CUT}-'])
+        self.assertIn(
+            f'%\nWARNING: Download interrupted after {DOWNLOAD_CUT} of {len(DOWNLOAD_PAYLOAD)} bytes', self.output
+        )
+
+    def test_resume_from_original_url(self):
+        err = self.download(
+            DownloadHandler.redirect,
+            lambda h: h.respond(sent=DOWNLOAD_CUT),
+            DownloadHandler.redirect,
+            DownloadHandler.respond,
+        )
+        self.assert_downloaded(err)
+        self.assertEqual(self.server.paths, ['/dl/archive.tar.gz', '/signed/1', '/dl/archive.tar.gz', '/signed/3'])
+
+    def test_resume_uses_timeout_and_context(self):
+        self.serve(lambda h: h.respond(sent=DOWNLOAD_CUT), DownloadHandler.respond)
+        context = ssl.create_default_context()
+        with patch.object(idf_tools, 'urlopen', wraps=idf_tools.urlopen) as urlopen:
+            with redirect_stderr(StringIO()):
+                idf_tools.urlretrieve_ctx(self.url, self.destination, context=context)
+        self.assertEqual(urlopen.call_count, 2)
+        for call in urlopen.call_args_list:
+            self.assertEqual(call.args[2], idf_tools.DOWNLOAD_TIMEOUT)
+            self.assertIs(call.kwargs['context'], context)
+
+    @unittest.skipIf(sys.platform == 'win32', reason='SO_LINGER has a different layout on Windows')
+    def test_resume_after_connection_reset(self):
+        err = self.download(DownloadHandler.reset, DownloadHandler.respond)
+        self.assert_downloaded(err)
+        self.assertEqual(len(self.server.ranges), 2)
+
+    def test_resume_after_stall(self):
+        with patch.object(idf_tools, 'DOWNLOAD_TIMEOUT', 1):
+            err = self.download(DownloadHandler.stall, DownloadHandler.respond)
+        self.assert_downloaded(err)
+        self.assertIn('timed out', self.output)
+
+    def test_no_resume_without_content_length(self):
+        with patch.object(idf_tools, 'DOWNLOAD_TIMEOUT', 1):
+            err = self.download(lambda h: h.stall(length=False))
+        self.assertIsInstance(err, OSError)
+        self.assertEqual(self.server.ranges, [None])
+
+    def test_resume_after_more_drops_than_resume_count(self):
+        step = 100000
+        err = self.download(*([lambda h: h.respond(sent=step)] * 6), DownloadHandler.respond)
+        self.assert_downloaded(err)
+        self.assertEqual(len(self.server.ranges), 7)
+
+    def test_resume_without_etag(self):
+        for name, first_etag in (('no ETag', None), ('ETag only in the first response', '"1"')):
+            with self.subTest(name):
+                err = self.download(
+                    lambda h: h.respond(sent=DOWNLOAD_CUT, etag=first_etag), lambda h: h.respond(etag=None)
+                )
+                self.assert_downloaded(err)
+
+    def test_resume_rejected(self):
+        for name, behaviour in (
+            ('Range ignored', lambda h: h.respond(resume=False)),
+            ('status 200 with Content-Range', lambda h: h.respond(status=200)),
+            ('wrong Content-Range', lambda h: h.respond(offset_error=1)),
+            ('wrong Content-Length', lambda h: h.respond(length_error=1)),
+            ('changed ETag', lambda h: h.respond(etag='"2"')),
+        ):
+            with self.subTest(name):
+                err = self.download(lambda h: h.respond(sent=DOWNLOAD_CUT), behaviour)
+                self.assertIsInstance(err, idf_tools.ContentTooShortError)
+                self.assertIn('did not send the rest of the same file', str(err))
+                self.assertEqual(len(self.server.ranges), 2)
+
+    def test_resume_without_progress(self):
+        err = self.download(lambda h: h.respond(sent=DOWNLOAD_CUT), lambda h: h.send_error(404))
+        self.assertIsInstance(err, idf_tools.ContentTooShortError)
+        self.assertIn(f'got only {DOWNLOAD_CUT} out of {len(DOWNLOAD_PAYLOAD)} bytes', str(err))
+        self.assertIn('404', str(err))
+        self.assertEqual(len(self.server.ranges), 1 + idf_tools.DOWNLOAD_RESUME_COUNT)
+
+    @unittest.skipUnless(os.path.exists('/dev/full'), reason='/dev/full is needed to simulate a full disk')
+    def test_write_error_not_resumed(self):
+        self.destination = '/dev/full'
+        err = self.download(DownloadHandler.respond)
+        self.assertIsInstance(err, OSError)
+        self.assertEqual(err.errno, errno.ENOSPC)
+        self.assertEqual(self.server.ranges, [None])
+
+    def test_truncated_constraints_file_not_used(self):
+        self.serve(lambda h: h.respond(sent=DOWNLOAD_CUT, resume=False))
+        mirror = f'https://dl.espressif.com/dl/esp-idf,http://127.0.0.1:{self.server.server_port}/dl'
+        # An invalid IDF_GITHUB_ASSETS from the environment would end get_constraints() before the download.
+        with patch.dict(os.environ, {'IDF_MIRROR_PREFIX_MAP': mirror, 'IDF_GITHUB_ASSETS': ''}):
+            with patch.object(idf_tools.g, '_idf_tools_path', self.temp_dir):
+                with redirect_stdout(StringIO()), redirect_stderr(StringIO()):
+                    with self.assertRaises(SystemExit):
+                        idf_tools.get_constraints('0.0')
+        self.assertFalse(os.path.exists(os.path.join(self.temp_dir, 'espidf.constraints.v0.0.txt')))
+        self.assertEqual(len(self.server.ranges), 2 * idf_tools.DOWNLOAD_RETRY_COUNT)
 
 
 # TestSystemDependencies tests behaviour when system dependencies had been broken, on linux

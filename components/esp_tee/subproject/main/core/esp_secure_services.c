@@ -532,7 +532,9 @@ int _ss_esp_tee_ota_end(void)
 esp_err_t _ss_esp_tee_sec_storage_clear_key(const char *key_id)
 {
     char id_buf[NVS_KEY_NAME_MAX_SIZE];
-    tee_snapshot_ree_str(&key_id, id_buf, sizeof(id_buf));
+    if (!tee_snapshot_ree_str(&key_id, id_buf, sizeof(id_buf))) {
+        return ESP_ERR_INVALID_ARG;
+    }
 
     bool valid_arg = !esp_tee_sec_storage_is_key_tee_owned(key_id);
     if (!valid_arg) {
@@ -551,7 +553,9 @@ esp_err_t _ss_esp_tee_sec_storage_gen_key(const esp_tee_sec_storage_key_cfg_t *c
 
     esp_tee_sec_storage_key_cfg_t cfg_local = *cfg;
     char id_buf[NVS_KEY_NAME_MAX_SIZE];
-    tee_snapshot_ree_str(&cfg_local.id, id_buf, sizeof(id_buf));
+    if (!tee_snapshot_ree_str(&cfg_local.id, id_buf, sizeof(id_buf))) {
+        return ESP_ERR_INVALID_ARG;
+    }
 
     bool valid_arg = !(cfg_local.flags & SEC_STORAGE_FLAG_TEE_ONLY) &&
                      !esp_tee_sec_storage_is_key_tee_owned(cfg_local.id);

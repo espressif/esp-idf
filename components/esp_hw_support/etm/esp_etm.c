@@ -276,7 +276,7 @@ esp_err_t esp_etm_new_channel(const esp_etm_channel_config_t *config, esp_etm_ch
     if (clk_src == 0) {
         clk_src = ETM_CLK_SRC_DEFAULT;
     }
-    ESP_GOTO_ON_ERROR(esp_clk_tree_acquire_src((soc_module_clk_t)clk_src), err, TAG, "clock source enable failed");
+    ESP_GOTO_ON_ERROR(esp_clk_tree_acquire_src((soc_module_clk_t)clk_src, NULL), err, TAG, "clock source enable failed");
     chan->clk_src = clk_src;
     etm_ll_set_clock_source(group_id, clk_src);
 #endif

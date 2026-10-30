@@ -2,11 +2,10 @@
 # SPDX-License-Identifier: Apache-2.0
 import os
 import re
-from typing import Optional
 
 from idf_py_actions.tools import get_build_context
 
-'''
+"""
 glossary:
 original_component:  component which compilation failed
 source_component:    component containing file which is including the missing header file
@@ -14,15 +13,13 @@ candidate_component: component which contain the missing header file
 original_filename:   abs path of file(compilation unit) in original_component
 source_filename:     abs path of file in source_component which is including the missing header file
 missing_header:      filename of the missing header included in source_filename
-'''
+"""
 
 # Regex to find source_filename in preprocessor's error message
-ENOENT_RE = re.compile(r'^(.+):\d+:\d+: fatal error: (.+): No such file or directory$',
-                       flags=re.MULTILINE)
+ENOENT_RE = re.compile(r'^(.+):\d+:\d+: fatal error: (.+): No such file or directory$', flags=re.MULTILINE)
 # Regex to find full preprocessor's error message to identify the original_filename
 # in case the missing_header is reported in indirect include.
-ENOENT_FULL_RE = re.compile(r'^(In file included.*?No such file or directory)$',
-                            flags=re.MULTILINE | re.DOTALL)
+ENOENT_FULL_RE = re.compile(r'^(In file included.*?No such file or directory)$', flags=re.MULTILINE | re.DOTALL)
 # Regex to find original_filename in preprocessor's error message
 ORIGINAL_FILE_RE = re.compile(r'.*from (.*):[\d]+:')
 
@@ -40,7 +37,7 @@ def _get_absolute_path(filename: str, base: str) -> str:
     return filename
 
 
-def generate_hint(output: str) -> Optional[str]:
+def generate_hint(output: str) -> str | None:
     # get the project description
     proj_desc = get_build_context().get('proj_desc')
     if not proj_desc:
@@ -101,15 +98,13 @@ def generate_hint(output: str) -> Optional[str]:
                 # Original component not found. This should never happen, because the
                 # original_filename has to part of some component, which was added to
                 # the build.
-                return _bug((f'cannot find original component for source '
-                             f'component {found_source_component_name}'))
+                return _bug(f'cannot find original component for source component {found_source_component_name}')
 
         else:
             # We should never reach this path. It would probably mean
             # the preprocessor output was changed or we received malformed
             # output.
-            return _bug((f'cannot match original component filename for '
-                         f'source component {found_source_component_name}'))
+            return _bug(f'cannot match original component filename for source component {found_source_component_name}')
 
     # look for the header file in the public include directories of all components
     found_dep_component_names = []
@@ -142,11 +137,13 @@ def generate_hint(output: str) -> Optional[str]:
 
         if candidate_component_include_dirs:
             candidates = ', '.join(candidate_component_include_dirs)
-            return (f'Missing "{missing_header}" file name found in the following component(s): {candidates}. '
-                    f'Maybe one of the components needs to add the missing header directory to INCLUDE_DIRS '
-                    f'of idf_component_register call in CMakeLists.txt. Another possibility may be that the '
-                    f'component or its feature is not enabled in the configuration. Use "idf.py menuconfig" '
-                    f'to check if the required options are enabled.')
+            return (
+                f'Missing "{missing_header}" file name found in the following component(s): {candidates}. '
+                f'Maybe one of the components needs to add the missing header directory to INCLUDE_DIRS '
+                f'of idf_component_register call in CMakeLists.txt. Another possibility may be that the '
+                f'component or its feature is not enabled in the configuration. Use "idf.py menuconfig" '
+                f'to check if the required options are enabled.'
+            )
 
         # The missing header not found anywhere, nothing much we can do here.
         return None
@@ -155,22 +152,22 @@ def generate_hint(output: str) -> Optional[str]:
     assert found_original_component_info is not None  # to help mypy
 
     # Sanity check: verify we didn't somehow find a component which is already in the requirements list
-    all_reqs = (found_source_component_info['reqs']
-                + found_source_component_info['managed_reqs'])
+    all_reqs = found_source_component_info['reqs'] + found_source_component_info['managed_reqs']
     if found_original_component_name == found_source_component_name:
         # Add also private reqs, but only if source_component is same original_component.
         # The missing_header may be part of component which is already added as private
         # req for source_component. Meaning it's not part of source_component public
         # interface.
-        all_reqs += (found_source_component_info['priv_reqs']
-                     + found_source_component_info['managed_priv_reqs'])
+        all_reqs += found_source_component_info['priv_reqs'] + found_source_component_info['managed_priv_reqs']
 
     for dep_component_name in found_dep_component_names:
         if dep_component_name in all_reqs:
             # Oops. This component is already in the requirements list.
             # How did this happen?
-            return _bug((f'{missing_header} found in component {dep_component_name} '
-                         f'which is already in the requirements list of {found_source_component_name}'))
+            return _bug(
+                f'{missing_header} found in component {dep_component_name} '
+                f'which is already in the requirements list of {found_source_component_name}'
+            )
 
     # try to figure out the correct require type: REQUIRES or PRIV_REQUIRES
     requires_type = None
@@ -203,8 +200,7 @@ def generate_hint(output: str) -> Optional[str]:
             # already there. If so, we suggest to move it from PRIV_REQUIRES to REQUIRES.
             # This is done only if there is one component in found_dep_component_names, because
             # otherwise we cannot be sure which component should be moved.
-            priv_reqs = (found_source_component_info['priv_reqs']
-                         + found_source_component_info['managed_priv_reqs'])
+            priv_reqs = found_source_component_info['priv_reqs'] + found_source_component_info['managed_priv_reqs']
             if found_dep_component_names[0] in priv_reqs:
                 source_component_has_priv_dep = True
 
@@ -213,19 +209,22 @@ def generate_hint(output: str) -> Optional[str]:
     cmakelists_file_to_fix = os.path.normpath(os.path.join(found_source_component_info['dir'], 'CMakeLists.txt'))
     problem_description = (
         f'Compilation failed because {source_filename_short} (in "{found_source_component_name}" component) '
-        f'includes {missing_header}, provided by {found_dep_component_names_list} component(s).\n')
+        f'includes {missing_header}, provided by {found_dep_component_names_list} component(s).\n'
+    )
 
     if source_component_has_priv_dep:
         problem_solution = (
             f'However, {found_dep_component_names_list} component(s) is in the private requirements list '
             f'of "{found_source_component_name}".\n'
             f'To fix this, move {found_dep_component_names_list} from PRIV_REQUIRES into '
-            f'REQUIRES list of idf_component_register call in {cmakelists_file_to_fix}.')
+            f'REQUIRES list of idf_component_register call in {cmakelists_file_to_fix}.'
+        )
     else:
         problem_solution = (
             f'However, {found_dep_component_names_list} component(s) is not in the requirements list '
             f'of "{found_source_component_name}".\n'
             f'To fix this, add {found_dep_component_names_list} to {requires_type} list '
-            f'of idf_component_register call in {cmakelists_file_to_fix}.')
+            f'of idf_component_register call in {cmakelists_file_to_fix}.'
+        )
 
     return problem_description + problem_solution

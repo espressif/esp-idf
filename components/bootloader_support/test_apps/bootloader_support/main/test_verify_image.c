@@ -43,6 +43,15 @@ uint32_t __wrap_bootloader_mmap_get_free_pages(void)
     return __real_bootloader_mmap_get_free_pages();
 }
 
+static uint32_t s_mmap_call_count;
+
+const void *__wrap_bootloader_mmap(uint32_t src_addr, uint32_t size)
+{
+    s_mmap_call_count++;
+    extern const void *__real_bootloader_mmap(uint32_t src_addr, uint32_t size);
+    return __real_bootloader_mmap(src_addr, size);
+}
+
 #if !CONFIG_IDF_TARGET_ESP32
 static uint32_t s_first_segment_app_desc_check_count;
 
@@ -118,6 +127,38 @@ TEST_CASE("Verify unit test app image with split first segment", "[bootloader_su
 #if !CONFIG_IDF_TARGET_ESP32
     TEST_ASSERT_EQUAL_UINT32(1, s_first_segment_app_desc_check_count);
 #endif
+}
+
+TEST_CASE("Verify rejects a segment that extends past the partition before reading it", "[bootloader_support]")
+{
+    esp_image_metadata_t metadata = { 0 };
+    const esp_partition_t *running = esp_ota_get_running_partition();
+    TEST_ASSERT_NOT_NULL(running);
+    esp_partition_pos_t pos = {
+        .offset = running->address,
+        .size = running->size,
+    };
+    TEST_ASSERT_EQUAL_HEX(ESP_OK, esp_image_verify(ESP_IMAGE_VERIFY, &pos, &metadata));
+    TEST_ASSERT_GREATER_THAN(1, metadata.image.segment_count);
+
+    /* Shrink the partition so segment 0's data runs 4 bytes past its end */
+    const uint32_t seg0_data_offs = metadata.segment_data[0] - running->address;
+    const uint32_t seg0_data_len = metadata.segments[0].data_len;
+    pos.size = seg0_data_offs + seg0_data_len - 4;
+
+    memset(&metadata, 0, sizeof(metadata));
+    s_mmap_call_count = 0;
+    TEST_ASSERT_EQUAL_HEX(ESP_ERR_IMAGE_INVALID, esp_image_verify(ESP_IMAGE_VERIFY, &pos, &metadata));
+    TEST_ASSERT_EQUAL_UINT32(0, s_mmap_call_count);
+    TEST_ASSERT_EQUAL_HEX(ESP_ERR_IMAGE_INVALID, esp_image_get_metadata(&pos, &metadata));
+
+    /* Segment 1's header lies past the end of the partition */
+    pos.size = seg0_data_offs + seg0_data_len + sizeof(esp_image_segment_header_t) - 4;
+    memset(&metadata, 0, sizeof(metadata));
+    s_mmap_call_count = 0;
+    TEST_ASSERT_EQUAL_HEX(ESP_ERR_IMAGE_INVALID, esp_image_verify(ESP_IMAGE_VERIFY, &pos, &metadata));
+    /* Segment 0 fits and was mapped before segment 1 was rejected */
+    TEST_ASSERT_GREATER_THAN(0, s_mmap_call_count);
 }
 
 void check_label_search (int num_test, const char *list, const char *t_label, bool result)

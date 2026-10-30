@@ -404,7 +404,7 @@ static void bta_dm_pm_cback(tBTA_SYS_CONN_STATUS status, UINT8 id, UINT8 app_id,
         bta_dm_conn_srvcs.conn_srvc[j].new_request = TRUE;
         bdcpy(bta_dm_conn_srvcs.conn_srvc[j].peer_bdaddr, peer_addr);
 
-        APPL_TRACE_WARNING("new conn_srvc id:%d, app_id:%d", id, app_id);
+        APPL_TRACE_DEBUG("new conn_srvc id:%d, app_id:%d", id, app_id);
 
         bta_dm_conn_srvcs.count++;
         bta_dm_conn_srvcs.conn_srvc[j].state = status;

@@ -4,3 +4,7 @@
 # symbol to y whenever it is processed, which happens for every discovered
 # component under IDF_BUILD_V2 regardless of the COMPONENTS restriction.
 CONFIG_VFS_SUPPORT_IO=n
+
+# Keep the feature-dependent PM and partition dependencies disabled for G1 checks.
+CONFIG_PM_ENABLE=n
+CONFIG_EFUSE_VIRTUAL_KEEP_IN_FLASH=n

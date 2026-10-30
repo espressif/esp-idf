@@ -149,7 +149,15 @@ idf_component_register(SRCS "${srcs}"
                     PRIV_REQUIRES "${priv_requires}")
 
 if(NOT BOOTLOADER_BUILD AND NOT esp_tee_build)
-    idf_component_optional_requires(PRIVATE esp_image_verify)
+    if(IDF_BUILD_V2 AND CONFIG_SECURE_SIGNED_ON_UPDATE_NO_SECURE_BOOT AND
+       (CONFIG_SECURE_SIGNED_APPS_RSA_SCHEME OR CONFIG_SECURE_SIGNED_APPS_ECDSA_V2_SCHEME))
+        # esp_secure_boot_init_checks() calls the on-update signature check.
+        idf_component_include(esp_image_verify)
+        target_link_libraries(${COMPONENT_LIB} PRIVATE idf::esp_image_verify)
+    endif()
+    if(NOT IDF_BUILD_V2)
+        idf_component_optional_requires(PRIVATE esp_image_verify)
+    endif()
 endif()
 
 idf_define_esp_err_codes(HEADERS include/esp_image_format.h)

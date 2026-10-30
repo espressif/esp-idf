@@ -11,7 +11,7 @@ from pathlib import Path
 from idf_ci_utils import IDF_PATH
 
 
-def print_list(_list: t.Iterable[t.Any], title: t.Optional[str] = None) -> None:
+def print_list(_list: t.Iterable[t.Any], title: str | None = None) -> None:
     if not _list:
         return
 
@@ -24,7 +24,7 @@ def print_list(_list: t.Iterable[t.Any], title: t.Optional[str] = None) -> None:
 
 if __name__ == '__main__':
     os.chdir(IDF_PATH)
-    ignore_lists: t.Set[Path] = set()
+    ignore_lists: set[Path] = set()
     ignore_lists.update(Path('tools', 'ci').glob('**/*.txt'))
     ignore_lists.remove(Path('tools', 'ci', 'ignore_build_warnings.txt'))
     ignore_lists.remove(Path('tools', 'ci', 'check_ldgen_mapping_exceptions.txt'))

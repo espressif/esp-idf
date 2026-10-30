@@ -83,7 +83,7 @@ Example:
 ESP-TLS Server Cert Selection Hook
 ----------------------------------
 
-The ESP-TLS component provides an option to set the server certification selection hook when using the MbedTLS stack. This provides an ability to configure and use a certificate selection callback during server handshake. The callback helps to select a certificate to present to the client based on the TLS extensions supplied in the client hello message, such as ALPN and SNI. To enable this feature, please enable  :menuitem:`CONFIG_ESP_TLS_SERVER_CERT_SELECT_HOOK` in the ESP-TLS menuconfig.
+The ESP-TLS component provides an option to set the server certificate selection hook when using the MbedTLS stack. This allows you to configure and use a certificate selection callback during the server handshake. The callback helps to select a certificate to present to the client based on the TLS extensions supplied in the client hello message, such as ALPN and SNI. To enable this feature, enable :menuitem:`CONFIG_ESP_TLS_SERVER_CERT_SELECT_HOOK` in the ESP-TLS menuconfig.
 
 The certificate selection callback can be configured in the :cpp:type:`esp_tls_cfg_t` structure as follows:
 
@@ -416,17 +416,17 @@ You can set ``ciphersuites_list`` in the :cpp:type:`esp_tls_cfg_t` structure dur
 
 .. code-block:: c
 
-    /* ciphersuites_list must end with 0 and must be available in the memory scope active during the entire TLS connection */
+    /* ciphersuites_list must end with 0 and must remain valid in memory for the entire TLS connection */
     static const int ciphersuites_list[] = {MBEDTLS_TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384, MBEDTLS_TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384, 0};
     esp_tls_cfg_t cfg = {
         .ciphersuites_list = ciphersuites_list,
     };
 
-ESP-TLS will not check the validity of ``ciphersuites_list`` that was set, you should call :cpp:func:`esp_tls_get_ciphersuites_list` to get ciphersuites list supported in the TLS stack and cross-check it against the supplied list.
+ESP-TLS does not validate the configured ``ciphersuites_list``. Call :cpp:func:`esp_tls_get_ciphersuites_list` to retrieve the list of ciphersuites supported by the TLS stack and cross-check it against the supplied list.
 
 .. note::
 
-   This feature is supported only in the MbedTLS stack.
+    This feature is supported only in the MbedTLS stack.
 
 TLS Supported Groups
 --------------------
@@ -437,21 +437,21 @@ You can set ``groups_list`` in the :cpp:type:`esp_tls_cfg_t` structure, or in th
 
 .. code-block:: c
 
-    /* groups_list must end with 0 and must be available in the memory scope active during the entire TLS connection */
+    /* groups_list must end with 0 and must remain valid in memory for the entire TLS connection */
     static const uint16_t groups_list[] = {MBEDTLS_SSL_IANA_TLS_GROUP_X25519, MBEDTLS_SSL_IANA_TLS_GROUP_SECP256R1, 0};
     esp_tls_cfg_t cfg = {
         .groups_list = groups_list,
     };
 
-ESP-TLS will not check the validity of ``groups_list`` that was set, you should call :cpp:func:`esp_tls_get_supported_groups_list` to get the groups list supported in the TLS stack and cross-check it against the supplied list.
+ESP-TLS does not validate the configured ``groups_list``. Call :cpp:func:`esp_tls_get_supported_groups_list` to retrieve the list of groups supported by the TLS stack and cross-check it against the supplied list.
 
 .. note::
 
-   A group list that excludes the group of the peer costs one HelloRetryRequest in TLS 1.3. In TLS 1.2 the handshake fails.
+    If the configured list excludes the group initially selected by the peer, TLS 1.3 requires an additional HelloRetryRequest. In TLS 1.2, the handshake fails.
 
 .. note::
 
-   This feature is supported only in the MbedTLS stack.
+    This feature is supported only in the MbedTLS stack.
 
 TLS Protocol Version
 --------------------
@@ -460,7 +460,7 @@ ESP-TLS provides the ability to set the TLS protocol version for the respective 
 
 .. note::
 
-   At the moment, the feature is supported only when ESP-TLS is used with MbedTLS as its underlying SSL/TLS stack.
+    At the moment, the feature is supported only when ESP-TLS uses MbedTLS as the underlying SSL/TLS stack.
 
 To set TLS protocol version with ESP-TLS, set :cpp:member:`esp_tls_cfg_t::tls_version` to the required protocol version from :cpp:type:`esp_tls_proto_ver_t`. If the protocol version field is not set, then the default policy is to allow TLS connection based on the server requirement.
 

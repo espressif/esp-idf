@@ -23,6 +23,7 @@
 #include "hal/i2s_periph.h"
 #include "dac_priv_dma.h"
 #include "esp_private/i2s_platform.h"
+#include "esp_private/esp_clk_tree_common.h"
 #include "esp_clk_tree.h"
 #include "esp_log.h"
 #include "esp_check.h"
@@ -147,7 +148,7 @@ esp_err_t dac_priv_dma_init(soc_periph_dac_digi_clk_src_t clk_src, uint32_t freq
     ESP_GOTO_ON_ERROR(i2s_platform_acquire_occupation(I2S_CTLR_HP, DAC_DMA_PERIPH_I2S_NUM, "dac_dma"), err, TAG, "Failed to acquire DAC DMA peripheral");
     s_ddp->periph_dev = (void *)I2S_LL_GET_HW(DAC_DMA_PERIPH_I2S_NUM);
 
-    ESP_GOTO_ON_ERROR(esp_clk_tree_acquire_src((soc_module_clk_t)clk_src), err, TAG, "enable DAC digital clock source failed");
+    ESP_GOTO_ON_ERROR(esp_clk_tree_acquire_src((soc_module_clk_t)clk_src, NULL), err, TAG, "enable DAC digital clock source failed");
     s_ddp->clk_src = clk_src;
     dac_ll_dma_clk_inv(true);
     ESP_GOTO_ON_ERROR(s_dac_priv_dma_set_clock(clk_src, freq_hz), err, TAG, "Failed to set clock of DMA peripheral");

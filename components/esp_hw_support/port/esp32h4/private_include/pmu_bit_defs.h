@@ -10,7 +10,7 @@
 extern "C" {
 #endif
 
-#define PMU_EXT0_WAKEUP_EN          BIT(0)
+#define PMU_VDDBAT_RECOVER_WAKEUP_EN BIT(0)
 #define PMU_EXT1_WAKEUP_EN          BIT(1)
 #define PMU_GPIO_WAKEUP_EN          BIT(2)
 #define PMU_RTC_TIMER_WAKEUP_EN     BIT(4)

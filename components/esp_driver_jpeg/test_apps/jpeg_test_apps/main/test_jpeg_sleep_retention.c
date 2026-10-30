@@ -28,7 +28,6 @@ extern const uint8_t image_esp1080_jpg_end[]   asm("_binary_esp1080_jpg_end");
 
 #define JPEG_SLEEP_RETENTION_TIMEOUT_MS 50
 
-#if SOC_LIGHT_SLEEP_SUPPORTED && CONFIG_PM_ENABLE
 static void test_jpeg_sleep_retention(bool allow_pd)
 {
     jpeg_decoder_handle_t jpgd_handle;
@@ -98,4 +97,3 @@ TEST_CASE("jpeg sleep retention test", "[jpeg]")
     test_jpeg_sleep_retention(false);
     test_jpeg_sleep_retention(true);
 }
-#endif

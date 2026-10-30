@@ -95,7 +95,12 @@ typedef struct {
 
 /* Global PAN data
  */
+#if PAN_DYNAMIC_MEMORY == FALSE
 extern tPAN_CB pan_cb;
+#else
+extern tPAN_CB *pan_cb_ptr;
+#define pan_cb (*pan_cb_ptr)
+#endif
 
 /******************************************************************************/
 extern void pan_register_with_bnep(void);

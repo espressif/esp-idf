@@ -228,7 +228,7 @@ static void switch_freq(int mhz)
 static const int test_freqs[] = {40, CONFIG_ESP_DEFAULT_CPU_FREQ_MHZ, 80, 40, 80, 10, 80, 20, 40};
 #elif CONFIG_IDF_TARGET_ESP32C5
 static const int test_freqs[] = {40, CONFIG_ESP_DEFAULT_CPU_FREQ_MHZ, 80, 40, 80, 12, 80, 24, 40};
-#elif CONFIG_IDF_TARGET_ESP32H2
+#elif CONFIG_IDF_TARGET_ESP32H2 || CONFIG_IDF_TARGET_ESP32H21 || CONFIG_IDF_TARGET_ESP32H4
 static const int test_freqs[] = {32, CONFIG_ESP_DEFAULT_CPU_FREQ_MHZ, 64, 48, 32, 64, 48, 8, 64, 48, 16, 32};
 #elif CONFIG_IDF_TARGET_ESP32C2
 static const int test_freqs[] = {CONFIG_XTAL_FREQ, CONFIG_ESP_DEFAULT_CPU_FREQ_MHZ, 80, CONFIG_XTAL_FREQ, 80,

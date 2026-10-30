@@ -25,7 +25,7 @@
 
 ESP_LOG_ATTR_TAG(TAG, "cordic");
 
-// Per result; generous margin over the maximum 15 CORDIC iterations.
+// Per result; generous margin over the maximum 24 CORDIC iterations.
 #define CORDIC_ONESHOT_CALCULATE_MAX_RETRIES (1024)
 
 typedef struct cordic_platform_t {
@@ -130,8 +130,7 @@ esp_err_t cordic_calculate_polling(cordic_engine_handle_t engine, const cordic_c
             calc_cfg->iq_format >= ESP_CORDIC_IQ_SIZE_MAX ||
             calc_cfg->scale_exp < cordic_hal_algorithm_allowable_scale[calc_cfg->function][0] ||
             calc_cfg->scale_exp > cordic_hal_algorithm_allowable_scale[calc_cfg->function][1] ||
-            calc_cfg->iteration_count == 0 ||
-            calc_cfg->iteration_count > CORDIC_LL_PRECISION_MAX) {
+            !cordic_ll_iteration_count_valid(calc_cfg->function, calc_cfg->iteration_count)) {
         return ESP_ERR_INVALID_ARG;
     }
     bool is_two_args = (calc_cfg->function == ESP_CORDIC_FUNC_PHASE || calc_cfg->function == ESP_CORDIC_FUNC_MODULUS);
@@ -153,7 +152,7 @@ esp_err_t cordic_calculate_polling(cordic_engine_handle_t engine, const cordic_c
     cordic_ll_set_calculate_config(engine->hal.dev,
                                    calc_cfg->function,
                                    CORDIC_LL_MODE_REG,
-                                   calc_cfg->iteration_count - 1,
+                                   calc_cfg->iteration_count,
                                    calc_cfg->scale_exp,
                                    is_two_args ? 2 : 1,
                                    2,

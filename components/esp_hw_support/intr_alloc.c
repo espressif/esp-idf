@@ -1169,6 +1169,49 @@ void ESP_INTR_IRAM_ATTR esp_intr_disable_source(int inum)
     esp_cpu_intr_disable(1 << inum);
 }
 
+#if SOC_CPU_HAS_FLEXIBLE_INTC
+typedef struct {
+    uint8_t priority[CPU_INT_LINES_COUNT];
+    uint32_t edge_mask;
+} intr_dump_cpu_config_t;
+
+/* The interrupt controller registers are only accessible from the core they belong to,
+ * so this needs to run on the CPU whose configuration is read. */
+static void intr_dump_read_cpu_config(void *arg)
+{
+    intr_dump_cpu_config_t *config = (intr_dump_cpu_config_t *)arg;
+    config->edge_mask = 0;
+    for (int i_num = 0; i_num < CPU_INT_LINES_COUNT; ++i_num) {
+        config->priority[i_num] = esp_cpu_intr_get_priority(i_num);
+        if (esp_cpu_intr_get_type(i_num) == ESP_CPU_INTR_TYPE_EDGE) {
+            config->edge_mask |= BIT(i_num);
+        }
+    }
+}
+
+static bool intr_dump_get_cpu_config(int cpu, intr_dump_cpu_config_t *config)
+{
+#if !CONFIG_FREERTOS_UNICORE
+    /* Read the calling core directly, IPC fails if the scheduler is not running.
+     * The critical section prevents migrating to the other core between the check and the read. */
+    bool is_local = false;
+    esp_os_enter_critical_safe(&spinlock);
+    if (cpu == esp_cpu_get_core_id()) {
+        intr_dump_read_cpu_config(config);
+        is_local = true;
+    }
+    esp_os_exit_critical_safe(&spinlock);
+    if (is_local) {
+        return true;
+    }
+    return esp_ipc_call_blocking(cpu, &intr_dump_read_cpu_config, config) == ESP_OK;
+#else
+    intr_dump_read_cpu_config(config);
+    return true;
+#endif
+}
+#endif // SOC_CPU_HAS_FLEXIBLE_INTC
+
 esp_err_t esp_intr_dump(FILE *stream)
 {
     if (stream == NULL) {
@@ -1184,6 +1227,10 @@ esp_err_t esp_intr_dump(FILE *stream)
     int shared_ints = 0;
 
     for (int cpu = 0; cpu < cpu_num; ++cpu) {
+#if SOC_CPU_HAS_FLEXIBLE_INTC
+        intr_dump_cpu_config_t cpu_config;
+        bool cpu_config_valid = intr_dump_get_cpu_config(cpu, &cpu_config);
+#endif
         fprintf(stream, "CPU %d interrupt status:\n", cpu);
         fprintf(stream, " Int  Level  Type   Status\n");
         for (int i_num = 0; i_num < CPU_INT_LINES_COUNT; ++i_num) {
@@ -1203,13 +1250,10 @@ esp_err_t esp_intr_dump(FILE *stream)
             if (vd == NULL) {
                 fprintf(stream, "   *      *    ");
             } else {
-                // # TODO: IDF-9512
-                // esp_cpu_intr_get_* functions need to be extended with cpu parameter.
-                // Showing info for the current cpu only, in the meantime.
-                if (esp_cpu_get_core_id() == cpu) {
+                if (cpu_config_valid) {
                     fprintf(stream, "   %d    %s  ",
-                            esp_cpu_intr_get_priority(i_num),
-                            esp_cpu_intr_get_type(i_num) == ESP_CPU_INTR_TYPE_EDGE ? "Edge " : "Level");
+                            cpu_config.priority[i_num],
+                            (cpu_config.edge_mask & BIT(i_num)) ? "Edge " : "Level");
                 } else {
                     fprintf(stream, "   ?      ?    ");
                 }

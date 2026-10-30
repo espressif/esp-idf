@@ -1,5 +1,12 @@
 # Documentation: .gitlab/ci/README.md#manifest-file-to-control-the-buildtest-apps
 
+components/riscv/test_apps/sv32:
+  enable:
+    - if: IDF_TARGET == "esp32s31"
+      reason: Sv32 is supported by ESP32-S31 only
+  depends_components:
+    - riscv
+    - soc
 components/riscv/test_apps/test_zcmp_workaround_checking:
   enable:
     - if: SOC_CPU_ZCMP_WORKAROUND == 1

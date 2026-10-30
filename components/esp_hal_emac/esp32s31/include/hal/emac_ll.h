@@ -1137,6 +1137,20 @@ static inline void emac_ll_gpio_init(void *ext_regs, uint32_t gpio_num)
         emac_ll_gpio_init(__VA_ARGS__); \
     } while(0)
 
+static inline void emac_ll_gpio_deinit(void *ext_regs, uint32_t gpio_num)
+{
+    if (gpio_num >= 13 && gpio_num <= 19) {
+        _emac_ll_dedicated_pad_ctrl_enable(ext_regs, false);
+    }
+}
+
+/// use a macro to wrap the function, force the caller to use it in a critical section
+/// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
+#define emac_ll_gpio_deinit(...) do { \
+        (void)__DECLARE_RCC_ATOMIC_ENV; \
+        emac_ll_gpio_deinit(__VA_ARGS__); \
+    } while(0)
+
 static inline void emac_ll_dedicated_pad_pullup_enable(void *ext_regs, eth_pad_t pad, bool enable)
 {
     switch (pad) {

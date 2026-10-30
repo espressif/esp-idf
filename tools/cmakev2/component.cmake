@@ -558,6 +558,8 @@ endfunction()
     the same. Only the directory, priority, and source are updated in the
     already initialized component.
 
+    Components named in the ``EXCLUDE_COMPONENTS`` build property are skipped.
+
     The name of the initialized component is added to the
     ``COMPONENTS_DISCOVERED`` build property, and its interface target is added
     to the ``COMPONENT_INTERFACES`` build property. These two lists are used by
@@ -596,6 +598,15 @@ function(__init_component)
     if("${component_priority}" STREQUAL "NOTFOUND")
         idf_die("Unknown component source '${component_source}' "
                 "for directory '${component_directory}'")
+    endif()
+
+    # Skip components named in the EXCLUDE_COMPONENTS build property. They get
+    # no interface target, no Kconfig collection and no project_include.cmake.
+    idf_build_get_property(exclude_components EXCLUDE_COMPONENTS)
+    if(component_name IN_LIST exclude_components)
+        idf_dbg("Component '${component_name}' in '${component_directory}' "
+                "is excluded by EXCLUDE_COMPONENTS")
+        return()
     endif()
 
     # Collect Kconfig files from this component directory.
@@ -834,6 +845,15 @@ endfunction()
 
     The name of the component being evaluated, which is the name of its directory.
 
+.. cmakev2:variable:: COMPONENT_DIR
+
+    The absolute path of the directory of the component being evaluated.
+
+.. cmakev2:variable:: COMPONENT_BUILD_DIR
+
+    The absolute path of the build directory of the component being evaluated.
+    It is the binary directory of its ``add_subdirectory`` call.
+
 .. cmakev2:variable:: ESP_PLATFORM
 
     Set to ``1`` on any build driven by ``idf.py``, which passes
@@ -876,6 +896,118 @@ endfunction()
     defined in ``tools/cmake/kasan.cmake`` and shared with the CMake-based build
     system v1, which honours this property as well.
 #]]
+
+#[[
+    __idf_component_scope_properties(<variable>)
+
+    Set <variable> to the directory properties that the build system
+    isolates. A directory added with add_subdirectory() inherits them from
+    the calling directory. See __idf_component_add_subdirectory().
+#]]
+function(__idf_component_scope_properties variable)
+    set(${variable} INCLUDE_DIRECTORIES COMPILE_DEFINITIONS COMPILE_OPTIONS
+                    LINK_OPTIONS LINK_DIRECTORIES LINK_LIBRARIES PARENT_SCOPE)
+endfunction()
+
+#[[
+    __idf_component_scope_record()
+
+    Record the state that every component starts with: the visible variables
+    and the directory properties listed by __idf_component_scope_properties().
+    See __idf_component_add_subdirectory() for how the record is used.
+    Nothing is recorded when the isolation is disabled, see __init_isolation()
+    in idf.cmake.
+
+    The record is made once, at the first idf_component_include() call. That
+    call is never made during the evaluation of a component, because an
+    evaluation starts only through idf_component_include(). The function is
+    called before idf_component_include() defines any variable of its own, so
+    the record holds only the variables visible to its caller.
+
+    The record is not made in idf_project_init(). A project may set variables
+    or call directory-scoped commands after idf_project_init() and before it
+    builds a library. The first inclusion sees that state.
+#]]
+function(__idf_component_scope_record)
+    idf_build_get_property(isolation __COMPONENT_SCOPE_ISOLATION)
+    idf_build_get_property(recorded __COMPONENT_SCOPE_RECORDED)
+    if(NOT isolation OR recorded)
+        return()
+    endif()
+    # The unset() calls keep these variables out of the record.
+    unset(isolation)
+    unset(recorded)
+    get_cmake_property(variables VARIABLES)
+    idf_build_set_property(__COMPONENT_SCOPE_VARIABLES "${variables}")
+
+    __idf_component_scope_properties(properties)
+    foreach(property IN LISTS properties)
+        get_directory_property(value ${property})
+        idf_build_set_property(__COMPONENT_SCOPE_${property} "${value}")
+    endforeach()
+
+    idf_build_set_property(__COMPONENT_SCOPE_RECORDED YES)
+endfunction()
+
+#[[
+    __idf_component_add_subdirectory()
+
+    Evaluate the CMakeLists.txt of a component with add_subdirectory(). Hide
+    the variables that are not in the record made by
+    __idf_component_scope_record() first.
+
+    CMake initializes the variable scope of a new directory with a copy of
+    every variable visible at the add_subdirectory() call. See the
+    InitializeFromParent function in cmStateSnapshot.cxx and the MakeClosure
+    function in cmDefinitions.cxx in the CMake sources. Components are
+    included recursively. Without this function, a dependency would see the
+    variables of the requiring component, for example a 'srcs' list.
+
+    Every visible variable that is not in the record is unset in this
+    function's scope before add_subdirectory(). The variables that the build
+    system passes to the component are kept. The unset() call marks the
+    variable as undefined in this scope, and the closure respects that. The
+    component therefore sees the same variables at any depth. The scope of the
+    caller is not modified, because the unset() calls are made in the scope
+    of this function.
+
+    The directory properties listed by __idf_component_scope_properties() are
+    inherited the same way. They are set to the recorded values before the
+    add_subdirectory() call. A component therefore does not inherit them from
+    the requiring component. An example is a compile option added with
+    add_compile_options() before idf_component_register(). The caller
+    restores the properties of its directory afterwards. The rest of the
+    directory relies on them, for example a source tree added with
+    add_subdirectory().
+
+    The directories of the component are taken from the COMPONENT_DIR and
+    COMPONENT_BUILD_DIR variables set by idf_component_include(). They stay
+    visible.
+#]]
+function(__idf_component_add_subdirectory)
+    __idf_component_scope_properties(properties)
+    foreach(property IN LISTS properties)
+        idf_build_get_property(value __COMPONENT_SCOPE_${property})
+        set_property(DIRECTORY PROPERTY ${property} "${value}")
+    endforeach()
+
+    idf_build_get_property(scope_variables __COMPONENT_SCOPE_VARIABLES)
+    get_cmake_property(variables VARIABLES)
+    list(REMOVE_ITEM variables ${scope_variables}
+         # Set for the component by idf_component_include().
+         COMPONENT_NAME COMPONENT_DIR COMPONENT_BUILD_DIR COMPONENT_ALIAS
+         COMPONENT_LIB COMPONENT_VERSION COMPONENT_TARGET ESP_PLATFORM
+         # Used by nested idf_component_include() calls to detect cycles.
+         __DEPENDENCY_CHAIN)
+    foreach(variable IN LISTS variables)
+        unset("${variable}")
+    endforeach()
+    # The two variables of this function defined after the VARIABLES query
+    # are not in the list.
+    unset(variables)
+    unset(variable)
+    add_subdirectory("${COMPONENT_DIR}" "${COMPONENT_BUILD_DIR}")
+endfunction()
 
 #[[api
 .. cmakev2:function:: idf_component_include
@@ -931,6 +1063,11 @@ endfunction()
         endif()
 #]]
 function(idf_component_include name)
+    # Record the state every component starts with. This must happen before
+    # this function defines any variable of its own. See
+    # __idf_component_scope_record().
+    __idf_component_scope_record()
+
     set(options OPTIONAL)
     set(one_value INTERFACE)
     set(multi_value)
@@ -971,6 +1108,7 @@ function(idf_component_include name)
     idf_component_get_property(component_interface "${name}" COMPONENT_INTERFACE)
     idf_component_get_property(component_target "${name}" COMPONENT_TARGET)
     idf_component_get_property(component_directory "${name}" COMPONENT_DIR)
+    idf_component_get_property(component_build_dir "${name}" COMPONENT_BUILD_DIR)
     idf_component_get_property(component_alias "${name}" COMPONENT_ALIAS)
     idf_component_get_property(component_lib "${name}" COMPONENT_LIB)
     idf_component_get_property(component_version "${name}" COMPONENT_VERSION)
@@ -979,6 +1117,7 @@ function(idf_component_include name)
     # component's CMakeLists.txt.
     set(COMPONENT_NAME ${component_name})
     set(COMPONENT_DIR ${component_directory})
+    set(COMPONENT_BUILD_DIR ${component_build_dir})
     set(COMPONENT_ALIAS ${component_alias})
     set(COMPONENT_LIB ${component_lib})
     set(COMPONENT_VERSION ${component_version})
@@ -1024,9 +1163,23 @@ function(idf_component_include name)
         endif()
     endif()
 
-    # Evaluate the CMakeLists.txt file of the component.
-    idf_component_get_property(component_build_dir "${component_name}" COMPONENT_BUILD_DIR)
-    add_subdirectory("${component_directory}" "${component_build_dir}")
+    # Evaluate the CMakeLists.txt file of the component. The scope isolation
+    # can be disabled, see __init_isolation() in idf.cmake.
+    idf_build_get_property(scope_isolation __COMPONENT_SCOPE_ISOLATION)
+    if(scope_isolation)
+        # The helper replaces the directory properties. Restore them for the
+        # rest of this directory.
+        __idf_component_scope_properties(properties)
+        foreach(property IN LISTS properties)
+            get_directory_property(saved_${property} ${property})
+        endforeach()
+        __idf_component_add_subdirectory()
+        foreach(property IN LISTS properties)
+            set_property(DIRECTORY PROPERTY ${property} "${saved_${property}}")
+        endforeach()
+    else()
+        add_subdirectory("${COMPONENT_DIR}" "${COMPONENT_BUILD_DIR}")
+    endif()
 
     # The component has been evaluated; remove it from the dependency chain.
     list(POP_BACK __DEPENDENCY_CHAIN)

@@ -153,6 +153,50 @@ TEST_CASE("esp_http_client_init() should return NULL if configured with wrong ur
     esp_http_client_cleanup(client);
 }
 
+/* Each value would split a header line or the request line: a CR LF, a lone LF
+ * or a lone CR ends the line early, so the rest is sent as a header, or a
+ * request, of the sender's choosing. */
+static const char *const s_split_values[] = {
+    "ok\r\nX-Injected: yes",
+    "ok\nX-Injected: yes",
+    "ok\rX-Injected: yes",
+};
+
+/* Returns whether esp_http_client_init() accepts cfg, and cleans up if it does. */
+static bool init_accepts(const esp_http_client_config_t *cfg)
+{
+    esp_http_client_handle_t client = esp_http_client_init(cfg);
+    if (client == NULL) {
+        return false;
+    }
+    esp_http_client_cleanup(client);
+    return true;
+}
+
+TEST_CASE("init() refuses CR or LF in host, path, query and URL", "[esp_http_client][crlf][negative][p0]")
+{
+    esp_http_client_config_t base = { .host = "test-server.local", .path = "/crlf", .query = "a=1" };
+    TEST_ASSERT_TRUE(init_accepts(&base));
+
+    for (size_t i = 0; i < sizeof(s_split_values) / sizeof(s_split_values[0]); i++) {
+        esp_http_client_config_t cfg = base;
+        cfg.host = s_split_values[i];
+        TEST_ASSERT_FALSE_MESSAGE(init_accepts(&cfg), "host");
+        cfg = base;
+        cfg.path = s_split_values[i];
+        TEST_ASSERT_FALSE_MESSAGE(init_accepts(&cfg), "path");
+        cfg = base;
+        cfg.query = s_split_values[i];
+        TEST_ASSERT_FALSE_MESSAGE(init_accepts(&cfg), "query");
+    }
+
+    /* A URL is checked by the URL parser, not by the field check above. */
+    esp_http_client_config_t url_cfg = { .url = "http://test-server.local/crlf" };
+    TEST_ASSERT_TRUE(init_accepts(&url_cfg));
+    url_cfg.url = "http://test-server.local/crlf\r\nX-Injected: yes";
+    TEST_ASSERT_FALSE(init_accepts(&url_cfg));
+}
+
 /**
  * Test case to verify that esp_http_client_get_url() returns the URL in the correct format.
  **/
@@ -894,6 +938,35 @@ TEST_CASE("esp_http_client_read() returns 0 for a 204 with Content-Length", "[ES
     TEST_ASSERT_EQUAL(reads_after_first, stats.read_calls);
 
     TEST_ASSERT_EQUAL(ESP_OK, esp_http_client_cleanup(client));
+    mock_http_transport_destroy(mock);
+}
+
+TEST_CASE("set_header() refuses CR or LF and sends only the plain header", "[esp_http_client][crlf][negative][p0]")
+{
+    mock_http_transport_config_t mc = MOCK_HTTP_TRANSPORT_DEFAULT_CONFIG();
+    mc.response_data = "HTTP/1.1 200 OK\r\nContent-Length: 0\r\n\r\n";
+    esp_transport_handle_t mock = mock_http_transport_create(&mc);
+    TEST_ASSERT_NOT_NULL(mock);
+    esp_http_client_config_t cfg = { .url = "http://test-server.local/crlf", .transport = mock };
+    esp_http_client_handle_t client = esp_http_client_init(&cfg);
+    TEST_ASSERT_NOT_NULL(client);
+
+    for (size_t i = 0; i < sizeof(s_split_values) / sizeof(s_split_values[0]); i++) {
+        TEST_ASSERT_EQUAL_MESSAGE(ESP_ERR_INVALID_ARG,
+                                  esp_http_client_set_header(client, "X-Value", s_split_values[i]), s_split_values[i]);
+        TEST_ASSERT_EQUAL_MESSAGE(ESP_ERR_INVALID_ARG,
+                                  esp_http_client_set_header(client, s_split_values[i], "v"), s_split_values[i]);
+    }
+    TEST_ASSERT_EQUAL(ESP_OK, esp_http_client_set_header(client, "X-Plain", "fine"));
+
+    TEST_ASSERT_EQUAL(ESP_OK, esp_http_client_perform(client));
+    char req[512];
+    TEST_ASSERT_EQUAL(ESP_OK, mock_http_transport_get_last_request(mock, req, sizeof(req), NULL));
+    TEST_ASSERT_NOT_NULL_MESSAGE(strstr(req, "X-Plain: fine\r\n"), req);
+    TEST_ASSERT_NULL_MESSAGE(strstr(req, "X-Injected"), req);
+    TEST_ASSERT_NULL_MESSAGE(strstr(req, "X-Value"), req);
+
+    esp_http_client_cleanup(client);
     mock_http_transport_destroy(mock);
 }
 

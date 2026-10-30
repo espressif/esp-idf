@@ -9,7 +9,7 @@
 #include <stddef.h>
 #include "soc/soc_caps.h"
 #include "soc/periph_defs.h"
-#if SOC_HAS(I2S)
+#if SOC_HAS(I2S_I80_LCD)
 #include "hal/i2s_ll.h"
 #endif
 #if SOC_HAS(LCDCAM_I80_LCD) || SOC_HAS(LCDCAM_RGB_LCD)

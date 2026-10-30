@@ -53,6 +53,7 @@
 #include "btdm_osal.h"
 #include "btdm_endian.h"
 #include "btdm_external.h"
+#include "bredr_mempool.h"
 #if CONFIG_BT_SMP_CRYPTO_STACK_MBEDTLS
 #include "psa/crypto.h"
 #endif
@@ -135,13 +136,17 @@ extern void bt_stack_enableSecCtrlVsCmd(bool en);
 extern void bt_stack_enablePwrCtrlVsCmd(bool en);
 #endif // UC_BR_EDR_POWER_CTRL_VSC_ENABLED
 
+#if UC_BR_EDR_DYNAMIC_TX_PWR_EN
+extern int bredr_ctrl_tx_pwr_configure_en(void);
+extern int bredr_ctrl_configure_acl_dft_tx_pwr(int8_t min, int8_t max);
+extern int bredr_ctrl_read_acl_dft_tx_pwr(int8_t *min, int8_t *max);
+#endif // UC_BR_EDR_DYNAMIC_TX_PWR_EN
+
 extern void bredr_ctrl_get_btdm_info(uint32_t *version, uint32_t *size);
 extern const char *co_orca_get_git_version_str(void);
 extern void r_orca_log_set_printf(bredr_log_printf_fn printf_fn);
 /* Shutdown */
 extern void bredr_controller_shutdown(void);
-
-extern esp_bt_controller_status_t s_btdm_controller_status;
 
 #if CONFIG_FREERTOS_USE_TICKLESS_IDLE
 extern const sleep_retention_entries_config_t *r_bredr_mac_retention_link_get(uint8_t *size);
@@ -637,20 +642,6 @@ const char *bredr_controller_get_compile_version(void)
     return co_orca_get_git_version_str();
 }
 
-orca_mempool_t tlsf_create_with_pool(void *mem, size_t pool_bytes, size_t max_bytes);
-void tlsf_destroy(orca_mempool_t tlsf);
-void *tlsf_malloc(orca_mempool_t tlsf, size_t size);
-void tlsf_free(orca_mempool_t tlsf, void *ptr);
-size_t tlsf_block_size(void *ptr);
-size_t tlsf_alloc_overhead(void);
-
-struct orca_mempool_ops s_orca_mempool_ops = {
-    .create_with_pool = tlsf_create_with_pool,
-    .destroy = NULL,
-    .malloc = tlsf_malloc,
-    .free = tlsf_free,
-};
-
 static int bredr_ctrl_setup_callback(void)
 {
     int ret = 0;
@@ -759,6 +750,14 @@ static int bredr_ctrl_setup_callback(void)
             break;
         }
 #endif /* CONFIG_SW_COEXIST_ENABLE */
+
+#if UC_BR_EDR_DYNAMIC_TX_PWR_EN
+        ret = bredr_ctrl_tx_pwr_configure_en();
+        if (ret != 0) {
+            ESP_LOGE(BREDR_LOG_TAG, "bredr_ctrl_tx_pwr_configure_en failed, ret:%d", ret);
+            break;
+        }
+#endif /* UC_BR_EDR_DYNAMIC_TX_PWR_EN */
     } while (0);
 
     return ret;
@@ -860,6 +859,48 @@ esp_err_t esp_bredr_tx_power_range_get(int8_t *min_power, int8_t *max_power)
     return ESP_OK;
 }
 
+#if UC_BR_EDR_DYNAMIC_TX_PWR_EN
+esp_err_t esp_bredr_acl_dft_tx_power_range_set(int8_t min_power, int8_t max_power)
+{
+    esp_bt_controller_status_t status = esp_bt_controller_get_status();
+    if (status != ESP_BT_CONTROLLER_STATUS_INITED && status != ESP_BT_CONTROLLER_STATUS_ENABLED) {
+        return ESP_ERR_INVALID_STATE;
+    }
+
+    if (min_power > max_power) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    int8_t chip_min = 0;
+    int8_t chip_max = 0;
+    esp_err_t err = esp_bredr_tx_power_range_get(&chip_min, &chip_max);
+    if (err != ESP_OK) {
+        return err;
+    }
+    if (min_power < chip_min || max_power > chip_max) {
+        ESP_LOGE(BREDR_LOG_TAG, "ACL tx power range [%d, %d] dBm out of supported range [%d, %d] dBm",
+                 min_power, max_power, chip_min, chip_max);
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    return bredr_ctrl_configure_acl_dft_tx_pwr(min_power, max_power) == 0 ? ESP_OK : ESP_FAIL;
+}
+
+esp_err_t esp_bredr_acl_dft_tx_power_range_get(int8_t *min_power, int8_t *max_power)
+{
+    esp_bt_controller_status_t status = esp_bt_controller_get_status();
+    if (status != ESP_BT_CONTROLLER_STATUS_INITED && status != ESP_BT_CONTROLLER_STATUS_ENABLED) {
+        return ESP_ERR_INVALID_STATE;
+    }
+
+    if (min_power == NULL || max_power == NULL) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    return bredr_ctrl_read_acl_dft_tx_pwr(min_power, max_power) == 0 ? ESP_OK : ESP_FAIL;
+}
+#endif // UC_BR_EDR_DYNAMIC_TX_PWR_EN
+
 /* Check a single configured TX power value against [min_power, max_power]. */
 static bool bredr_check_tx_pwr(const char *name, int8_t value, int8_t min_power, int8_t max_power)
 {
@@ -924,7 +965,7 @@ int esp_bredr_controller_init(esp_bt_controller_config_t *cfg)
     bredr_register_ext_dep_callback(bredr_ctrl_ext_dep_callback);
 
     cfg->bredr.mempool_size = 1024 * (cfg->bredr.max_acl_conn + 2);
-    cfg->bredr.mempool_ops = &s_orca_mempool_ops;
+    cfg->bredr.mempool_ops = bredr_mempool_ops_get();
 
     uint32_t bredr_btdm_version = 0;
     uint32_t bredr_btdm_size = 0;

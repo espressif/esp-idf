@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2025-2026 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: CC0-1.0
 import os
 import sys
@@ -27,9 +27,10 @@ def check_output(p: Any) -> None:
     p.expect_exact('example: float var 1.600000')
     p.expect_exact('example: double var -70.199997')
     p.expect_exact('example: int, double, var32, float, float, char 4095 -70.199997 9000 1.600000 1.600000 A')
-    p.expect(r'example: str_array 0x[0-9a-fA-F]+')
+    # Wait for the line ending, allowing IDF Monitor's optional color reset.
+    p.expect(r'example: str_array 0x[0-9a-fA-F]+(?:\x1b\[0m)?\r?\n')
 
-    p.expect(r'example: str_ptr 0x[0-9a-fA-F]+')
+    p.expect(r'example: str_ptr 0x[0-9a-fA-F]+(?:\x1b\[0m)?\r?\n')
     p.expect_exact('example: 00 01 02 03 04 05 06 07 08 09 0a 0b 0c 0d 0e 0f')
     p.expect_exact('example: 10 11 12 13 14 15 16 17 18 19 1a 1b 1c 1d 1e 1f')
     p.expect_exact('example: 20 21 21 21 21 21 21 21 21 21 21 21 21 21 21 21')
@@ -37,7 +38,7 @@ def check_output(p: Any) -> None:
     p.expect_exact('example: 40 41 42 43 44 45 46 47 48 49 4a 4b 4c 4d 4e 4f')
     p.expect_exact('example: 50 51 52 53 54 55 56 57 58 59')
 
-    match = p.expect(r'example: buffer addr = 0x([0-9a-fA-F]+)')
+    match = p.expect(r'example: buffer addr = 0x([0-9a-fA-F]+)(?:\x1b\[0m)?\r?\n')
     addr = int((match.group(1) if text_mode else p.match.group(1)), 16)
     p.expect_exact(f'example: {addr + 0:#x}   00 01 02 03 04 05 06 07  08 09 0a 0b 0c 0d 0e 0f  |................|')
     p.expect_exact(f'example: {addr + 16:#x}   10 11 12 13 14 15 16 17  18 19 1a 1b 1c 1d 1e 1f  |................|')
@@ -56,7 +57,7 @@ def check_output(p: Any) -> None:
     p.expect_exact('example: and begin doing.')
     p.expect_exact('example:  - Walt Disney')
 
-    match = p.expect(r'example: buffer2 addr = 0x([0-9a-fA-F]+)')
+    match = p.expect(r'example: buffer2 addr = 0x([0-9a-fA-F]+)(?:\x1b\[0m)?\r?\n')
     addr = int((match.group(1) if text_mode else p.match.group(1)), 16)
     p.expect_exact(f'example: {addr + 0:#x}   00 00 00 00 01 00 00 00  02 00 00 00 03 00 00 00  |................|')
     p.expect_exact(f'example: {addr + 16:#x}   04 00 00 00 05 00 00 00  06 00 00 00 07 00 00 00  |................|')
@@ -64,7 +65,7 @@ def check_output(p: Any) -> None:
     p.expect_exact(f'example: {addr + 48:#x}   0c 00 00 00 0d 00 00 00  0e 00 00 00 0f 00 00 00  |................|')
     p.expect_exact(f'example: {addr + 64:#x}   10 00 00 00 11 00 00 00  12 00 00 00 13 00 00 00  |................|')
 
-    match = p.expect(r'example: buffer3 addr = 0x([0-9a-fA-F]+)')
+    match = p.expect(r'example: buffer3 addr = 0x([0-9a-fA-F]+)(?:\x1b\[0m)?\r?\n')
     addr = int((match.group(1) if text_mode else p.match.group(1)), 16)
     p.expect_exact(f'example: {addr + 0:#x}   00 00 00 00 00 00 00 00  01 00 00 00 00 00 00 00  |................|')
     p.expect_exact(f'example: {addr + 16:#x}   02 00 00 00 00 00 00 00  03 00 00 00 00 00 00 00  |................|')
@@ -176,9 +177,10 @@ def test_log(dut: Dut) -> None:
         if dut.app.sdkconfig.get('BOOTLOADER_LOG_MODE_BINARY_EN'):
             monitor_cmd += ' ' + os.path.join(dut.app.binary_path, 'bootloader', 'bootloader.elf')
         monitor_log_path = os.path.join(dut.logdir, 'monitor.txt')
-        with open(monitor_log_path, 'w') as log, pexpect.spawn(
-            monitor_cmd, logfile=log, timeout=3, encoding='utf-8', codec_errors='ignore'
-        ) as p:
+        with (
+            open(monitor_log_path, 'w') as log,
+            pexpect.spawn(monitor_cmd, logfile=log, timeout=3, encoding='utf-8', codec_errors='ignore') as p,
+        ):
             check_output(p)
     else:
         check_output(dut)
