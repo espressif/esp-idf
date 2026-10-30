@@ -9,7 +9,7 @@
 #include "sdkconfig.h"
 #include "esp_err.h"
 
-#if CONFIG_ENABLE_HCI_CONSOLE
+#if CONFIG_EXAMPLE_HCI_CONSOLE
 /**
  * @brief Start the console REPL and register the enabled command groups of this example.
  */

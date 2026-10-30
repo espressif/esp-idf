@@ -1,6 +1,6 @@
 menu "Example Configuration"
 
-    config ENABLE_HCI_CONSOLE
+    config EXAMPLE_HCI_CONSOLE
         bool "Enable HCI console REPL"
         default n
         depends on !IDF_TARGET_ESP32
@@ -8,11 +8,11 @@ menu "Example Configuration"
             Start a console REPL on the log UART for example commands such as
             HCI UART pin reconfig.
 
-    config ENABLE_BLE_DTM_CONFIGURATION_COMMAND
+    config EXAMPLE_BLE_DTM_CONFIGURATION_COMMAND
         bool
         prompt "Enable BLE DTM configuration commands"
         default n
-        depends on ENABLE_HCI_CONSOLE && BT_ENABLED
+        depends on EXAMPLE_HCI_CONSOLE && BT_ENABLED
         depends on SOC_ESP_NIMBLE_CONTROLLER || IDF_TARGET_ESP32C3 || IDF_TARGET_ESP32S3
         select BT_CTRL_AGC_RECORRECT_EN if (IDF_TARGET_ESP32C3 || IDF_TARGET_ESP32S3)
         select BT_CTRL_CODED_AGC_RECORRECT_EN if (IDF_TARGET_ESP32C3 || IDF_TARGET_ESP32S3)
@@ -20,5 +20,64 @@ menu "Example Configuration"
         help
             Add the BLE DTM command group to the HCI console.
             On ESP32-C3/S3, HCI UART is configured without flow control for DTM.
+
+    config EXAMPLE_CTE_ANTENNA_GPIO
+        bool "Use GPIOs for CTE antenna switching"
+        depends on BT_CONTROLLER_ENABLED && SOC_BLE_CTE_SUPPORTED && BT_LE_CTE_FEATURE_ENABLED
+        default n
+        help
+            Initialize antenna selection GPIOs using the same routing as the CTE
+            examples. Enable for local antenna switching, such as AoA reception
+            or AoD transmission. AoA transmission does not require this option.
+            The external host still configures CTE through HCI commands.
+            Choose pins that do not conflict with UART, flash, or board peripherals.
+
+    if EXAMPLE_CTE_ANTENNA_GPIO
+
+        config EXAMPLE_ANT_GPIO_BIT_COUNT
+            int "Number of GPIO bits for antenna encoding"
+            range 1 4
+            default 2
+            help
+                Select the number of GPIO pins used as encoded bits for antenna switching.
+                Each additional GPIO bit doubles the number of controllable antennas.
+                Example:
+                1 bit -> 2 antennas (0, 1)
+                2 bits -> 4 antennas (00, 01, 10, 11)
+                3 bits -> 8 antennas
+                4 bits -> 16 antennas
+
+        config EXAMPLE_ANT_GPIO_0
+            int "GPIO Bit 0 (LSB)"
+            range 0 39
+            default 0
+            help
+                GPIO pin number for the least significant bit (LSB) of antenna encoding.
+
+        config EXAMPLE_ANT_GPIO_1
+            int "GPIO Bit 1"
+            range 0 39
+            default 1
+            depends on EXAMPLE_ANT_GPIO_BIT_COUNT > 1
+            help
+                GPIO pin number for bit 1 of antenna encoding.
+
+        config EXAMPLE_ANT_GPIO_2
+            int "GPIO Bit 2"
+            range 0 39
+            default 2
+            depends on EXAMPLE_ANT_GPIO_BIT_COUNT > 2
+            help
+                GPIO pin number for bit 2 of antenna encoding.
+
+        config EXAMPLE_ANT_GPIO_3
+            int "GPIO Bit 3 (MSB)"
+            range 0 39
+            default 3
+            depends on EXAMPLE_ANT_GPIO_BIT_COUNT > 3
+            help
+                GPIO pin number for the most significant bit (MSB) of antenna encoding.
+
+    endif # EXAMPLE_CTE_ANTENNA_GPIO
 
 endmenu

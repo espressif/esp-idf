@@ -9,11 +9,30 @@
 #include "esp_bt.h"
 #include "esp_log.h"
 
-#if CONFIG_ENABLE_HCI_CONSOLE
+#if CONFIG_EXAMPLE_CTE_ANTENNA_GPIO
+#include "ble_cte_antenna.h"
+#endif
+
+#if CONFIG_EXAMPLE_HCI_CONSOLE
 #include "hci_common.h"
 #endif
 
 static const char *tag = "CONTROLLER_UART_HCI";
+
+#if CONFIG_EXAMPLE_CTE_ANTENNA_GPIO
+static const uint8_t antenna_use_gpio[] = {
+    CONFIG_EXAMPLE_ANT_GPIO_0,
+#if CONFIG_EXAMPLE_ANT_GPIO_BIT_COUNT > 1
+    CONFIG_EXAMPLE_ANT_GPIO_1,
+#endif
+#if CONFIG_EXAMPLE_ANT_GPIO_BIT_COUNT > 2
+    CONFIG_EXAMPLE_ANT_GPIO_2,
+#endif
+#if CONFIG_EXAMPLE_ANT_GPIO_BIT_COUNT > 3
+    CONFIG_EXAMPLE_ANT_GPIO_3,
+#endif
+};
+#endif
 
 void app_main(void)
 {
@@ -34,6 +53,15 @@ void app_main(void)
         return;
     }
 
+#if CONFIG_EXAMPLE_CTE_ANTENNA_GPIO
+    ret = ble_cte_antenna_init(antenna_use_gpio, CONFIG_EXAMPLE_ANT_GPIO_BIT_COUNT);
+    if (ret != ESP_OK) {
+        ESP_LOGE(tag, "Antenna init failed: %s", esp_err_to_name(ret));
+        esp_bt_controller_deinit();
+        return;
+    }
+#endif
+
 #if defined(CONFIG_BTDM_CTRL_MODE_BTDM) && CONFIG_BTDM_CTRL_MODE_BTDM
     ret = esp_bt_controller_enable(ESP_BT_MODE_BTDM);
 #elif defined(CONFIG_BTDM_CTRL_MODE_BR_EDR_ONLY) && CONFIG_BTDM_CTRL_MODE_BR_EDR_ONLY
@@ -46,7 +74,7 @@ void app_main(void)
         return;
     }
 
-#if CONFIG_ENABLE_HCI_CONSOLE
+#if CONFIG_EXAMPLE_HCI_CONSOLE
     hci_console_init();
 #endif
 }

@@ -45,4 +45,4 @@ Example
 
         The HCI UART transport is unchanged; only the example location has changed. The new example starts the Bluetooth controller only and does not depend on the NimBLE host. It therefore lives under ``examples/bluetooth/hci/`` instead of ``examples/bluetooth/nimble/``.
 
-        The DTM configuration commands from the removed example are now provided by the console of the new example and are enabled with ``CONFIG_ENABLE_BLE_DTM_CONFIGURATION_COMMAND``.
+        The DTM configuration commands from the removed example are now provided by the console of the new example and are enabled with ``CONFIG_EXAMPLE_BLE_DTM_CONFIGURATION_COMMAND``.
