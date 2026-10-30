@@ -330,7 +330,7 @@ static void bta_dm_pm_cback(tBTA_SYS_CONN_STATUS status, UINT8 id, UINT8 app_id,
 
     APPL_TRACE_DEBUG("bta_dm_pm_cback: st(%d), id(%d), app(%d)", status, id, app_id);
 
-    p_dev = bta_dm_find_peer_device(peer_addr);
+    p_dev = bta_dm_find_peer_device(peer_addr, BT_TRANSPORT_BR_EDR);
 
     /* find if there is an power mode entry for the service */
     for (i = 1; i <= p_bta_dm_pm_cfg[0].app_id; i++) {
@@ -348,7 +348,7 @@ static void bta_dm_pm_cback(tBTA_SYS_CONN_STATUS status, UINT8 id, UINT8 app_id,
     }
 
     bta_dm_pm_stop_timer_by_srvc_id(peer_addr, id);
-    /*p_dev = bta_dm_find_peer_device(peer_addr);*/
+    /*p_dev = bta_dm_find_peer_device(peer_addr, BT_TRANSPORT_BR_EDR);*/
 
 #if (BTM_SSR_INCLUDED == TRUE)
     /* set SSR parameters on SYS CONN OPEN */
@@ -498,7 +498,7 @@ static void bta_dm_pm_set_mode(BD_ADDR peer_addr, tBTA_DM_PM_ACTION pm_request,
     }
 
     /* see if any attempt to put device in low power mode failed */
-    p_peer_device = bta_dm_find_peer_device(peer_addr);
+    p_peer_device = bta_dm_find_peer_device(peer_addr, BT_TRANSPORT_BR_EDR);
     /* if no peer device found return */
     if (p_peer_device == NULL) {
         return;
@@ -931,7 +931,7 @@ void bta_dm_pm_btm_status(tBTA_DM_MSG *p_data)
 {
     APPL_TRACE_DEBUG("%s status: %d", __func__, p_data->pm_status.status);
 
-    tBTA_DM_PEER_DEVICE *p_dev = bta_dm_find_peer_device(p_data->pm_status.bd_addr);
+    tBTA_DM_PEER_DEVICE *p_dev = bta_dm_find_peer_device(p_data->pm_status.bd_addr, BT_TRANSPORT_BR_EDR);
     if (NULL == p_dev) {
         return;
     }
@@ -1101,7 +1101,7 @@ static void bta_dm_pm_hid_check(BOOLEAN bScoActive)
         if (bta_dm_conn_srvcs.conn_srvc[j].id == BTA_ID_HH ) {
             APPL_TRACE_DEBUG ("SCO status change(Active: %d), modify HID link policy. state: %d",
                               bScoActive, bta_dm_conn_srvcs.conn_srvc[j].state);
-            bta_dm_pm_set_sniff_policy( bta_dm_find_peer_device(bta_dm_conn_srvcs.conn_srvc[j].peer_bdaddr), bScoActive);
+            bta_dm_pm_set_sniff_policy( bta_dm_find_peer_device(bta_dm_conn_srvcs.conn_srvc[j].peer_bdaddr, BT_TRANSPORT_BR_EDR), bScoActive);
 
             /* if we had disabled link policy, seems like the hid device stop retrying SNIFF after a few tries. force sniff if needed */
             if (!bScoActive) {
@@ -1178,21 +1178,26 @@ UINT8 bta_dm_get_av_count(void)
 **
 ** Function         bta_dm_find_peer_device
 **
-** Description      Given an address, find the associated control block.
+** Description      Find the peer control block for an address. transport
+**                  BT_TRANSPORT_INVALID matches the address only.
 **
 ** Returns          tBTA_DM_PEER_DEVICE
 **
 *******************************************************************************/
-tBTA_DM_PEER_DEVICE *bta_dm_find_peer_device(BD_ADDR peer_addr)
+tBTA_DM_PEER_DEVICE *bta_dm_find_peer_device(BD_ADDR peer_addr, tBT_TRANSPORT transport)
 {
     tBTA_DM_PEER_DEVICE *p_dev = NULL;
 
     for (int i = 0; i < bta_dm_cb.device_list.count; i++) {
-        if (!bdcmp( bta_dm_cb.device_list.peer_device[i].peer_bdaddr, peer_addr)) {
-            p_dev = &bta_dm_cb.device_list.peer_device[i];
-            break;
+        if (bdcmp(bta_dm_cb.device_list.peer_device[i].peer_bdaddr, peer_addr)) {
+            continue;
         }
-
+        if (transport != BT_TRANSPORT_INVALID &&
+                bta_dm_cb.device_list.peer_device[i].transport != transport) {
+            continue;
+        }
+        p_dev = &bta_dm_cb.device_list.peer_device[i];
+        break;
     }
     return p_dev;
 }

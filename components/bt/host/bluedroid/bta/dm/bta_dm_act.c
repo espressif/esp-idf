@@ -1493,7 +1493,7 @@ static void bta_dm_policy_cback(tBTA_SYS_CONN_STATUS status, UINT8 id, UINT8 app
     UINT32  mask = (UINT32)(1 << id);
 
     if (peer_addr) {
-        p_dev = bta_dm_find_peer_device(peer_addr);
+        p_dev = bta_dm_find_peer_device(peer_addr, BT_TRANSPORT_BR_EDR);
     }
 
     APPL_TRACE_DEBUG(" bta_dm_policy_cback cmd:%d, policy:0x%x",
@@ -3714,7 +3714,7 @@ void bta_dm_acl_change(tBTA_DM_MSG *p_data)
         return;
 #if (CLASSIC_BT_INCLUDED == TRUE)
     case BTM_BL_ROLE_CHG_EVT:   /* role change event */
-        p_dev = bta_dm_find_peer_device(p_bda);
+        p_dev = bta_dm_find_peer_device(p_bda, BT_TRANSPORT_BR_EDR);
         if (p_dev) {
             APPL_TRACE_DEBUG("bta_dm_acl_change role chg info:x%x new_role:%d dev count:%d",
                              p_dev->info, p_data->acl_change.new_role, bta_dm_cb.device_list.count);
@@ -3793,6 +3793,8 @@ void bta_dm_acl_change(tBTA_DM_MSG *p_data)
 #if BLE_INCLUDED == TRUE
         conn.link_up.link_type = p_data->acl_change.transport;
         bta_dm_cb.device_list.peer_device[i].transport = p_data->acl_change.transport;
+#else
+        bta_dm_cb.device_list.peer_device[i].transport = BT_TRANSPORT_BR_EDR;
 #endif
 
         if (((NULL != (p = BTM_ReadLocalFeatures ())) && HCI_SNIFF_SUB_RATE_SUPPORTED(p)) &&
@@ -4000,7 +4002,7 @@ static void bta_dm_rm_cback(tBTA_SYS_CONN_STATUS status, UINT8 id, UINT8 app_id,
     tBTA_PREF_ROLES role;
     tBTA_DM_PEER_DEVICE *p_dev;
 
-    p_dev = bta_dm_find_peer_device(peer_addr);
+    p_dev = bta_dm_find_peer_device(peer_addr, BT_TRANSPORT_BR_EDR);
     if ( status == BTA_SYS_CONN_OPEN) {
         if (p_dev) {
             /* Do not set to connected if we are in the middle of unpairing. When AV stream is

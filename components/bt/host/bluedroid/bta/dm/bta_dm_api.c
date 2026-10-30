@@ -1122,7 +1122,7 @@ void BTA_GetEirService( UINT8 *p_eir, tBTA_SERVICE_MASK *p_services )
 *******************************************************************************/
 UINT16 BTA_DmGetConnectionState( BD_ADDR bd_addr )
 {
-    tBTA_DM_PEER_DEVICE *p_dev = bta_dm_find_peer_device(bd_addr);
+    tBTA_DM_PEER_DEVICE *p_dev = bta_dm_find_peer_device(bd_addr, BT_TRANSPORT_INVALID);
     return (p_dev && p_dev->conn_state == BTA_DM_CONNECTED);
 }
 
