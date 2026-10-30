@@ -9,13 +9,33 @@
 #include "osi/mutex.h"
 
 
-STAILQ_HEAD(pkt_queue_header, pkt_linked_item);
-
 struct pkt_queue {
     osi_mutex_t lock;
-    size_t length;
-    struct pkt_queue_header header;
+    slist_t *list;
 } pkt_queue_t;
+
+static slist_node_t *pkt_queue_node(pkt_linked_item_t *item)
+{
+    return &item->node;
+}
+
+static pkt_linked_item_t *pkt_queue_item(slist_node_t *node)
+{
+    return (pkt_linked_item_t *)node;
+}
+
+static pkt_linked_item_t *pkt_queue_take_front(struct pkt_queue *queue)
+{
+    slist_node_t *node;
+
+    if (slist_is_empty(queue->list)) {
+        return NULL;
+    }
+
+    node = slist_front(queue->list);
+    slist_delete(queue->list, node);
+    return pkt_queue_item(node);
+}
 
 struct pkt_queue *pkt_queue_create(void)
 {
@@ -27,8 +47,12 @@ struct pkt_queue *pkt_queue_create(void)
         osi_free(queue);
         return NULL;
     }
-    struct pkt_queue_header *p = &queue->header;
-    STAILQ_INIT(p);
+    queue->list = slist_new(NULL);
+    if (queue->list == NULL) {
+        osi_mutex_free(&queue->lock);
+        osi_free(queue);
+        return NULL;
+    }
 
     return queue;
 }
@@ -39,20 +63,12 @@ static void pkt_queue_cleanup(struct pkt_queue *queue, pkt_queue_free_cb free_cb
         return;
     }
 
-    struct pkt_queue_header *header = &queue->header;
-    pkt_linked_item_t *item = STAILQ_FIRST(header);
-    pkt_linked_item_t *tmp;
-
     pkt_queue_free_cb free_func = (free_cb != NULL) ? free_cb : (pkt_queue_free_cb)osi_free_func;
+    pkt_linked_item_t *item;
 
-    while (item != NULL) {
-        tmp = STAILQ_NEXT(item, next);
+    while ((item = pkt_queue_take_front(queue)) != NULL) {
         free_func(item);
-        item = tmp;
-        queue->length--;
     }
-    STAILQ_INIT(header);
-    queue->length = 0;
 }
 
 void pkt_queue_flush(struct pkt_queue *queue, pkt_queue_free_cb free_cb)
@@ -74,6 +90,7 @@ void pkt_queue_destroy(struct pkt_queue *queue, pkt_queue_free_cb free_cb)
     pkt_queue_cleanup(queue, free_cb);
     osi_mutex_unlock(&queue->lock);
 
+    slist_free(queue->list);
     osi_mutex_free(&queue->lock);
     osi_free(queue);
 }
@@ -87,19 +104,12 @@ pkt_linked_item_t *pkt_queue_dequeue_and_len(struct pkt_queue *queue, size_t *ou
         return NULL;
     }
 
-    struct pkt_linked_item *item;
-    struct pkt_queue_header *header;
+    pkt_linked_item_t *item;
+
     osi_mutex_lock(&queue->lock, OSI_MUTEX_MAX_TIMEOUT);
-    header = &queue->header;
-    item = STAILQ_FIRST(header);
-    if (item != NULL) {
-        STAILQ_REMOVE_HEAD(header, next);
-        if (queue->length > 0) {
-            queue->length--;
-        }
-    }
+    item = pkt_queue_take_front(queue);
     if (out_len != NULL) {
-        *out_len = queue->length;
+        *out_len = slist_length(queue->list);
     }
     osi_mutex_unlock(&queue->lock);
 
@@ -117,13 +127,10 @@ bool pkt_queue_enqueue_and_len(struct pkt_queue *queue, pkt_linked_item_t *item,
         return false;
     }
 
-    struct pkt_queue_header *header;
     osi_mutex_lock(&queue->lock, OSI_MUTEX_MAX_TIMEOUT);
-    header = &queue->header;
-    STAILQ_INSERT_TAIL(header, item, next);
-    queue->length++;
+    slist_append(queue->list, pkt_queue_node(item));
     if (out_len != NULL) {
-        *out_len = queue->length;
+        *out_len = slist_length(queue->list);
     }
     osi_mutex_unlock(&queue->lock);
 
@@ -140,7 +147,7 @@ size_t pkt_queue_length(const struct pkt_queue *queue)
     if (queue == NULL) {
         return 0;
     }
-    return queue->length;
+    return slist_length(queue->list);
 }
 
 bool pkt_queue_is_empty(const struct pkt_queue *queue)
@@ -154,11 +161,11 @@ pkt_linked_item_t *pkt_queue_try_peek_first(struct pkt_queue *queue)
         return NULL;
     }
 
-    struct pkt_queue_header *header = &queue->header;
-    pkt_linked_item_t *item;
+    slist_node_t *node;
+
     osi_mutex_lock(&queue->lock, OSI_MUTEX_MAX_TIMEOUT);
-    item = STAILQ_FIRST(header);
+    node = slist_is_empty(queue->list) ? NULL : slist_front(queue->list);
     osi_mutex_unlock(&queue->lock);
 
-    return item;
+    return pkt_queue_item(node);
 }
