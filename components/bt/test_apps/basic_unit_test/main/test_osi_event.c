@@ -333,7 +333,7 @@ TEST_CASE("osi_event post timeout 0 fails when work queue is full", "[osi_event]
     event = test_event_bind(thread, handler_count);
 
     for (size_t i = 0; i < queue_len; i++) {
-        TEST_ASSERT_TRUE(osi_thread_post(thread, dummy_work, NULL, 0, 0));
+        TEST_ASSERT_TRUE(osi_thread_post(thread, dummy_work, NULL, NULL, 0, 0));
     }
     TEST_ASSERT_FALSE(osi_thread_post_event(event, 0));
     TEST_ASSERT_EQUAL_UINT32(0, s_run_count);
