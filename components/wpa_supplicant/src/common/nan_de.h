@@ -77,6 +77,10 @@ void nan_de_tx_wait_ended(struct nan_de *de);
 void nan_de_rx_sdf(struct nan_de *de, const u8 *peer_addr, const u8 *a3,
 		   unsigned int freq, const u8 *buf, size_t len);
 const u8 * nan_de_get_service_id(struct nan_de *de, int id);
+#ifdef ESP_SUPPLICANT
+const char * nan_de_get_service_name(struct nan_de *de, int id);
+int nan_de_get_service_type(struct nan_de *de, int id);
+#endif /* ESP_SUPPLICANT */
 
 struct nan_publish_params {
 	/* configuration_parameters */
