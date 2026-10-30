@@ -309,6 +309,18 @@ void rtc_clk_cpu_freq_get_config(rtc_cpu_freq_config_t *out_config);
  * Assumes that XTAL frequency has been determined — don't call in startup code.
  */
 void rtc_clk_cpu_freq_set_xtal(void);
+
+/**
+ * @brief Release root clock source locked by PMU
+ *
+ * In PMU modem state on ESP32-S31, PMU takes control of the HP root clock
+ * (sysclk_slp_sel = 1) and selects XTAL (40 MHz). When waking up to HP_ACTIVE
+ * via HP_MODEM, PMU does not automatically hand the root clock mux back to
+ * software (HP_SYS_CLKRST). Software must explicitly release this lock by
+ * setting PMU_UPDATE_DIG_SYS_CLK_SEL after restoring the CPU clock config,
+ * otherwise the HP root clock remains stuck at XTAL 40 MHz.
+ */
+void rtc_clk_modem_pll_lock_release(void);
 #endif
 
 /**

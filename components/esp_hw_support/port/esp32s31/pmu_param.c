@@ -152,7 +152,9 @@ const pmu_hp_system_power_param_t * pmu_hp_system_power_param_default(pmu_hp_mod
         .icg_sysclk_en      = 1,                            \
         .sysclk_slp_sel     = 1,                            \
         .icg_slp_sel        = 1,                            \
-        /* Default: dig_sysclk uses XTAL. For PLL, update divider coeffs and release PLL lock. */ \
+        /* Since SOC APB and MODEM APB on ESP32-S31 are decoupled, XTAL can be used as SOC clock in modem state. \
+         * Because sysclk_slp_sel = 1, the HP root clock still has to be released on wake via PMU_UPDATE_DIG_SYS_CLK_SEL \
+         * regardless of the selected source. */            \
         .dig_sysclk_sel     = SOC_CPU_CLK_SRC_XTAL          \
     } \
 }
