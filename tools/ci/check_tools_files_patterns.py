@@ -1,16 +1,41 @@
 #!/usr/bin/env python
 #
-# SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2021-2026 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
 
 import argparse
 import os
 import sys
-from pathlib import Path
+from fnmatch import fnmatchcase
 
 import yaml
 from idf_ci_utils import IDF_PATH
 from idf_ci_utils import get_git_files
+
+
+def _match_parts(path_parts: list[str], pattern_parts: list[str]) -> bool:
+    if not pattern_parts:
+        return not path_parts
+    if pattern_parts[0] == '**':
+        # '**' stands for zero or more directories and never consumes the file name. A trailing '**' therefore
+        # matches no file, as in Path.glob() before Python 3.13; GitLab rules:changes would not cover deeper files.
+        return any(_match_parts(path_parts[i:], pattern_parts[1:]) for i in range(len(path_parts)))
+    return (
+        bool(path_parts)
+        and fnmatchcase(path_parts[0], pattern_parts[0])
+        and _match_parts(path_parts[1:], pattern_parts[1:])
+    )
+
+
+def path_matches(path: str, pattern: str) -> bool:
+    """
+    Match a file path relative to IDF_PATH against a Path.glob() pattern.
+
+    Globbing the disk walks untracked build output too, which made the check take seconds in a used checkout.
+    Splitting on '/' works on Windows as well, because git ls-files and the patterns use '/' on every OS.
+    fnmatchcase() keeps matching case-sensitive on Windows and macOS, as GitLab CI does.
+    """
+    return _match_parts(path.split('/'), pattern.split('/'))
 
 
 def check(pattern_yml: str, exclude_list: str) -> tuple[set, set]:
@@ -20,32 +45,19 @@ def check(pattern_yml: str, exclude_list: str) -> tuple[set, set]:
         if k.startswith('.pattern') and k != '.patterns-python-files' and isinstance(v, list):
             rules_patterns_set.update(v)
 
-    rules_files_set: set = set()
-    idf_path = Path(IDF_PATH)
-    for pat in rules_patterns_set:
-        rules_files_set.update(idf_path.glob(pat))
-
     exclude_patterns_set = set()
     for line in open(exclude_list).readlines():
         pat = line.split('#')[0].strip()
         if pat:
             exclude_patterns_set.add(pat)
 
-    exclude_files_set: set = set()
-    for pat in exclude_patterns_set:
-        exclude_files_set.update(idf_path.glob(pat))
-
+    patterns = rules_patterns_set | exclude_patterns_set
     missing_files = set()
-    git_files = get_git_files(os.path.join(IDF_PATH, 'tools'), full_path=True)
-    for f in git_files:
-        f = Path(f)
-        if (
-            f in rules_files_set
-            or f in exclude_files_set
-            or str(f).startswith(os.path.join(IDF_PATH, 'tools', 'test_apps'))
-        ):
+    for f in get_git_files(os.path.join(IDF_PATH, 'tools')):
+        f = f'tools/{f}'
+        if f.startswith('tools/test_apps/') or any(path_matches(f, pat) for pat in patterns):
             continue
-        missing_files.add(os.path.relpath(f, IDF_PATH))
+        missing_files.add(f)
 
     return missing_files, rules_patterns_set.intersection(exclude_patterns_set)
 
