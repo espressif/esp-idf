@@ -4,6 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <string.h>
 #include "hal/hal_utils.h"
 #include "hal/assert.h"
 
@@ -141,53 +142,62 @@ uint32_t hal_utils_calc_clk_div_integer(const hal_utils_clk_info_t *clk_info, ui
     return clk_info->src_freq_hz / div_integ;
 }
 
-typedef union {
-    struct {
-        uint32_t mantissa: 23;
-        uint32_t exponent: 8;
-        uint32_t sign: 1;
-    };
-    uint32_t val;
-} hal_utils_ieee754_float_t;
-
 int hal_utils_float_to_fixed_point_32b(float flt, const hal_utils_fixed_point_t *fp_cfg, uint32_t *fp_out)
 {
     int ret = 0;
     uint32_t output = 0;
-    const hal_utils_ieee754_float_t *f = (const hal_utils_ieee754_float_t *)&flt;
-    if (fp_cfg->int_bit + fp_cfg->frac_bit > 31) {
+    if (fp_cfg->int_bit > 31 || fp_cfg->frac_bit > 31 - fp_cfg->int_bit) {
         // Not supported
         return -3;
     }
 
-    if (f->val == 0) {  // Zero case
+    uint32_t flt_bits;
+    memcpy(&flt_bits, &flt, sizeof(flt_bits));
+    uint32_t sign = flt_bits >> 31;
+    uint32_t exponent = (flt_bits >> 23) & BIT_MASK(8);
+    uint32_t mantissa = flt_bits & BIT_MASK(23);
+    uint32_t fixed_point_bits = fp_cfg->int_bit + fp_cfg->frac_bit;
+
+    if (exponent == 0) {  // Zero and subnormal case
         *fp_out = 0;
         return 0;
     }
-    if (f->exponent != 0xFF) {  // Normal case
-        int real_exp = (int)f->exponent - 127;
-        uint32_t real_mant = f->mantissa | BIT(23);  // Add the hidden bit
+
+    if (exponent != BIT_MASK(8)) {  // Normal case
+        int real_exp = (int)exponent - 127;
         // Overflow check
         if (real_exp >= (int)fp_cfg->int_bit) {
             ret = -1;
         }
-        // Determine sign
-        output |= f->sign << (fp_cfg->int_bit + fp_cfg->frac_bit);
-        // Determine integer and fraction part
-        int shift = 23 - fp_cfg->frac_bit - real_exp;
-        output |= shift >= 0 ? real_mant >> shift : real_mant << -shift;
+
+        if (ret == 0 || !fp_cfg->saturation) {
+            uint32_t real_mant = mantissa | BIT(23);  // Add the hidden bit
+            int shift = 23 - fp_cfg->frac_bit - real_exp;
+            if (shift < 24) {
+                // Determine sign
+                output = sign << fixed_point_bits;
+                // Determine integer and fraction part
+                if (shift >= 0) {
+                    output |= real_mant >> shift;
+                } else if (shift > -32) {
+                    output |= real_mant << -shift;
+                } else {
+                    // The converted value cannot be represented by uint32_t
+                    output = sign ? UINT32_MAX : UINT32_MAX >> 1;
+                }
+            }
+        }
     } else {
-        if (f->mantissa && f->mantissa < BIT(23) - 1) {  // NaN (Not-a-Number) case
+        if (mantissa != 0) {  // NaN (Not-a-Number) case
             return -2;
         } else {  // Infinity or Largest Number case
-            output = f->sign ? ~(uint32_t)0 : BIT(31) - 1;
+            output = sign ? UINT32_MAX : UINT32_MAX >> 1;
             ret = -1;
         }
     }
 
     if (ret != 0 && fp_cfg->saturation) {
-        *fp_out = (f->sign << (fp_cfg->int_bit + fp_cfg->frac_bit)) |
-                (BIT_MASK(fp_cfg->int_bit + fp_cfg->frac_bit));
+        *fp_out = (sign << fixed_point_bits) | BIT_MASK(fixed_point_bits);
     } else {
         *fp_out = output;
     }
