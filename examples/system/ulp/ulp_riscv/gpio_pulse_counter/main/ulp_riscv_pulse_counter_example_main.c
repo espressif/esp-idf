@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2025-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -34,14 +34,15 @@ extern const uint8_t ulp_main_bin_end[]   asm("_binary_ulp_main_bin_end");
 #if CONFIG_IDF_TARGET_ESP32S2
 #define HP_CORE_PULSE_DELAY 29    /* ESP32S2 has slower RTC clock, so it needs longer delay. */
 #elif CONFIG_IDF_TARGET_ESP32S3
-#define HP_CORE_PULSE_DELAY 6    /* ESP32S3 has faster RTC clock, so it can count pulses at higher speed. */
+#define HP_CORE_PULSE_DELAY 10    /* ESP32S3 has faster RTC clock, so it can count pulses at higher speed. */
 #else
 #error "This example is only supported on ESP32-S2 and ESP32-S3"
 #endif
 
 /* NOTE: HP_CORE_PULSE_DELAY has been pre-calculated for each target to achieve maximum frequency
  * For ESP32-S2, with HP_CORE_PULSE_DELAY = 27, maximum pulse frequency is ~120 KHz
- * For ESP32-S3, with HP_CORE_PULSE_DELAY = 5, maximum pulse frequency is ~250 KHz
+ * For ESP32-S3, HP_CORE_PULSE_DELAY = 8 is the lowest value at which all pulses are counted
+ * The pulse frequency also depends on how fast rtc_gpio_set_level() executes, so these values may need tuning
  * In the above defined macro, some buffer margin has been kept to ensure it works on different devices
  * and different conditions. User can try reducing the delay value further to achieve higher pulse frequency
  */
