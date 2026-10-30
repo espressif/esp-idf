@@ -201,6 +201,20 @@ const uint8_t ecc_p256_small_x_y[] = {
     0x33, 0x41, 0x5C, 0x08, 0x32, 0x48, 0xFB, 0xCC
 };
 
+const uint8_t ecc_p256_y1_x[] = {
+    0x09, 0xE7, 0x8D, 0x4E, 0xF6, 0x0D, 0x05, 0xF7,
+    0x50, 0xF6, 0x63, 0x62, 0x09, 0x09, 0x2B, 0xC4,
+    0x3C, 0xBD, 0xD6, 0xB4, 0x7E, 0x11, 0xA9, 0xDE,
+    0x20, 0xA9, 0xFE, 0xB2, 0xA5, 0x0B, 0xB9, 0x6C
+};
+
+const uint8_t ecc_p256_sqrt_b[] = {
+    0x66, 0x48, 0x5C, 0x78, 0x0E, 0x2F, 0x83, 0xD7,
+    0x24, 0x33, 0xBD, 0x5D, 0x84, 0xA0, 0x6B, 0xB6,
+    0x54, 0x1C, 0x2A, 0xF3, 0x1D, 0xAE, 0x87, 0x17,
+    0x28, 0xBF, 0x85, 0x6A, 0x17, 0x4F, 0x93, 0xF4
+};
+
 #if SOC_ECC_SUPPORT_CURVE_P384
 const uint8_t ecc_p384_point_x[] = {
     0xaa, 0x87, 0xca, 0x22, 0xbe, 0x8b, 0x05, 0x37,
@@ -272,6 +286,24 @@ const uint8_t ecc_p384_small_x_y[] = {
     0x6f, 0xc3, 0x19, 0xf0, 0xe2, 0xbb, 0x78, 0x02,
     0x32, 0xba, 0xf5, 0x78, 0x25, 0xfc, 0x0c, 0x19,
     0x12, 0xad, 0xa2, 0xfe, 0xfe, 0x84, 0x02, 0x4c
+};
+
+const uint8_t ecc_p384_y1_x[] = {
+    0x22, 0x61, 0xb2, 0xbf, 0x60, 0x5c, 0x22, 0xf2,
+    0xf3, 0xae, 0xf6, 0x33, 0x87, 0x19, 0xb2, 0xc4,
+    0x86, 0x38, 0x8a, 0xd5, 0x24, 0x07, 0x19, 0xa5,
+    0x25, 0x73, 0x15, 0x96, 0x9e, 0xf0, 0x1b, 0xa2,
+    0x7f, 0x0a, 0x10, 0x4c, 0x89, 0x70, 0x47, 0x73,
+    0xa8, 0x1f, 0xda, 0xbe, 0xe6, 0xab, 0x5c, 0x78
+};
+
+const uint8_t ecc_p384_sqrt_b[] = {
+    0xc3, 0x06, 0x61, 0x0f, 0xb0, 0xae, 0x5a, 0x15,
+    0x9c, 0xf4, 0x5c, 0x06, 0x06, 0x9f, 0x22, 0xa6,
+    0xc5, 0xeb, 0x36, 0x41, 0xc6, 0x02, 0xd4, 0x2d,
+    0xea, 0x2c, 0x4b, 0x4f, 0x75, 0x55, 0x07, 0x93,
+    0x40, 0x6d, 0x80, 0xd2, 0xb9, 0x1a, 0xd5, 0x4f,
+    0x90, 0x48, 0xbd, 0x48, 0x7a, 0xf1, 0xad, 0xe1
 };
 #endif /* SOC_ECC_SUPPORT_CURVE_P384 */
 
@@ -562,6 +594,82 @@ TEST_CASE("ECC point multiply rejects out-of-range scalar with SECP384R1", "[mbe
 {
     if (ecc_ll_is_p384_curve_operations_supported()) {
         test_ecc_mul_scalar_range(MBEDTLS_ECP_DP_SECP384R1);
+    }
+}
+#endif /* SOC_ECC_SUPPORT_CURVE_P384 */
+
+static void ecc_point_from_mpi(ecc_point_t *point, const mbedtls_mpi *x, const mbedtls_mpi *y, uint16_t len)
+{
+    memset(point, 0, sizeof(*point));
+    point->len = len;
+    TEST_ASSERT_MBEDTLS_OK(mbedtls_mpi_write_binary_le(x, point->x, len));
+    TEST_ASSERT_MBEDTLS_OK(mbedtls_mpi_write_binary_le(y, point->y, len));
+}
+
+static void test_ecc_verify_rejects_unreduced(mbedtls_ecp_group_id id, mbedtls_mpi_sint small_x,
+                                              const uint8_t *small_x_y, const uint8_t *y1_x,
+                                              const uint8_t *sqrt_b)
+{
+    mbedtls_ecp_group grp;
+    mbedtls_mpi x;
+    mbedtls_mpi y;
+    ecc_point_t point;
+    ecc_point_t result;
+    ecc_point_t zero;
+    uint8_t scalar[MAX_SIZE] = {2};
+
+    mbedtls_ecp_group_init(&grp);
+    mbedtls_mpi_init(&x);
+    mbedtls_mpi_init(&y);
+    memset(&zero, 0, sizeof(zero));
+
+    TEST_ASSERT_MBEDTLS_OK(mbedtls_ecp_group_load(&grp, id));
+    uint16_t len = grp.pbits / 8;
+
+    TEST_ASSERT_MBEDTLS_OK(mbedtls_mpi_lset(&x, small_x));
+    TEST_ASSERT_MBEDTLS_OK(mbedtls_mpi_read_binary(&y, small_x_y, len));
+    ecc_point_from_mpi(&point, &x, &y, len);
+    TEST_ASSERT_EQUAL_INT(1, esp_ecc_point_verify(&point));
+    TEST_ASSERT_EQUAL_INT(0, esp_ecc_point_multiply(&point, scalar, &result, true));
+
+    TEST_ASSERT_MBEDTLS_OK(mbedtls_mpi_add_mpi(&x, &x, &grp.P));
+    ecc_point_from_mpi(&point, &x, &y, len);
+    TEST_ASSERT_EQUAL_INT(0, esp_ecc_point_verify(&point));
+    memset(&result, 0xa5, sizeof(result));
+    TEST_ASSERT_EQUAL_INT(-1, esp_ecc_point_multiply(&point, scalar, &result, true));
+    TEST_ASSERT_EQUAL_MEMORY(&zero, &result, sizeof(result));
+
+    TEST_ASSERT_MBEDTLS_OK(mbedtls_mpi_read_binary(&x, y1_x, len));
+    TEST_ASSERT_MBEDTLS_OK(mbedtls_mpi_lset(&y, 1));
+    ecc_point_from_mpi(&point, &x, &y, len);
+    TEST_ASSERT_EQUAL_INT(1, esp_ecc_point_verify(&point));
+
+    TEST_ASSERT_MBEDTLS_OK(mbedtls_mpi_add_mpi(&y, &y, &grp.P));
+    ecc_point_from_mpi(&point, &x, &y, len);
+    TEST_ASSERT_EQUAL_INT(0, esp_ecc_point_verify(&point));
+
+    TEST_ASSERT_MBEDTLS_OK(mbedtls_mpi_copy(&x, &grp.P));
+    TEST_ASSERT_MBEDTLS_OK(mbedtls_mpi_read_binary(&y, sqrt_b, len));
+    ecc_point_from_mpi(&point, &x, &y, len);
+    TEST_ASSERT_EQUAL_INT(0, esp_ecc_point_verify(&point));
+
+    mbedtls_mpi_free(&y);
+    mbedtls_mpi_free(&x);
+    mbedtls_ecp_group_free(&grp);
+}
+
+TEST_CASE("ECC point verify rejects unreduced coordinates with SECP256R1", "[mbedtls]")
+{
+    test_ecc_verify_rejects_unreduced(MBEDTLS_ECP_DP_SECP256R1, 5, ecc_p256_small_x_y,
+                                      ecc_p256_y1_x, ecc_p256_sqrt_b);
+}
+
+#if SOC_ECC_SUPPORT_CURVE_P384
+TEST_CASE("ECC point verify rejects unreduced coordinates with SECP384R1", "[mbedtls]")
+{
+    if (ecc_ll_is_p384_curve_operations_supported()) {
+        test_ecc_verify_rejects_unreduced(MBEDTLS_ECP_DP_SECP384R1, 2, ecc_p384_small_x_y,
+                                          ecc_p384_y1_x, ecc_p384_sqrt_b);
     }
 }
 #endif /* SOC_ECC_SUPPORT_CURVE_P384 */
