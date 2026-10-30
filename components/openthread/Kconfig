@@ -26,6 +26,16 @@ menu "OpenThread"
             default 5
             help
                 The priority of OpenThread task.
+
+        config OPENTHREAD_PRIORITY_TASK_QUEUE_SIZE
+            int "Size of OpenThread priority task queue"
+            default 3
+            range 1 10
+            help
+                The OpenThread priority task queue holds tasks and events that must be processed.
+                Posting to this queue will assert if it is full. Increase this size, or post
+                droppable work with esp_openthread_task_queue_post() using
+                ESP_OPENTHREAD_TASK_QUEUE_TYPE_NORMAL instead.
     endmenu
 
     menu "Thread Version Message"
