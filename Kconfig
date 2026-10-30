@@ -563,8 +563,8 @@ mainmenu "Espressif IoT Development Framework Configuration"
 
                 - Enabled. The check's message, with its function and line number. This is the default.
 
-                - Address only, to save code size. The error code and the address of the check, which
-                  addr2line or idf.py monitor resolves to its file and line.
+                - Address only, to save code size. The address of the check, which addr2line or idf.py
+                  monitor resolves to its file and line, and the error code of a failed *_ON_ERROR check.
 
                 - Silent, to save the most code size. Nothing.
 
@@ -578,11 +578,12 @@ mainmenu "Espressif IoT Development Framework Configuration"
                 prompt "Address only (saves code size)"
                 bool
                 help
-                    A failed check prints the error code and the address of the check instead of its
-                    message. Running addr2line on that address with the application ELF, or reading the
-                    log through idf.py monitor, gives the file and line of the check. Values that the
-                    message would have printed are not reported. The messages are left out of the binary,
-                    and each check costs a few bytes for the call that reports it.
+                    A failed check prints the address of the check instead of its message, and a failed
+                    *_ON_ERROR check also prints the error code. Running addr2line on that address with the
+                    application ELF, or reading the log through idf.py monitor, gives the file and line of
+                    the check. Values that the message would have printed are not reported. The messages
+                    are left out of the binary, and each check costs a few bytes for the call that reports
+                    it.
 
             config COMPILER_OPTIMIZATION_CHECKS_SILENT
                 prompt "Silent (saves more code size)"

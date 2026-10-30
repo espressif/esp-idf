@@ -122,7 +122,7 @@ The macros are defined as follows:
 
 - **ESP_RETURN_ON_ERROR_CLEANUP**: Return from the function after executing cleanup code if an error is detected. This macro is useful when resources need to be released before returning an error code. It evaluates an expression that returns :cpp:type:`esp_err_t`, and if the result is not :c:macro:`ESP_OK`, it executes the cleanup code provided in the variable arguments (such as freeing resources or logging) before returning the error code from the current function.
 
-What these macros print when a check fails is set by :menuitem:`CONFIG_COMPILER_OPTIMIZATION_CHECK_LEVEL`. ``Address only`` and ``Silent`` leave the error messages out of the application binary. With ``Address only``, a failed check still prints the error code and the address of the check, which ``idf.py monitor`` or ``addr2line`` resolves to the file and line of the check.
+What these macros print when a check fails is set by :menuitem:`CONFIG_COMPILER_OPTIMIZATION_CHECK_LEVEL`. ``Address only`` and ``Silent`` leave the error messages out of the application binary. With ``Address only``, a failed check still prints the address of the check, which ``idf.py monitor`` or ``addr2line`` resolves to the file and line of the check, and a failed ``*_ON_ERROR`` check also prints the error code.
 
 .. _check_macros_examples:
 
