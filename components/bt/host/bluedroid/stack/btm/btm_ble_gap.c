@@ -786,6 +786,7 @@ static void btm_ble_resolve_random_addr_on_adv(void *p_rec, void *p)
     tBTM_SEC_DEV_REC    *match_rec = (tBTM_SEC_DEV_REC *) p_rec;
     UINT8       addr_type = BLE_ADDR_RANDOM;
     BD_ADDR     bda;
+    BD_ADDR     dummy_bda = {0};
     UINT8       *pp = (UINT8 *)p;
     UINT8           evt_type;
 
@@ -799,14 +800,29 @@ static void btm_ble_resolve_random_addr_on_adv(void *p_rec, void *p)
         BTM_TRACE_DEBUG("Random match");
         match_rec->ble.active_addr_type = BTM_BLE_ADDR_RRA;
         memcpy(match_rec->ble.cur_rand_addr, bda, BD_ADDR_LEN);
+        /* dukatyr patch A: maintain l2cble_init_direct_conn's current-address
+           bookkeeping for asynchronously resolved RPAs — the stock setter in
+           btm_ble_process_adv_pkt cannot find the record by the raw RPA, so
+           without this the direct-connect dial falls back to the identity,
+           which the peer never answers */
+        match_rec->ble.current_addr_type = addr_type;
+        memcpy(match_rec->ble.current_addr, bda, BD_ADDR_LEN);
+        match_rec->ble.current_addr_valid = true;
 
         if (btm_ble_init_pseudo_addr(match_rec, bda)) {
             memcpy(bda, match_rec->bd_addr, BD_ADDR_LEN);
+            addr_type = match_rec->ble.ble_addr_type;
+        } else if (memcmp(match_rec->ble.static_addr, dummy_bda, BD_ADDR_LEN) != 0) {
+            /* dukatyr patch A: the peer's identity (IRK + static addr) is known —
+               report the stable identity address, not the pairing-time RPA that
+               has since rotated away */
+            memcpy(bda, match_rec->ble.static_addr, BD_ADDR_LEN);
+            addr_type = match_rec->ble.static_addr_type & (~BLE_ADDR_TYPE_ID_BIT);
         } else {
             // Assign the original address to be the current report address
             memcpy(bda, match_rec->ble.pseudo_addr, BD_ADDR_LEN);
+            addr_type = match_rec->ble.ble_addr_type;
         }
-        addr_type = match_rec->ble.ble_addr_type;
     }
 
     btm_ble_process_adv_pkt_cont(bda, addr_type, evt_type, pp);
