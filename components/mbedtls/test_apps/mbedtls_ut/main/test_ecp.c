@@ -194,6 +194,13 @@ const uint8_t ecc_p256_small_mul_res_y[] = {
     0x17, 0xFD, 0xF6, 0x64, 0x41, 0x9E, 0x50, 0x0C
 };
 
+const uint8_t ecc_p256_small_x_y[] = {
+    0x45, 0x92, 0x43, 0xB9, 0xAA, 0x58, 0x18, 0x06,
+    0xFE, 0x91, 0x3B, 0xCE, 0x99, 0x81, 0x7A, 0xDE,
+    0x11, 0xCA, 0x50, 0x3C, 0x64, 0xD9, 0xA3, 0xC5,
+    0x33, 0x41, 0x5C, 0x08, 0x32, 0x48, 0xFB, 0xCC
+};
+
 #if SOC_ECC_SUPPORT_CURVE_P384
 const uint8_t ecc_p384_point_x[] = {
     0xaa, 0x87, 0xca, 0x22, 0xbe, 0x8b, 0x05, 0x37,
@@ -256,6 +263,15 @@ const uint8_t ecc_p384_small_mul_res_y[] = {
     0x30, 0xa5, 0x05, 0x7c, 0x7d, 0x62, 0xde, 0x8f,
     0x8e, 0xc3, 0xce, 0x9b, 0xa7, 0xc1, 0x71, 0xb9,
     0xb0, 0x2a, 0xda, 0x1c, 0xb3, 0x42, 0x61, 0x58
+};
+
+const uint8_t ecc_p384_small_x_y[] = {
+    0x8c, 0xde, 0xad, 0xbb, 0xd0, 0x49, 0x11, 0xa3,
+    0xc1, 0x93, 0x1e, 0x26, 0xdf, 0x3f, 0xa6, 0x43,
+    0x9d, 0xca, 0x9c, 0x7e, 0xb2, 0x86, 0xfb, 0xd4,
+    0x6f, 0xc3, 0x19, 0xf0, 0xe2, 0xbb, 0x78, 0x02,
+    0x32, 0xba, 0xf5, 0x78, 0x25, 0xfc, 0x0c, 0x19,
+    0x12, 0xad, 0xa2, 0xfe, 0xfe, 0x84, 0x02, 0x4c
 };
 #endif /* SOC_ECC_SUPPORT_CURVE_P384 */
 
@@ -399,6 +415,64 @@ TEST_CASE("mbedtls ECP point verify with SECP384R1", "[mbedtls]")
 {
     if (ecc_ll_is_p384_curve_operations_supported()) {
         test_ecp_verify(MBEDTLS_ECP_DP_SECP384R1, ecc_p384_mul_res_x, ecc_p384_mul_res_y);
+    }
+}
+#endif /* SOC_ECC_SUPPORT_CURVE_P384 */
+
+static void test_ecp_verify_rejects_unreduced(mbedtls_ecp_group_id id, mbedtls_mpi_sint small_x,
+                                              const uint8_t *small_x_y)
+{
+    mbedtls_ecp_group grp;
+    mbedtls_ecp_point P;
+    mbedtls_mpi zero;
+
+    mbedtls_ecp_group_init(&grp);
+    mbedtls_ecp_point_init(&P);
+    mbedtls_mpi_init(&zero);
+
+    TEST_ASSERT_MBEDTLS_OK(mbedtls_ecp_group_load(&grp, id));
+
+    TEST_ASSERT_MBEDTLS_OK(mbedtls_ecp_copy(&P, &grp.G));
+    TEST_ASSERT_MBEDTLS_OK(mbedtls_ecp_check_pubkey(&grp, &P));
+
+    TEST_ASSERT_MBEDTLS_OK(mbedtls_mpi_set_bit(&P.MBEDTLS_PRIVATE(X), grp.pbits, 1));
+    TEST_ASSERT_EQUAL_INT(MBEDTLS_ERR_ECP_INVALID_KEY, mbedtls_ecp_check_pubkey(&grp, &P));
+
+    TEST_ASSERT_MBEDTLS_OK(mbedtls_ecp_copy(&P, &grp.G));
+    TEST_ASSERT_MBEDTLS_OK(mbedtls_mpi_set_bit(&P.MBEDTLS_PRIVATE(Y), grp.pbits, 1));
+    TEST_ASSERT_EQUAL_INT(MBEDTLS_ERR_ECP_INVALID_KEY, mbedtls_ecp_check_pubkey(&grp, &P));
+
+    TEST_ASSERT_MBEDTLS_OK(mbedtls_ecp_copy(&P, &grp.G));
+    TEST_ASSERT_MBEDTLS_OK(mbedtls_mpi_sub_mpi(&P.MBEDTLS_PRIVATE(X), &zero, &grp.G.MBEDTLS_PRIVATE(X)));
+    TEST_ASSERT_EQUAL_INT(MBEDTLS_ERR_ECP_INVALID_KEY, mbedtls_ecp_check_pubkey(&grp, &P));
+
+    TEST_ASSERT_MBEDTLS_OK(mbedtls_ecp_copy(&P, &grp.G));
+    TEST_ASSERT_MBEDTLS_OK(mbedtls_mpi_sub_mpi(&P.MBEDTLS_PRIVATE(Y), &zero, &grp.G.MBEDTLS_PRIVATE(Y)));
+    TEST_ASSERT_EQUAL_INT(MBEDTLS_ERR_ECP_INVALID_KEY, mbedtls_ecp_check_pubkey(&grp, &P));
+
+    TEST_ASSERT_MBEDTLS_OK(mbedtls_mpi_lset(&P.MBEDTLS_PRIVATE(X), small_x));
+    TEST_ASSERT_MBEDTLS_OK(mbedtls_mpi_read_binary(&P.MBEDTLS_PRIVATE(Y), small_x_y, grp.pbits / 8));
+    TEST_ASSERT_MBEDTLS_OK(mbedtls_mpi_lset(&P.MBEDTLS_PRIVATE(Z), 1));
+    TEST_ASSERT_MBEDTLS_OK(mbedtls_ecp_check_pubkey(&grp, &P));
+
+    TEST_ASSERT_MBEDTLS_OK(mbedtls_mpi_add_mpi(&P.MBEDTLS_PRIVATE(X), &P.MBEDTLS_PRIVATE(X), &grp.P));
+    TEST_ASSERT_EQUAL_INT(MBEDTLS_ERR_ECP_INVALID_KEY, mbedtls_ecp_check_pubkey(&grp, &P));
+
+    mbedtls_mpi_free(&zero);
+    mbedtls_ecp_point_free(&P);
+    mbedtls_ecp_group_free(&grp);
+}
+
+TEST_CASE("mbedtls ECP point verify rejects unreduced coordinates with SECP256R1", "[mbedtls]")
+{
+    test_ecp_verify_rejects_unreduced(MBEDTLS_ECP_DP_SECP256R1, 5, ecc_p256_small_x_y);
+}
+
+#if SOC_ECC_SUPPORT_CURVE_P384
+TEST_CASE("mbedtls ECP point verify rejects unreduced coordinates with SECP384R1", "[mbedtls]")
+{
+    if (ecc_ll_is_p384_curve_operations_supported()) {
+        test_ecp_verify_rejects_unreduced(MBEDTLS_ECP_DP_SECP384R1, 2, ecc_p384_small_x_y);
     }
 }
 #endif /* SOC_ECC_SUPPORT_CURVE_P384 */

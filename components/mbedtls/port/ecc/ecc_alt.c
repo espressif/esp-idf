@@ -115,6 +115,13 @@ int mbedtls_ecp_check_pubkey( const mbedtls_ecp_group *grp,
         return( MBEDTLS_ERR_ECP_INVALID_KEY );
     }
 
+    if (mbedtls_mpi_cmp_int(&pt->MBEDTLS_PRIVATE(X), 0) < 0 ||
+        mbedtls_mpi_cmp_int(&pt->MBEDTLS_PRIVATE(Y), 0) < 0 ||
+        mbedtls_mpi_cmp_mpi(&pt->MBEDTLS_PRIVATE(X), &grp->P) >= 0 ||
+        mbedtls_mpi_cmp_mpi(&pt->MBEDTLS_PRIVATE(Y), &grp->P) >= 0) {
+        return MBEDTLS_ERR_ECP_INVALID_KEY;
+    }
+
     mbedtls_platform_zeroize((void *)&point, sizeof(ecc_point_t));
 
     if (mbedtls_mpi_write_binary_le(&pt->MBEDTLS_PRIVATE(X), point.x, sizeof(point.x)) != 0 ||
