@@ -336,24 +336,6 @@ void emac_hal_start(emac_hal_context_t *hal);
  */
 esp_err_t emac_hal_stop(emac_hal_context_t *hal);
 
-#if SOC_IS(ESP32P4)
-bool emac_hal_rx_needs_recovery(emac_hal_context_t *hal);
-
-/**
- * @brief Recover a timestamp-related RX stall before restarting a stopped EMAC
- *
- * @note PHY clocks must be running. The caller must serialize register access.
- *       PTP time is restored using the elapsed monotonic time; synchronization
- *       precision is lost during recovery.
- * @param hal EMAC HAL context
- * @param timeout_us Maximum time to wait for the DMA reset
- * @param get_time_us Monotonic time source in microseconds
- * @return ESP_OK on success, ESP_ERR_INVALID_STATE
- *         if the EMAC is running or a PTP update is pending, ESP_ERR_TIMEOUT on timeout
- */
-esp_err_t emac_hal_recover_rx(emac_hal_context_t *hal, uint32_t timeout_us, int64_t (*get_time_us)(void));
-#endif
-
 void emac_hal_enable_flow_ctrl(emac_hal_context_t *hal, bool enable);
 
 #define emac_hal_get_intr_enable_status(hal) emac_ll_get_intr_enable_status((hal)->dma_regs)
