@@ -138,6 +138,7 @@ list(APPEND bt_common_srcs
     "${CMAKE_CURRENT_LIST_DIR}/osi/hash_functions.c"
     "${CMAKE_CURRENT_LIST_DIR}/osi/hash_map.c"
     "${CMAKE_CURRENT_LIST_DIR}/osi/list.c"
+    "${CMAKE_CURRENT_LIST_DIR}/osi/slist.c"
     "${CMAKE_CURRENT_LIST_DIR}/osi/mutex.c"
     "${CMAKE_CURRENT_LIST_DIR}/osi/thread.c"
     "${CMAKE_CURRENT_LIST_DIR}/osi/osi.c"
