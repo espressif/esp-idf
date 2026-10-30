@@ -71,11 +71,31 @@ static void sdp_disconnect_cfm (UINT16 l2cap_cid, UINT16 result);
 #endif
 
 #if BT_SDP_BQB_INCLUDED
-static BOOLEAN s_sdp_bqb_disable_flag = FALSE;
-static BOOLEAN s_sdp_bqb_inact_timeout_flag = FALSE;
-BOOLEAN s_l2cap_bqb_ertm_mode_included_flag = FALSE;
-/* L2CAP/COS/CFD/BV-09-C: first SDP L2CAP payload is at least 48 bytes */
-BOOLEAN s_sdp_bqb_data_len_min_48_flag = FALSE;
+/* Defaults are off. Each field is one PTS case and one ctrl function. */
+struct sdp_bqb_params {
+    BOOLEAN disable_flag;
+    BOOLEAN inact_timeout_flag;
+    /* L2CAP ERTM BQB flag. Also read by l2c_fcr.c and l2c_utils.c. */
+    BOOLEAN ertm_mode_included_flag;
+    /* L2CAP/COS/CFD/BV-09-C: first SDP L2CAP payload is at least 48 bytes.
+     * Consumed by the next Service Search Attribute Request. */
+    BOOLEAN data_len_min_48_flag;
+};
+
+static struct sdp_bqb_params s_sdp_bqb;
+
+BOOLEAN l2cap_bqb_ertm_mode_included_get(void)
+{
+    return s_sdp_bqb.ertm_mode_included_flag;
+}
+
+BOOLEAN sdp_bqb_take_data_len_min_48(void)
+{
+    BOOLEAN take = s_sdp_bqb.data_len_min_48_flag;
+
+    s_sdp_bqb.data_len_min_48_flag = FALSE;
+    return take;
+}
 #endif /* BT_SDP_BQB_INCLUDED */
 
 /*******************************************************************************
@@ -90,7 +110,7 @@ BOOLEAN s_sdp_bqb_data_len_min_48_flag = FALSE;
 #if BT_SDP_BQB_INCLUDED
 void sdp_bqb_disable_ctrl(BOOLEAN enable)
 {
-    s_sdp_bqb_disable_flag = enable;
+    s_sdp_bqb.disable_flag = enable;
 }
 
 /*******************************************************************************
@@ -104,7 +124,7 @@ void sdp_bqb_disable_ctrl(BOOLEAN enable)
 *******************************************************************************/
 void sdp_bqb_inact_timeout_ctrl(BOOLEAN enable)
 {
-    s_sdp_bqb_inact_timeout_flag = enable;
+    s_sdp_bqb.inact_timeout_flag = enable;
 }
 
 /* Local ConfigReq options while the ERTM flag is set. */
@@ -122,7 +142,7 @@ static void sdp_bqb_fill_ertm_cfg(tL2CAP_CFG_INFO *cfg)
 /* Applied on the BTU task. Flag off forces Basic on this copy. */
 static void sdp_bqb_prepare_cfg(tL2CAP_CFG_INFO *cfg)
 {
-    if (s_l2cap_bqb_ertm_mode_included_flag) {
+    if (s_sdp_bqb.ertm_mode_included_flag) {
         sdp_bqb_fill_ertm_cfg(cfg);
         return;
     }
@@ -143,7 +163,7 @@ static void sdp_bqb_prepare_cfg(tL2CAP_CFG_INFO *cfg)
 *******************************************************************************/
 void l2cap_bqb_ertm_mode_included_ctrl(BOOLEAN enable)
 {
-    s_l2cap_bqb_ertm_mode_included_flag = enable;
+    s_sdp_bqb.ertm_mode_included_flag = enable;
 }
 
 /*******************************************************************************
@@ -159,7 +179,7 @@ void l2cap_bqb_ertm_mode_included_ctrl(BOOLEAN enable)
 *******************************************************************************/
 void sdp_bqb_data_len_min_48_ctrl(BOOLEAN enable)
 {
-    s_sdp_bqb_data_len_min_48_flag = enable;
+    s_sdp_bqb.data_len_min_48_flag = enable;
 }
 
 #if SDP_CLIENT_ENABLED == TRUE
@@ -171,66 +191,67 @@ void sdp_bqb_data_len_min_48_ctrl(BOOLEAN enable)
 #define SDP_BQB_OP_SS    1
 #define SDP_BQB_OP_SA    2
 
-typedef void (*sdp_bqb_ss_cb_t)(UINT16 status, UINT16 num_handles, const UINT32 *handles);
-typedef void (*sdp_bqb_sa_cb_t)(UINT16 status, UINT32 handle);
+/* One SS or SA at a time. The discovery DB stays outside: it is the
+ * buffer SDP parses, not the result handed to the callback. */
+struct sdp_bqb_disc {
+    UINT32 handles[SDP_MAX_DISC_SERVER_RECS];
+    UINT16 num_handles;
+    UINT32 sa_handle;
+    sdp_bqb_ss_cb_t ss_cb;
+    sdp_bqb_sa_cb_t sa_cb;
+    BOOLEAN busy;
+    UINT8 op;
+};
 
 static UINT8 __attribute__((aligned(4))) s_bqb_db_buf[SDP_BQB_DB_SIZE];
-static UINT32 s_bqb_handles[SDP_MAX_DISC_SERVER_RECS];
-static UINT16 s_bqb_num_handles;
-static UINT32 s_bqb_sa_handle;
-static sdp_bqb_ss_cb_t s_bqb_ss_cb;
-static sdp_bqb_sa_cb_t s_bqb_sa_cb;
-static BOOLEAN s_bqb_busy;
-static UINT8 s_bqb_op;
+static struct sdp_bqb_disc s_sdp_bqb_disc;
 
 static void sdp_bqb_disc_reset(void)
 {
-    s_bqb_busy = FALSE;
-    s_bqb_op = SDP_BQB_OP_NONE;
-    s_bqb_ss_cb = NULL;
-    s_bqb_sa_cb = NULL;
-    s_bqb_num_handles = 0;
-    s_bqb_sa_handle = 0;
+    memset(&s_sdp_bqb_disc, 0, sizeof(s_sdp_bqb_disc));
 }
 
 void sdp_bqb_save_search_handles(const UINT32 *handles, UINT16 num)
 {
     if (handles == NULL) {
-        s_bqb_num_handles = 0;
+        s_sdp_bqb_disc.num_handles = 0;
         return;
     }
     if (num > SDP_MAX_DISC_SERVER_RECS) {
         num = SDP_MAX_DISC_SERVER_RECS;
     }
-    s_bqb_num_handles = num;
-    memcpy(s_bqb_handles, handles, (size_t)num * sizeof(UINT32));
+    s_sdp_bqb_disc.num_handles = num;
+    memcpy(s_sdp_bqb_disc.handles, handles, (size_t)num * sizeof(UINT32));
 }
 
 static void sdp_bqb_disc_cmpl(UINT16 status, void *user_data)
 {
-    UINT8 op = s_bqb_op;
-    sdp_bqb_ss_cb_t ss_cb = s_bqb_ss_cb;
-    sdp_bqb_sa_cb_t sa_cb = s_bqb_sa_cb;
+    UINT8 op = s_sdp_bqb_disc.op;
+    sdp_bqb_ss_cb_t ss_cb = s_sdp_bqb_disc.ss_cb;
+    sdp_bqb_sa_cb_t sa_cb = s_sdp_bqb_disc.sa_cb;
 
     UNUSED(user_data);
-    s_bqb_busy = FALSE;
-    s_bqb_op = SDP_BQB_OP_NONE;
-    s_bqb_ss_cb = NULL;
-    s_bqb_sa_cb = NULL;
+    s_sdp_bqb_disc.busy = FALSE;
+    s_sdp_bqb_disc.op = SDP_BQB_OP_NONE;
+    s_sdp_bqb_disc.ss_cb = NULL;
+    s_sdp_bqb_disc.sa_cb = NULL;
 
     if (op == SDP_BQB_OP_SS && ss_cb) {
-        ss_cb(status, s_bqb_num_handles, s_bqb_handles);
+        ss_cb(status, s_sdp_bqb_disc.num_handles, s_sdp_bqb_disc.handles);
     } else if (op == SDP_BQB_OP_SA && sa_cb) {
-        sa_cb(status, s_bqb_sa_handle);
+        sa_cb(status, s_sdp_bqb_disc.sa_handle);
     }
 }
 
+/* Caller task. busy is checked before SDP_InitDiscoveryDb() zeroes the
+ * shared buffer, and is set before the request is handed to L2CAP, so a
+ * concurrent call cannot clear a discovery that is already in flight. */
 BOOLEAN sdp_bqb_service_search(UINT8 *bd_addr, UINT16 uuid16, sdp_bqb_ss_cb_t cb)
 {
     tCONN_CB *p_ccb;
     tSDP_UUID uuid;
 
-    if (bd_addr == NULL || cb == NULL || s_bqb_busy) {
+    if (bd_addr == NULL || cb == NULL || s_sdp_bqb_disc.busy) {
         return FALSE;
     }
 
@@ -257,19 +278,20 @@ BOOLEAN sdp_bqb_service_search(UINT8 *bd_addr, UINT16 uuid16, sdp_bqb_ss_cb_t cb
     p_ccb->is_search_only = TRUE;
     p_ccb->is_attr_only = FALSE;
 
-    s_bqb_num_handles = 0;
-    memset(s_bqb_handles, 0, sizeof(s_bqb_handles));
-    s_bqb_ss_cb = cb;
-    s_bqb_op = SDP_BQB_OP_SS;
-    s_bqb_busy = TRUE;
+    s_sdp_bqb_disc.num_handles = 0;
+    memset(s_sdp_bqb_disc.handles, 0, sizeof(s_sdp_bqb_disc.handles));
+    s_sdp_bqb_disc.ss_cb = cb;
+    s_sdp_bqb_disc.op = SDP_BQB_OP_SS;
+    s_sdp_bqb_disc.busy = TRUE;
     return TRUE;
 }
 
+/* Same single-discovery rule as sdp_bqb_service_search(). */
 BOOLEAN sdp_bqb_service_attr(UINT8 *bd_addr, UINT32 handle, sdp_bqb_sa_cb_t cb)
 {
     tCONN_CB *p_ccb;
 
-    if (bd_addr == NULL || cb == NULL || s_bqb_busy) {
+    if (bd_addr == NULL || cb == NULL || s_sdp_bqb_disc.busy) {
         return FALSE;
     }
 
@@ -295,10 +317,10 @@ BOOLEAN sdp_bqb_service_attr(UINT8 *bd_addr, UINT32 handle, sdp_bqb_sa_cb_t cb)
     p_ccb->num_handles = 1;
     p_ccb->cur_handle = 0;
 
-    s_bqb_sa_handle = handle;
-    s_bqb_sa_cb = cb;
-    s_bqb_op = SDP_BQB_OP_SA;
-    s_bqb_busy = TRUE;
+    s_sdp_bqb_disc.sa_handle = handle;
+    s_sdp_bqb_disc.sa_cb = cb;
+    s_sdp_bqb_disc.op = SDP_BQB_OP_SA;
+    s_sdp_bqb_disc.busy = TRUE;
     return TRUE;
 }
 #endif /* SDP_CLIENT_ENABLED == TRUE */
@@ -324,9 +346,6 @@ void sdp_init (void)
 #endif /* #if SDP_DYNAMIC_MEMORY */
     /* Clears all structures and local SDP database (if Server is enabled) */
     memset (&sdp_cb, 0, sizeof (tSDP_CB));
-#if BT_SDP_BQB_INCLUDED && (SDP_CLIENT_ENABLED == TRUE)
-    sdp_bqb_disc_reset();
-#endif
 
     sdp_cb.server_db.p_record_list  = list_new(osi_free_func);
     /* Initialize the L2CAP configuration. We only care about MTU and flush */
@@ -336,6 +355,9 @@ void sdp_init (void)
     sdp_cb.l2cap_my_cfg.flush_to          = SDP_FLUSH_TO;
 #if BT_SDP_BQB_INCLUDED
     sdp_bqb_prepare_cfg(&sdp_cb.l2cap_my_cfg);
+#if (SDP_CLIENT_ENABLED == TRUE)
+    sdp_bqb_disc_reset();
+#endif
 #endif /* BT_SDP_BQB_INCLUDED */
     sdp_cb.max_attr_list_size             = SDP_MTU_SIZE - 16;
     sdp_cb.max_recs_per_search            = SDP_MAX_DISC_SERVER_RECS;
@@ -455,8 +477,7 @@ static void sdp_connect_ind (BD_ADDR  bd_addr, UINT16 l2cap_cid, UINT16 psm, UIN
         tL2CAP_CFG_INFO cfg = sdp_cb.l2cap_my_cfg;
 
 #if BT_SDP_BQB_INCLUDED
-        /* L2CAP/ERM/BV-03-C: the flag can be set after sdp_init. PTS rejects
-         * a Basic fallback (result 1). */
+        /* Flag on asks for ERTM. Flag off forces Basic on this copy. */
         sdp_bqb_prepare_cfg(&cfg);
 #endif /* BT_SDP_BQB_INCLUDED */
 
@@ -469,7 +490,7 @@ static void sdp_connect_ind (BD_ADDR  bd_addr, UINT16 l2cap_cid, UINT16 psm, UIN
         if ((!L2CA_ConfigReq (l2cap_cid, &cfg)) && cfg.fcr_present
                 && cfg.fcr.mode != L2CAP_FCR_BASIC_MODE) {
 #if BT_SDP_BQB_INCLUDED
-            if (s_l2cap_bqb_ertm_mode_included_flag) {
+            if (s_sdp_bqb.ertm_mode_included_flag) {
                 /* Sending the same options again cannot succeed, and the
                  * incompatible-mode path has already disconnected. */
                 SDP_TRACE_WARNING ("SDP - ERTM ConfigReq failed, CID 0x%x\n", l2cap_cid);
@@ -523,8 +544,7 @@ static void sdp_connect_cfm (UINT16 l2cap_cid, UINT16 result)
         cfg = sdp_cb.l2cap_my_cfg;
 
 #if BT_SDP_BQB_INCLUDED
-        /* Same ERTM request as the acceptor. A failed ConfigReq must not
-         * fall back to Basic when the flag is set. */
+        /* Same ERTM request as the acceptor. Flag off forces Basic. */
         sdp_bqb_prepare_cfg(&cfg);
 #endif /* BT_SDP_BQB_INCLUDED */
 
@@ -537,7 +557,7 @@ static void sdp_connect_cfm (UINT16 l2cap_cid, UINT16 result)
         if ((!L2CA_ConfigReq (l2cap_cid, &cfg)) && cfg.fcr_present
                 && cfg.fcr.mode != L2CAP_FCR_BASIC_MODE) {
 #if BT_SDP_BQB_INCLUDED
-            if (s_l2cap_bqb_ertm_mode_included_flag) {
+            if (s_sdp_bqb.ertm_mode_included_flag) {
                 SDP_TRACE_WARNING ("SDP - ERTM ConfigReq failed, CID 0x%x\n", l2cap_cid);
                 return;
             } else
@@ -627,7 +647,7 @@ static void sdp_config_ind (UINT16 l2cap_cid, tL2CAP_CFG_INFO *p_cfg)
 #if BT_SDP_BQB_INCLUDED
             /* Flag on keeps ERTM and caps the window at the value we request.
              * Flag off asks for Basic, including a cfg stored while the flag was on. */
-            if (s_l2cap_bqb_ertm_mode_included_flag) {
+            if (s_sdp_bqb.ertm_mode_included_flag) {
                 want_ertm = TRUE;
                 max_tx_win = 8;
             } else {
@@ -715,7 +735,7 @@ static void sdp_config_cfm (UINT16 l2cap_cid, tL2CAP_CFG_INFO *p_cfg)
             {
 #if BT_SDP_BQB_INCLUDED
                 /* PTS leaves this channel idle longer than SDP_INACT_TIMEOUT. */
-                if (s_sdp_bqb_inact_timeout_flag) {
+                if (s_sdp_bqb.inact_timeout_flag) {
                     btu_start_timer(&p_ccb->timer_entry, BTU_TTYPE_SDP, SDP_BQB_INACT_TIMEOUT);
                 } else
 #endif /* BT_SDP_BQB_INCLUDED */
@@ -727,7 +747,7 @@ static void sdp_config_cfm (UINT16 l2cap_cid, tL2CAP_CFG_INFO *p_cfg)
     } else {
 #if BT_SDP_BQB_INCLUDED
         /* Peer rejected ERTM. Do not retry in Basic while the flag is set. */
-        if (s_l2cap_bqb_ertm_mode_included_flag && p_cfg->fcr_present) {
+        if (s_sdp_bqb.ertm_mode_included_flag && p_cfg->fcr_present) {
             SDP_TRACE_WARNING("SDP - peer rejected ERTM, CID 0x%x\n", l2cap_cid);
         } else
 #endif
@@ -817,7 +837,7 @@ static void sdp_data_ind (UINT16 l2cap_cid, BT_HDR *p_msg)
 #if BT_SDP_BQB_INCLUDED
             /* Skip the following code in BQB test when the flag is true, since the PDU is reserved and
                function sdp_server_handle_client_req will return error (sdpu_build_n_send_error) */
-            if (!s_sdp_bqb_disable_flag)
+            if (!s_sdp_bqb.disable_flag)
 #endif /* BT_SDP_BQB_INCLUDED */
             {
                 if (p_ccb->con_flags & SDP_FLAGS_IS_ORIG) {

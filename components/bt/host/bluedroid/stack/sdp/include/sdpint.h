@@ -315,6 +315,7 @@ extern void sdp_disc_connected (tCONN_CB *p_ccb);
 extern void sdp_disc_server_rsp (tCONN_CB *p_ccb, BT_HDR *p_msg);
 #if BT_SDP_BQB_INCLUDED
 extern void sdp_bqb_save_search_handles(const UINT32 *handles, UINT16 num);
+extern BOOLEAN sdp_bqb_take_data_len_min_48(void);
 #endif
 #else
 #define sdp_disc_connected(p_ccb)

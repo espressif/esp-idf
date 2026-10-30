@@ -1288,6 +1288,19 @@ typedef struct {
 
 extern void l2ble_update_att_acl_pkt_num(UINT8 type, tl2c_buff_param_t *param);
 
+#if (BT_CLASSIC_BQB_INCLUDED == TRUE)
+void l2cap_bqb_bad_cmd_len_rej_ctrl(BOOLEAN enable);
+void l2cap_bqb_echo_rej_ctrl(BOOLEAN enable);
+void l2cap_bqb_info_rej_ctrl(BOOLEAN enable);
+void l2cap_bqb_disc_cid_not_understood_ctrl(BOOLEAN enable);
+void l2cap_bqb_cfg_hint_rej_ctrl(BOOLEAN enable);
+void l2cap_bqb_hide_fixed_chnl_ctrl(BOOLEAN enable);
+#if (BT_SDP_BQB_INCLUDED == TRUE)
+void l2cap_bqb_ertm_mode_included_ctrl(BOOLEAN enable);
+#endif
+void l2cap_bqb_write_data(UINT16 cid);
+#endif
+
 #ifdef __cplusplus
 }
 #endif

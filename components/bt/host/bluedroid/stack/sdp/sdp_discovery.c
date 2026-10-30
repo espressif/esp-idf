@@ -41,9 +41,6 @@
 #define SDP_DEBUG_RAW       FALSE
 #endif
 
-#if BT_SDP_BQB_INCLUDED
-extern BOOLEAN s_sdp_bqb_data_len_min_48_flag;
-#endif /* BT_SDP_BQB_INCLUDED */
 
 /********************************************************************************/
 /*              L O C A L    F U N C T I O N     P R O T O T Y P E S            */
@@ -742,9 +739,8 @@ static void process_service_search_attr_rsp (tCONN_CB *p_ccb, UINT8 *p_reply, UI
 #if BT_SDP_BQB_INCLUDED
         /* L2CAP/COS/CFD/BV-09-C: send at least 48 bytes. Pad a short
          * Service Search Attribute Request; do not truncate a longer one. */
-        if (s_sdp_bqb_data_len_min_48_flag) {
+        if (sdp_bqb_take_data_len_min_48()) {
             UINT16 pdu_len = (UINT16)(p - p_start);
-            s_sdp_bqb_data_len_min_48_flag = FALSE;
             if (pdu_len <= 48) {
                 memset(p, 0, (size_t)(48 - pdu_len));
                 p_msg->len = 48;

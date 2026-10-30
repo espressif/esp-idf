@@ -43,19 +43,6 @@
 #include "stack/c2h_credit.h"
 #endif
 
-#if BT_SDP_BQB_INCLUDED
-extern BOOLEAN s_l2cap_bqb_ertm_mode_included_flag;
-#endif /* BT_SDP_BQB_INCLUDED */
-#if BT_CLASSIC_BQB_INCLUDED
-/* L2CAP/EXF/BV-08-C and L2CAP/FIX/BV-03-C. Default off so CID 0x0007 stays advertised. */
-BOOLEAN s_l2cap_bqb_hide_fixed_chnl_flag = FALSE;
-extern BOOLEAN s_l2cap_bqb_cfg_hint_rej_flag;
-
-void l2cap_bqb_hide_fixed_chnl_ctrl(BOOLEAN enable)
-{
-    s_l2cap_bqb_hide_fixed_chnl_flag = enable;
-}
-#endif /* BT_CLASSIC_BQB_INCLUDED */
 
 /*******************************************************************************
 **
@@ -1062,7 +1049,7 @@ void l2cu_send_peer_config_rej (tL2C_CCB *p_ccb, UINT8 *p_data, UINT16 data_len,
         default:
             if ((cfg_code & 0x80) == 0
 #if BT_CLASSIC_BQB_INCLUDED
-                    || s_l2cap_bqb_cfg_hint_rej_flag
+                    || l2cap_bqb_cfg_hint_rej_get()
 #endif
                ) {
                 if (buf_space >= opt_len) {
@@ -1373,7 +1360,7 @@ void l2cu_send_peer_info_rsp (tL2C_LCB *p_lcb, UINT8 remote_id, UINT16 info_type
 #if BT_CLASSIC_BQB_INCLUDED
                 /* EXF/BV-08-C expects the mask PTS derives from the ICS,
                  * which is Enhanced Retransmission Mode only. */
-                if (s_l2cap_bqb_hide_fixed_chnl_flag) {
+                if (l2cap_bqb_hide_fixed_chnl_get()) {
                     ext_fea = L2CAP_EXTFEA_ENH_RETRANS;
                 }
 #endif
@@ -1393,7 +1380,7 @@ void l2cu_send_peer_info_rsp (tL2C_LCB *p_lcb, UINT8 remote_id, UINT16 info_type
 #if (L2CAP_NUM_FIXED_CHNLS > 0)
 #if BT_CLASSIC_BQB_INCLUDED
         /* FIX/BV-03-C omits optional fixed channels, including BR/EDR SMP CID 0x0007. */
-        if (!s_l2cap_bqb_hide_fixed_chnl_flag)
+        if (!l2cap_bqb_hide_fixed_chnl_get())
 #endif
         {
             int xx;
@@ -1723,7 +1710,7 @@ tL2C_CCB *l2cu_allocate_ccb (tL2C_LCB *p_lcb, UINT16 cid)
     /* The BQB precondition covers BR/EDR dynamic channels only. LE CCBs (COC,
      * ECFC) and fixed channels, which are allocated with a NULL LCB, cannot
      * negotiate ERTM and must keep the basic-mode defaults. */
-    if (s_l2cap_bqb_ertm_mode_included_flag && p_lcb && p_lcb->transport != BT_TRANSPORT_LE) {
+    if (l2cap_bqb_ertm_mode_included_get() && p_lcb && p_lcb->transport != BT_TRANSPORT_LE) {
         p_ccb->ertm_info.preferred_mode = L2CAP_FCR_ERTM_MODE;
         p_ccb->ertm_info.allowed_modes = L2CAP_FCR_CHAN_OPT_ERTM;
     } else
