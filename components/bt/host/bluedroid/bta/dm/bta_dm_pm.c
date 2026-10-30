@@ -52,6 +52,8 @@ static BOOLEAN bta_dm_pm_sniff(tBTA_DM_PEER_DEVICE *p_peer_dev, UINT8 index);
 static BOOLEAN bta_dm_pm_is_sco_active (void);
 static void bta_dm_pm_hid_check(BOOLEAN bScoActive);
 static void bta_dm_pm_set_sniff_policy(tBTA_DM_PEER_DEVICE *p_dev, BOOLEAN bDisable);
+static void bta_dm_sniff_allowed_notify(tBTM_CMPL_CB *p_cb, BD_ADDR remote_bda,
+                                        BOOLEAN allowed, tBTM_STATUS status);
 static void bta_dm_pm_stop_timer_by_index(tBTA_PM_TIMER *p_timer,
         UINT8 timer_idx);
 
@@ -629,8 +631,10 @@ static void bta_dm_pm_set_mode(BD_ADDR peer_addr, tBTA_DM_PM_ACTION pm_request,
         p_peer_device->pm_mode_attempted = BTA_DM_PM_PARK;
         bta_dm_pm_park(peer_addr);
     } else if (pm_action & BTA_DM_PM_SNIFF) {
-        /* dont initiate SNIFF, if link_policy has it disabled */
-        if (p_peer_device->link_policy & HCI_ENABLE_SNIFF_MODE) {
+        /* Sniff needs the stack policy, the app permission, and the policy last sent. */
+        if ((p_peer_device->link_policy & HCI_ENABLE_SNIFF_MODE) &&
+                (p_peer_device->active_link_policy & HCI_ENABLE_SNIFF_MODE) &&
+                p_peer_device->sniff_allowed) {
             p_peer_device->pm_mode_attempted = BTA_DM_PM_SNIFF;
             bta_dm_pm_sniff(p_peer_device, (UINT8)(pm_action & 0x0F) );
         } else {
@@ -994,6 +998,10 @@ void bta_dm_pm_btm_status(tBTA_DM_MSG *p_data)
              * in sniff mode from host side.
              */
             bta_dm_pm_stop_timer(p_data->pm_status.bd_addr);
+            /* A sniff request can complete after sniff was disallowed. Leave sniff. */
+            if (!p_dev->sniff_allowed) {
+                bta_dm_pm_active(p_dev->peer_bdaddr);
+            }
         } else {
             p_dev->info &= ~(BTA_DM_DI_SET_SNIFF | BTA_DM_DI_INT_SNIFF | BTA_DM_DI_ACP_SNIFF);
             if (info & BTA_DM_DI_SET_SNIFF) {
@@ -1056,6 +1064,61 @@ void bta_dm_pm_timer(tBTA_DM_MSG *p_data)
 
 /*******************************************************************************
 **
+** Function         bta_dm_set_sniff_allowed
+**
+** Description      Allow or disallow sniff mode on one BR/EDR ACL.
+**
+** Returns          void
+**
+*******************************************************************************/
+void bta_dm_set_sniff_allowed(tBTA_DM_MSG *p_data)
+{
+    BOOLEAN allowed = p_data->set_sniff_allowed.allowed;
+    tBTM_CMPL_CB *p_cb = p_data->set_sniff_allowed.set_sniff_allowed_cb;
+    tBTA_DM_PEER_DEVICE *p_dev = NULL;
+    tBTM_STATUS status = BTM_SUCCESS;
+    UINT16 settings = 0;
+
+    do {
+        p_dev = bta_dm_find_peer_device(p_data->set_sniff_allowed.remote_bda, BT_TRANSPORT_BR_EDR);
+        if (p_dev == NULL) {
+            status = BTM_UNKNOWN_ADDR;
+            break;
+        }
+        /* bta_dm_cb.cur_policy is the stack's link policy. With no sniff bit there is nothing to restore. */
+        if (allowed && !(bta_dm_cb.cur_policy & HCI_ENABLE_SNIFF_MODE)) {
+            status = BTM_MODE_UNSUPPORTED;
+            break;
+        }
+
+        if (!allowed) {
+            /* Keep stack policy in link_policy; mask sniff only in the HCI write. */
+            settings = p_dev->link_policy & ~HCI_ENABLE_SNIFF_MODE;
+            status = bta_dm_apply_link_policy(p_dev, settings);
+            if (status != BTM_SUCCESS) {
+                break;
+            }
+            p_dev->sniff_allowed = FALSE;
+            /* A2DP or SCO may already have cleared the bit while the link is still in sniff. */
+            bta_dm_pm_stop_timer(p_dev->peer_bdaddr);
+            bta_dm_pm_active(p_dev->peer_bdaddr);
+        } else if (!p_dev->sniff_allowed) {
+            /* Clear the app restriction and submit the stored stack policy.
+             * Do not OR sniff back on; a stack temporary disable may still own that bit. */
+            status = bta_dm_apply_link_policy(p_dev, p_dev->link_policy);
+            if (status != BTM_SUCCESS) {
+                break;
+            }
+            p_dev->sniff_allowed = TRUE;
+            bta_dm_pm_set_mode(p_dev->peer_bdaddr, BTA_DM_PM_NO_ACTION, BTA_DM_PM_RESTART);
+        }
+    } while (0);
+
+    bta_dm_sniff_allowed_notify(p_cb, p_data->set_sniff_allowed.remote_bda, allowed, status);
+}
+
+/*******************************************************************************
+**
 ** Function         bta_dm_is_sco_active
 **
 ** Description      Loop through connected services for HFP+State=SCO
@@ -1079,7 +1142,6 @@ static BOOLEAN bta_dm_pm_is_sco_active (void)
     APPL_TRACE_DEBUG("bta_dm_is_sco_active: SCO active: %d", bScoActive);
     return bScoActive;
 }
-
 
 /*******************************************************************************
 **
@@ -1125,6 +1187,7 @@ static void bta_dm_pm_hid_check(BOOLEAN bScoActive)
 static void bta_dm_pm_set_sniff_policy(tBTA_DM_PEER_DEVICE *p_dev, BOOLEAN bDisable)
 {
     UINT16 policy_setting;
+    UINT16 settings;
 
     if (!p_dev) {
         return;
@@ -1135,9 +1198,8 @@ static void bta_dm_pm_set_sniff_policy(tBTA_DM_PEER_DEVICE *p_dev, BOOLEAN bDisa
                          (HCI_ENABLE_MASTER_SLAVE_SWITCH |
                           HCI_ENABLE_HOLD_MODE  |
                           HCI_ENABLE_PARK_MODE);
-
     } else {
-        /*  allow sniff after sco is closed */
+        /* allow sniff after sco is closed */
         policy_setting = bta_dm_cb.cur_policy;
     }
 
@@ -1146,10 +1208,48 @@ static void bta_dm_pm_set_sniff_policy(tBTA_DM_PEER_DEVICE *p_dev, BOOLEAN bDisa
         bta_dm_pm_active(p_dev->peer_bdaddr);
     }
 
-    /* update device record and set link policy */
+    /* link_policy keeps the stack intent; mask sniff only for the HCI write. */
     p_dev->link_policy = policy_setting;
-    BTM_SetLinkPolicy(p_dev->peer_bdaddr, &policy_setting);
+    settings = policy_setting;
+    if (!p_dev->sniff_allowed) {
+        settings &= ~HCI_ENABLE_SNIFF_MODE;
+    }
+    bta_dm_apply_link_policy(p_dev, settings);
 
+}
+
+/*******************************************************************************
+**
+** Function         bta_dm_sniff_allowed_notify
+**
+** Description      Report the result of a set-sniff-allowed request.
+**
+** Returns          void
+**
+*******************************************************************************/
+static void bta_dm_sniff_allowed_notify(tBTM_CMPL_CB *p_cb, BD_ADDR remote_bda, BOOLEAN allowed, tBTM_STATUS status)
+{
+    if (p_cb != NULL) {
+        tBTA_SET_SNIFF_ALLOWED_RESULTS results = {0};
+        results.status = status;
+        results.allowed = allowed;
+        bdcpy(results.rem_bda, remote_bda);
+        (*p_cb)(&results);
+    }
+}
+
+#else /* BTA_DM_PM_INCLUDED == FALSE */
+void bta_dm_set_sniff_allowed(tBTA_DM_MSG *p_data)
+{
+    tBTM_CMPL_CB *p_cb = p_data->set_sniff_allowed.set_sniff_allowed_cb;
+
+    if (p_cb != NULL) {
+        tBTA_SET_SNIFF_ALLOWED_RESULTS results = {0};
+        results.status = BTM_MODE_UNSUPPORTED;
+        results.allowed = p_data->set_sniff_allowed.allowed;
+        bdcpy(results.rem_bda, p_data->set_sniff_allowed.remote_bda);
+        (*p_cb)(&results);
+    }
 }
 #endif /* #if (BTA_DM_PM_INCLUDED == TRUE) */
 

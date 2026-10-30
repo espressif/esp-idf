@@ -906,6 +906,14 @@ typedef struct {
     UINT16      pkt_types;
 } tBTM_SET_ACL_PKT_TYPES_RESULTS;
 
+/* Structure returned with set sniff allowed event (in tBTM_CMPL_CB callback function).
+*/
+typedef struct {
+    tBTM_STATUS status;
+    BD_ADDR     rem_bda;
+    BOOLEAN     allowed;
+} tBTM_SET_SNIFF_ALLOWED_RESULTS;
+
 /* Structure returned with set minimal encryption key size event (in tBTM_CMPL_CB callback function)
 ** in response to BTM_SetMinEncKeySize call.
 */

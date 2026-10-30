@@ -1479,6 +1479,35 @@ void bta_dm_pin_reply (tBTA_DM_MSG *p_data)
 #if (CLASSIC_BT_INCLUDED == TRUE)
 /*******************************************************************************
 **
+** Function         bta_dm_apply_link_policy
+**
+** Description      Submit link policy when it differs from the policy last
+**                  submitted. link_policy itself is unchanged.
+**
+** Returns          BTM_SUCCESS if settings match the last submission or the
+**                  write was submitted.
+**
+*******************************************************************************/
+tBTM_STATUS bta_dm_apply_link_policy(tBTA_DM_PEER_DEVICE *p_dev, UINT16 settings)
+{
+    tBTM_STATUS status;
+
+    if (settings == p_dev->active_link_policy) {
+        return BTM_SUCCESS;
+    }
+
+    status = BTM_SetLinkPolicy(p_dev->peer_bdaddr, &settings);
+    if (status != BTM_CMD_STARTED) {
+        return status;
+    }
+
+    /* BTM_SetLinkPolicy may clear bits the controller does not support. */
+    p_dev->active_link_policy = settings;
+    return BTM_SUCCESS;
+}
+
+/*******************************************************************************
+**
 ** Function         bta_dm_policy_cback
 **
 ** Description      process the link policy changes
@@ -1505,7 +1534,14 @@ static void bta_dm_policy_cback(tBTA_SYS_CONN_STATUS status, UINT8 id, UINT8 app
         }
         /* restore the default link policy */
         p_dev->link_policy |= policy;
-        BTM_SetLinkPolicy(p_dev->peer_bdaddr, &(p_dev->link_policy));
+        {
+            /* link_policy keeps the stack intent; mask sniff only for the HCI write. */
+            UINT16 settings = p_dev->link_policy;
+            if (!p_dev->sniff_allowed) {
+                settings &= ~HCI_ENABLE_SNIFF_MODE;
+            }
+            bta_dm_apply_link_policy(p_dev, settings);
+        }
         break;
 
     case BTA_SYS_PLCY_CLR:
@@ -1514,7 +1550,13 @@ static void bta_dm_policy_cback(tBTA_SYS_CONN_STATUS status, UINT8 id, UINT8 app
         }
         /* clear the policy from the default link policy */
         p_dev->link_policy &= (~policy);
-        BTM_SetLinkPolicy(p_dev->peer_bdaddr, &(p_dev->link_policy));
+        {
+            UINT16 settings = p_dev->link_policy;
+            if (!p_dev->sniff_allowed) {
+                settings &= ~HCI_ENABLE_SNIFF_MODE;
+            }
+            bta_dm_apply_link_policy(p_dev, settings);
+        }
 
 #if (BTA_DM_PM_INCLUDED == TRUE)
         if (policy & (HCI_ENABLE_SNIFF_MODE | HCI_ENABLE_PARK_MODE)) {
@@ -3773,6 +3815,8 @@ void bta_dm_acl_change(tBTA_DM_MSG *p_data)
             if (bta_dm_cb.device_list.count < BTA_DM_NUM_PEER_DEVICE) {
                 bdcpy(bta_dm_cb.device_list.peer_device[bta_dm_cb.device_list.count].peer_bdaddr, p_bda);
                 bta_dm_cb.device_list.peer_device[bta_dm_cb.device_list.count].link_policy = bta_dm_cb.cur_policy;
+                bta_dm_cb.device_list.peer_device[bta_dm_cb.device_list.count].active_link_policy = bta_dm_cb.cur_policy;
+                bta_dm_cb.device_list.peer_device[bta_dm_cb.device_list.count].sniff_allowed = TRUE;
                 bta_dm_cb.device_list.count++;
 #if BLE_INCLUDED == TRUE
                 bta_dm_cb.device_list.peer_device[i].conn_handle = p_data->acl_change.handle;

@@ -991,6 +991,33 @@ static void btc_gap_set_acl_pkt_types(btc_gap_bt_args_t *arg)
                          btc_gap_bt_set_acl_pkt_types_cmpl_callback);
 }
 
+static void btc_gap_bt_set_sniff_allowed_cmpl_callback(void *p_data)
+{
+    tBTA_SET_SNIFF_ALLOWED_RESULTS *result = (tBTA_SET_SNIFF_ALLOWED_RESULTS *)p_data;
+
+    btc_msg_t msg = {0};
+    msg.sig = BTC_SIG_API_CB;
+    msg.pid = BTC_PID_GAP_BT;
+    msg.act = BTC_GAP_BT_SET_SNIFF_ALLOWED_EVT;
+
+    esp_bt_gap_cb_param_t param = {0};
+    param.set_sniff_allowed.status = btc_btm_status_to_esp_status(result->status);
+    param.set_sniff_allowed.allowed = result->allowed;
+    memcpy(param.set_sniff_allowed.bda, result->rem_bda, sizeof(BD_ADDR));
+
+    bt_status_t status = btc_transfer_context(&msg, &param, sizeof(esp_bt_gap_cb_param_t), NULL, NULL);
+    if (status != BT_STATUS_SUCCESS) {
+        BTC_TRACE_ERROR("%s btc_transfer_context failed\n", __func__);
+    }
+}
+
+static void btc_gap_set_sniff_allowed(btc_gap_bt_args_t *arg)
+{
+    BTA_DmSetSniffAllowed(arg->set_sniff_allowed.bda.address,
+                          arg->set_sniff_allowed.allowed,
+                          btc_gap_bt_set_sniff_allowed_cmpl_callback);
+}
+
 static void btc_gap_bt_set_min_enc_key_size_cmpl_callback(void *p_data)
 {
     tBTA_SET_MIN_ENC_KEY_SIZE_RESULTS *result = (tBTA_SET_MIN_ENC_KEY_SIZE_RESULTS *)p_data;
@@ -1132,6 +1159,7 @@ void btc_gap_bt_arg_deep_copy(btc_msg_t *msg, void *p_dest, void *p_src)
     case BTC_GAP_BT_ACT_SET_ACL_PKT_TYPES:
     case BTC_GAP_BT_ACT_GET_DEV_NAME:
     case BTC_GAP_BT_ACT_SET_MIN_ENC_KEY_SIZE:
+    case BTC_GAP_BT_ACT_SET_SNIFF_ALLOWED:
         break;
     case BTC_GAP_BT_ACT_PASSKEY_REPLY:
     case BTC_GAP_BT_ACT_CONFIRM_REPLY:
@@ -1219,6 +1247,7 @@ void btc_gap_bt_arg_deep_free(btc_msg_t *msg)
     case BTC_GAP_BT_ACT_SET_ACL_PKT_TYPES:
     case BTC_GAP_BT_ACT_GET_DEV_NAME:
     case BTC_GAP_BT_ACT_SET_MIN_ENC_KEY_SIZE:
+    case BTC_GAP_BT_ACT_SET_SNIFF_ALLOWED:
         break;
     case BTC_GAP_BT_ACT_PASSKEY_REPLY:
     case BTC_GAP_BT_ACT_CONFIRM_REPLY:
@@ -1364,6 +1393,10 @@ void btc_gap_bt_call_handler(btc_msg_t *msg)
         btc_gap_set_min_enc_key_size(arg);
         break;
     }
+    case BTC_GAP_BT_ACT_SET_SNIFF_ALLOWED: {
+        btc_gap_set_sniff_allowed(arg);
+        break;
+    }
     case BTC_GAP_BT_ACT_SET_DEV_NAME: {
         BTA_DmSetDeviceName(arg->bt_set_dev_name.device_name, BT_DEVICE_TYPE_BREDR);
         break;
@@ -1430,6 +1463,7 @@ void btc_gap_bt_cb_deep_free(btc_msg_t *msg)
     case BTC_GAP_BT_SSR_EVT:
 #endif /// BTC_DM_PM_INCLUDED == TRUE
     case BTC_GAP_BT_SET_MIN_ENC_KEY_SIZE_EVT:
+    case BTC_GAP_BT_SET_SNIFF_ALLOWED_EVT:
         break;
     case BTC_GAP_BT_GET_DEV_NAME_CMPL_EVT: {
         char *name = ((esp_bt_gap_cb_param_t *)msg->arg)->get_dev_name_cmpl.name;
@@ -1553,6 +1587,10 @@ void btc_gap_bt_cb_handler(btc_msg_t *msg)
     }
     case BTC_GAP_BT_SET_MIN_ENC_KEY_SIZE_EVT: {
         btc_gap_bt_cb_to_app(ESP_BT_GAP_SET_MIN_ENC_KEY_SIZE_EVT, (esp_bt_gap_cb_param_t *)msg->arg);
+        break;
+    }
+    case BTC_GAP_BT_SET_SNIFF_ALLOWED_EVT: {
+        btc_gap_bt_cb_to_app(ESP_BT_GAP_SET_SNIFF_ALLOWED_EVT, (esp_bt_gap_cb_param_t *)msg->arg);
         break;
     }
     case BTC_GAP_BT_GET_DEV_NAME_CMPL_EVT: {
