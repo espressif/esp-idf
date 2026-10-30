@@ -2321,12 +2321,20 @@ esp_err_t esp_http_client_flush_response(esp_http_client_handle_t client, int *l
         return ESP_ERR_INVALID_ARG;
     }
     int read_len = 0;
+    esp_err_t err = ESP_OK;
     while (!esp_http_client_is_complete_data_received(client)) {
         int data_read = esp_http_client_get_data(client);
         if (data_read < 0) {
-            return ESP_FAIL;
+            err = ESP_FAIL;
+            break;
         }
         read_len += data_read;
+    }
+    /* The flushed bytes are gone: reset the counter so the next request
+     * can start cleanly */
+    client->response->buffer->raw_len = 0;
+    if (err != ESP_OK) {
+        return err;
     }
     if (len) {
         *len = read_len;
