@@ -43,6 +43,7 @@ Peripherals API
     :SOC_SDIO_SLAVE_SUPPORTED: sdio_slave
     :SOC_SDM_SUPPORTED: sdm
     :SOC_SHA_SUPPORT_SM3: sm3
+    :SOC_ECC_SUPPORT_CURVE_SM2: sm2
     :SOC_SPI_FLASH_SUPPORTED: spi_flash/index
     :SOC_GPSPI_SUPPORTED: spi_master
     :SOC_GPSPI_SUPPORTED: spi_slave

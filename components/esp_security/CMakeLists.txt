@@ -35,6 +35,10 @@ if(NOT non_os_build)
         list(APPEND srcs "src/esp_dpa_protection.c")
     endif()
 
+    if(CONFIG_SOC_ECC_SUPPORT_CURVE_SM2)
+        list(APPEND srcs "src/esp_sm2.c")
+    endif()
+
     list(APPEND srcs "src/esp_crypto_lock.c" "src/esp_crypto_periph_clk.c"
                     "src/${target}/esp_crypto_clk.c")
     list(APPEND priv_requires esp_system esp_timer)

@@ -428,6 +428,7 @@
 /*--------------------------- ECC CAPS ---------------------------------------*/
 #define SOC_ECC_CONSTANT_TIME_POINT_MUL           1
 #define SOC_ECC_SUPPORT_CURVE_P384      (1)
+#define SOC_ECC_SUPPORT_CURVE_SM2       (1)
 
 /*--------------------------- ECDSA CAPS ---------------------------------------*/
 #define SOC_ECDSA_SUPPORT_EXPORT_PUBKEY              (1)
@@ -455,6 +456,8 @@
 #define SOC_EFUSE_ECDSA_KEY_P384 1
 #define SOC_EFUSE_XTS_AES_KEY_128 1
 #define SOC_EFUSE_XTS_AES_KEY_256 1
+/* Capability to disable all the SM crypto functions (SM2, SM3) */
+#define SOC_EFUSE_DIS_SM_CRYPT 1
 
 /*-------------------------- HUK CAPS----------------------------*/
 #define SOC_HUK_SUPPORTED                       1
