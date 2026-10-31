@@ -102,6 +102,14 @@ void cache_hal_init(const cache_hal_config_t *config)
 #endif
 
 #if SOC_CACHE_INTERNAL_MEM_VIA_L1CACHE
+    // L1 also caches internal memory, so invalidate the two external windows separately:
+    // flash and PSRAM, instruction and data. L2 is invalidated in cache_hal_init_l2_cache().
+    cache_ll_invalidate_addr(CACHE_LL_LEVEL_INT_MEM, CACHE_TYPE_ALL, CACHE_LL_ID_ALL,
+                             SOC_DRAM_FLASH_ADDRESS_LOW,
+                             SOC_DRAM_FLASH_ADDRESS_HIGH - SOC_DRAM_FLASH_ADDRESS_LOW);
+    cache_ll_invalidate_addr(CACHE_LL_LEVEL_INT_MEM, CACHE_TYPE_ALL, CACHE_LL_ID_ALL,
+                             SOC_DRAM_PSRAM_ADDRESS_LOW,
+                             SOC_DRAM_PSRAM_ADDRESS_HIGH - SOC_DRAM_PSRAM_ADDRESS_LOW);
     cache_hal_init_l2_cache(config);
 #endif
     //CACHE_LL_PRELOAD_ARBITRARY will have better performance for preload
