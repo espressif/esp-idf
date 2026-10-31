@@ -22,6 +22,11 @@
 #include "test_memprot.h"
 #include "sdkconfig.h"
 
+#if CONFIG_PM_ESP_SLEEP_POWER_DOWN_CPU
+#include "esp_sleep.h"
+#include "esp_private/sleep_cpu.h"
+#endif
+
 #if SOC_CACHE_INTERNAL_MEM_VIA_L1CACHE
 #include "hal/cache_ll.h"
 #endif
@@ -39,6 +44,15 @@ __attribute__((noinline))
 static void run_function(void (*test_addr)(void)) {
     test_addr();
 }
+
+#if CONFIG_PM_ESP_SLEEP_POWER_DOWN_CPU
+static __attribute__((unused)) void light_sleep_with_cpu_power_down(void)
+{
+    ESP_ERROR_CHECK(sleep_cpu_configure(true));
+    ESP_ERROR_CHECK(esp_sleep_enable_timer_wakeup(10 * 1000));
+    ESP_ERROR_CHECK(esp_light_sleep_start());
+}
+#endif
 
 /* NOTE: Naming conventions for RTC_FAST_MEM are
  * different for ESP32-C3 and other RISC-V targets
@@ -515,6 +529,14 @@ void test_non_cache_spiram_heap_execute_violation(void)
     memcpy(test_addr, &foo_d, 1024);
     run_function(test_addr);
 }
+
+#if CONFIG_PM_ESP_SLEEP_POWER_DOWN_CPU
+void test_light_sleep_non_cache_spiram_heap_execute_violation(void)
+{
+    light_sleep_with_cpu_power_down();
+    test_non_cache_spiram_heap_execute_violation();
+}
+#endif
 #endif
 #endif /* CONFIG_SPIRAM */
 
@@ -532,6 +554,38 @@ void test_invalid_memory_region_execute_violation(void)
     void *test_addr = (void *)(SOC_DRAM_HIGH + 0x40);
     printf("Execute operation | Address: %p\n", test_addr);
     run_function(test_addr);
+}
+#endif
+
+#if CONFIG_PM_ESP_SLEEP_POWER_DOWN_CPU && CONFIG_ESP_SYSTEM_MEMPROT && CONFIG_SOC_RTC_FAST_MEM_SUPPORTED && CONFIG_SOC_CPU_HAS_PMA
+void test_light_sleep_iram_reg1_write_violation(void)
+{
+    light_sleep_with_cpu_power_down();
+    test_iram_reg1_write_violation();
+}
+
+void test_light_sleep_drom_reg_write_violation(void)
+{
+    light_sleep_with_cpu_power_down();
+    test_drom_reg_write_violation();
+}
+
+void test_light_sleep_rtc_fast_text_write_violation(void)
+{
+    light_sleep_with_cpu_power_down();
+    test_rtc_fast_text_write_violation();
+}
+
+void test_light_sleep_rtc_fast_reg3_execute_violation(void)
+{
+    light_sleep_with_cpu_power_down();
+    test_rtc_fast_reg3_execute_violation();
+}
+
+void test_light_sleep_invalid_memory_region_write_violation(void)
+{
+    light_sleep_with_cpu_power_down();
+    test_invalid_memory_region_write_violation();
 }
 #endif
 

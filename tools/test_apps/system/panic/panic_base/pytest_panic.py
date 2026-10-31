@@ -746,6 +746,8 @@ CONFIGS_MEMPROT_SPIRAM_HEAP_END = list(zip(['memprot_esp32p4', 'memprot_spiram_x
 
 CONFIGS_MEMPROT_CORE1 = list(zip(['memprot_esp32p4'], ['esp32p4']))
 
+CONFIGS_MEMPROT_LIGHT_SLEEP_P4 = list(zip(['memprot_esp32p4', 'memprot_spiram_xip_esp32p4'], ['esp32p4', 'esp32p4']))
+
 CONFIGS_MEMPROT_SPIRAM_XIP_IROM_ALIGNMENT_HEAP = list(
     zip(
         [
@@ -1372,6 +1374,52 @@ def test_spiram_heap_end_execute_violation(dut: PanicTestDut, test_func_name: st
 @idf_parametrize('config, target', CONFIGS_MEMPROT_SPIRAM_HEAP_L2_NON_CACHE, indirect=['config', 'target'])
 def test_non_cache_spiram_heap_execute_violation(dut: PanicTestDut, test_func_name: str) -> None:
     dram_reg2_execute_violation(dut, test_func_name)
+
+
+@pytest.mark.generic
+@idf_parametrize('config, target', CONFIGS_MEMPROT_SPIRAM_HEAP_L2_NON_CACHE, indirect=['config', 'target'])
+def test_light_sleep_non_cache_spiram_heap_execute_violation(dut: PanicTestDut, test_func_name: str) -> None:
+    dram_reg2_execute_violation(dut, test_func_name)
+
+
+@pytest.mark.generic
+@idf_parametrize('config, target', CONFIGS_MEMPROT_LIGHT_SLEEP_P4, indirect=['config', 'target'])
+def test_light_sleep_iram_reg1_write_violation(dut: PanicTestDut, test_func_name: str) -> None:
+    iram_reg1_write_violation(dut, test_func_name)
+
+
+@pytest.mark.generic
+@idf_parametrize('config, target', CONFIGS_MEMPROT_LIGHT_SLEEP_P4, indirect=['config', 'target'])
+def test_light_sleep_drom_reg_write_violation(dut: PanicTestDut, test_func_name: str) -> None:
+    drom_reg_write_violation(dut, test_func_name)
+
+
+@pytest.mark.generic
+@idf_parametrize('config, target', CONFIGS_MEMPROT_LIGHT_SLEEP_P4, indirect=['config', 'target'])
+def test_light_sleep_rtc_fast_text_write_violation(dut: PanicTestDut, test_func_name: str) -> None:
+    dut.run_test_func(test_func_name)
+    dut.expect_gme('Store access fault')
+    dut.expect_reg_dump(0)
+    dut.expect_cpu_reset()
+
+
+@pytest.mark.generic
+@idf_parametrize('config, target', CONFIGS_MEMPROT_LIGHT_SLEEP_P4, indirect=['config', 'target'])
+def test_light_sleep_rtc_fast_reg3_execute_violation(dut: PanicTestDut, test_func_name: str) -> None:
+    dut.run_test_func(test_func_name)
+    dut.expect_gme('Instruction access fault')
+    dut.expect_reg_dump(0)
+    dut.expect_stack_dump()
+    dut.expect_cpu_reset()
+
+
+@pytest.mark.generic
+@idf_parametrize('config, target', CONFIGS_MEMPROT_LIGHT_SLEEP_P4, indirect=['config', 'target'])
+def test_light_sleep_invalid_memory_region_write_violation(dut: PanicTestDut, test_func_name: str) -> None:
+    dut.run_test_func(test_func_name)
+    dut.expect_gme('Store access fault')
+    dut.expect_reg_dump(0)
+    dut.expect_cpu_reset()
 
 
 def memprot_core1_violation(dut: PanicTestDut, test_func_name: str, reason: str) -> None:
