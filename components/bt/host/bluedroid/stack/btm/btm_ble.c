@@ -2248,12 +2248,11 @@ static void btm_ble_resolve_random_addr_on_conn_cmpl(void *p_rec, void *p_data)
         match = TRUE;
         match_rec->ble.active_addr_type = BTM_BLE_ADDR_RRA;
         memcpy(match_rec->ble.cur_rand_addr, bda, BD_ADDR_LEN);
-        if (!btm_ble_init_pseudo_addr (match_rec, bda)) {
-            /* assign the original address to be the current report address */
-            memcpy(bda, match_rec->ble.pseudo_addr, BD_ADDR_LEN);
-        } else {
-            memcpy(bda, match_rec->bd_addr, BD_ADDR_LEN);
-        }
+        btm_ble_init_pseudo_addr (match_rec, bda);
+        /* Key the connection under the record's own address - the address the
+           connect API was given - so an app that dialled the identity reported
+           above finds the link it created instead of leaving an orphan LCB. */
+        memcpy(bda, match_rec->bd_addr, BD_ADDR_LEN);
     } else {
         BTM_TRACE_DEBUG("%s unable to match and resolve random address", __func__);
     }

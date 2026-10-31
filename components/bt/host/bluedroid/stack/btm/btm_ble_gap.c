@@ -802,11 +802,18 @@ static void btm_ble_resolve_random_addr_on_adv(void *p_rec, void *p)
 
         if (btm_ble_init_pseudo_addr(match_rec, bda)) {
             memcpy(bda, match_rec->bd_addr, BD_ADDR_LEN);
+            addr_type = match_rec->ble.ble_addr_type;
+        } else if (match_rec->ble.key_type & BTM_LE_KEY_PID) {
+            /* Report the identity the peer distributed with its SMP keys. The
+               pseudo address is the one the bond was created on and stops being
+               on air at the first resolvable-address rotation. */
+            memcpy(bda, match_rec->ble.static_addr, BD_ADDR_LEN);
+            addr_type = match_rec->ble.static_addr_type & (~BLE_ADDR_TYPE_ID_BIT);
         } else {
             // Assign the original address to be the current report address
             memcpy(bda, match_rec->ble.pseudo_addr, BD_ADDR_LEN);
+            addr_type = match_rec->ble.ble_addr_type;
         }
-        addr_type = match_rec->ble.ble_addr_type;
     }
 
     btm_ble_process_adv_pkt_cont(bda, addr_type, evt_type, pp);
