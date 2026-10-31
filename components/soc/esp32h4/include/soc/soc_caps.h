@@ -364,6 +364,7 @@
 /*--------------------------- ECC CAPS ---------------------------------------*/
 #define SOC_ECC_CONSTANT_TIME_POINT_MUL           1
 #define SOC_ECC_SUPPORT_CURVE_P384      (1)
+#define SOC_ECC_SUPPORT_CURVE_SM2                 1
 
 /*--------------------------- ECDSA CAPS ---------------------------------------*/
 #define SOC_ECDSA_SUPPORT_EXPORT_PUBKEY     (1)

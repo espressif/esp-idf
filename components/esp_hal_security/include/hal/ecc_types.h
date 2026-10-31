@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2017-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2017-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -9,18 +9,20 @@
 extern "C" {
 #endif
 
+/* The values match the ECC work-mode register encoding on every chip that
+   implements the mode. Raw value 1 is reserved in hardware. */
 typedef enum {
-    ECC_MODE_POINT_MUL       = 0x0,         // (Rx, Ry) = K * (Px, Py)
-    ECC_MODE_INVERSE_MUL,                   // R = K^(-1) * Py
-    ECC_MODE_VERIFY,                        // Check if (Px, Py) are points on the curve
-    ECC_MODE_VERIFY_THEN_POINT_MUL,         // Verify and then perform point multiplication
-    ECC_MODE_JACOBIAN_POINT_MUL,
-    ECC_MODE_POINT_ADD,
-    ECC_MODE_JACOBIAN_POINT_VERIFY,
-    ECC_MODE_POINT_VERIFY_JACOBIAN_MUL,
-    ECC_MODE_MOD_ADD,
-    ECC_MODE_MOD_SUB,
-    ECC_MODE_MOD_MUL,
+    ECC_MODE_POINT_MUL                 = 0,     // (Rx, Ry) = K * (Px, Py)
+    ECC_MODE_VERIFY                    = 2,     // Check if (Px, Py) are points on the curve
+    ECC_MODE_VERIFY_THEN_POINT_MUL     = 3,     // Verify and then perform point multiplication
+    ECC_MODE_JACOBIAN_POINT_MUL        = 4,
+    ECC_MODE_POINT_ADD                 = 5,
+    ECC_MODE_JACOBIAN_POINT_VERIFY     = 6,
+    ECC_MODE_POINT_VERIFY_JACOBIAN_MUL = 7,
+    ECC_MODE_MOD_ADD                   = 8,
+    ECC_MODE_MOD_SUB                   = 9,
+    ECC_MODE_MOD_MUL                   = 10,
+    ECC_MODE_INVERSE_MUL               = 11,    // R = K^(-1) * Py
 } ecc_mode_t;
 
 typedef enum {

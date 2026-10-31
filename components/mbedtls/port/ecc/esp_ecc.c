@@ -11,7 +11,12 @@
 #include "esp_crypto_periph_clk.h"
 #include "ecc_impl.h"
 #include "hal/ecc_hal.h"
+#include "hal/ecc_types.h"
 #include "soc/soc_caps.h"
+
+#define ECC_P192_SIZE_BYTES  P192_LEN
+#define ECC_P256_SIZE_BYTES  P256_LEN
+#define ECC_P384_SIZE_BYTES  P384_LEN
 
 static void esp_ecc_acquire_hardware(void)
 {
@@ -25,6 +30,22 @@ static void esp_ecc_release_hardware(void)
     esp_crypto_ecc_enable_periph_clk(false);
 
     esp_crypto_ecc_lock_release();
+}
+
+/* Infer the NIST curve from the coordinate length.
+   esp_ecc_point_multiply() / esp_ecc_point_verify() only expose the NIST
+   SECP family; SM2 (which shares the 32-byte size with SECP256R1) is a
+   distinct curve family and is selectable only at the HAL level via
+   ecc_hal_write_*_param() with ECC_CURVE_SM2. */
+static inline ecc_curve_t curve_from_len(uint16_t len)
+{
+    if (len == ECC_P384_SIZE_BYTES) {
+        return ECC_CURVE_SECP384R1;
+    } else if (len == ECC_P256_SIZE_BYTES) {
+        return ECC_CURVE_SECP256R1;
+    } else {
+        return ECC_CURVE_SECP192R1;
+    }
 }
 
 int esp_ecc_point_multiply(const ecc_point_t *point, const uint8_t *scalar, ecc_point_t *result, bool verify_first)
@@ -46,7 +67,7 @@ int esp_ecc_point_multiply(const ecc_point_t *point, const uint8_t *scalar, ecc_
 
     esp_ecc_acquire_hardware();
 
-    ecc_hal_write_mul_param(scalar, point->x, point->y, len);
+    ecc_hal_write_mul_param(scalar, point->x, point->y, len, curve_from_len(len));
     ecc_hal_set_mode(work_mode);
     /*
      * Enable constant-time point multiplication operations for the ECC hardware accelerator,
@@ -86,7 +107,7 @@ int esp_ecc_point_verify(const ecc_point_t *point)
     }
 
     esp_ecc_acquire_hardware();
-    ecc_hal_write_verify_param(point->x, point->y, len);
+    ecc_hal_write_verify_param(point->x, point->y, point->len, curve_from_len(point->len));
     ecc_hal_set_mode(ECC_MODE_VERIFY);
     ecc_hal_start_calc();
 

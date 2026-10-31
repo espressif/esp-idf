@@ -1,19 +1,47 @@
 /*
- * SPDX-FileCopyrightText: 2021-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
+#include "hal/assert.h"
 #include "hal/ecc_hal.h"
 #include "hal/ecc_ll.h"
 #include "soc/soc_caps.h"
 
-/* ECC curve size constants in bytes */
+/* Maximum ECC buffer size for all supported curves */
+#define ECC_MAX_BUFFER_SIZE                 48
+
+/* Coordinate length in bytes for each curve. SM2 shares its length with
+   SECP256R1, which is why the curve cannot be derived from the length. */
 #define ECC_P192_SIZE_BYTES                 24
 #define ECC_P256_SIZE_BYTES                 32
 #define ECC_P384_SIZE_BYTES                 48
+#define ECC_SM2_SIZE_BYTES                  32
 
-/* Maximum ECC buffer size for all supported curves */
-#define ECC_MAX_BUFFER_SIZE                 48
+/* The length drives the register write and read loops, and the curve drives
+   the modulus that the hardware applies. A caller that pairs the two wrongly
+   gets a silently wrong result, so reject the pair before it reaches the
+   peripheral. */
+static void ecc_hal_assert_curve_len(ecc_curve_t curve, uint16_t len)
+{
+    switch (curve) {
+    case ECC_CURVE_SECP192R1:
+        HAL_ASSERT(len == ECC_P192_SIZE_BYTES);
+        break;
+    case ECC_CURVE_SECP256R1:
+        HAL_ASSERT(len == ECC_P256_SIZE_BYTES);
+        break;
+    case ECC_CURVE_SECP384R1:
+        HAL_ASSERT(len == ECC_P384_SIZE_BYTES);
+        break;
+    case ECC_CURVE_SM2:
+        HAL_ASSERT(len == ECC_SM2_SIZE_BYTES);
+        break;
+    default:
+        HAL_ASSERT(false && "Unsupported curve");
+        break;
+    }
+}
 
 void ecc_hal_set_mode(ecc_mode_t mode)
 {
@@ -50,11 +78,11 @@ static void clear_param_registers(void)
 #endif
 }
 
-void ecc_hal_write_mul_param(const uint8_t *k, const uint8_t *px, const uint8_t *py, uint16_t len)
+void ecc_hal_write_mul_param(const uint8_t *k, const uint8_t *px, const uint8_t *py, uint16_t len, ecc_curve_t curve)
 {
-    ecc_curve_t curve = len == ECC_P384_SIZE_BYTES ? ECC_CURVE_SECP384R1 : (len == ECC_P256_SIZE_BYTES ? ECC_CURVE_SECP256R1 : ECC_CURVE_SECP192R1);
-    ecc_ll_set_curve(curve);
+    ecc_hal_assert_curve_len(curve, len);
 
+    ecc_ll_set_curve(curve);
     clear_param_registers();
 
     ecc_ll_write_param(ECC_PARAM_K, k, len);
@@ -62,11 +90,11 @@ void ecc_hal_write_mul_param(const uint8_t *k, const uint8_t *px, const uint8_t 
     ecc_ll_write_param(ECC_PARAM_PY, py, len);
 }
 
-void ecc_hal_write_verify_param(const uint8_t *px, const uint8_t *py, uint16_t len)
+void ecc_hal_write_verify_param(const uint8_t *px, const uint8_t *py, uint16_t len, ecc_curve_t curve)
 {
-    ecc_curve_t curve = len == ECC_P384_SIZE_BYTES ? ECC_CURVE_SECP384R1 : (len == ECC_P256_SIZE_BYTES ? ECC_CURVE_SECP256R1 : ECC_CURVE_SECP192R1);
-    ecc_ll_set_curve(curve);
+    ecc_hal_assert_curve_len(curve, len);
 
+    ecc_ll_set_curve(curve);
     clear_param_registers();
 
     ecc_ll_write_param(ECC_PARAM_PX, px, len);
@@ -102,11 +130,11 @@ void ecc_hal_set_mod_base(ecc_mod_base_t base)
     ecc_ll_set_mod_base(base);
 }
 
-void ecc_hal_write_jacob_verify_param(const uint8_t *qx, const uint8_t *qy, const uint8_t *qz, uint16_t len)
+void ecc_hal_write_jacob_verify_param(const uint8_t *qx, const uint8_t *qy, const uint8_t *qz, uint16_t len, ecc_curve_t curve)
 {
-    ecc_curve_t curve = len == ECC_P384_SIZE_BYTES ? ECC_CURVE_SECP384R1 : (len == ECC_P256_SIZE_BYTES ? ECC_CURVE_SECP256R1 : ECC_CURVE_SECP192R1);
-    ecc_ll_set_curve(curve);
+    ecc_hal_assert_curve_len(curve, len);
 
+    ecc_ll_set_curve(curve);
     clear_param_registers();
 
     ecc_ll_write_param(ECC_PARAM_QX, qx, len);
@@ -133,11 +161,11 @@ int ecc_hal_read_jacob_mul_result(uint8_t *rx, uint8_t *ry, uint8_t *rz, uint16_
     return 0;
 }
 
-void ecc_hal_write_point_add_param(const uint8_t *px, const uint8_t *py, const uint8_t *qx, const uint8_t *qy, const uint8_t *qz, uint16_t len)
+void ecc_hal_write_point_add_param(const uint8_t *px, const uint8_t *py, const uint8_t *qx, const uint8_t *qy, const uint8_t *qz, uint16_t len, ecc_curve_t curve)
 {
-    ecc_curve_t curve = len == ECC_P384_SIZE_BYTES ? ECC_CURVE_SECP384R1 : (len == ECC_P256_SIZE_BYTES ? ECC_CURVE_SECP256R1 : ECC_CURVE_SECP192R1);
-    ecc_ll_set_curve(curve);
+    ecc_hal_assert_curve_len(curve, len);
 
+    ecc_ll_set_curve(curve);
     clear_param_registers();
 
     ecc_ll_write_param(ECC_PARAM_PX, px, len);
@@ -160,11 +188,11 @@ int ecc_hal_read_point_add_result(uint8_t *rx, uint8_t *ry, uint8_t *rz, uint16_
     return 0;
 }
 
-void ecc_hal_write_mod_op_param(const uint8_t *a, const uint8_t *b, uint16_t len)
+void ecc_hal_write_mod_op_param(const uint8_t *a, const uint8_t *b, uint16_t len, ecc_curve_t curve)
 {
-    ecc_curve_t curve = len == ECC_P384_SIZE_BYTES ? ECC_CURVE_SECP384R1 : (len == ECC_P256_SIZE_BYTES ? ECC_CURVE_SECP256R1 : ECC_CURVE_SECP192R1);
-    ecc_ll_set_curve(curve);
+    ecc_hal_assert_curve_len(curve, len);
 
+    ecc_ll_set_curve(curve);
     clear_param_registers();
 
     ecc_ll_write_param(ECC_PARAM_PX, a, len);

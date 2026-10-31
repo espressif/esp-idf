@@ -13,6 +13,7 @@
 
 #if SOC_ECC_SUPPORTED
 #include "hal/ecc_hal.h"
+#include "hal/ecc_types.h"
 #endif /* SOC_ECC_SUPPORTED */
 
 #define ECC_MAX_PARAM_BYTES 48
@@ -49,21 +50,48 @@ static void esp_tinycrypt_release_ecc_hardware(void)
     esp_crypto_ecc_enable_periph_clk(false);
     esp_crypto_ecc_lock_release();
 }
+
+/*
+ * Map a coordinate length to the curve that the ECC peripheral must use.
+ * TinyCrypt offloads secp256r1 always, and secp192r1 when BR/EDR SMP is built.
+ * Return -1 for every other length. The caller then declines the offload and
+ * TinyCrypt stays on the software ladder.
+ */
+static int esp_tinycrypt_get_curve(uint8_t len, ecc_curve_t *curve)
+{
+    if (len == NUM_ECC_BYTES) {
+        *curve = ECC_CURVE_SECP256R1;
+        return 0;
+    }
+#if uECC_SUPPORTS_secp192r1
+    if (len == NUM_ECC_BYTES_SECP192R1) {
+        *curve = ECC_CURVE_SECP192R1;
+        return 0;
+    }
+#endif /* uECC_SUPPORTS_secp192r1 */
+    return -1;
+}
 #endif /* SOC_ECC_SUPPORTED */
 
 int esp_tinycrypt_verify_ecc_point(const uint8_t *pk_x, const uint8_t *pk_y, uint8_t length)
 {
 #if SOC_ECC_SUPPORTED
     int result;
+    ecc_curve_t curve;
     uint8_t px_le[ECC_MAX_PARAM_BYTES];
     uint8_t py_le[ECC_MAX_PARAM_BYTES];
+
+    /* Check the length before the conversion below writes ECC_MAX_PARAM_BYTES buffers. */
+    if (esp_tinycrypt_get_curve(length, &curve) != 0) {
+        return -1;
+    }
 
     uecc_vli_native_to_le(px_le, (const uECC_word_t *)pk_x, length);
     uecc_vli_native_to_le(py_le, (const uECC_word_t *)pk_y, length);
 
     esp_tinycrypt_acquire_ecc_hardware();
 
-    ecc_hal_write_verify_param(px_le, py_le, length);
+    ecc_hal_write_verify_param(px_le, py_le, length, curve);
     ecc_hal_set_mode(ECC_MODE_VERIFY);
     ecc_hal_start_calc();
     while (!ecc_hal_is_calc_finished());
@@ -90,12 +118,18 @@ int esp_tinycrypt_calc_ecc_mult(const uECC_word_t *point_x, const uECC_word_t *p
 {
 #if SOC_ECC_SUPPORTED
     int ret;
+    ecc_curve_t curve;
     ecc_mode_t work_mode = verify_first ? ECC_MODE_VERIFY_THEN_POINT_MUL : ECC_MODE_POINT_MUL;
     uint8_t k_le[ECC_MAX_PARAM_BYTES];
     uint8_t px_le[ECC_MAX_PARAM_BYTES];
     uint8_t py_le[ECC_MAX_PARAM_BYTES];
     uint8_t rx_le[ECC_MAX_PARAM_BYTES];
     uint8_t ry_le[ECC_MAX_PARAM_BYTES];
+
+    /* Check the length before the conversions below write ECC_MAX_PARAM_BYTES buffers. */
+    if (esp_tinycrypt_get_curve(num_bytes, &curve) != 0) {
+        return -1;
+    }
 
     memset(k_le, 0, sizeof(k_le));
     memset(px_le, 0, sizeof(px_le));
@@ -109,7 +143,7 @@ int esp_tinycrypt_calc_ecc_mult(const uECC_word_t *point_x, const uECC_word_t *p
 
     esp_tinycrypt_acquire_ecc_hardware();
 
-    ecc_hal_write_mul_param(k_le, px_le, py_le, num_bytes);
+    ecc_hal_write_mul_param(k_le, px_le, py_le, num_bytes, curve);
     ecc_hal_set_mode(work_mode);
     /*
      * Enable constant-time point multiplication operations for the ECC hardware accelerator,

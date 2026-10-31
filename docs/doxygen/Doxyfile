@@ -339,6 +339,7 @@ INPUT = \
     $(PROJECT_PATH)/components/lwip/include/apps/esp_sntp.h \
     $(PROJECT_PATH)/components/lwip/include/apps/ping/ping_sock.h \
     $(PROJECT_PATH)/components/mbedtls/esp_crt_bundle/include/esp_crt_bundle.h \
+    $(PROJECT_PATH)/components/esp_security/include/esp_sm2.h \
     $(PROJECT_PATH)/components/mbedtls/port/psa_driver/include/psa_crypto_driver_esp_ecdsa_contexts.h \
     $(PROJECT_PATH)/components/mbedtls/port/psa_driver/include/psa_crypto_driver_esp_hmac_opaque_contexts.h \
     $(PROJECT_PATH)/components/mbedtls/port/psa_driver/include/psa_crypto_driver_esp_rsa_ds_contexts.h \

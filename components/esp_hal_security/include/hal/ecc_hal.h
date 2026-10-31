@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -56,10 +56,12 @@ int ecc_hal_is_calc_finished(void);
  * @param px X coordinate of the ECC point
  * @param py Y coordinate of the ECC point
  * @param len Length (in bytes) of the ECC point
- *            - 32 bytes for SECP256R1
+ *            - 48 bytes for SECP384R1
+ *            - 32 bytes for SECP256R1 or SM2
  *            - 24 bytes for SECP192R1
+ * @param curve ECC curve type (ECC_CURVE_SECP192R1, ECC_CURVE_SECP256R1, ECC_CURVE_SECP384R1, or ECC_CURVE_SM2)
  */
-void ecc_hal_write_mul_param(const uint8_t *k, const uint8_t *px, const uint8_t *py, uint16_t len);
+void ecc_hal_write_mul_param(const uint8_t *k, const uint8_t *px, const uint8_t *py, uint16_t len, ecc_curve_t curve);
 
 /**
  * @brief Write parameters for point verification,
@@ -68,10 +70,12 @@ void ecc_hal_write_mul_param(const uint8_t *k, const uint8_t *px, const uint8_t 
  * @param px X coordinate of the ECC point
  * @param py Y coordinate of the ECC point
  * @param len Length (in bytes) of the ECC point
- *            - 32 for SECP256R1
+ *            - 48 for SECP384R1
+ *            - 32 for SECP256R1 or SM2
  *            - 24 for SECP192R1
+ * @param curve ECC curve type (ECC_CURVE_SECP192R1, ECC_CURVE_SECP256R1, ECC_CURVE_SECP384R1, or ECC_CURVE_SM2)
  */
-void ecc_hal_write_verify_param(const uint8_t *px, const uint8_t *py, uint16_t len);
+void ecc_hal_write_verify_param(const uint8_t *px, const uint8_t *py, uint16_t len, ecc_curve_t curve);
 
 /**
  * @brief Read point multiplication result
@@ -114,10 +118,12 @@ void ecc_hal_set_mod_base(ecc_mod_base_t base);
  * @param qy Y coordinate of the ECC point in jacobian form
  * @param qz Z coordinate of the ECC point in jacobian form
  * @param len Length (in bytes) of the ECC point
- *            - 32 bytes for SECP256R1
+ *            - 48 bytes for SECP384R1
+ *            - 32 bytes for SECP256R1 or SM2
  *            - 24 bytes for SECP192R1
+ * @param curve ECC curve type (ECC_CURVE_SECP192R1, ECC_CURVE_SECP256R1, ECC_CURVE_SECP384R1, or ECC_CURVE_SM2)
  */
-void ecc_hal_write_jacob_verify_param(const uint8_t *qx, const uint8_t *qy, const uint8_t *qz, uint16_t len);
+void ecc_hal_write_jacob_verify_param(const uint8_t *qx, const uint8_t *qy, const uint8_t *qz, uint16_t len, ecc_curve_t curve);
 
 /**
  * @brief Read ECC point multiplication result in jacobian form
@@ -146,10 +152,12 @@ int ecc_hal_read_jacob_mul_result(uint8_t *rx, uint8_t *ry, uint8_t *rz, uint16_
  * @param qy Y coordinate of the 2nd addend ECC point in jacobian form
  * @param qz Z coordinate of the 2nd addend ECC point in jacobian form
  * @param len Length (in bytes) of the ECC point
- *            - 32 bytes for SECP256R1
+ *            - 48 bytes for SECP384R1
+ *            - 32 bytes for SECP256R1 or SM2
  *            - 24 bytes for SECP192R1
+ * @param curve ECC curve type (ECC_CURVE_SECP192R1, ECC_CURVE_SECP256R1, ECC_CURVE_SECP384R1, or ECC_CURVE_SM2)
  */
-void ecc_hal_write_point_add_param(const uint8_t *px, const uint8_t *py, const uint8_t *qx, const uint8_t *qy, const uint8_t *qz, uint16_t len);
+void ecc_hal_write_point_add_param(const uint8_t *px, const uint8_t *py, const uint8_t *qx, const uint8_t *qy, const uint8_t *qz, uint16_t len, ecc_curve_t curve);
 
 /**
  * @brief Read ECC point addition result
@@ -174,10 +182,12 @@ int ecc_hal_read_point_add_result(uint8_t *rx, uint8_t *ry, uint8_t *rz, uint16_
  * @param a Value of operand 1
  * @param b Value of operand 2
  * @param len Length (in bytes) of the ECC point
- *            - 32 bytes for SECP256R1
+ *            - 48 bytes for SECP384R1
+ *            - 32 bytes for SECP256R1 or SM2
  *            - 24 bytes for SECP192R1
+ * @param curve ECC curve type (ECC_CURVE_SECP192R1, ECC_CURVE_SECP256R1, ECC_CURVE_SECP384R1, or ECC_CURVE_SM2)
  */
-void ecc_hal_write_mod_op_param(const uint8_t *a, const uint8_t *b, uint16_t len);
+void ecc_hal_write_mod_op_param(const uint8_t *a, const uint8_t *b, uint16_t len, ecc_curve_t curve);
 
 /**
  * @brief Read result of mod operations
