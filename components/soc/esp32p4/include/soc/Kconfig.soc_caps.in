@@ -595,6 +595,10 @@ config SOC_CPU_PMP_REGION_GRANULARITY
     int
     default 128
 
+config SOC_CPU_PMP_EXTENDED_REGIONS
+    bool
+    default y
+
 config SOC_CPU_HAS_LOCKUP_RESET
     bool
     default y

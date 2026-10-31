@@ -91,6 +91,8 @@ void test_non_cache_spiram_xip_heap_execute_violation(void);
 void test_non_cache_irom_mask_reg_write_violation(void);
 
 void test_non_cache_spiram_heap_execute_violation(void);
+
+void test_light_sleep_non_cache_spiram_heap_execute_violation(void);
 #endif
 
 void test_spiram_heap_execute_violation(void);
@@ -108,6 +110,14 @@ void test_dram_reg2_execute_violation_core1(void);
 void test_rtc_fast_text_write_violation_core1(void);
 
 void test_drom_reg_write_violation_core1(void);
+
+#if CONFIG_PM_ESP_SLEEP_POWER_DOWN_CPU && CONFIG_ESP_SYSTEM_MEMPROT && CONFIG_SOC_RTC_FAST_MEM_SUPPORTED && CONFIG_SOC_CPU_HAS_PMA
+void test_light_sleep_iram_reg1_write_violation(void);
+void test_light_sleep_drom_reg_write_violation(void);
+void test_light_sleep_rtc_fast_text_write_violation(void);
+void test_light_sleep_rtc_fast_reg3_execute_violation(void);
+void test_light_sleep_invalid_memory_region_write_violation(void);
+#endif
 
 #ifdef __cplusplus
 }

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -77,59 +77,9 @@ static IRAM_ATTR RvCoreNonCriticalSleepFrame * rv_core_noncritical_regs_save(voi
     frame->tdata2    = RV_READ_CSR(tdata2);
     frame->tcontrol  = RV_READ_CSR(tcontrol);
 
-    frame->pmpaddr0  = RV_READ_CSR(pmpaddr0);
-    frame->pmpaddr1  = RV_READ_CSR(pmpaddr1);
-    frame->pmpaddr2  = RV_READ_CSR(pmpaddr2);
-    frame->pmpaddr3  = RV_READ_CSR(pmpaddr3);
-    frame->pmpaddr4  = RV_READ_CSR(pmpaddr4);
-    frame->pmpaddr5  = RV_READ_CSR(pmpaddr5);
-    frame->pmpaddr6  = RV_READ_CSR(pmpaddr6);
-    frame->pmpaddr7  = RV_READ_CSR(pmpaddr7);
-    frame->pmpaddr8  = RV_READ_CSR(pmpaddr8);
-    frame->pmpaddr9  = RV_READ_CSR(pmpaddr9);
-    frame->pmpaddr10 = RV_READ_CSR(pmpaddr10);
-    frame->pmpaddr11 = RV_READ_CSR(pmpaddr11);
-    frame->pmpaddr12 = RV_READ_CSR(pmpaddr12);
-    frame->pmpaddr13 = RV_READ_CSR(pmpaddr13);
-    frame->pmpaddr14 = RV_READ_CSR(pmpaddr14);
-    frame->pmpaddr15 = RV_READ_CSR(pmpaddr15);
-    frame->pmpcfg0   = RV_READ_CSR(pmpcfg0);
-    frame->pmpcfg1   = RV_READ_CSR(pmpcfg1);
-    frame->pmpcfg2   = RV_READ_CSR(pmpcfg2);
-    frame->pmpcfg3   = RV_READ_CSR(pmpcfg3);
+    RV_SLEEP_SAVE_PMP_REGS(frame->pmpaddr, frame->pmpcfg);
 
-    frame->pmaaddr0  = RV_READ_CSR(CSR_PMAADDR(0));
-    frame->pmaaddr1  = RV_READ_CSR(CSR_PMAADDR(1));
-    frame->pmaaddr2  = RV_READ_CSR(CSR_PMAADDR(2));
-    frame->pmaaddr3  = RV_READ_CSR(CSR_PMAADDR(3));
-    frame->pmaaddr4  = RV_READ_CSR(CSR_PMAADDR(4));
-    frame->pmaaddr5  = RV_READ_CSR(CSR_PMAADDR(5));
-    frame->pmaaddr6  = RV_READ_CSR(CSR_PMAADDR(6));
-    frame->pmaaddr7  = RV_READ_CSR(CSR_PMAADDR(7));
-    frame->pmaaddr8  = RV_READ_CSR(CSR_PMAADDR(8));
-    frame->pmaaddr9  = RV_READ_CSR(CSR_PMAADDR(9));
-    frame->pmaaddr10 = RV_READ_CSR(CSR_PMAADDR(10));
-    frame->pmaaddr11 = RV_READ_CSR(CSR_PMAADDR(11));
-    frame->pmaaddr12 = RV_READ_CSR(CSR_PMAADDR(12));
-    frame->pmaaddr13 = RV_READ_CSR(CSR_PMAADDR(13));
-    frame->pmaaddr14 = RV_READ_CSR(CSR_PMAADDR(14));
-    frame->pmaaddr15 = RV_READ_CSR(CSR_PMAADDR(15));
-    frame->pmacfg0   = RV_READ_CSR(CSR_PMACFG(0));
-    frame->pmacfg1   = RV_READ_CSR(CSR_PMACFG(1));
-    frame->pmacfg2   = RV_READ_CSR(CSR_PMACFG(2));
-    frame->pmacfg3   = RV_READ_CSR(CSR_PMACFG(3));
-    frame->pmacfg4   = RV_READ_CSR(CSR_PMACFG(4));
-    frame->pmacfg5   = RV_READ_CSR(CSR_PMACFG(5));
-    frame->pmacfg6   = RV_READ_CSR(CSR_PMACFG(6));
-    frame->pmacfg7   = RV_READ_CSR(CSR_PMACFG(7));
-    frame->pmacfg8   = RV_READ_CSR(CSR_PMACFG(8));
-    frame->pmacfg9   = RV_READ_CSR(CSR_PMACFG(9));
-    frame->pmacfg10   = RV_READ_CSR(CSR_PMACFG(10));
-    frame->pmacfg11   = RV_READ_CSR(CSR_PMACFG(11));
-    frame->pmacfg12   = RV_READ_CSR(CSR_PMACFG(12));
-    frame->pmacfg13   = RV_READ_CSR(CSR_PMACFG(13));
-    frame->pmacfg14   = RV_READ_CSR(CSR_PMACFG(14));
-    frame->pmacfg15   = RV_READ_CSR(CSR_PMACFG(15));
+    RV_SLEEP_SAVE_PMA_REGS(frame->pmaaddr, frame->pmacfg);
 
     frame->utvec     = RV_READ_CSR(utvec);
     frame->ustatus   = RV_READ_CSR(ustatus);
@@ -159,59 +109,9 @@ static IRAM_ATTR void rv_core_noncritical_regs_restore(RvCoreNonCriticalSleepFra
     RV_WRITE_CSR(tdata1,   frame->tdata1);
     RV_WRITE_CSR(tdata2,   frame->tdata2);
     RV_WRITE_CSR(tcontrol, frame->tcontrol);
-    RV_WRITE_CSR(pmpaddr0, frame->pmpaddr0);
-    RV_WRITE_CSR(pmpaddr1, frame->pmpaddr1);
-    RV_WRITE_CSR(pmpaddr2, frame->pmpaddr2);
-    RV_WRITE_CSR(pmpaddr3, frame->pmpaddr3);
-    RV_WRITE_CSR(pmpaddr4, frame->pmpaddr4);
-    RV_WRITE_CSR(pmpaddr5, frame->pmpaddr5);
-    RV_WRITE_CSR(pmpaddr6, frame->pmpaddr6);
-    RV_WRITE_CSR(pmpaddr7, frame->pmpaddr7);
-    RV_WRITE_CSR(pmpaddr8, frame->pmpaddr8);
-    RV_WRITE_CSR(pmpaddr9, frame->pmpaddr9);
-    RV_WRITE_CSR(pmpaddr10,frame->pmpaddr10);
-    RV_WRITE_CSR(pmpaddr11,frame->pmpaddr11);
-    RV_WRITE_CSR(pmpaddr12,frame->pmpaddr12);
-    RV_WRITE_CSR(pmpaddr13,frame->pmpaddr13);
-    RV_WRITE_CSR(pmpaddr14,frame->pmpaddr14);
-    RV_WRITE_CSR(pmpaddr15,frame->pmpaddr15);
-    RV_WRITE_CSR(pmpcfg0,  frame->pmpcfg0);
-    RV_WRITE_CSR(pmpcfg1,  frame->pmpcfg1);
-    RV_WRITE_CSR(pmpcfg2,  frame->pmpcfg2);
-    RV_WRITE_CSR(pmpcfg3,  frame->pmpcfg3);
+    RV_SLEEP_RESTORE_PMP_REGS(frame->pmpaddr, frame->pmpcfg);
 
-    RV_WRITE_CSR(CSR_PMAADDR(0), frame->pmaaddr0);
-    RV_WRITE_CSR(CSR_PMAADDR(1), frame->pmaaddr1);
-    RV_WRITE_CSR(CSR_PMAADDR(2), frame->pmaaddr2);
-    RV_WRITE_CSR(CSR_PMAADDR(3), frame->pmaaddr3);
-    RV_WRITE_CSR(CSR_PMAADDR(4), frame->pmaaddr4);
-    RV_WRITE_CSR(CSR_PMAADDR(5), frame->pmaaddr5);
-    RV_WRITE_CSR(CSR_PMAADDR(6), frame->pmaaddr6);
-    RV_WRITE_CSR(CSR_PMAADDR(7), frame->pmaaddr7);
-    RV_WRITE_CSR(CSR_PMAADDR(8), frame->pmaaddr8);
-    RV_WRITE_CSR(CSR_PMAADDR(9), frame->pmaaddr9);
-    RV_WRITE_CSR(CSR_PMAADDR(10),frame->pmaaddr10);
-    RV_WRITE_CSR(CSR_PMAADDR(11),frame->pmaaddr11);
-    RV_WRITE_CSR(CSR_PMAADDR(12),frame->pmaaddr12);
-    RV_WRITE_CSR(CSR_PMAADDR(13),frame->pmaaddr13);
-    RV_WRITE_CSR(CSR_PMAADDR(14),frame->pmaaddr14);
-    RV_WRITE_CSR(CSR_PMAADDR(15),frame->pmaaddr15);
-    RV_WRITE_CSR(CSR_PMACFG(0),  frame->pmacfg0);
-    RV_WRITE_CSR(CSR_PMACFG(1),  frame->pmacfg1);
-    RV_WRITE_CSR(CSR_PMACFG(2),  frame->pmacfg2);
-    RV_WRITE_CSR(CSR_PMACFG(3),  frame->pmacfg3);
-    RV_WRITE_CSR(CSR_PMACFG(4),  frame->pmacfg4);
-    RV_WRITE_CSR(CSR_PMACFG(5),  frame->pmacfg5);
-    RV_WRITE_CSR(CSR_PMACFG(6),  frame->pmacfg6);
-    RV_WRITE_CSR(CSR_PMACFG(7),  frame->pmacfg7);
-    RV_WRITE_CSR(CSR_PMACFG(8),  frame->pmacfg8);
-    RV_WRITE_CSR(CSR_PMACFG(9),  frame->pmacfg9);
-    RV_WRITE_CSR(CSR_PMACFG(10),  frame->pmacfg10);
-    RV_WRITE_CSR(CSR_PMACFG(11),  frame->pmacfg11);
-    RV_WRITE_CSR(CSR_PMACFG(12),  frame->pmacfg12);
-    RV_WRITE_CSR(CSR_PMACFG(13),  frame->pmacfg13);
-    RV_WRITE_CSR(CSR_PMACFG(14),  frame->pmacfg14);
-    RV_WRITE_CSR(CSR_PMACFG(15),  frame->pmacfg15);
+    RV_SLEEP_RESTORE_PMA_REGS(frame->pmaaddr, frame->pmacfg);
 
     RV_WRITE_CSR(utvec,    frame->utvec);
     RV_WRITE_CSR(ustatus,  frame->ustatus);

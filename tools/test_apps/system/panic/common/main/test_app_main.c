@@ -228,7 +228,18 @@ void app_main(void)
     HANDLE_TEST(test_name, test_spiram_heap_end_execute_violation);
 #if SOC_CACHE_INTERNAL_MEM_VIA_L1CACHE
     HANDLE_TEST(test_name, test_non_cache_spiram_heap_execute_violation);
+#if CONFIG_PM_ESP_SLEEP_POWER_DOWN_CPU
+    HANDLE_TEST(test_name, test_light_sleep_non_cache_spiram_heap_execute_violation);
 #endif
+#endif
+#endif
+
+#if CONFIG_PM_ESP_SLEEP_POWER_DOWN_CPU && CONFIG_ESP_SYSTEM_MEMPROT && CONFIG_SOC_RTC_FAST_MEM_SUPPORTED && CONFIG_SOC_CPU_HAS_PMA
+    HANDLE_TEST(test_name, test_light_sleep_iram_reg1_write_violation);
+    HANDLE_TEST(test_name, test_light_sleep_drom_reg_write_violation);
+    HANDLE_TEST(test_name, test_light_sleep_rtc_fast_text_write_violation);
+    HANDLE_TEST(test_name, test_light_sleep_rtc_fast_reg3_execute_violation);
+    HANDLE_TEST(test_name, test_light_sleep_invalid_memory_region_write_violation);
 #endif
 
 #if !CONFIG_FREERTOS_UNICORE
