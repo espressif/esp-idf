@@ -54,6 +54,21 @@ If using mbedTLS directly then the bundle may be activated by directly calling t
     esp_crt_bundle_attach(&conf);
 
 
+Chain Verification
+------------------
+
+The bundle stores only the subject name and public key of each root certificate. mbedTLS therefore gets no list of CA certificates. It takes the chain the server sends, checks that each certificate is signed by the one above it, and then asks the bundle about the last certificate in that chain. That certificate is accepted in either of two cases:
+
+ * It is signed by a root in the bundle. This is the usual case: the server sends its own certificate and the intermediate certificates, and the last intermediate is issued by a bundled root.
+ * It has the same subject name and public key as a root in the bundle. Such a certificate is a cross-signed copy of a bundled root: the same root key, signed by another, often retired, CA so that older clients can still build a chain. The copy is trusted because the bundle trusts its key, so the CA that signed the copy does not need to be in the bundle.
+
+The server's certificate is also checked against the host name. Certificate validity dates are only checked when :ref:`CONFIG_MBEDTLS_HAVE_TIME_DATE` is enabled, which is not the default. With that option enabled, every certificate in the chain is checked for expiry. The bundle stores no validity dates, so a bundled root is only date-checked when the server includes it, or a cross-signed copy of it, in the chain. An expired copy then fails verification even though the root it duplicates is still trusted.
+
+.. note::
+
+    mbedTLS has no CA list to stop at, so the chain always runs to the last certificate the server sends. If a server sends a cross-signed copy of a bundled root and also the retired root that signed it, the chain ends at that retired root. It is not in the bundle, so verification fails even though a trusted root is in the chain.
+
+
 .. _updating_bundle:
 
 Generating the List of Root Certificates
