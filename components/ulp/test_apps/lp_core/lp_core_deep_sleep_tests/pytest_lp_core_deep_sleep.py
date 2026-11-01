@@ -12,6 +12,8 @@ SLEEP_ENTRY_DELAY_S = 0.3
 GPIO_EDGE_DELAY_S = 2.0
 # LP timer is 500 ms. Wait until main() is running before the peer toggles.
 LP_RUNNING_DELAY_S = 0.8
+# LP SPI slave arms inside main(), after the timer and the settle delay.
+SPI_SLAVE_CLOCK_DELAY_S = 1.2
 
 
 @pytest.mark.generic_multi_device
@@ -27,6 +29,46 @@ LP_RUNNING_DELAY_S = 0.8
 )
 def test_lp_i2c_during_deep_sleep(case_tester: CaseTester) -> None:
     TwoBoardSleep(case_tester, 'lp_i2c_sleep').run_retained('I2C_PEER_ARMED', 'I2C_PEER_OK')
+
+
+@pytest.mark.generic_multi_device
+@pytest.mark.parametrize('count', [2], indirect=True)
+@pytest.mark.parametrize('config', ['defaults'], indirect=True)
+@idf_parametrize(
+    'target',
+    soc_filtered_targets(
+        '(SOC_LP_CORE_SUPPORTED == 1) and (SOC_LP_SPI_SUPPORTED == 1) and '
+        '(SOC_DEEP_SLEEP_SUPPORTED == 1) and (SOC_RTC_TIMER_SUPPORTED == 1)'
+    ),
+    indirect=['target'],
+)
+def test_lp_spi_master_during_deep_sleep(case_tester: CaseTester) -> None:
+    TwoBoardSleep(case_tester, 'lp_spi_master_sleep').run_retained(
+        'SPI_MST_PEER_ARMED',
+        'SPI_MST_PEER_OK',
+        after_sleep_signal='queue',
+        delay_s=SLEEP_ENTRY_DELAY_S,
+    )
+
+
+@pytest.mark.generic_multi_device
+@pytest.mark.parametrize('count', [2], indirect=True)
+@pytest.mark.parametrize('config', ['defaults'], indirect=True)
+@idf_parametrize(
+    'target',
+    soc_filtered_targets(
+        '(SOC_LP_CORE_SUPPORTED == 1) and (SOC_LP_SPI_SUPPORTED == 1) and '
+        '(SOC_DEEP_SLEEP_SUPPORTED == 1) and (SOC_RTC_TIMER_SUPPORTED == 1)'
+    ),
+    indirect=['target'],
+)
+def test_lp_spi_slave_during_deep_sleep(case_tester: CaseTester) -> None:
+    TwoBoardSleep(case_tester, 'lp_spi_slave_sleep').run_retained(
+        'SPI_SLV_PEER_ARMED',
+        'SPI_SLV_PEER_OK',
+        after_sleep_signal='clock',
+        delay_s=SPI_SLAVE_CLOCK_DELAY_S,
+    )
 
 
 @pytest.mark.generic_multi_device

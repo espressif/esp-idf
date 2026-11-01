@@ -71,6 +71,10 @@ class UnityBoard:
 
     def select_stage(self, case: UnittestMenuCase, stage_index: int, *, wait_ready: bool = True) -> None:
         self.start(case, wait_ready=wait_ready)
+        # unity_gets() discards bytes already in the RX buffer. Wait until the
+        # stage menu has been printed so the index is not dropped.
+        last_stage = case.subcases[-1]['name']
+        self.expect(f'"{last_stage}"')
         self.dut.write(str(stage_index))
 
     def run(self, case: UnittestMenuCase, *, wait_ready: bool = True) -> None:

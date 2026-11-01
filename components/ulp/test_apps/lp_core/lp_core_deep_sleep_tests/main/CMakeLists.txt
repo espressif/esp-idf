@@ -1,12 +1,16 @@
 set(app_sources "test_app_main.c" "lp_sleep_common.c")
 set(lp_core_test_apps "")
 
-if(CONFIG_SOC_LP_CORE_SUPPORT_I2C OR CONFIG_SOC_ULP_LP_UART_SUPPORTED)
+if(CONFIG_SOC_LP_CORE_SUPPORT_I2C OR CONFIG_SOC_ULP_LP_UART_SUPPORTED OR CONFIG_SOC_LP_SPI_SUPPORTED)
     list(APPEND app_sources "lp_sleep_regs.c")
 endif()
 
 if(CONFIG_SOC_LP_CORE_SUPPORT_I2C)
     list(APPEND app_sources "test_lp_i2c_sleep.c")
+endif()
+
+if(CONFIG_SOC_LP_SPI_SUPPORTED)
+    list(APPEND app_sources "test_lp_spi_sleep.c")
 endif()
 
 if(CONFIG_SOC_ULP_LP_UART_SUPPORTED)
@@ -20,7 +24,8 @@ endif()
 idf_component_register(SRCS ${app_sources}
                        INCLUDE_DIRS "lp_core"
                        REQUIRES ulp unity test_utils esp_hw_support
-                       PRIV_REQUIRES esp_driver_gpio esp_driver_i2c esp_driver_uart hal
+                       PRIV_REQUIRES esp_driver_gpio esp_driver_i2c esp_driver_spi esp_driver_uart
+                                     esp_hal_gpspi hal
                        WHOLE_ARCHIVE)
 
 set(lp_core_exp_dep_srcs ${app_sources})
@@ -45,6 +50,12 @@ endfunction()
 if(CONFIG_SOC_LP_CORE_SUPPORT_I2C)
     ulp_embed_binary(lp_core_test_app_i2c_sleep "lp_core/test_main_i2c_sleep.c" "${lp_core_exp_dep_srcs}")
     list(APPEND lp_core_test_apps lp_core_test_app_i2c_sleep)
+endif()
+
+if(CONFIG_SOC_LP_SPI_SUPPORTED)
+    ulp_embed_binary(lp_core_test_app_spi_master_sleep "lp_core/test_main_spi_master_sleep.c" "${lp_core_exp_dep_srcs}")
+    ulp_embed_binary(lp_core_test_app_spi_slave_sleep "lp_core/test_main_spi_slave_sleep.c" "${lp_core_exp_dep_srcs}")
+    list(APPEND lp_core_test_apps lp_core_test_app_spi_master_sleep lp_core_test_app_spi_slave_sleep)
 endif()
 
 if(CONFIG_SOC_ULP_LP_UART_SUPPORTED)
