@@ -177,9 +177,10 @@ cleanup:
     return ret;
 }
 
-static cert_t esp_crt_find_cert(const unsigned char* const issuer, const size_t issuer_len)
+/* Binary search on the DER subject name; returns the bundle entry or NULL */
+static cert_t esp_crt_find_cert(const unsigned char* const name, const size_t name_len)
 {
-    if (unlikely(issuer == NULL || issuer_len == 0)) {
+    if (unlikely(name == NULL || name_len == 0)) {
         return NULL;
     }
 
@@ -195,10 +196,10 @@ static cert_t esp_crt_find_cert(const unsigned char* const issuer, const size_t 
         cert = esp_crt_get_cert(s_crt_bundle, middle);
         cert_name_len = esp_crt_get_name_len(cert);
 
-        // Issuers are in DER encoding, with lengths encoded in the content; if valid DER, differing lengths
+        // Names are in DER encoding, with lengths encoded in the content; if valid DER, differing lengths
         // are reflected in differing content.
         // Still, we won't try to memcmp beyond the given length:
-        int cmp_res = memcmp(issuer, esp_crt_get_name(cert), MIN(issuer_len, cert_name_len));
+        int cmp_res = memcmp(name, esp_crt_get_name(cert), MIN(name_len, cert_name_len));
 
         if (unlikely(cmp_res == 0)) {
             return cert;
@@ -216,9 +217,10 @@ static cert_t esp_crt_find_cert(const unsigned char* const issuer, const size_t 
 
 /* This callback is called for every certificate in the chain. If the chain
  * is proper each intermediate certificate is validated through its parent
- * in the x509_crt_verify_chain() function. So this callback should
- * only verify the first untrusted link in the chain is signed by the
- * root certificate in the trusted bundle
+ * in the x509_crt_verify_chain() function. So this callback only has to
+ * decide about the first untrusted link in the chain: either it is a
+ * cross-signed copy of a root in the trusted bundle, or it must be signed
+ * by a root in the trusted bundle.
 */
 int esp_crt_verify_callback(void *buf, mbedtls_x509_crt* const crt, const int depth, uint32_t* const flags)
 {
@@ -240,6 +242,22 @@ int esp_crt_verify_callback(void *buf, mbedtls_x509_crt* const crt, const int de
 
     ESP_LOGD(TAG, "%" PRIu16 " certificates in bundle", (uint16_t)esp_crt_get_certcount(s_crt_bundle));
 
+    /* A certificate mbedtls could not chain to a trusted CA may be a
+       cross-signed copy of a root the bundle already trusts. Its subject and
+       public key then match a bundle entry, and mbedtls has already verified
+       the chain below it against that key, so the cross-signer need not be
+       in the bundle. Limit: mbedtls has no CA list here and cannot stop at a
+       trusted certificate, so if the server also sends the cross-signer's
+       root, the path extends to that untrusted root and verification fails. */
+    const cert_t self = esp_crt_find_cert(child->subject_raw.p, child->subject_raw.len);
+    if (self != NULL && child->pk_raw.len == esp_crt_get_key_len(self) &&
+            memcmp(child->pk_raw.p, esp_crt_get_key(self), child->pk_raw.len) == 0) {
+        ESP_LOGI(TAG, "Certificate validated (cross-signed copy of a trusted root)");
+        *flags = 0;
+        return 0;
+    }
+
+    /* Otherwise the certificate must be signed by a root in the bundle */
     cert_t cert = esp_crt_find_cert(child->issuer_raw.p, child->issuer_raw.len);
 
     if (likely(cert != NULL)) {
