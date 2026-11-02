@@ -1408,6 +1408,10 @@ void btm_establish_continue (tACL_CONN *p_acl_cb)
 {
     tBTM_BL_EVENT_DATA  evt_data;
     BTM_TRACE_DEBUG ("btm_establish_continue\n");
+
+    if (p_acl_cb->link_up_issued) {
+        return;
+    }
 #if (!defined(BTM_BYPASS_EXTRA_ACL_SETUP) || BTM_BYPASS_EXTRA_ACL_SETUP == FALSE)
 #if (CLASSIC_BT_INCLUDED == TRUE)
 #if (defined BLE_INCLUDED && BLE_INCLUDED == TRUE)

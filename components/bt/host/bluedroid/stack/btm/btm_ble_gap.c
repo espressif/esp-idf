@@ -3800,6 +3800,26 @@ void btm_ble_read_remote_features_complete(UINT8 *p)
                  * can't get remote device's version.*/
                 if (p_acl_cb->link_role == HCI_ROLE_MASTER){
                     btsnd_hcic_rmt_ver_req (p_acl_cb->hci_handle);
+                    /* On error, leave the pending request for
+                     * l2cble_process_data_length_change_event to consume. */
+                    if (p_acl_cb->transport == BT_TRANSPORT_LE && p_acl_cb->data_len_waiting &&
+                            status == HCI_SUCCESS) {
+                        UINT16 pending_len = p_acl_cb->tx_len_waiting;
+
+                        p_acl_cb->data_len_waiting = FALSE;
+                        if (HCI_LE_DATA_LEN_EXT_SUPPORTED(p_acl_cb->peer_le_features)) {
+                            if (pending_len > BTM_BLE_DATA_SIZE_MAX) {
+                                pending_len = BTM_BLE_DATA_SIZE_MAX;
+                            } else if (pending_len < BTM_BLE_DATA_SIZE_MIN) {
+                                pending_len = BTM_BLE_DATA_SIZE_MIN;
+                            }
+                            p_acl_cb->data_len_updating = TRUE;
+                            /* Host OOM on HCI cmd buf is unrecoverable; no rollback
+                             * of data_len_updating — see btm_ble_int.h memory policy. */
+                            btsnd_hcic_ble_set_data_length(p_acl_cb->hci_handle, pending_len,
+                                                           BTM_BLE_DATA_TX_TIME_MAX);
+                        }
+                    }
                 }
                 else{
                     uint16_t data_length = controller_get_interface()->get_ble_default_data_packet_length();
@@ -3915,6 +3935,11 @@ tBTM_BLE_STATE_MASK btm_ble_get_topology_mask (void)
 *******************************************************************************/
 void btm_ble_update_link_topology_mask(UINT8 link_role, BOOLEAN increase)
 {
+    if (link_role != HCI_ROLE_MASTER && link_role != HCI_ROLE_SLAVE) {
+        BTM_TRACE_ERROR("invalid link_role=%d", link_role);
+        return;
+    }
+
     btm_ble_clear_topology_mask (BTM_BLE_STATE_ALL_CONN_MASK);
 
     if (increase) {
