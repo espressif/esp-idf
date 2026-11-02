@@ -73,6 +73,14 @@ typedef struct {
 } tBTM_BLE_SYNC_RETRY_CB;
 
 static tBTM_BLE_SYNC_RETRY_CB sync_retry_cb = {0};
+
+static bool btm_ble_sync_retry_params_match(const tBTM_BLE_PERIOD_ADV_SYNC_ESTAB *estab)
+{
+    /* A failed LE Periodic Advertising Sync Established event does not have
+     * valid SID or address fields (Core Vol 4 Part E 4.5.1). Only one
+     * create-sync command is pending, so host state is enough. */
+    return (estab != NULL && sync_retry_cb.in_use);
+}
 #endif // #if (BLE_FEAT_CREATE_SYNC_RETRY_MAX > 0)
 #endif // #if (BLE_50_EXTEND_SYNC_EN == TRUE)
 
@@ -896,6 +904,13 @@ tBTM_STATUS BTM_BlePeriodicAdvCreateSync(tBTM_BLE_Periodic_Sync_Params *params)
             BTM_TRACE_ERROR("%s, The sync parameters is invalid.", __func__);
             goto end;
     }
+#if (BLE_FEAT_CREATE_SYNC_RETRY_MAX > 0)
+    if (sync_retry_cb.in_use) {
+        status = BTM_BUSY;
+        BTM_TRACE_ERROR("periodic sync creation in progress");
+        goto end;
+    }
+#endif // #if (BLE_FEAT_CREATE_SYNC_RETRY_MAX > 0)
     uint8_t option = 0x00;
     if (params->filter_policy) {
         SET_BIT(option, 0);
@@ -947,6 +962,29 @@ void btm_set_phy_callback(UINT8 status)
 void btm_create_sync_callback(UINT8 status)
 {
     tBTM_BLE_5_GAP_CB_PARAMS cb_params = {0};
+
+#if (BLE_FEAT_CREATE_SYNC_RETRY_MAX > 0)
+    if (status != HCI_SUCCESS) {
+        if (sync_retry_cb.retry_count > 0) {
+            /* Retry HCI was rejected: app already got CREATE_SYNC_COMPLETE
+             * success and is waiting for SYNC_ESTAB. Controller will not send it. */
+            cb_params.sync_estab.status = HCI_ERR_CONN_FAILED_ESTABLISHMENT;
+            cb_params.sync_estab.sid = sync_retry_cb.params.sid;
+            cb_params.sync_estab.adv_addr_type = sync_retry_cb.params.addr_type;
+            memcpy(cb_params.sync_estab.adv_addr, sync_retry_cb.params.addr, BD_ADDR_LEN);
+            sync_retry_cb.in_use = false;
+            sync_retry_cb.retry_count = 0;
+            BTM_ExtBleCallbackTrigger(BTM_BLE_5_GAP_PERIODIC_ADV_SYNC_ESTAB_EVT, &cb_params);
+            return;
+        }
+        sync_retry_cb.in_use = false;
+        sync_retry_cb.retry_count = 0;
+    } else if (sync_retry_cb.retry_count > 0) {
+        /* Internal 0x3E retry: wait for establish event, not CREATE_SYNC_COMPLETE */
+        return;
+    }
+#endif // #if (BLE_FEAT_CREATE_SYNC_RETRY_MAX > 0)
+
     cb_params.status = status;
 
     BTM_ExtBleCallbackTrigger(BTM_BLE_5_GAP_PERIODIC_ADV_CREATE_SYNC_COMPLETE_EVT, &cb_params);
@@ -1967,9 +2005,13 @@ void btm_ble_periodic_adv_sync_establish_evt(tBTM_BLE_PERIOD_ADV_SYNC_ESTAB *par
     }
 
 #if (BLE_FEAT_CREATE_SYNC_RETRY_MAX > 0)
-    /* Check if retry is needed for error 0x3E (Connection Failed to be Established) */
     if (params->status == HCI_ERR_CONN_FAILED_ESTABLISHMENT &&
         sync_retry_cb.in_use &&
+        !btm_ble_sync_retry_params_match(params)) {
+        sync_retry_cb.in_use = false;
+        sync_retry_cb.retry_count = 0;
+    } else if (params->status == HCI_ERR_CONN_FAILED_ESTABLISHMENT &&
+        btm_ble_sync_retry_params_match(params) &&
         sync_retry_cb.retry_count < BLE_FEAT_CREATE_SYNC_RETRY_MAX) {
 
         sync_retry_cb.retry_count++;
