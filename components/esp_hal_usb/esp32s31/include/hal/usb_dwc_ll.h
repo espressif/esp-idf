@@ -950,22 +950,47 @@ static inline void usb_dwc_ll_hctsiz_init_buffer_dma(volatile usb_dwc_host_chan_
     chan->hctsiz_reg.val = hctsiz.val;
 }
 
+/**
+ * @brief Set the HCTSIZ PID field
+ *
+ * Programs the data PID of the channel's next transaction. The core maintains the field for the rest of the transfer
+ * (DWC_otg databook §5.4.41), so reprogramming is only required when a specific starting PID is needed.
+ *
+ * @note The HCTSIZ PID encoding is non-contiguous (0=DATA0, 1=DATA2, 2=DATA1, 3=MDATA/SETUP),
+ * so the logical PID cannot be written directly; a map converts it to the register value.
+ * @note Scatter/Gather DMA: Control transfer's SETUP PID is carried by the QTD descriptor, thus only DATA0/DATA1 shall be used
+ * @note Buffer DMA: Buffer DMA programs the control stage PIDs in HCTSIZ directly, hence all 3 PIDs DATA0/DATA1/SETUP shall be used.
+ * @note DATA2 (reg 1) is reserved for high-bandwidth isochronous transfers, which are not supported
+ * yet, so no logical DATA2 value exists. Extend the logical PID numbering and this map when
+ * high-bandwidth isochronous support is added.
+ *
+ * @param[in] chan     Channel registers
+ * @param[in] data_pid Logical PID: 0=DATA0, 1=DATA1, 2=SETUP
+ */
 static inline void usb_dwc_ll_hctsiz_set_pid(volatile usb_dwc_host_chan_regs_t *chan, uint32_t data_pid)
 {
-    if (data_pid == 0) {
-        chan->hctsiz_reg.pid = 0;
-    } else {
-        chan->hctsiz_reg.pid = 2;
-    }
+    static const uint32_t map[] = { 0, 2, 3 };  // Logical DATA0/DATA1/SETUP to HCTSIZ.pid encoding
+    chan->hctsiz_reg.pid = map[data_pid];
 }
 
+/**
+ * @brief Get the HCTSIZ PID field
+ *
+ * Inverse of usb_dwc_ll_hctsiz_set_pid(): converts the non-contiguous register encoding
+ * (0=DATA0, 2=DATA1, 3=SETUP) back to the logical PID.
+ *
+ * @note DATA2 (reg 1) is reserved for high-bandwidth isochronous transfers, which are not
+ * supported yet: it currently has no logical representation and is mapped to DATA0 as a
+ * placeholder. Give DATA2 a logical value and update this map when high-bandwidth
+ * isochronous support is added.
+ *
+ * @param[in] chan Channel registers
+ * @return Logical PID: 0=DATA0, 1=DATA1, 2=SETUP
+ */
 static inline uint32_t usb_dwc_ll_hctsiz_get_pid(volatile usb_dwc_host_chan_regs_t *chan)
 {
-    if (chan->hctsiz_reg.pid == 0) {
-        return 0;   //DATA0
-    } else {
-        return 1;   //DATA1
-    }
+    static const uint32_t map[] = { 0, 0, 1, 2 };  // HCTSIZ.pid encoding to logical PID (index 1 = DATA2, see note above)
+    return map[chan->hctsiz_reg.pid];
 }
 
 static inline void usb_dwc_ll_hctsiz_set_qtd_list_len(volatile usb_dwc_host_chan_regs_t *chan, int qtd_list_len)
@@ -1038,23 +1063,25 @@ static inline void usb_dwc_ll_hctsiz_set_sched_info(volatile usb_dwc_host_chan_r
 /**
  * @brief Configure a Buffer DMA transfer on a host channel
  *
- * Programs the HCTSIZ register with the transfer length, packet count, PID, and PING setting
+ * Programs the HCTSIZ register with the transfer length, packet count, and PING setting
  * for a single Buffer DMA transfer. Must be called before enabling the channel.
+ *
+ * @note: The PID field is preserved: the core maintains it for the rest of the transfer after the initial transaction
+ * (DWC_otg databook §5.4.41). Use usb_dwc_ll_hctsiz_set_pid() beforehand when a specific starting PID is required.
  *
  * @param[in] chan     Channel registers
  * @param[in] xfer_len Total number of bytes to transfer
  * @param[in] pkt_cnt  Number of packets for this transfer (typically ceil(xfer_len / MPS))
- * @param[in] pid_reg  HCTSIZ PID field value (0=DATA0, 2=DATA1, 3=SETUP). Use usb_dwc_ll_pid_to_reg() to convert.
  * @param[in] dopng    true to enable PING protocol for High-Speed OUT transfers, false otherwise
  */
 static inline void usb_dwc_ll_hctsiz_set_buffer_xfer(volatile usb_dwc_host_chan_regs_t *chan,
                                                      uint32_t xfer_len, uint32_t pkt_cnt,
-                                                     uint32_t pid_reg, bool dopng)
+                                                     bool dopng)
 {
-    usb_dwc_hctsiz_reg_t hctsiz = { .val = 0 };
+    usb_dwc_hctsiz_reg_t hctsiz;
+    hctsiz.val = chan->hctsiz_reg.val;  // Preserve the core-maintained PID field
     hctsiz.xfersize = xfer_len;
     hctsiz.pktcnt   = pkt_cnt;
-    hctsiz.pid      = pid_reg;   // 0=DATA0, 2=DATA1, 3=SETUP
     hctsiz.dopng    = dopng;
     chan->hctsiz_reg.val = hctsiz.val;
 }
@@ -1089,36 +1116,6 @@ static inline uint32_t usb_dwc_ll_hctsiz_get_rem_xfersize(volatile usb_dwc_host_
 static inline uint32_t usb_dwc_ll_hctsiz_get_pkt_cnt(volatile usb_dwc_host_chan_regs_t *chan)
 {
     return chan->hctsiz_reg.pktcnt;
-}
-
-/**
- * @brief Get the raw PID field from HCTSIZ
- *
- * Returns the 2-bit HCTSIZ.pid field exactly as stored in the register (0=DATA0, 2=DATA1, 3=SETUP).
- * The core advances this field as packets complete, so reading it back yields the next expected PID.
- * Unlike usb_dwc_ll_hctsiz_get_pid(), this preserves the SETUP encoding, so it can be fed straight back
- * into usb_dwc_ll_hctsiz_set_buffer_xfer() when re-initializing a channel for a retry.
- *
- * @param[in] chan Channel registers
- * @return Raw HCTSIZ.pid field value
- */
-static inline uint32_t usb_dwc_ll_hctsiz_get_pid_reg(volatile usb_dwc_host_chan_regs_t *chan)
-{
-    return chan->hctsiz_reg.pid;
-}
-
-/**
- * @brief Convert a logical USB PID to the HCTSIZ PID register encoding
- *
- * Maps the driver-level PID index to the value expected in the HCTSIZ.pid field.
- *
- * @param[in] pid Logical PID: 0=DATA0, 1=DATA1, 2=SETUP
- * @return HCTSIZ PID register value: 0=DATA0, 2=DATA1, 3=SETUP
- */
-static inline uint32_t usb_dwc_ll_pid_to_reg(int pid)
-{
-    static const uint32_t map[] = { 0, 2, 3 };  // DATA0, DATA1, SETUP
-    return map[pid];
 }
 
 // ---------------------------- HCDMAi Register --------------------------------
