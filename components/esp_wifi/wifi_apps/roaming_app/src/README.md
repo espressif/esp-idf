@@ -20,38 +20,46 @@ There are broadly two different roaming triggers you can choose from:
 
 1) Low RSSI triggered roaming :
 
-If enabled, in this method the roaming app sets a Wi-Fi Threshold (configured by “Wi-Fi RSSI threshold to trigger roaming”), which when reached by the connection to the current AP, triggers a check for a better AP and if found will trigger roaming.
+If enabled, in this method the roaming app sets a Wi-Fi Threshold (configured by “Wi-Fi RSSI threshold to trigger roaming”), which when reached by the connection to the current AP, calls the common roam method decision (`decide_and_roam`: 11v → 11k → legacy) without an upfront discovery scan. A full discovery scan is started only if legacy is selected and no candidate is already known.
 
 Every time the threshold is reached, a new threshold needs to be set at an even lower RSSI threshold since if we fail to find a better AP the first time the RSSI threshold is reached there will be no further attempts to find better APs, leading to possible disconnection as the only avenue for finding a better AP. The offset by which the next RSSI threshold can be set is decided by “Offset by which to reset the RSSI Threshold after attempt to roam” which defaults to 5.
 
-Also please note that if the AP we connect to, upon connecting, itself has a worse RSSI than the threshold set in the configuration, the new RSSI threshold is set to the current RSSI - offset. Additionally, the RSSI threshold gets reset to the configured value if the RSSI later improves above the configured threshold.
+Also please note that if the AP we connect to, upon connecting, itself has a worse RSSI than the threshold set in the configuration, the new RSSI threshold is set to the current RSSI - offset. Additionally, the RSSI threshold gets reset to the configured value if the RSSI later improves above the configured threshold. Optional “Log connected AP RSSI periodically” (enabled by default) only reports RSSI/BSSID/channel for debugging and does not change the low-RSSI trigger.
 
 2) Periodic Scan based roaming:
 
-Unlike Low RSSI triggered roaming, which is a bit reactive to the changing network environment, periodic scanning-based roaming (enabled by “Conduct periodic scans to check if a better AP is available”) allows for a more active approach to ensuring that you are connected to the best AP in the network. You can also decide the threshold after which you want to conduct the periodic scans with a default of -50 dBm. (Configured by “Threshold at which to begin periodic scanning for a better AP”)
+Unlike Low RSSI triggered roaming, which is a bit reactive to the changing network environment, periodic monitoring (enabled by “Conduct periodic scans to check if a better AP is available”) allows for a more active approach. When the connected RSSI is below the configured threshold, the app first runs a discovery scan. Only if a better AP is found does it call the same common `decide_and_roam` decision (11v → 11k → legacy), with that candidate available for preferred-candidate BTM and for legacy directed reconnect (no second scan). You can also decide the threshold after which you want to begin this monitoring with a default of -50 dBm. (Configured by “Threshold at which to begin periodic scanning for a better AP”)
 
-The intervals at which this periodic scan will take place can also be configured through “Time intervals at which station will initiate a scan”. This defaults to 30 seconds. The RSSI difference between a candidate AP and the current AP, which can be considered as acceptable to initiate roaming, can also be configured as the “RSSI difference b/w current AP and a candidate AP to initiate roaming”
+The intervals at which this periodic check will take place can also be configured through “Time intervals at which station will initiate a scan”. This defaults to 30 seconds. The RSSI difference between a candidate AP and the current AP, which can be considered as acceptable to treat an AP as better after a discovery scan, can also be configured as the “RSSI difference b/w current AP and a candidate AP to initiate roaming”
 
 **Please note that at least one of the two Roaming Triggers needs to be enabled.**
 
 
 **Roaming Methods**
 
-Currently 2 methods of roaming are supported by the roaming app. (Roaming App Settings --> Roaming Methods)
+Currently 3 methods of roaming are supported by the roaming app. (Roaming App Settings --> Roaming Methods)
+
+Priority while connected: **802.11v BTM > 802.11k assisted > legacy**.
+
+Both triggers share `decide_and_roam` for method selection. Low RSSI enters that decision directly. Periodic monitoring runs a discovery scan first and only then enters `decide_and_roam` if a better AP was found. **802.11v and 802.11k do not require a full discovery scan on the low-RSSI path.** Legacy directed-reconnects when a candidate is already known; otherwise it runs a discovery scan. Fallback is only to methods that are still enabled; if none remain usable, roaming triggers are suppressed until the next association.
 
 1) Network Assisted Roaming:
 
-Enabled by “Support Network Assisted Roaming using 802.11v”, this method primarily uses the BSS transition Management mechanisms outlined in IEEE 802.11v. It uses candidates received from neighbor report requests (if enabled, explained later) and scanning results to send BSS transition Management Queries to the AP it is currently associated to. Depending on the current radio environment and vendor implementation on the side of the AP, this could then lead to BSS Transition Management Requests and corresponding BSS Transition Management responses which could lead to a seamless transition from one AP to another. For a better understanding of the mechanisms involved and the general implementation please look up the IEEE 802.11v specification and upstream wpa_supplicant’s implementation.
+Enabled by “Support Network Assisted Roaming using 802.11v”, this method primarily uses the BSS transition Management mechanisms outlined in IEEE 802.11v. It sends BSS Transition Management Queries using the cached neighbor list from periodic Neighbor Report requests (if enabled). Depending on the current radio environment and vendor implementation on the side of the AP, this could then lead to BSS Transition Management Requests and corresponding BSS Transition Management responses which could lead to a seamless transition from one AP to another. For a better understanding of the mechanisms involved and the general implementation please look up the IEEE 802.11v specification and upstream wpa_supplicant’s implementation.
 
 Please note that for this to work as expected, the APs should be setup in a network where they are aware of each other. If the network is expected to preserve IP configuration across a roaming event, `Skip IP renew after roaming` can also be enabled. This is relevant only when the roam keeps the same IP state, such as 802.11r or BTM-based roaming.
 
-2) Legacy Roaming approach.
+2) 802.11k assisted roaming:
 
-Enabled by “Support Legacy roaming approach”, this is designed for scenarios where there is no support for 802.11v amongst the APs of the network. In this scenario, upon determining the better AP to connect to, the station forcibly will disconnect and attempt to connect to the AP with the better AP.
+Enabled by “Support 802.11k assisted roaming using neighbor reports”. When selected, the station uses Neighbor Report information to scan only AP-advertised channels and look for a better AP. On success it uses a directed reconnect. If NR channels are already cached (for example from periodic RRM) and still within the configured neighbor-report channel cache expiry window, the on-demand Neighbor Report Request can be skipped; after that window the cache is treated as stale and a fresh report is required (same idea as the scan results expiry window). Neighbor Report Request retries are configured separately from BTM retries. On 11k failure the station retries NR while attempts remain; only after retries are exhausted does it fall through to legacy (if enabled).
 
-Please note that if both approaches are enabled, there is an additional configuration (“Retry count after which to switch to legacy roaming”) that allows developers to decide how many times should the station attempt to roam using the Network Assisted roaming methods before switching to using the legacy approach.
+3) Legacy Roaming approach.
 
-**Please note that at least one of the two roaming methods needs to be selected.**
+Enabled by “Support Legacy roaming approach”, this is designed for scenarios where there is no support for 802.11v/802.11k amongst the APs of the network, or after higher-priority methods have been exhausted. If a better AP candidate is already known (for example from a periodic discovery scan), the station directed-reconnects to it without scanning again. Otherwise it runs a discovery scan, and upon determining a better AP forcibly disconnects and attempts to connect to that AP.
+
+“Retry count for 802.11v BTM roaming” applies whenever BTM is enabled (including BTM-only). After that many BTM attempts, the station falls through to 11k and/or legacy if those are enabled; otherwise roaming triggers are suppressed until the next association. 11k has its own independent retry count for Neighbor Report Requests.
+
+**Please note that at least one of the roaming methods needs to be selected.**
 
 
 **Scan configuration**
@@ -72,7 +80,7 @@ Successive roaming attempts by multiple roaming triggers simultaneously could le
 
 **Periodic Neighbor Report Requests:**
 
-Neighbor Report requests are a part of the IEEE 802.11k specification, and hence the intended network would need to support and be setup in a way to support its mechanisms. Periodic neighbor report requests provide vital information about the network and other APs in the vicinity that are candidate APs of the same network. This can be enabled using “Send Periodic Neighbor Report requests for updating the internal list”. The frequency of these requests is controlled by “Time interval between Periodic Neighbor report Requests”. There can also be a RSSI threshold (“Threshold for sending periodic neighbor report requests”) after which you wish to consider sending these requests however this is set by default to -20.
+Neighbor Report requests are a part of the IEEE 802.11k specification, and hence the intended network would need to support and be setup in a way to support its mechanisms. Periodic neighbor report requests provide vital information about the network and other APs in the vicinity that are candidate APs of the same network. This can be enabled using “Send Periodic Neighbor Report requests for updating the internal list” when 802.11v and/or 802.11k roaming is enabled. The cached list is used by BTM queries and to warm the 11k NR channel cache. The frequency of these requests is controlled by “Time interval between Periodic Neighbor report Requests”. There can also be a RSSI threshold (“Threshold for sending periodic neighbor report requests”) after which you wish to consider sending these requests however this is set by default to -20.
 
 
 **Blacklist and security behavior:**
