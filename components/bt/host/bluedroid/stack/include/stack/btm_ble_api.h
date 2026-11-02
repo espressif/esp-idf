@@ -1033,7 +1033,8 @@ typedef UINT8 tBTM_BLE_5_GAP_EVENT;
 #define    BTM_BLE_ISO_BIG_SYNC_TERMINATE_COMPLETE_EVT             5
 #define    BTM_BLE_ISO_BIGINFO_ADV_REPORT_EVT                      6
 #endif // #if (BLE_FEAT_ISO_BIG_SYNCER_EN == TRUE)
-#define    BTM_BLE_ISO_DATA_PATH_UPFATE_EVT                        7
+#define    BTM_BLE_ISO_DATA_PATH_UPDATE_EVT                        7
+#define    BTM_BLE_ISO_DATA_PATH_UPFATE_EVT                        BTM_BLE_ISO_DATA_PATH_UPDATE_EVT
 #define    BTM_BLE_ISO_READ_TX_SYNC_EVT                            9
 #define    BTM_BLE_ISO_READ_LINK_QUALITY_EVT                       10
 #if (BLE_FEAT_ISO_CIG_CENTRAL_EN == TRUE)
