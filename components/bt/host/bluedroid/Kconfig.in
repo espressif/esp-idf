@@ -1838,14 +1838,15 @@ menu "Bluedroid L2CAP CoC"
     config BT_BLE_L2CAP_COC_MPS
         int "Default MPS (L2CAP fragment size)"
         depends on BT_BLE_L2CAP_COC_ENABLED
-        range 23 65533 if !BT_BLE_L2CAP_ENHANCED_COC
-        range 64 65533 if BT_BLE_L2CAP_ENHANCED_COC
+        range 23 4096 if !BT_BLE_L2CAP_ENHANCED_COC
+        range 64 4096 if BT_BLE_L2CAP_ENHANCED_COC
         default 247
         help
-            Default Maximum PDU Payload Size for LE CoC channels. Legacy LE Credit
-            Based Flow Control allows 23–65533 octets (section 4.22). Enhanced
-            Credit Based Flow Control (ECFC/EATT) requires 64–65533 (section 4.25).
-            When ECFC is enabled the minimum is raised to 64 automatically.
+            Default Maximum PDU Payload Size for LE CoC channels. The spec allows
+            up to 65533 octets, but the host ACL reassembly buffer
+            (BT_DEFAULT_BUFFER_SIZE) accepts at most 4096. A larger advertised
+            receive MPS makes a peer send K-frames that are dropped before LE
+            credit accounting. Legacy CoC minimum is 23; ECFC/EATT minimum is 64.
 
     config BT_BLE_L2CAP_COC_INIT_CREDITS
         int "Initial RX credit window (K-frames per channel)"
