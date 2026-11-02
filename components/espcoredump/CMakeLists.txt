@@ -9,13 +9,14 @@ set(includes "")
 set(priv_includes "")
 set(priv_requires
   esp_partition spi_flash bootloader_support mbedtls esp_rom soc esp_system esp_driver_gpio esp_app_format
-  esp_hal_security efuse)
+  esp_hal_security efuse esp_timer)
 
 if(CONFIG_ESP_COREDUMP_ENABLE)
   list(APPEND srcs "src/core_dump_init.c"
           "src/core_dump_common.c"
           "src/core_dump_elf.c"
-          "src/core_dump_sha.c")
+          "src/core_dump_sha.c"
+          "src/core_dump_uptime.c")
 
   if(CONFIG_ESP_COREDUMP_ENABLE_TO_UART)
     list(APPEND srcs "src/core_dump_uart.c")

@@ -57,6 +57,8 @@ Setting this option to 0 bytes will cause the core dump routines to run from the
 
     By default, core dumps typically save CPU registers, tasks data and summary of the panic reason. When the :menuitem:`CONFIG_ESP_COREDUMP_CAPTURE_DRAM` option is selected, ``.bss`` and ``.data`` sections and ``heap`` data will also be part of the dump.
 
+    Core dumps also save the uptime, which ``idf.py coredump-info`` prints in the ``Uptime`` line. It is the value of :cpp:func:`esp_timer_get_time` at the start of ``esp_core_dump_write()``, and it counts from ``esp_timer_early_init()`` in the application startup. It does not include the time spent in the bootloader and in the startup code before ``esp_timer_early_init()``, so it is lower than the log timestamps, which count from the chip reset.
+
     For a better debugging experience, it is recommended to dump these sections. However, this will result in a larger coredump file. The required additional storage space may vary based on the amount of DRAM the application uses.
 
     .. only:: SOC_SPIRAM_SUPPORTED
@@ -129,6 +131,7 @@ If :menuitem:`CONFIG_ESP_COREDUMP_DECODE` is set to automatically decode the UAR
     Crashed task handle: 0x3ffafba0, name: 'main', GDB name: 'process 1073413024'
     Crashed task is not in the interrupt context
     Panic reason: abort() was called at PC 0x400d66b9 on core 0
+    Uptime: 5123456 us (5.123 s)
 
     ================== CURRENT THREAD REGISTERS ===================
     exccause       0x1d (StoreProhibitedCause)
@@ -207,6 +210,17 @@ ESP-IDF provides special commands to retrieve and analyze core dumps:
 
 ``idf.py coredump-info --help`` and ``idf.py coredump-debug --help`` commands can be used to get more details on usage. For example, they can save the coredump into a file and avoid the need to read it from flash every time these commands are run.
 
+``idf.py coredump-info`` can also print variables from the core dump:
+
+* ``--print-var`` prints a variable or expression. Use it once per value, for example ``--print-var g_batt.mv --print-var "/x g_state.flags"``. The GDB format letter, such as ``/x``, is optional.
+* ``--print-all-vars`` prints all variables placed in the core dump with a ``COREDUMP_*_ATTR`` attribute, in hex.
+
+The values are printed in the ``USER VARIABLES`` section, one ``name = value`` line each. A value that is not in the core dump is printed as ``<not in core dump>``. To place a variable in the core dump, see :ref:`core_dump_dumping_variables`.
+
+.. code-block:: bash
+
+    idf.py coredump-info --print-all-vars --print-var g_batt.mv --print-var "/x g_state.flags"
+
 For advanced users who want to pass additional arguments or use custom ELF files, it is possible to use the `esp-coredump <https://github.com/espressif/esp-coredump>`_ tool directly. For more information, use in ESP-IDF environment:
 
 .. code-block:: bash
@@ -221,6 +235,8 @@ It is a possible that at the moment of a crash, some tasks and/or the crashed ta
 
 To overcome this issue, the `ROM ELF <https://github.com/espressif/esp-rom-elfs/releases>`_ provided by Espressif is loaded automatically by ESP-IDF monitor based on the target and its revision. More details about ROM ELFs can be found in `esp-rom-elfs <https://github.com/espressif/esp-rom-elfs/blob/master/README.md>`_.
 
+
+.. _core_dump_dumping_variables:
 
 Dumping Variables on Demand
 ---------------------------

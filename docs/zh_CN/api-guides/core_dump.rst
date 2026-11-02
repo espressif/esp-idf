@@ -57,6 +57,8 @@
 
     核心转储默认保存 CPU 寄存器、任务数据和崩溃原因。选择 :menuitem:`CONFIG_ESP_COREDUMP_CAPTURE_DRAM` 选项后，``.bss`` 段和 ``.data`` 段以及 ``heap`` 数据也将保存到转储中。
 
+    核心转储还会保存系统运行时间，``idf.py coredump-info`` 会在 ``Uptime`` 行中打印该时间。该值为 ``esp_core_dump_write()`` 开始时 :cpp:func:`esp_timer_get_time` 的返回值，从应用程序启动过程中的 ``esp_timer_early_init()`` 开始计时。该值不包括引导加载程序以及 ``esp_timer_early_init()`` 之前的启动代码所用的时间，因此会小于从芯片复位开始计时的日志时间戳。
+
     推荐将上面提到的几个数据段都保存到核心转储中，以方便调试。但这会导致核心转储文件变大，具体所需的额外存储空间取决于应用程序使用的 DRAM 大小。
 
     .. only:: SOC_SPIRAM_SUPPORTED
@@ -129,6 +131,7 @@
     Crashed task handle: 0x3ffafba0, name: 'main', GDB name: 'process 1073413024'
     Crashed task is not in the interrupt context
     Panic reason: abort() was called at PC 0x400d66b9 on core 0
+    Uptime: 5123456 us (5.123 s)
 
     ================== CURRENT THREAD REGISTERS ===================
     exccause       0x1d (StoreProhibitedCause)
@@ -207,6 +210,17 @@ ESP-IDF 提供了一些特殊命令，用于检索和分析核心转储：
 
 运行 ``idf.py coredump-info --help`` 和 ``idf.py coredump-debug --help`` 命令可以查看更详细的使用说明。例如，它们可以将核心转储保存到文件中，避免每次执行命令时都需要从 flash 中读取。
 
+``idf.py coredump-info`` 还可以打印核心转储中的变量：
+
+* ``--print-var`` 打印一个变量或表达式。每个值使用一次该选项，例如 ``--print-var g_batt.mv --print-var "/x g_state.flags"``。GDB 格式字母（如 ``/x``）为可选项。
+* ``--print-all-vars`` 以十六进制打印所有通过 ``COREDUMP_*_ATTR`` 属性放入核心转储的变量。
+
+这些值打印在 ``USER VARIABLES`` 部分，每行格式为 ``name = value``。不在核心转储中的值会打印为 ``<not in core dump>``。如需将变量放入核心转储，请参阅 :ref:`core_dump_dumping_variables`。
+
+.. code-block:: bash
+
+    idf.py coredump-info --print-all-vars --print-var g_batt.mv --print-var "/x g_state.flags"
+
 高阶用户如果需要传递额外参数或使用自定义 ELF 文件，可直接使用 `esp-coredump <https://github.com/espressif/esp-coredump>`_ 工具。如果在 ESP-IDF 环境中使用该工具，可运行如下命令查询更多信息：
 
 .. code-block:: bash
@@ -221,6 +235,8 @@ ESP-IDF 提供了一些特殊命令，用于检索和分析核心转储：
 
 为解决这一问题，ESP-IDF 监视器会根据目标芯片及其修订版本自动加载乐鑫提供的 `ROM ELF <https://github.com/espressif/esp-rom-elfs/releases>`_。有关 ROM ELF 的详细信息，请参阅 `esp-rom-elfs <https://github.com/espressif/esp-rom-elfs/blob/master/README.md>`_。
 
+
+.. _core_dump_dumping_variables:
 
 按需转储变量
 ---------------------------
