@@ -1164,9 +1164,9 @@ esp_err_t uart_param_config(uart_port_t uart_num, const uart_config_t *uart_conf
     uart_hal_set_stop_bits(&(uart_context[uart_num].hal), uart_config->stop_bits);
     uart_hal_set_tx_idle_num(&(uart_context[uart_num].hal), UART_TX_IDLE_NUM_DEFAULT);
     uart_hal_set_hw_flow_ctrl(&(uart_context[uart_num].hal), uart_config->flow_ctrl, uart_config->rx_flow_ctrl_thresh);
-    UART_EXIT_CRITICAL(&(uart_context[uart_num].spinlock));
     uart_hal_rxfifo_rst(&(uart_context[uart_num].hal));
     uart_hal_txfifo_rst(&(uart_context[uart_num].hal));
+    UART_EXIT_CRITICAL(&(uart_context[uart_num].spinlock));
 #if SOC_UART_SUPPORT_SLEEP_RETENTION && CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP
     // Create sleep retention link if desired
     if (uart_num != CONFIG_ESP_CONSOLE_UART_NUM && uart_num < SOC_UART_HP_NUM) {
@@ -1952,7 +1952,9 @@ esp_err_t uart_flush_input(uart_port_t uart_num)
             }
         }
     }
+    UART_ENTER_CRITICAL(&(uart_context[uart_num].spinlock));
     uart_hal_rxfifo_rst(&(uart_context[uart_num].hal));
+    UART_EXIT_CRITICAL(&(uart_context[uart_num].spinlock));
     /* Only re-enable UART_INTR_RXFIFO_TOUT or UART_INTR_RXFIFO_FULL if they
      * were explicitly enabled by the user. */
     uart_reenable_intr_mask(uart_num, UART_INTR_RXFIFO_TOUT | UART_INTR_RXFIFO_FULL);
@@ -2302,7 +2304,9 @@ esp_err_t uart_wait_tx_idle_polling(uart_port_t uart_num)
 esp_err_t uart_set_loop_back(uart_port_t uart_num, bool loop_back_en)
 {
     ESP_RETURN_ON_FALSE((uart_num < UART_NUM_MAX), ESP_ERR_INVALID_ARG, UART_TAG, "uart_num error");
+    UART_ENTER_CRITICAL(&(uart_context[uart_num].spinlock));
     uart_hal_set_loop_back(&(uart_context[uart_num].hal), loop_back_en);
+    UART_EXIT_CRITICAL(&(uart_context[uart_num].spinlock));
     return ESP_OK;
 }
 
@@ -2356,7 +2360,9 @@ esp_err_t uart_detect_bitrate_start(uart_port_t uart_num, const uart_bitrate_det
     }
 
     // start auto baud rate detection
+    UART_ENTER_CRITICAL(&(uart_context[uart_num].spinlock));
     uart_hal_set_autobaud_en(&(uart_context[uart_num].hal), true);
+    UART_EXIT_CRITICAL(&(uart_context[uart_num].spinlock));
 
 err:
     if (ret != ESP_OK) {
@@ -2378,7 +2384,9 @@ esp_err_t uart_detect_bitrate_stop(uart_port_t uart_num, bool deinit, uart_bitra
     ret_res->edge_cnt = uart_hal_get_rxd_edge_cnt(&(uart_context[uart_num].hal));
 
     // stop auto baud rate detection
+    UART_ENTER_CRITICAL(&(uart_context[uart_num].spinlock));
     uart_hal_set_autobaud_en(&(uart_context[uart_num].hal), false);
+    UART_EXIT_CRITICAL(&(uart_context[uart_num].spinlock));
 
     const char *err_str = "";
     if (ret_res->low_period == 0 || ret_res->high_period == 0 || ret_res->pos_period == 0 || ret_res->neg_period == 0) {
