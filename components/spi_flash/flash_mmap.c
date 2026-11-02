@@ -5,6 +5,7 @@
  */
 
 #include <stdlib.h>
+#include <limits.h>
 #include <assert.h>
 #include <string.h>
 #include <stdio.h>
@@ -86,7 +87,9 @@ static esp_err_t mmap_lock_init(void)
         goto err;
     }
 
-    s_mmap_lock.semphr_acq = xSemaphoreCreateBinary();
+    // Counting, not binary: mmap_lock_unfreeze() gives once per waiting acquirer
+    // and a binary semaphore would drop all but one of those wake-ups.
+    s_mmap_lock.semphr_acq = xSemaphoreCreateCounting(INT_MAX, 0);
     if (s_mmap_lock.semphr_acq == NULL) {
         ret = ESP_ERR_NO_MEM;
         goto err;
