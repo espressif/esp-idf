@@ -3,44 +3,84 @@ RF Calibration
 
 :link_to_translation:`zh_CN:[中文]`
 
-{IDF_TARGET_NAME} supports three RF calibration methods during RF initialization:
+The RF calibration behavior of {IDF_TARGET_NAME} is jointly determined by the following two configuration options:
 
-1. Partial calibration
+1. :menuitem:`CONFIG_ESP_PHY_CALIBRATION_MODE`: Selects partial calibration, full calibration, or no calibration.
 
-2. Full calibration
+2. :menuitem:`CONFIG_ESP_PHY_CALIBRATION_AND_DATA_STORAGE`: Controls whether PHY calibration data in NVS is automatically loaded and stored during RF initialization.
 
-3. No calibration
+RF Calibration Configuration
+----------------------------
+
+:menuitem:`CONFIG_ESP_PHY_CALIBRATION_AND_DATA_STORAGE` controls whether PHY calibration data in NVS is automatically used during RF initialization:
+
+- If this option is enabled, the system loads calibration data from NVS, and :menuitem:`CONFIG_ESP_PHY_CALIBRATION_MODE` determines the calibration method used during a normal boot. When the device wakes up from Deep-sleep mode, no calibration is selected regardless of the configured calibration method. If the NVS calibration data is missing or invalid, the system switches to full calibration and attempts to store the new data in NVS.
+- If this option is disabled, :menuitem:`CONFIG_ESP_PHY_CALIBRATION_MODE` is not configurable, the system does not automatically load or store NVS calibration data, and full calibration is always performed.
+
+When NVS calibration data storage is enabled, call :cpp:func:`nvs_flash_init` before initializing Wi-Fi or Bluetooth®/Bluetooth Low Energy. Otherwise, calibration data cannot be loaded or stored, and the system falls back to full calibration.
 
 Partial Calibration
 -------------------
 
-During RF initialization, the partial calibration method is used by default for RF calibration. It is done based on the full calibration data which is stored in the NVS. To use this method, please go to ``menuconfig`` and enable :menuitem:`CONFIG_ESP_PHY_CALIBRATION_AND_DATA_STORAGE`.
+In the current version, partial calibration and full calibration are functionally equivalent. Full calibration is selected by default.
 
 Full Calibration
 ----------------
 
-Full calibration is triggered in the following conditions:
+Full calibration is the default option for :menuitem:`CONFIG_ESP_PHY_CALIBRATION_MODE`. It is also forced under the following conditions:
 
-1. NVS does not exist.
+1. :menuitem:`CONFIG_ESP_PHY_CALIBRATION_AND_DATA_STORAGE` is disabled.
 
-2. The NVS partition to store calibration data has been erased.
+2. NVS is not initialized, or the NVS partition or ``phy`` namespace containing the calibration data does not exist.
 
-3. Hardware MAC address has changed.
+3. The NVS partition containing calibration data has been erased.
 
-4. PHY library version has changed.
+4. The hardware MAC address has changed.
 
-5. The RF calibration data loaded from the NVS partition is broken.
+5. The calibration data format version used by the PHY library has changed.
 
-Full calibration takes 100 ms longer than the partial calibration method. If boot duration is not of critical importance to the application, the full calibration method is recommended. To switch to the full calibration method, go to ``menuconfig`` and disable :menuitem:`CONFIG_ESP_PHY_CALIBRATION_AND_DATA_STORAGE`. If you use the default method of RF calibration, there are two ways to add the function of triggering full calibration as a last-resort remedy.
+6. The RF calibration data loaded from NVS has an invalid length, fails validation, or is outdated.
 
-1. Erase the NVS partition if you do not mind all of the data stored in the NVS partition is erased. That is indeed the easiest way.
+When :menuitem:`CONFIG_ESP_PHY_CALIBRATION_AND_DATA_STORAGE` is enabled and loading the NVS data fails, the system performs full calibration and attempts to store the new data. If the NVS data is loaded successfully, it is updated only when the PHY library reports that the calibration data failed validation or is outdated.
+
+To force full calibration, use one of the following methods:
+
+1. Erase the NVS partition if erasing all data stored in the partition is acceptable.
 
 2. Call API :cpp:func:`esp_phy_erase_cal_data_in_nvs` before initializing Wi-Fi and Bluetooth®/Bluetooth Low Energy based on some conditions (e.g., an option provided in some diagnostic mode). In this case, only the PHY namespace of the NVS partition is erased.
 
 No Calibration
 ---------------
 
-The no calibration method is only used when the device wakes up from Deep-sleep mode.
+No calibration is intended only for devices waking up from Deep-sleep mode. When :menuitem:`CONFIG_ESP_PHY_CALIBRATION_AND_DATA_STORAGE` is enabled, the system automatically changes the calibration method to no calibration after a Deep-sleep wakeup. There is no need to change :menuitem:`CONFIG_ESP_PHY_CALIBRATION_MODE` manually. If valid calibration data cannot be loaded from NVS, the system still falls back to full calibration.
+
+Do not set :menuitem:`CONFIG_ESP_PHY_CALIBRATION_MODE` to no calibration. If it is selected and the NVS calibration data is valid, RF calibration is also skipped during a normal cold boot, which may cause RF performance issues.
+
+Configuration Summary
+---------------------
+
+In the current version, partial calibration and full calibration are functionally equivalent. PARTIAL, FULL, and NONE in the following summary indicate the calibration mode passed to the PHY library:
+
+- :menuitem:`CONFIG_ESP_PHY_CALIBRATION_AND_DATA_STORAGE` enabled with FULL selected:
+
+  - Normal boot with valid NVS calibration data: FULL.
+  - Deep-sleep wakeup with valid NVS calibration data: NONE.
+  - Invalid NVS calibration data or a loading failure: FULL, followed by an attempt to store the new calibration data.
+
+- :menuitem:`CONFIG_ESP_PHY_CALIBRATION_AND_DATA_STORAGE` enabled with PARTIAL selected: In the current version, the behavior is the same as when FULL is selected.
+
+- :menuitem:`CONFIG_ESP_PHY_CALIBRATION_AND_DATA_STORAGE` enabled with NONE selected:
+
+  - Normal boot with valid NVS calibration data: NONE.
+  - Deep-sleep wakeup with valid NVS calibration data: NONE.
+  - Invalid NVS calibration data or a loading failure: FULL, followed by an attempt to store the new calibration data.
+
+- :menuitem:`CONFIG_ESP_PHY_CALIBRATION_AND_DATA_STORAGE` disabled:
+
+  - :menuitem:`CONFIG_ESP_PHY_CALIBRATION_MODE` is not configurable and its value is ignored.
+  - FULL is used in all cases.
+  - NVS calibration data is not automatically loaded or stored.
+  - FULL is also used after a Deep-sleep wakeup.
 
 PHY Initialization Data
 -----------------------
