@@ -77,9 +77,10 @@ uint32_t esp_get_minimum_free_heap_size(void)
     return heap_caps_get_minimum_free_size(MALLOC_CAP_DEFAULT);
 }
 
+/* user code should use this function to get the IDF version rather than IDF_VER */
 const char *esp_get_idf_version(void)
 {
-    return IDF_VER;
+    return IDF_VER_DEF;
 }
 
 void __attribute__((noreturn)) esp_system_abort(const char *details)

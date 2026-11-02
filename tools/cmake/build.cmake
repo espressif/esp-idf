@@ -165,7 +165,6 @@ function(__build_get_idf_git_revision)
     endif()
     # cut IDF_VER to required 32 characters.
     string(SUBSTRING "${idf_ver_t}" 0 31 idf_ver)
-    idf_build_set_property(COMPILE_DEFINITIONS "IDF_VER=\"${idf_ver}\"" APPEND)
     git_submodule_check("${idf_path}")
     idf_build_set_property(IDF_VER ${idf_ver})
 endfunction()
@@ -763,6 +762,14 @@ macro(idf_build_process target)
     endif()
 
     __build_import_configs()
+
+    # CONFIG_* is only available after sdkconfig is imported. Adding IDF_VER
+    # earlier would ignore APP_BUILD_DEFINE_IDF_VER.
+    idf_build_get_config(define_idf_ver CONFIG_APP_BUILD_DEFINE_IDF_VER)
+    if(define_idf_ver)
+        idf_build_get_property(idf_ver IDF_VER)
+        idf_build_set_property(COMPILE_DEFINITIONS "IDF_VER=\"${idf_ver}\"" APPEND)
+    endif()
 
     if(result EQUAL 0)
         # All targets built under this scope is with the ESP-IDF build system

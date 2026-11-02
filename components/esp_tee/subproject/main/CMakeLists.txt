@@ -1,5 +1,6 @@
 idf_build_get_property(target IDF_TARGET)
 idf_build_get_property(arch IDF_TARGET_ARCH)
+idf_build_get_property(idf_ver_def IDF_VER)
 idf_component_get_property(heap_dir heap COMPONENT_DIR)
 
 set(srcs)
@@ -114,4 +115,4 @@ message(STATUS "App \"${PROJECT_NAME_CUT}\" version: ${PROJECT_VER_CUT}")
 set_source_files_properties(
     SOURCE "common/esp_app_desc_tee.c"
     PROPERTIES COMPILE_DEFINITIONS
-    "PROJECT_VER=\"${PROJECT_VER_CUT}\"; PROJECT_NAME=\"${PROJECT_NAME_CUT}\"")
+    "PROJECT_VER=\"${PROJECT_VER_CUT}\"; PROJECT_NAME=\"${PROJECT_NAME_CUT}\"; IDF_VER_DEF=\"${idf_ver_def}\"")

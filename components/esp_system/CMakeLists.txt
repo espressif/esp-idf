@@ -1,5 +1,6 @@
 idf_build_get_property(target IDF_TARGET)
 idf_build_get_property(esp_tee_build ESP_TEE_BUILD)
+idf_build_get_property(idf_ver_def IDF_VER)
 
 # On Linux, we only support a few features, hence this simple component registration
 if(${target} STREQUAL "linux")
@@ -42,6 +43,10 @@ if(${target} STREQUAL "linux")
     if(NOT CMAKE_SYSTEM_NAME STREQUAL "Darwin")
         target_link_options(${COMPONENT_TARGET} INTERFACE "-Wl,-T,${CMAKE_CURRENT_SOURCE_DIR}/ld/linux/sections.ld")
     endif()
+
+    set_source_files_properties(
+        "port/esp_system_linux.c" PROPERTIES COMPILE_DEFINITIONS
+        "IDF_VER_DEF=\"${idf_ver_def}\"")
 
     return()
 endif()
@@ -169,6 +174,10 @@ else()
     if(NOT CONFIG_ESP_SYSTEM_SINGLE_CORE_MODE)
         target_link_libraries(${COMPONENT_LIB} INTERFACE "-u start_app_other_cores")
     endif()
+
+    set_source_files_properties(
+        SOURCE "port/esp_system_chip.c" PROPERTIES COMPILE_DEFINITIONS
+        "IDF_VER_DEF=\"${idf_ver_def}\"")
 
     if(CONFIG_COMPILER_KASAN)
         # Files involved in stack-protector initialisation: disable stack protector.

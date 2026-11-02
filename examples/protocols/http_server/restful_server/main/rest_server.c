@@ -8,6 +8,7 @@
 #include <fcntl.h>
 #include "esp_http_server.h"
 #include "esp_chip_info.h"
+#include "esp_idf_version.h"
 #include "esp_random.h"
 #include "esp_log.h"
 #include "esp_check.h"
@@ -152,7 +153,7 @@ static esp_err_t system_info_get_handler(httpd_req_t *req)
     json_gen_str_start(&jstr, buf, SCRATCH_BUFSIZE, NULL, NULL);
     json_gen_start_object(&jstr);
     json_gen_obj_set_string(&jstr, "chip", CONFIG_IDF_TARGET);
-    json_gen_obj_set_string(&jstr, "idf_version", IDF_VER);
+    json_gen_obj_set_string(&jstr, "idf_version", esp_get_idf_version());
     json_gen_obj_set_int(&jstr, "cores", chip_info.cores);
     json_gen_end_object(&jstr);
     if (json_gen_str_end(&jstr) < 0) {
