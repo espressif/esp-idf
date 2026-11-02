@@ -111,7 +111,7 @@ examples/peripherals/dma/async_crc:
     - if: SOC_GDMA_SUPPORT_CRC != 1
   depends_components:
     - esp_driver_dma
-    - esp_console
+    - console
 
 examples/peripherals/gpio:
   depends_components:

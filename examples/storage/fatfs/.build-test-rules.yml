@@ -15,7 +15,7 @@ examples/storage/fatfs/bdl_wl:
     - esp_blockdev
     - fatfs
     - vfs
-    - wear_leveling
+    - wear_levelling
   disable_test:
     - if: IDF_TARGET != "esp32"
       reason: only one target needed

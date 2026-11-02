@@ -6,7 +6,7 @@
     - esp_phy
     - esp_coex
     - nvs_flash
-    - esp_log
+    - log
     - mbedtls
     - vfs
 
@@ -32,7 +32,7 @@ examples/bluetooth/bluedroid/ble:
       temporary: true
       reason: lack of runner
   depends_components+:
-    - esp_console
+    - console
     - esp_driver_gpio
     - esp_driver_i2s
     - esp_driver_uart
@@ -65,7 +65,7 @@ examples/bluetooth/bluedroid/ble/ble_throughput:
       temporary: true
       reason: lack of runner
   depends_components+:
-    - esp_console
+    - console
     - esp_driver_gpio
     - esp_driver_i2s
     - esp_driver_uart
@@ -81,7 +81,7 @@ examples/bluetooth/bluedroid/ble/gatt_client:
       temporary: true
       reason: lack of runner
   depends_components+:
-    - esp_console
+    - console
     - esp_driver_gpio
     - esp_driver_i2s
     - esp_driver_uart
@@ -97,7 +97,7 @@ examples/bluetooth/bluedroid/ble_50:
       temporary: true
       reason: lack of runner
   depends_components+:
-    - esp_console
+    - console
     - esp_driver_gpio
     - esp_driver_i2s
     - esp_driver_uart
@@ -270,7 +270,7 @@ examples/bluetooth/bluedroid/classic_bt:
       reason: temporarily lack of runners
   depends_components+:
     - esp_lcd
-    - esp_console
+    - console
     - esp_driver_gpio
     - esp_driver_i2s
     - esp_driver_uart
@@ -301,7 +301,7 @@ examples/bluetooth/blufi:
   disable:
     - if: SOC_BLUFI_SUPPORTED != 1
   depends_components+:
-    - esp_console
+    - console
     - esp_wifi
 
 examples/bluetooth/esp_ble_audio:
@@ -325,7 +325,7 @@ examples/bluetooth/esp_ble_mesh:
     # limit build configs
     - if: CI_COMMIT_REF_NAME == "master" and (NIGHTLY_RUN == 0 and CONFIG_NAME not in ["default", "bluedroid", "nimble"])
   depends_components+:
-    - esp_console
+    - console
     - esp_driver_gpio
   depends_components-:
     - esp_coex
@@ -338,7 +338,7 @@ examples/bluetooth/esp_ble_mesh/wifi_coexist:
     - if: SOC_BLE_MESH_SUPPORTED != 1
     - if: SOC_WIFI_SUPPORTED != 1
   depends_components+:
-    - esp_console
+    - console
     - esp_wifi
     - esp_netif
     - esp_driver_gpio

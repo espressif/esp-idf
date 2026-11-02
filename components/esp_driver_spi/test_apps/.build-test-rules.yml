@@ -3,7 +3,7 @@
     - esp_mm  # for cache
     - esp_driver_spi
     - esp_driver_gpio
-    - esp_hal_spi
+    - esp_hal_gpspi
     - esp_hw_support
     - esp_sleep
     - soc

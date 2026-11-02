@@ -36,7 +36,7 @@ components/fatfs/test_apps/flash_wl:
     - esp_partition
     - fatfs
     - vfs
-    - wear_leveling
+    - wear_levelling
 
 components/fatfs/test_apps/flash_wl_readonly:
   disable_test:
@@ -46,7 +46,7 @@ components/fatfs/test_apps/flash_wl_readonly:
     - esp_partition
     - fatfs
     - vfs
-    - wear_leveling
+    - wear_levelling
 
 components/fatfs/test_apps/sdcard:
   disable:
