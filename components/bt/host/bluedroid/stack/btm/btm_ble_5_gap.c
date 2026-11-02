@@ -53,7 +53,6 @@ typedef struct {
     UINT8 instance;
     int duration;
     int max_events;
-    uint8_t retry_count;
 } tBTM_EXT_ADV_RECORD;
 
 tBTM_EXT_ADV_RECORD adv_record[MAX_BLE_ADV_INSTANCE] = {0};
@@ -183,7 +182,8 @@ tBTM_STATUS BTM_BleSetExtendedAdvRandaddr(UINT8 instance, BD_ADDR rand_addr)
     tHCI_STATUS err = HCI_SUCCESS;
     tBTM_BLE_5_GAP_CB_PARAMS cb_params = {0};
 
-    if (instance >= MAX_BLE_ADV_INSTANCE || rand_addr == NULL) {
+    /* rand_addr: BTA ble_set_ext_adv_rand_addr.rand_addr (embedded), never NULL */
+    if (instance >= MAX_BLE_ADV_INSTANCE) {
         status = BTM_ILLEGAL_VALUE;
         goto end;
     }
@@ -225,8 +225,19 @@ tBTM_STATUS BTM_BleSetExtendedAdvRandaddr(UINT8 instance, BD_ADDR rand_addr)
     } else {
         memcpy(extend_adv_cb.inst[instance].rand_addr, rand_addr, BD_ADDR_LEN);
         extend_adv_cb.inst[instance].rand_addr_set = TRUE;
-        // set random address success, update address info
-        if(extend_adv_cb.inst[instance].configured && extend_adv_cb.inst[instance].connetable) {
+        /* esp_ble_gap_get_local_used_addr() reads only the global addr_mgnt_cb,
+         * so a connectable set has to publish its address there even though
+         * per-set state is what multi-ADV relies on. This does not bring back
+         * the multi-ADV pairing failure: btm_ble_adjust_conn_addr_for_ext_adv()
+         * and smp_build_id_addr_cmd() consult extend_adv_cb.inst[] first, so
+         * the global slot no longer feeds SMP c1/f5/f6.
+         * Only Own_Address_Type 0x01 / 0x03 put this address on air, and only
+         * a static random address can live in static_rand_addr; skip NRPA so
+         * private_addr/own_addr_type cannot diverge from exist_addr_bit. */
+        if (extend_adv_cb.inst[instance].configured && extend_adv_cb.inst[instance].connectable &&
+                (extend_adv_cb.inst[instance].own_addr_type == BLE_ADDR_RANDOM ||
+                 extend_adv_cb.inst[instance].own_addr_type == BLE_ADDR_RANDOM_ID) &&
+                BTM_BLE_IS_STATIC_RAND_BDA(rand_addr)) {
             BTM_BleSetStaticAddr(rand_addr);
             BTM_UpdateAddrInfor(BLE_ADDR_RANDOM, rand_addr);
         }
@@ -245,8 +256,10 @@ tBTM_STATUS BTM_BleSetExtendedAdvParams(UINT8 instance, tBTM_BLE_GAP_EXT_ADV_PAR
     tBTM_STATUS status = BTM_SUCCESS;
     tHCI_STATUS err = HCI_SUCCESS;
     tBTM_BLE_5_GAP_CB_PARAMS cb_params = {0};
-    bool use_rpa_addr = false;
+    tBLE_ADDR_TYPE identity_addr_type;
+#if (CONTROLLER_RPA_LIST_ENABLE == FALSE)
     BD_ADDR rand_addr;
+#endif
 
     if (instance >= MAX_BLE_ADV_INSTANCE) {
         status = BTM_ILLEGAL_VALUE;
@@ -259,19 +272,27 @@ tBTM_STATUS BTM_BleSetExtendedAdvParams(UINT8 instance, tBTM_BLE_GAP_EXT_ADV_PAR
         goto end;
     }
 
+    /* Capture identity type before host-RPA rewrite of params->own_addr_type. */
+    identity_addr_type = params->own_addr_type;
+
 #if (CONTROLLER_RPA_LIST_ENABLE == FALSE)
+    BOOLEAN set_rpa_rand_addr = FALSE;
     // if own_addr_type == BLE_ADDR_PUBLIC_ID or BLE_ADDR_RANDOM_ID,
     if((params->own_addr_type == BLE_ADDR_PUBLIC_ID || params->own_addr_type == BLE_ADDR_RANDOM_ID) && BTM_GetLocalResolvablePrivateAddr(rand_addr)) {
         params->own_addr_type = BLE_ADDR_RANDOM;
-        use_rpa_addr = true;
+        set_rpa_rand_addr = TRUE;
     } else if(params->own_addr_type == BLE_ADDR_PUBLIC_ID){
         params->own_addr_type = BLE_ADDR_PUBLIC;
     } else if (params->own_addr_type == BLE_ADDR_RANDOM_ID) {
         params->own_addr_type = BLE_ADDR_RANDOM;
     }
 #else
+    /* Controller owns the RPA list, so the host knows the type but not the
+     * on-air address. Kept for esp_ble_gap_get_local_used_addr(), which has no
+     * other source; the address itself still comes from the global slot set by
+     * esp_ble_gap_set_rand_addr(). */
     btm_cb.ble_ctr_cb.addr_mgnt_cb.own_addr_type = params->own_addr_type;
-#endif
+#endif /* (CONTROLLER_RPA_LIST_ENABLE == FALSE) */
 #if (BT_BLE_FEAT_ADV_CODING_SELECTION == TRUE)
     if ((err = btsnd_hcic_ble_set_ext_adv_params_v2(instance, params->type, params->interval_min, params->interval_max,
                                       params->channel_map, params->own_addr_type, params->peer_addr_type,
@@ -296,9 +317,9 @@ tBTM_STATUS BTM_BleSetExtendedAdvParams(UINT8 instance, tBTM_BLE_GAP_EXT_ADV_PAR
 #endif // (BT_BLE_FEAT_ADV_CODING_SELECTION == TRUE)
 
     if (params->type & BTM_BLE_GAP_SET_EXT_ADV_PROP_CONNECTABLE) {
-        extend_adv_cb.inst[instance].connetable = true;
+        extend_adv_cb.inst[instance].connectable = true;
     } else {
-        extend_adv_cb.inst[instance].connetable = false;
+        extend_adv_cb.inst[instance].connectable = false;
     }
 
     if (params->type & BTM_BLE_GAP_SET_EXT_ADV_PROP_SCANNABLE) {
@@ -323,19 +344,26 @@ tBTM_STATUS BTM_BleSetExtendedAdvParams(UINT8 instance, tBTM_BLE_GAP_EXT_ADV_PAR
     extend_adv_cb.inst[instance].configured = true;
     /* Record the post-fallback on-air address type for per-set conn_addr fixup. */
     extend_adv_cb.inst[instance].own_addr_type = params->own_addr_type;
+    extend_adv_cb.inst[instance].id_addr_type = identity_addr_type;
+
+#if (CONTROLLER_RPA_LIST_ENABLE == FALSE)
+    if (set_rpa_rand_addr) {
+        if((err = btsnd_hcic_ble_set_extend_rand_address(instance, rand_addr)) != HCI_SUCCESS) {
+            BTM_TRACE_ERROR("LE EA SetParams: set rand addr cmd err=0x%x", err);
+            status = BTM_HCI_ERROR | err;
+            goto end;
+        }
+        memcpy(extend_adv_cb.inst[instance].rand_addr, rand_addr, BD_ADDR_LEN);
+        extend_adv_cb.inst[instance].rand_addr_set = TRUE;
+        /* Host-generated RPA is the on-air address for this set; publish it so
+         * esp_ble_gap_get_local_used_addr() does not report the stale identity.
+         * Not fed to SMP: smp_build_id_addr_cmd() rejects a non-static-random
+         * per-set address and falls back to static_rand_addr. */
+        BTM_UpdateAddrInfor(BLE_ADDR_RANDOM, rand_addr);
+    }
+#endif /* (CONTROLLER_RPA_LIST_ENABLE == FALSE) */
 
 end:
-    if(use_rpa_addr) {
-        // update RPA address
-        if((err = btsnd_hcic_ble_set_extend_rand_address(instance, rand_addr)) != HCI_SUCCESS) {
-            BTM_TRACE_ERROR("LE EA SetParams: cmd err=0x%x", err);
-            status = BTM_HCI_ERROR | err;
-        } else {
-            // set addr success, update address info
-            BTM_UpdateAddrInfor(BLE_ADDR_RANDOM, rand_addr);
-            extend_adv_cb.inst[instance].rand_addr_set = FALSE;
-        }
-    }
     cb_params.set_params.status = status;
     cb_params.set_params.instance = instance;
     BTM_ExtBleCallbackTrigger(BTM_BLE_5_GAP_EXT_ADV_SET_PARAMS_COMPLETE_EVT, &cb_params);
@@ -485,7 +513,6 @@ end:
                 adv_record[i].instance = INVALID_VALUE_8BIT;
                 adv_record[i].duration = INVALID_VALUE_32BIT;
                 adv_record[i].max_events = INVALID_VALUE_32BIT;
-                adv_record[i].retry_count = 0;
             }
         } else {
             for (uint8_t i = 0; i < num; i++)
@@ -500,7 +527,6 @@ end:
                 adv_record[index].instance = INVALID_VALUE_8BIT;
                 adv_record[index].duration = INVALID_VALUE_32BIT;
                 adv_record[index].max_events = INVALID_VALUE_32BIT;
-                adv_record[index].retry_count = 0;
             }
         }
     }
@@ -518,7 +544,6 @@ end:
             adv_record[index].instance = ext_adv[i].instance;
             adv_record[index].duration = ext_adv[i].duration;
             adv_record[index].max_events = ext_adv[i].max_events;
-            adv_record[index].retry_count = 0;
         }
     }
 
@@ -553,7 +578,9 @@ tBTM_STATUS BTM_BleStartExtAdvRestart(uint16_t con_handle)
         return BTM_WRONG_MODE;
     }
 
-    adv_record[index].retry_count ++;
+    /* By design the extended advertising is restarted after every failed
+     * connection establishment with no upper bound, so no max-retry check
+     * is performed here. */
     BTM_TRACE_DEBUG("remote device did not receive aux connect response, retatrt the extend adv to reconnect, adv handle %d con_handle %d\n", index, con_handle);
     ext_adv.instance = adv_record[index].instance;
     ext_adv.duration = adv_record[index].duration;
@@ -577,11 +604,11 @@ UINT8 BTM_BleGetExtAdvInstByConHandle(UINT16 con_handle)
         return 0xFF;
     }
     for (UINT8 i = 0; i < MAX_BLE_ADV_INSTANCE; i++) {
-        /* configured + connetable guard prevents an all-zero slot from
+        /* configured + connectable guard prevents an all-zero slot from
          * spuriously matching a real conn_handle == 0. */
         if (adv_record[i].ter_con_handle == con_handle &&
             extend_adv_cb.inst[i].configured &&
-            extend_adv_cb.inst[i].connetable) {
+            extend_adv_cb.inst[i].connectable) {
             return i;
         }
     }
@@ -629,8 +656,9 @@ tBTM_STATUS BTM_BleExtAdvSetRemove(UINT8 instance)
         extend_adv_cb.inst[instance].legacy_pdu = false;
         extend_adv_cb.inst[instance].directed = false;
         extend_adv_cb.inst[instance].scannable = false;
-        extend_adv_cb.inst[instance].connetable = false;
+        extend_adv_cb.inst[instance].connectable = false;
         extend_adv_cb.inst[instance].own_addr_type = BLE_ADDR_PUBLIC;
+        extend_adv_cb.inst[instance].id_addr_type = BLE_ADDR_PUBLIC;
         extend_adv_cb.inst[instance].rand_addr_set = FALSE;
         memset(extend_adv_cb.inst[instance].rand_addr, 0, BD_ADDR_LEN);
         /* Fully reset the per-set record, consistent with BTM_BleExtAdvSetClear(). */
@@ -640,7 +668,6 @@ tBTM_STATUS BTM_BleExtAdvSetRemove(UINT8 instance)
         adv_record[instance].instance = INVALID_VALUE_8BIT;
         adv_record[instance].duration = INVALID_VALUE_32BIT;
         adv_record[instance].max_events = INVALID_VALUE_32BIT;
-        adv_record[instance].retry_count = 0;
     }
 
 end:
@@ -669,8 +696,9 @@ tBTM_STATUS BTM_BleExtAdvSetClear(void)
             extend_adv_cb.inst[i].legacy_pdu = false;
             extend_adv_cb.inst[i].directed = false;
             extend_adv_cb.inst[i].scannable = false;
-            extend_adv_cb.inst[i].connetable = false;
+            extend_adv_cb.inst[i].connectable = false;
             extend_adv_cb.inst[i].own_addr_type = BLE_ADDR_PUBLIC;
+            extend_adv_cb.inst[i].id_addr_type = BLE_ADDR_PUBLIC;
             extend_adv_cb.inst[i].rand_addr_set = FALSE;
             memset(extend_adv_cb.inst[i].rand_addr, 0, BD_ADDR_LEN);
             /* Fully reset the per-set record, consistent with
@@ -684,7 +712,6 @@ tBTM_STATUS BTM_BleExtAdvSetClear(void)
             adv_record[i].instance = INVALID_VALUE_8BIT;
             adv_record[i].duration = INVALID_VALUE_32BIT;
             adv_record[i].max_events = INVALID_VALUE_32BIT;
-            adv_record[i].retry_count = 0;
         }
     }
 
@@ -711,7 +738,7 @@ tBTM_STATUS BTM_BlePeriodicAdvSetParams(UINT8 instance, tBTM_BLE_Periodic_Adv_Pa
 
     if (!extend_adv_cb.inst[instance].configured ||
         extend_adv_cb.inst[instance].scannable ||
-        extend_adv_cb.inst[instance].connetable ||
+        extend_adv_cb.inst[instance].connectable ||
         extend_adv_cb.inst[instance].legacy_pdu) {
         BTM_TRACE_ERROR("%s, instance = %d, Before set the periodic adv parameters, please configure the the \
                 extend adv to nonscannable and nonconnectable first, and it shouldn't include the legacy bit.", __func__, instance);
@@ -1305,7 +1332,7 @@ void btm_ble_adv_set_terminated_evt(tBTM_BLE_ADV_TERMINAT *params)
         adv_record[params->adv_handle].ter_con_handle = HCID_GET_HANDLE(params->conn_handle);
         /* Re-run the per-set conn_addr fixup in case this event arrives
          * after LE (Enhanced) Connection Complete. */
-#if (CONTROLLER_RPA_LIST_ENABLE == TRUE)
+#if (BLE_50_FEATURE_SUPPORT == TRUE) && (BLE_50_EXTEND_ADV_EN == TRUE) && (CONTROLLER_RPA_LIST_ENABLE == TRUE)
         btm_ble_adjust_conn_addr_for_ext_adv(adv_record[params->adv_handle].ter_con_handle);
 #endif
 #if (BLE_INCLUDED == TRUE && SMP_INCLUDED == TRUE && BLE_PERIPH_PSEUDO_ADDR_BOND == TRUE)

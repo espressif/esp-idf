@@ -624,13 +624,15 @@ typedef struct {
 
     BOOLEAN                     directed;
     BOOLEAN                     scannable;
-    BOOLEAN                     connetable;
+    BOOLEAN                     connectable;
     /* Per-set on-air address policy, captured at BTM_BleSetExtendedAdvParams()
-     * time. For now we only consider CONTROLLER_RPA_LIST_ENABLE == TRUE;
-     * CONTROLLER_RPA_LIST_ENABLE == FALSE is out of scope temporarily. The global
-     * addr_mgnt_cb is a single slot shared across all sets, so in multi-ADV
-     * it does not necessarily reflect the policy used for a given connection. */
+     * time. Authoritative for multi-ADV; global addr_mgnt_cb is for legacy
+     * 4.2 adv/scan/initiator only (review 0019). */
     tBLE_ADDR_TYPE              own_addr_type;
+    /* App identity type (PUBLIC / RANDOM / PUBLIC_ID / RANDOM_ID), captured
+     * before host-RPA rewrite of own_addr_type. SMP Identity Address
+     * Information must use this, not the on-air type. */
+    tBLE_ADDR_TYPE              id_addr_type;
     BOOLEAN                     rand_addr_set;
     BD_ADDR                     rand_addr;
 } tBTM_BLE_EXTENDED_INST;
@@ -1877,6 +1879,7 @@ typedef struct {
 
 typedef struct {
     UINT8 status;
+    UINT8 adv_handle;
 } tBTM_BLE_CTE_SET_TRANS_EN_CMPL;
 typedef struct {
     UINT8 status;
