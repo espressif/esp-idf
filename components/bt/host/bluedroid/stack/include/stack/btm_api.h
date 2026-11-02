@@ -1798,6 +1798,9 @@ typedef UINT8 tBTM_LE_AUTH_REQ;
 #define BTM_LE_AUTH_REQ_SC_MITM         SMP_AUTH_SC_MITM_NB     /* 1100 */
 #define BTM_LE_AUTH_REQ_SC_MITM_BOND    SMP_AUTH_SC_MITM_GB     /* 1101 */
 #define BTM_LE_AUTH_REQ_MASK            SMP_AUTH_MASK           /* 0x1D */
+#if BTM_BLE_CONFORMANCE_TESTING == TRUE
+#define BTM_LE_AUTH_REQ_MASK_KEEP_RFU   0xFF
+#endif
 
 /* LE security level */
 #define BTM_LE_SEC_NONE             SMP_SEC_NONE

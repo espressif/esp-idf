@@ -309,6 +309,7 @@ BOOLEAN                 enable_test_mac_val;
 BT_OCTET8               test_mac;
 BOOLEAN                 enable_test_local_sign_cntr;
 UINT32                  test_local_sign_cntr;
+BOOLEAN                 keep_rfu_in_auth_req;
 #endif
 
 #endif  /* BLE_INCLUDED */
@@ -755,6 +756,7 @@ struct tBTM_SEC_DEV_REC{
 #if (BLE_50_FEATURE_SUPPORT == TRUE)
     tBTM_EXT_CONN_PARAMS ext_conn_params;
 #endif // #if (BLE_50_FEATURE_SUPPORT == TRUE)
+    BOOLEAN is_aux_conn;
     BOOLEAN is_pawr_synced;
     UINT8   adv_handle;
     UINT8   subevent;
