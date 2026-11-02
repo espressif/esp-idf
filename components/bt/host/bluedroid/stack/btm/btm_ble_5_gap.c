@@ -205,7 +205,7 @@ tBTM_STATUS BTM_BleReadPhy(BD_ADDR bd_addr, UINT8 *tx_phy, UINT8 *rx_phy)
     tL2C_LCB *p_lcb = l2cu_find_lcb_by_bd_addr(bd_addr, BT_TRANSPORT_LE);
     tBTM_BLE_5_GAP_CB_PARAMS cb_params = {0};
 
-    if (!tx_phy || !rx_phy || !p_lcb) {
+    if (!p_lcb) {
         cb_params.read_phy.status = BTM_ILLEGAL_VALUE;
         memcpy(cb_params.read_phy.addr, bd_addr, BD_ADDR_LEN);
 
@@ -222,6 +222,12 @@ tBTM_STATUS BTM_BleReadPhy(BD_ADDR bd_addr, UINT8 *tx_phy, UINT8 *rx_phy)
 tBTM_STATUS BTM_BleSetPreferDefaultPhy(UINT8 tx_phy_mask, UINT8 rx_phy_mask)
 {
     UINT8 all_phys = 0;
+    if (tx_phy_mask == 0) {
+        all_phys |= BTM_BLE_GAP_PHY_NO_TX_PREF_MASK;
+    }
+    if (rx_phy_mask == 0) {
+        all_phys |= BTM_BLE_GAP_PHY_NO_RX_PREF_MASK;
+    }
     tBTM_STATUS status = BTM_SUCCESS;
     tHCI_STATUS err = HCI_SUCCESS;
     tBTM_BLE_5_GAP_CB_PARAMS cb_params = {0};
@@ -258,6 +264,7 @@ tBTM_STATUS BTM_BleSetPreferPhy(BD_ADDR bd_addr, UINT8 all_phys, UINT8 tx_phy_ma
     if (!btsnd_hcic_ble_set_phy(p_lcb->handle, all_phys, tx_phy_mask, rx_phy_mask, phy_options)) {
         cb_params.status = BTM_ILLEGAL_VALUE;
         BTM_ExtBleCallbackTrigger(BTM_BLE_5_GAP_SET_PREFERED_PHY_COMPLETE_EVT, &cb_params);
+        return BTM_ILLEGAL_VALUE;
     }
 
 
@@ -1074,6 +1081,9 @@ void btm_read_phy_callback(uint8_t hci_status, uint16_t conn_handle, uint8_t tx_
     if(hci_status != HCI_SUCCESS) {
         status = BTM_ILLEGAL_VALUE;
         BTM_TRACE_ERROR("%s error status %d", __func__, hci_status);
+    } else if (p_lcb == NULL) {
+        status = BTM_ILLEGAL_VALUE;
+        BTM_TRACE_ERROR("no LCB handle %d", conn_handle);
     }
     tBTM_BLE_5_GAP_CB_PARAMS cb_params = {0};
     if(p_lcb) {
