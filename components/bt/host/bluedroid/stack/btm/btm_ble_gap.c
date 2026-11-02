@@ -1002,6 +1002,12 @@ void BTM_BleSetKeyMaterial(const uint8_t *session_key, const uint8_t *iv)
     memcpy(p_value.key_material.session_key, session_key, GAP_KEY_MATERIAL_SESSION_KEY_SIZE);
     memcpy(p_value.key_material.iv, iv, GAP_KEY_MATERIAL_IV_SIZE);
     GAP_BleAttrDBUpdate(GATT_UUID_GAP_KEY_MATERIAL, &p_value);
+    {
+        volatile UINT8 *p = (volatile UINT8 *)&p_value;
+        for (size_t i = 0; i < sizeof(tGAP_BLE_ATTR_VALUE); i++) {
+            p[i] = 0;
+        }
+    }
 #else
     BTM_TRACE_ERROR("%s\n", __func__);
 #endif
