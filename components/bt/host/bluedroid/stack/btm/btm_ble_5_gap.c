@@ -1144,18 +1144,13 @@ tBTM_STATUS BTM_BlePeriodicAdvAddDevToList(tBLE_ADDR_TYPE addr_type, BD_ADDR add
     tBTM_STATUS status = BTM_SUCCESS;
     tBTM_BLE_5_GAP_CB_PARAMS cb_params = {0};
 
-    if (addr_type > BLE_ADDR_TYPE_MAX) {
-        status = BTM_ILLEGAL_VALUE;
-        BTM_TRACE_ERROR("%s invalid addr_type %d", __func__, addr_type);
-        goto end;
-    }
+    /* addr_type/sid range: validated by controller on HCI LE Add Device To PA List */
 
     if ((err = btsnd_hcic_ble_add_dev_to_periodic_adv_list(addr_type, addr, sid)) != HCI_SUCCESS) {
         BTM_TRACE_ERROR("LE PA AddDevToList: cmd err=0x%x", err);
         status = BTM_HCI_ERROR | err;
     }
 
-end:
     cb_params.status = status;
     BTM_ExtBleCallbackTrigger(BTM_BLE_5_GAP_PERIODIC_ADV_ADD_DEV_COMPLETE_EVT, &cb_params);
 
@@ -1168,18 +1163,12 @@ tBTM_STATUS BTM_BlePeriodicAdvRemoveDevFromList(tBLE_ADDR_TYPE addr_type, BD_ADD
     tBTM_STATUS status = BTM_SUCCESS;
     tBTM_BLE_5_GAP_CB_PARAMS cb_params = {0};
 
-    if (addr_type > BLE_ADDR_TYPE_MAX) {
-        status = BTM_ILLEGAL_VALUE;
-        BTM_TRACE_ERROR("%s invalid addr_type %d", __func__, addr_type);
-        goto end;
-    }
+    /* addr_type/sid range: validated by controller on HCI LE Remove Device From PA List */
 
     if ((err = btsnd_hcic_ble_rm_dev_from_periodic_adv_list(addr_type, addr, sid)) != HCI_SUCCESS) {
         BTM_TRACE_ERROR("LE PA RmDevFromList: cmd err=0x%x", err);
         status = BTM_HCI_ERROR | err;
     }
-
-end:
 
     cb_params.status = status;
     BTM_ExtBleCallbackTrigger(BTM_BLE_5_GAP_PERIODIC_ADV_REMOVE_DEV_COMPLETE_EVT, &cb_params);
