@@ -38,29 +38,30 @@ idf.py -p PORT flash monitor
 At startup the example prints the PM config. The **pm_dump** task then prints PM config and lock/mode stats every 10 seconds; the two demo tasks do not log.
 
 ```
-=== Power Management Example (multi-task) ===
-I (319) pm: Frequency switching config: CPU_MAX: 400, APB_MAX: 100, APB_MIN: 40, Light sleep: ENABLED
-PM configured: max=400 min=40 MHz, light_sleep_enable=1
-I (330) main_task: Returned from app_main()
+=== Power Management Example (nested locks, single task) ===
+I (345) pm: Frequency switching config: CPU_MAX: 360, APB_MAX: 90, APB_MIN: 40, Light sleep: ENABLED
+PM configured: max=360 min=40 MHz, light_sleep_enable=1
+I (359) main_task: Returned from app_main()
 
---- PM: max_freq=400 min_freq=40 MHz, light_sleep=1 ---
-Time since boot up: 10044534 us
+--- PM: max_freq=360 min_freq=40 MHz, light_sleep=1 ---
+Time since bootup: 10048135 us
 Lock stats:
 Name            Type            Arg    Active    Total_count    Time(us)        Time(%) 
-background      NO_LIGHT_SLEEP  0      0         20             2998011         30 %
-critical_work   CPU_FREQ_MAX    0      1         21             1000507         10 %
-rtos1           CPU_FREQ_MAX    0      1         4087           141343          2  %
-rtos0           CPU_FREQ_MAX    0      0         4076           184970          2  %
+demo_cpu        CPU_FREQ_MAX    0      0         10             1999695         20 %
+demo_apb        APB_FREQ_MAX    0      0         10             3999371         40 %
+demo_no_ls      NO_LIGHT_SLEEP  0      1         11             5989214         60 %
+rtos1           CPU_FREQ_MAX    0      1         6048           195373          2  %
+rtos0           CPU_FREQ_MAX    0      1         6030           224904          3  %
 
 Mode stats:
 Mode      CPU_freq    Time(us)    Time(%)   
-SLEEP     40 M        5958343     59%
-APB_MIN   40 M        2848902     28%
-APB_MAX   100M        0           0 %
-CPU_MAX   400M        1205696     11%
+SLEEP     40 M        3987122     39%
+APB_MIN   40 M        1749701     17%
+APB_MAX   90 M        1857291     18%
+CPU_MAX   360M        2450316     24%
 
 Sleep stats:
-light_sleep_counts:40  light_sleep_reject_counts:0
+light_sleep_counts:10  light_sleep_reject_counts:0
 ```
 
 The same block repeats every 10 seconds.
