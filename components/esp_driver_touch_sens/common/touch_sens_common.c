@@ -32,10 +32,37 @@
 #include "esp_check.h"
 #include "touch_sens_private.h"
 
-#define TOUCH_CHANNEL_CHECK(num)        ESP_RETURN_ON_FALSE((int)(num) >= (int)TOUCH_MIN_CHAN_ID && num <= TOUCH_MAX_CHAN_ID,  \
+#define TOUCH_CHANNEL_CHECK(num)        ESP_RETURN_ON_FALSE(TOUCH_IS_CHAN_ID_VALID(num),  \
                                         ESP_ERR_INVALID_ARG, TAG, "The channel number is out of supported range");
 
 static const char *TAG = "touch";
+
+#if SOC_TOUCH_SENSOR_VERSION > 1
+bool IRAM_ATTR touch_priv_invoke_state_callbacks(touch_sensor_handle_t sens_handle, touch_base_event_data_t *data,
+                                                 uint32_t chan_mask,
+                                                 bool (*cb)(touch_sensor_handle_t, const touch_base_event_data_t *, void *))
+{
+    bool need_yield = false;
+    while (chan_mask) {
+        uint32_t chan_id = __builtin_ctz(chan_mask);
+        chan_mask &= chan_mask - 1;     // clear the least significant set bit
+        if (!TOUCH_IS_CHAN_ID_VALID(chan_id)) {
+            continue;
+        }
+        size_t ch_offset = chan_id - TOUCH_MIN_CHAN_ID;
+        touch_channel_handle_t chan = sens_handle->ch[ch_offset];
+        if (!chan) {
+            continue;
+        }
+        data->chan = chan;
+        data->chan_id = chan->id;
+        if (cb) {
+            need_yield |= cb(sens_handle, data, sens_handle->user_ctx);
+        }
+    }
+    return need_yield;
+}
+#endif
 
 touch_sensor_handle_t g_touch = NULL;
 
@@ -264,6 +291,10 @@ esp_err_t touch_sensor_enable(touch_sensor_handle_t sens_handle)
     TOUCH_ENTER_CRITICAL(TOUCH_PERIPH_LOCK);
     touch_ll_enable_channel_mask(sens_handle->chan_mask);
     touch_ll_interrupt_clear(TOUCH_LL_INTR_MASK_ALL);
+#if SOC_TOUCH_SENSOR_VERSION > 1
+    touch_ll_clear_active_channel_status();
+    sens_handle->active_status_mask = 0;
+#endif
     touch_ll_interrupt_enable(TOUCH_LL_INTR_MASK_ALL);
     TOUCH_EXIT_CRITICAL(TOUCH_PERIPH_LOCK);
 #if SOC_TOUCH_SUPPORT_PROX_SENSING
@@ -292,6 +323,9 @@ esp_err_t touch_sensor_disable(touch_sensor_handle_t sens_handle)
     TOUCH_ENTER_CRITICAL(TOUCH_PERIPH_LOCK);
     touch_ll_interrupt_disable(TOUCH_LL_INTR_MASK_ALL);
     touch_ll_enable_channel_mask(0);
+#if SOC_TOUCH_SENSOR_VERSION > 1
+    sens_handle->active_status_mask = 0;
+#endif
     TOUCH_EXIT_CRITICAL(TOUCH_PERIPH_LOCK);
     sens_handle->is_enabled = false;
 
