@@ -1873,7 +1873,7 @@ void BTM_BleSetDefaultRateParameters(UINT16 conn_interval_min, UINT16 conn_inter
                                                           subrate_min, subrate_max, max_latency,
                                                           continuation_number, supervision_timeout,
                                                           min_ce_len, max_ce_len)) != HCI_SUCCESS) {
-        BTM_TRACE_ERROR("%s cmd err=0x%x", __func__, err);
+        BTM_TRACE_ERROR("cmd err 0x%x", err);
         status = BTM_HCI_ERROR | err;
     }
 
@@ -2204,7 +2204,7 @@ void BTM_BlePeriodicAdvRecvEnable(UINT16 sync_handle, UINT8 enable)
     tBTM_BLE_5_GAP_CB_PARAMS cb_params = {0};
 
     if ((err = btsnd_hcic_ble_set_periodic_adv_recv_enable(sync_handle, enable)) != HCI_SUCCESS) {
-        BTM_TRACE_ERROR("%s cmd err=0x%x", __func__, err);
+        BTM_TRACE_ERROR("cmd err 0x%x", err);
         status = BTM_HCI_ERROR | err;
     }
 
@@ -2263,7 +2263,7 @@ void BTM_BleSetPeriodicAdvSyncTransParams(BD_ADDR bd_addr, UINT8 mode, UINT16 sk
     if (bdaddr_is_empty((bt_bdaddr_t *)bd_addr)) {
         tHCI_STATUS err = HCI_SUCCESS;
         if ((err = btsnd_hcic_ble_set_default_periodic_adv_sync_trans_params(mode, skip, sync_timeout, cte_type)) != HCI_SUCCESS) {
-            BTM_TRACE_ERROR("%s cmd err=0x%x", __func__, err);
+            BTM_TRACE_ERROR("cmd err 0x%x", err);
             status = BTM_HCI_ERROR | err;
         }
 
@@ -2329,7 +2329,7 @@ void BTM_BleSetPathLossRptParams(uint16_t conn_handle, uint8_t high_threshold, u
     tBTM_BLE_5_GAP_CB_PARAMS cb_params = {0};
 
     if ((err = btsnd_hcic_ble_set_path_loss_rpt_params(conn_handle, high_threshold, high_hysteresis, low_threshold, low_hysteresis, min_time_spent)) != HCI_SUCCESS) {
-        BTM_TRACE_ERROR("%s cmd err=0x%x", __func__, err);
+        BTM_TRACE_ERROR("cmd err 0x%x", err);
         status = BTM_HCI_ERROR | err;
     }
 
@@ -2346,7 +2346,7 @@ void BTM_BleSetPathLossRptEnable(uint16_t conn_handle, uint8_t enable)
     tBTM_BLE_5_GAP_CB_PARAMS cb_params = {0};
 
     if ((err = btsnd_hcic_ble_set_path_loss_rpt_enable(conn_handle, enable)) != HCI_SUCCESS) {
-        BTM_TRACE_ERROR("%s cmd err=0x%x", __func__, err);
+        BTM_TRACE_ERROR("cmd err 0x%x", err);
         status = BTM_HCI_ERROR | err;
     }
 
@@ -2363,7 +2363,7 @@ void BTM_BleSetTransPwrRptEnable(uint16_t conn_handle, uint8_t local_enable, uin
     tBTM_BLE_5_GAP_CB_PARAMS cb_params = {0};
 
     if ((err = btsnd_hcic_ble_set_trans_pwr_rpt_enable(conn_handle, local_enable, remote_enable)) != HCI_SUCCESS) {
-        BTM_TRACE_ERROR("%s cmd err=0x%x", __func__, err);
+        BTM_TRACE_ERROR("cmd err 0x%x", err);
         status = BTM_HCI_ERROR | err;
     }
 
@@ -2418,9 +2418,7 @@ void btm_read_remote_trans_pwr_level_cmpl(UINT8 status)
     if (status != HCI_SUCCESS) {
         status = (status | BTM_HCI_ERROR);
     }
-
     cb_params.remote_pwr_level_cmpl.status = status;
-
     BTM_ExtBleCallbackTrigger(BTM_BLE_GAP_READ_REMOTE_TRANS_POWER_LEVEL_EVT, &cb_params);
 }
 
@@ -2460,7 +2458,7 @@ void BTM_BleSetDefaultSubrate(UINT16 subrate_min, UINT16 subrate_max, UINT16 max
     tBTM_BLE_5_GAP_CB_PARAMS cb_params = {0};
 
     if ((err = btsnd_hcic_ble_set_default_subrate(subrate_min, subrate_max, max_latency, continuation_number, supervision_timeout)) != HCI_SUCCESS) {
-        BTM_TRACE_ERROR("%s cmd err=0x%x", __func__, err);
+        BTM_TRACE_ERROR("cmd err 0x%x", err);
         status = BTM_HCI_ERROR | err;
     }
 
