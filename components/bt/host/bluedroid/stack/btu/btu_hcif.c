@@ -1833,6 +1833,11 @@ static void btu_hcif_hdl_command_status (UINT16 opcode, UINT8 status, UINT8 *p_c
                 if (p_cmd != NULL) {
                     p_cmd++;
                     STREAM_TO_BDADDR (bd_addr, p_cmd);
+#if (CLASSIC_BT_INCLUDED == TRUE)
+                    if (btm_acl_drop_failed_page(bd_addr, status)) {
+                        break;
+                    }
+#endif // (CLASSIC_BT_INCLUDED == TRUE)
 #if (SMP_INCLUDED == TRUE)
                     btm_sec_connected (bd_addr, HCI_INVALID_HANDLE, status, 0);
 #endif  ///SMP_INCLUDED == TRUE
