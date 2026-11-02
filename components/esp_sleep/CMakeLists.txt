@@ -108,6 +108,7 @@ endif()
 
 idf_component_register(SRCS ${srcs}
                        INCLUDE_DIRS ${public_include_dirs}
+                       PRIV_INCLUDE_DIRS "port/include"
                        REQUIRES esp_hw_support
                        PRIV_REQUIRES ${priv_requires}
                        LDFRAGMENTS linker.lf)
