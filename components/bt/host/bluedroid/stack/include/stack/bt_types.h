@@ -198,6 +198,9 @@ typedef struct {
     uint8_t           status;
     uint16_t          opcode;
     osi_sem_t         sync_sem;
+    BOOLEAN           sync_active;
+    INT16             rf_tx_path_comp;
+    INT16             rf_rx_path_comp;
 } BlE_SYNC;
 
 

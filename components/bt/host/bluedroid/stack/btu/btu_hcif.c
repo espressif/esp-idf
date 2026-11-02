@@ -766,7 +766,7 @@ UINT8 btu_hcif_send_cmd_sync (UINT8 controller_id, BT_HDR *p_buf)
         return HCI_ERR_ILLEGAL_PARAMETER_FMT;
     }
     BlE_SYNC *sync_info =  btsnd_hcic_ble_get_sync_info();
-    if((sync_info ==  NULL) || (sync_info->sync_sem == NULL)) {
+    if((sync_info ==  NULL) || (sync_info->sync_sem == NULL) || !sync_info->sync_active) {
         HCI_TRACE_ERROR("%s sync_info error", __func__);
         return HCI_ERR_ILLEGAL_PARAMETER_FMT;
     }

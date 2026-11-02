@@ -1148,7 +1148,7 @@ UINT8 btsnd_hcic_ble_read_periodic_adv_list_size(void);
 
 UINT8 btsnd_hcic_ble_read_trans_power(void);
 
-UINT8 btsnd_hcic_ble_read_rf_path_compensation(void);
+UINT8 btsnd_hcic_ble_read_rf_path_compensation(INT16 *p_tx, INT16 *p_rx);
 
 UINT8 btsnd_hcic_ble_write_rf_path_compensation(UINT16 rf_tx_path, UINT16 rf_rx_path);
 

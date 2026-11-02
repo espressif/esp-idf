@@ -39,11 +39,16 @@ static BlE_SYNC ble_sync_info;
 void btsnd_hcic_ble_sync_sem_init(void)
 {
     ble_sync_info.opcode = 0;
+    ble_sync_info.status = HCI_SUCCESS;
+    ble_sync_info.sync_active = TRUE;
+    ble_sync_info.rf_tx_path_comp = 0;
+    ble_sync_info.rf_rx_path_comp = 0;
     osi_sem_new(&ble_sync_info.sync_sem, 1, 0);
 }
 
 void btsnd_hcic_ble_sync_sem_deinit(void)
 {
+    ble_sync_info.sync_active = FALSE;
     ble_sync_info.opcode = 0;
     osi_sem_free(&ble_sync_info.sync_sem);
 }
@@ -1925,18 +1930,34 @@ UINT8 btsnd_hcic_ble_read_trans_power(void)
     return btu_hcif_send_cmd_sync(LOCAL_BR_EDR_CONTROLLER_ID, p);
 }
 
-UINT8 btsnd_hcic_ble_read_rf_path_compensation(void)
+UINT8 btsnd_hcic_ble_read_rf_path_compensation(INT16 *p_tx, INT16 *p_rx)
 {
     BT_HDR *p;
     UINT8 *pp;
     HCI_TRACE_EVENT("%s", __func__);
+
+    if (p_tx) {
+        *p_tx = 0;
+    }
+    if (p_rx) {
+        *p_rx = 0;
+    }
 
     HCIC_BLE_CMD_CREATED_U8(p, pp,  HCIC_PARAM_SIZE_READ_RF_PATH_COMPENSATION);
 
     UINT16_TO_STREAM(pp, HCI_BLE_RD_RF_PATH_COMPENSATION);
     UINT8_TO_STREAM(pp, HCIC_PARAM_SIZE_READ_RF_PATH_COMPENSATION);
 
-    return btu_hcif_send_cmd_sync(LOCAL_BR_EDR_CONTROLLER_ID, p);
+    UINT8 status = btu_hcif_send_cmd_sync(LOCAL_BR_EDR_CONTROLLER_ID, p);
+    if (status == HCI_SUCCESS) {
+        if (p_tx) {
+            *p_tx = ble_sync_info.rf_tx_path_comp;
+        }
+        if (p_rx) {
+            *p_rx = ble_sync_info.rf_rx_path_comp;
+        }
+    }
+    return status;
 }
 
 UINT8 btsnd_hcic_ble_write_rf_path_compensation(UINT16 rf_tx_path, UINT16 rf_rx_path)
