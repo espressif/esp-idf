@@ -2656,6 +2656,9 @@ static void btm_ble_update_adv_flag(UINT8 flag)
         if ((BTM_BLE_AD_DATA_LEN - (p - p_adv_data->ad_data)) < 3) {
             p = p_adv_data->p_pad = p_adv_data->ad_data;
             memset(p_adv_data->ad_data, 0, BTM_BLE_AD_DATA_LEN);
+            p_adv_data->data_mask = 0;
+            p_adv_data->p_flags = NULL;
+            p_adv_data->p_pad = p_adv_data->ad_data;
         }
 
         *p++ = 2;
@@ -2874,7 +2877,7 @@ UINT8 btm_ble_is_discoverable(BD_ADDR bda, UINT8 evt_type, UINT8 *p)
 
     if (p_le_inq_cb->adv_len != 0) {
         if ((p_flag = BTM_CheckAdvData(p_le_inq_cb->adv_data_cache, p_le_inq_cb->adv_len,
-                                       BTM_BLE_AD_TYPE_FLAG, &data_len)) != NULL) {
+                                       BTM_BLE_AD_TYPE_FLAG, &data_len)) != NULL && data_len > 0) {
             flag = * p_flag;
 
             if ((btm_cb.btm_inq_vars.inq_active & BTM_BLE_GENERAL_INQUIRY) &&
@@ -2966,6 +2969,9 @@ static void btm_ble_appearance_to_cod(UINT16 appearance, UINT8 *dev_class)
         break;
     case BTM_BLE_APPEARANCE_GENERIC_BARCODE_SCANNER:
     case BTM_BLE_APPEARANCE_HID_BARCODE_SCANNER:
+        dev_class[1] = BTM_COD_MAJOR_PERIPHERAL;
+        dev_class[2] = BTM_COD_MINOR_HAND_SCANNER;
+        break;
     case BTM_BLE_APPEARANCE_GENERIC_HID:
         dev_class[1] = BTM_COD_MAJOR_PERIPHERAL;
         dev_class[2] = BTM_COD_MINOR_UNCLASSIFIED;
@@ -3049,6 +3055,19 @@ BOOLEAN btm_ble_update_inq_result(BD_ADDR bda, tINQ_DB_ENT *p_i, UINT8 addr_type
         BTM_TRACE_WARNING("EIR data too long %d. discard", data_len);
         return FALSE;
     }
+
+    if (p_i->inq_count != p_inq->inq_counter) {
+        p_cur->device_type = BT_DEVICE_TYPE_BLE;
+        p_cur->flag = 0;
+        memset(p_cur->dev_class, 0, sizeof(DEV_CLASS));
+        /* Do not clear adv_data_len/scan_rsp_len here: btm_ble_cache_adv_data
+         * uses adv_data_len to split SCAN_RSP from a previously cached ADV. */
+    } else {
+        p_cur->device_type |= BT_DEVICE_TYPE_BLE;
+    }
+
+    p_i->inq_count = p_inq->inq_counter;
+
     btm_ble_cache_adv_data(bda, p_cur, data_len, p, evt_type);
 
     p1 = (p + data_len);
@@ -3072,12 +3091,6 @@ BOOLEAN btm_ble_update_inq_result(BD_ADDR bda, tINQ_DB_ENT *p_i, UINT8 addr_type
         p_i->scan_rsp = TRUE;
     }
 
-    if (p_i->inq_count != p_inq->inq_counter) {
-        p_cur->device_type = BT_DEVICE_TYPE_BLE;
-    } else {
-        p_cur->device_type |= BT_DEVICE_TYPE_BLE;
-    }
-
     if (evt_type != BTM_BLE_SCAN_RSP_EVT) {
         p_cur->ble_evt_type     = evt_type;
     }
@@ -3086,10 +3099,8 @@ BOOLEAN btm_ble_update_inq_result(BD_ADDR bda, tINQ_DB_ENT *p_i, UINT8 addr_type
         p_cur->ble_evt_type = evt_type;
     }
 #endif
-    p_i->inq_count = p_inq->inq_counter;   /* Mark entry for current inquiry */
-
     if (p_le_inq_cb->adv_len != 0) {
-        if ((p_flag = BTM_CheckAdvData(p_le_inq_cb->adv_data_cache, p_le_inq_cb->adv_len, BTM_BLE_AD_TYPE_FLAG, &len)) != NULL) {
+        if ((p_flag = BTM_CheckAdvData(p_le_inq_cb->adv_data_cache, p_le_inq_cb->adv_len, BTM_BLE_AD_TYPE_FLAG, &len)) != NULL && len > 0) {
             p_cur->flag = * p_flag;
         }
     }
@@ -3226,7 +3237,10 @@ static void btm_adv_pkt_handler(void *arg)
 
     for (size_t i = 0; i < pkts_to_process; i++) {
         pkt_linked_item_t *linked_pkt = pkt_queue_dequeue(p_cb->adv_rpt_queue);
-        assert(linked_pkt != NULL);
+        if (linked_pkt == NULL) {
+            BTM_TRACE_ERROR("dequeue returned NULL");
+            break;
+        }
         BT_HDR *packet = (BT_HDR *)linked_pkt->data;
         uint8_t *p = packet->data + packet->offset;
         STREAM_TO_UINT8  (hci_evt_code, p);
@@ -3246,9 +3260,9 @@ static void btm_adv_pkt_handler(void *arg)
         if (ble_sub_code == HCI_BLE_ADV_PKT_RPT_EVT) {
             btm_ble_process_adv_pkt(p, hci_evt_len);
         } else if (ble_sub_code == HCI_BLE_ADV_DISCARD_REPORT_EVT) {
-            btm_ble_process_adv_discard_evt(p);
+            btm_ble_process_adv_discard_evt(p, hci_evt_len - 1);
         } else if (ble_sub_code == HCI_BLE_DIRECT_ADV_EVT) {
-            btm_ble_process_direct_adv_pkt(p);
+            btm_ble_process_direct_adv_pkt(p, hci_evt_len - 1);
         } else {
             assert (0);
         }
@@ -3393,12 +3407,16 @@ static void btm_ble_process_last_adv_pkt(void)
 
     if(p_i == NULL) {
         BTM_TRACE_DEBUG("no last adv");
+        p_le_inq_cb->adv_len = 0;
+        memset(p_le_inq_cb->adv_addr, 0, BD_ADDR_LEN);
         return;
     }
 
     if ((result = btm_ble_is_discoverable(p_le_inq_cb->adv_addr, p_i->inq_info.results.ble_evt_type, NULL)) == 0) {
         BTM_TRACE_WARNING("%s device is no longer discoverable so discarding advertising packet pkt",
                  __func__);
+        p_le_inq_cb->adv_len = 0;
+        memset(p_le_inq_cb->adv_addr, 0, BD_ADDR_LEN);
         return;
     }
 #if (BLE_GATT_BGCONN == TRUE)
@@ -3408,7 +3426,7 @@ static void btm_ble_process_last_adv_pkt(void)
     } else
 #endif // (BLE_GATT_BGCONN == TRUE)
     {
-        if (p_scan_results_cb && (result & BTM_BLE_DISCO_RESULT)) {
+        if (p_scan_results_cb && (result & (BTM_BLE_DISCO_RESULT | BTM_BLE_OBS_RESULT))) {
             (p_scan_results_cb)((tBTM_INQ_RESULTS *) &p_i->inq_info.results, p_le_inq_cb->adv_data_cache);
             p_le_inq_cb->adv_len = 0;
             memset(p_le_inq_cb->adv_addr, 0, BD_ADDR_LEN);
@@ -3462,8 +3480,18 @@ static void btm_ble_process_adv_pkt_cont(BD_ADDR bda, UINT8 addr_type, UINT8 evt
         btm_ble_process_last_adv_pkt();
     }
 
-
     p_i = btm_inq_db_find (bda);
+
+    /* After max_resps, still accept SCAN_RSP for an already-counted device.
+     * Only while an inquiry that set max_resps is still active. A finished
+     * classic inquiry leaves max_resps/num_resp behind, and BTM_BleScan does
+     * not clear them. */
+    if (p_inq->inq_active &&
+            p_inq->inqparms.max_resps &&
+            p_inq->inq_cmpl_info.num_resp >= p_inq->inqparms.max_resps &&
+            (p_i == NULL || p_i->scan_rsp)) {
+        return;
+    }
 
     /* Check if this address has already been processed for this inquiry */
     if (btm_inq_find_bdaddr(bda)) {
@@ -3526,7 +3554,7 @@ static void btm_ble_process_adv_pkt_cont(BD_ADDR bda, UINT8 addr_type, UINT8 evt
     } else
 #endif // (BLE_GATT_BGCONN == TRUE)
     {
-        if (p_scan_results_cb && (result & BTM_BLE_DISCO_RESULT)) {
+        if (p_scan_results_cb && (result & (BTM_BLE_DISCO_RESULT | BTM_BLE_OBS_RESULT))) {
             (p_scan_results_cb)((tBTM_INQ_RESULTS *) &p_i->inq_info.results, p_le_inq_cb->adv_data_cache);
             p_le_inq_cb->adv_len = 0;
             memset(p_le_inq_cb->adv_addr, 0, BD_ADDR_LEN);
@@ -4133,7 +4161,7 @@ void btm_ble_dir_adv_tout(void)
 **
 ** Description      set BLE topology mask
 **
-** Returns          TRUE is request is allowed, FALSE otherwise.
+** Returns          Always TRUE after updating the topology mask.
 **
 *******************************************************************************/
 BOOLEAN btm_ble_set_topology_mask(tBTM_BLE_STATE_MASK request_state_mask)
@@ -4553,6 +4581,9 @@ BOOLEAN BTM_BleSetPrivacyMode(UINT8 addr_type, BD_ADDR bd_addr, UINT8 privacy_mo
 bool btm_ble_adv_pkt_ready(void)
 {
     tBTM_BLE_CB *p_cb = &btm_cb.ble_ctr_cb;
+    if (p_cb->adv_rpt_ready == NULL) {
+        return false;
+    }
     osi_thread_post_event(p_cb->adv_rpt_ready, OSI_THREAD_MAX_TIMEOUT);
 
     return true;
@@ -4567,8 +4598,31 @@ bool btm_ble_adv_pkt_post(pkt_linked_item_t *pkt)
     }
 
     tBTM_BLE_CB *p_cb = &btm_cb.ble_ctr_cb;
-    pkt_queue_enqueue(p_cb->adv_rpt_queue, pkt);
+    if (p_cb->adv_rpt_queue == NULL) {
+        BTM_TRACE_ERROR("adv_rpt_queue not initialized");
+        goto discard;
+    }
+
+    if (pkt_queue_length(p_cb->adv_rpt_queue) >= BTM_BLE_ADV_RPT_QUEUE_LEN_MAX) {
+        BTM_TRACE_WARNING("adv report queue full %u, drop",
+                          (unsigned)BTM_BLE_ADV_RPT_QUEUE_LEN_MAX);
+        goto discard;
+    }
+
+    if (!pkt_queue_enqueue(p_cb->adv_rpt_queue, pkt)) {
+        BTM_TRACE_ERROR("failed to enqueue adv report");
+        goto discard;
+    }
     return true;
+
+discard:
+    /* Return flow-control credit so the controller can keep sending when the
+     * queue is full or enqueue fails; caller (btu_task) does not own pkt. */
+#if (BLE_ADV_REPORT_FLOW_CONTROL == TRUE)
+    hci_adv_credits_try_release(1);
+#endif
+    osi_free(pkt);
+    return false;
 }
 #endif // #if (BLE_42_SCAN_EN == TRUE)
 
