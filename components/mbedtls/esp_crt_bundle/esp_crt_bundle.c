@@ -74,11 +74,63 @@ cleanup:
 }
 
 
+static size_t esp_crt_name_len(const uint8_t *crt)
+{
+    return crt[0] << 8 | crt[1];
+}
+
+static size_t esp_crt_key_len(const uint8_t *crt)
+{
+    return crt[2] << 8 | crt[3];
+}
+
+static const uint8_t *esp_crt_name(const uint8_t *crt)
+{
+    return crt + CRT_HEADER_OFFSET;
+}
+
+static const uint8_t *esp_crt_key(const uint8_t *crt)
+{
+    return crt + CRT_HEADER_OFFSET + esp_crt_name_len(crt);
+}
+
+/* Binary search on the DER subject name; returns the bundle entry or NULL */
+static const uint8_t *esp_crt_find_cert(const uint8_t *name, size_t len)
+{
+    if (name == NULL || len == 0) {
+        return NULL;
+    }
+
+    int start = 0;
+    int end = s_crt_bundle.num_certs - 1;
+    int middle = (start + end) / 2;
+
+    while (start <= end) {
+        const uint8_t *crt = s_crt_bundle.crts[middle];
+        size_t crt_name_len = esp_crt_name_len(crt);
+
+        /* Both names are DER, so their lengths are encoded in the first bytes
+           and a differing length shows up as differing content. */
+        int cmp_res = memcmp(name, esp_crt_name(crt), len < crt_name_len ? len : crt_name_len);
+        if (cmp_res == 0) {
+            return crt;
+        } else if (cmp_res < 0) {
+            end = middle - 1;
+        } else {
+            start = middle + 1;
+        }
+        middle = (start + end) / 2;
+    }
+
+    return NULL;
+}
+
 /* This callback is called for every certificate in the chain. If the chain
  * is proper each intermediate certificate is validated through its parent
- * in the x509_crt_verify_chain() function. So this callback should
- * only verify the first untrusted link in the chain is signed by the
- * root certificate in the trusted bundle
+ * in the x509_crt_verify_chain() function. So this callback only has to
+ * decide about the first untrusted link in the chain: either it is a
+ * cross-signed copy of a root in the trusted bundle, or it must be signed
+ * by a root in the trusted bundle.
 */
 int esp_crt_verify_callback(void *buf, mbedtls_x509_crt *crt, int depth, uint32_t *flags)
 {
@@ -100,35 +152,26 @@ int esp_crt_verify_callback(void *buf, mbedtls_x509_crt *crt, int depth, uint32_
 
     ESP_LOGD(TAG, "%d certificates in bundle", s_crt_bundle.num_certs);
 
-    size_t name_len = 0;
-    const uint8_t *crt_name;
-
-    bool crt_found = false;
-    int start = 0;
-    int end = s_crt_bundle.num_certs - 1;
-    int middle = (end - start) / 2;
-
-    /* Look for the certificate using binary search on subject name */
-    while (start <= end) {
-        name_len = s_crt_bundle.crts[middle][0] << 8 | s_crt_bundle.crts[middle][1];
-        crt_name = s_crt_bundle.crts[middle] + CRT_HEADER_OFFSET;
-
-        int cmp_res = memcmp(child->issuer_raw.p, crt_name, name_len );
-        if (cmp_res == 0) {
-            crt_found = true;
-            break;
-        } else if (cmp_res < 0) {
-            end = middle - 1;
-        } else {
-            start = middle + 1;
-        }
-        middle = (start + end) / 2;
+    /* A certificate mbedtls could not chain to a trusted CA may be a
+       cross-signed copy of a root the bundle already trusts. Its subject and
+       public key then match a bundle entry, and mbedtls has already verified
+       the chain below it against that key, so the cross-signer need not be
+       in the bundle. Limit: mbedtls has no CA list here and cannot stop at a
+       trusted certificate, so if the server also sends the cross-signer's
+       root, the path extends to that untrusted root and verification fails. */
+    const uint8_t *self = esp_crt_find_cert(child->subject_raw.p, child->subject_raw.len);
+    if (self != NULL && child->pk_raw.len == esp_crt_key_len(self) &&
+            memcmp(child->pk_raw.p, esp_crt_key(self), child->pk_raw.len) == 0) {
+        ESP_LOGI(TAG, "Certificate validated (cross-signed copy of a trusted root)");
+        *flags = 0;
+        return 0;
     }
 
+    /* Otherwise the certificate must be signed by a root in the bundle */
     int ret = MBEDTLS_ERR_X509_FATAL_ERROR;
-    if (crt_found) {
-        size_t key_len = s_crt_bundle.crts[middle][2] << 8 | s_crt_bundle.crts[middle][3];
-        ret = esp_crt_check_signature(child, s_crt_bundle.crts[middle] + CRT_HEADER_OFFSET + name_len, key_len);
+    const uint8_t *issuer = esp_crt_find_cert(child->issuer_raw.p, child->issuer_raw.len);
+    if (issuer != NULL) {
+        ret = esp_crt_check_signature(child, esp_crt_key(issuer), esp_crt_key_len(issuer));
     }
 
     if (ret == 0) {
