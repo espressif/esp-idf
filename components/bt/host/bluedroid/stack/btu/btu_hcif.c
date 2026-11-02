@@ -1817,6 +1817,7 @@ static void btu_hcif_hdl_command_status (UINT16 opcode, UINT8 status, UINT8 *p_c
                 btm_process_inq_complete(status, BTM_BR_INQUIRY_MASK);
                 break;
 
+#if (CLASSIC_BT_INCLUDED == TRUE)
             case HCI_RMT_NAME_REQUEST:
                 /* Tell inquiry processing that we are done */
                 btm_process_remote_name (NULL, NULL, 0, status);
@@ -1824,6 +1825,7 @@ static void btu_hcif_hdl_command_status (UINT16 opcode, UINT8 status, UINT8 *p_c
                 btm_sec_rmt_name_request_complete (NULL, NULL, status);
 #endif  ///SMP_INCLUDED == TRUE
                 break;
+#endif /* CLASSIC_BT_INCLUDED == TRUE */
 
             case HCI_QOS_SETUP_COMP_EVT:
             #if (CLASSIC_BT_INCLUDED == TRUE)

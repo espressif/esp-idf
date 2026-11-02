@@ -2668,6 +2668,7 @@ tBTM_STATUS BTM_SetInquiryScanType (UINT16 scan_type);
 //extern
 tBTM_STATUS BTM_SetPageScanType (UINT16 scan_type);
 
+#if (CLASSIC_BT_INCLUDED == TRUE)
 /*******************************************************************************
 **
 ** Function         BTM_ReadRemoteDeviceName
@@ -2688,6 +2689,7 @@ tBTM_STATUS BTM_SetPageScanType (UINT16 scan_type);
 **                  BTM_UNKNOWN_ADDR if device address is bad
 **                  BTM_NO_RESOURCES if could not allocate resources to start the command
 **                  BTM_WRONG_MODE if the device is not up.
+**                  BTM_MODE_UNSUPPORTED if transport is BT_TRANSPORT_LE.
 **
 *******************************************************************************/
 //extern
@@ -2714,6 +2716,7 @@ tBTM_STATUS  BTM_ReadRemoteDeviceName (BD_ADDR remote_bda,
 *******************************************************************************/
 //extern
 tBTM_STATUS  BTM_CancelRemoteDeviceName (void);
+#endif /* CLASSIC_BT_INCLUDED == TRUE */
 
 /*******************************************************************************
 **

@@ -75,7 +75,9 @@ static tBTM_SEC_SERV_REC *btm_sec_find_mx_serv (UINT8 is_originator, UINT16 psm,
         UINT32 mx_proto_id,
         UINT32 mx_chan_id);
 static tBTM_STATUS btm_sec_execute_procedure (tBTM_SEC_DEV_REC *p_dev_rec);
+#if (CLASSIC_BT_INCLUDED == TRUE)
 static BOOLEAN  btm_sec_start_get_name (tBTM_SEC_DEV_REC *p_dev_rec);
+#endif
 static BOOLEAN  btm_sec_start_authentication (tBTM_SEC_DEV_REC *p_dev_rec);
 static BOOLEAN  btm_sec_start_encryption (tBTM_SEC_DEV_REC *p_dev_rec);
 static void     btm_sec_collision_timeout (TIMER_LIST_ENT *p_tle);
@@ -1162,7 +1164,9 @@ tBTM_STATUS btm_sec_bond_by_transport (BD_ADDR bd_addr, tBT_TRANSPORT transport,
              * -> RNR (to learn if peer is 2.1)
              * RNR when no ACL causes HCI_RMT_HOST_SUP_FEAT_NOTIFY_EVT */
             btm_sec_change_pairing_state (BTM_PAIR_STATE_GET_REM_NAME);
+#if (CLASSIC_BT_INCLUDED == TRUE)
             BTM_ReadRemoteDeviceName(bd_addr, NULL, BT_TRANSPORT_BR_EDR);
+#endif
         } else {
             /* We are accepting connection request from peer */
             btm_sec_change_pairing_state (BTM_PAIR_STATE_WAIT_PIN_REQ);
@@ -1317,7 +1321,9 @@ tBTM_STATUS BTM_SecBondCancel (BD_ADDR bd_addr)
                 return BTM_NO_RESOURCES;
             }
             if (btm_cb.pairing_state == BTM_PAIR_STATE_GET_REM_NAME) {
+#if (CLASSIC_BT_INCLUDED == TRUE)
                 BTM_CancelRemoteDeviceName();
+#endif
                 btm_cb.pairing_flags |= BTM_PAIR_FLAGS_WE_CANCEL_DD;
                 return BTM_CMD_STARTED;
             }
@@ -3077,7 +3083,7 @@ static tBTM_STATUS btm_sec_dd_create_conn (tBTM_SEC_DEV_REC *p_dev_rec)
 ** Returns          void
 **
 *******************************************************************************/
-#if (SMP_INCLUDED == TRUE)
+#if (SMP_INCLUDED == TRUE) && (CLASSIC_BT_INCLUDED == TRUE)
 void btm_sec_rmt_name_request_complete (UINT8 *p_bd_addr, UINT8 *p_bd_name, UINT8 status)
 {
     tBTM_SEC_DEV_REC *p_dev_rec = NULL;
@@ -3315,7 +3321,7 @@ void btm_sec_rmt_name_request_complete (UINT8 *p_bd_addr, UINT8 *p_bd_name, UINT
     /* There is no next procedure or start of procedure failed, notify the waiting layer */
     btm_sec_dev_rec_cback_event  (p_dev_rec, status, FALSE);
 }
-#endif  ///SMP_INCLUDED == TRUE
+#endif  ///SMP_INCLUDED == TRUE && CLASSIC_BT_INCLUDED == TRUE
 
 
 /*******************************************************************************
@@ -4239,6 +4245,23 @@ void btm_sec_encrypt_change (UINT16 handle, UINT8 status, UINT8 encr_enable)
             }
         } else {
             p_dev_rec->sec_flags |= BTM_SEC_LE_ENCRYPTED;
+#if (BLE_INCLUDED == TRUE)
+            /* Re-encryption of an existing MITM bond. Skip this while SMP is
+             * pairing the same device: the stored key is still the old one,
+             * and a pending MITM request must not succeed before the new keys
+             * are saved. */
+            if (encr_enable && (p_dev_rec->sec_flags & BTM_SEC_LE_LINK_KEY_AUTHED) &&
+                    (p_dev_rec->ble.key_type & (BTM_LE_KEY_PENC | BTM_LE_KEY_LENC)) &&
+                    !((btm_cb.pairing_flags & BTM_PAIR_FLAGS_LE_ACTIVE) &&
+                      (memcmp(btm_cb.pairing_bda, p_dev_rec->bd_addr, BD_ADDR_LEN) == 0 ||
+                       memcmp(btm_cb.pairing_bda, p_dev_rec->ble.pseudo_addr, BD_ADDR_LEN) == 0))) {
+                p_dev_rec->sec_flags |= BTM_SEC_LE_AUTHENTICATED;
+            }
+#else
+            if (encr_enable && (p_dev_rec->sec_flags & BTM_SEC_LE_LINK_KEY_AUTHED)) {
+                p_dev_rec->sec_flags |= BTM_SEC_LE_AUTHENTICATED;
+            }
+#endif
         }
     }
 
@@ -4525,7 +4548,9 @@ void btm_sec_connected (UINT8 *bda, UINT16 handle, UINT8 status, UINT8 enc_mode)
                         btu_start_timer (&btm_cb.sec_collision_tle, BTU_TTYPE_USER_FUNC, 0);
                     } else {
                         btm_sec_change_pairing_state (BTM_PAIR_STATE_GET_REM_NAME);
+#if (CLASSIC_BT_INCLUDED == TRUE)
                         BTM_ReadRemoteDeviceName(p_dev_rec->bd_addr, NULL, BT_TRANSPORT_BR_EDR);
+#endif
                     }
 #if BTM_DISC_DURING_RS == TRUE
                     p_dev_rec->rs_disc_pending   = BTM_SEC_RS_NOT_PENDING;     /* reset flag */
@@ -4560,7 +4585,9 @@ void btm_sec_connected (UINT8 *bda, UINT16 handle, UINT8 status, UINT8 enc_mode)
             if (BTM_SEC_IS_SM4_UNKNOWN(p_dev_rec->sm4)) {
                 /* Try again: RNR when no ACL causes HCI_RMT_HOST_SUP_FEAT_NOTIFY_EVT */
                 btm_sec_change_pairing_state (BTM_PAIR_STATE_GET_REM_NAME);
+#if (CLASSIC_BT_INCLUDED == TRUE)
                 BTM_ReadRemoteDeviceName(bda, NULL, BT_TRANSPORT_BR_EDR);
+#endif
                 return;
             }
 
@@ -4999,9 +5026,11 @@ void btm_sec_link_key_notification (UINT8 *p_bda, UINT8 *p_link_key, UINT8 key_t
 
         /* If it is for bonding nothing else will follow, so we need to start name resolution */
         if (we_are_bonding) {
+#if (CLASSIC_BT_INCLUDED == TRUE)
             if (!(btsnd_hcic_rmt_name_req (p_bda, HCI_PAGE_SCAN_REP_MODE_R1, HCI_MANDATARY_PAGE_SCAN_MODE, 0))) {
                 btm_inq_rmt_name_failed();
             }
+#endif
         }
 
         BTM_TRACE_EVENT ("rmt_io_caps:%d, sec_flags:x%x, dev_class[1]:x%02x\n", p_dev_rec->rmt_io_caps, p_dev_rec->sec_flags, p_dev_rec->dev_class[1])
@@ -5431,6 +5460,7 @@ static tBTM_STATUS btm_sec_execute_procedure (tBTM_SEC_DEV_REC *p_dev_rec)
         return (BTM_CMD_STARTED);
     }
 
+#if (CLASSIC_BT_INCLUDED == TRUE)
     /* If any security is required, get the name first */
     if (!(p_dev_rec->sec_flags & BTM_SEC_NAME_KNOWN)
             && (p_dev_rec->hci_handle != BTM_SEC_INVALID_HANDLE)) {
@@ -5440,6 +5470,7 @@ static tBTM_STATUS btm_sec_execute_procedure (tBTM_SEC_DEV_REC *p_dev_rec)
         }
         return (BTM_CMD_STARTED);
     }
+#endif
 
 #if (CLASSIC_BT_INCLUDED == TRUE)
     tACL_CONN *p_acl_cb = btm_handle_to_acl(p_dev_rec->hci_handle);
@@ -5566,6 +5597,7 @@ static tBTM_STATUS btm_sec_execute_procedure (tBTM_SEC_DEV_REC *p_dev_rec)
     return (BTM_SUCCESS);
 }
 
+#if (CLASSIC_BT_INCLUDED == TRUE)
 /*******************************************************************************
 **
 ** Function         btm_sec_start_get_name
@@ -5591,6 +5623,7 @@ static BOOLEAN btm_sec_start_get_name (tBTM_SEC_DEV_REC *p_dev_rec)
 
     return (TRUE);
 }
+#endif /* CLASSIC_BT_INCLUDED == TRUE */
 
 /*******************************************************************************
 **
@@ -5693,10 +5726,14 @@ static UINT8 btm_sec_start_authorization (tBTM_SEC_DEV_REC *p_dev_rec)
         }
         return (result);
     }
+#if (CLASSIC_BT_INCLUDED == TRUE)
     if (!btm_sec_start_get_name (p_dev_rec)) {
         return BTM_NO_RESOURCES;
     }
     return (BTM_CMD_STARTED);
+#else
+    return (BTM_MODE_UNSUPPORTED);
+#endif
 }
 #endif  ///SMP_INCLUDED == TRUE
 

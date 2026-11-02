@@ -55,11 +55,18 @@
 #define BTM_BLE_FILTER_TARGET_UNKNOWN       0xff
 #define BTM_BLE_POLICY_UNKNOWN              0xff
 
-#define BTM_EXT_BLE_RMT_NAME_TIMEOUT        30
 #define MIN_ADV_LENGTH                       2
 #define BTM_VSC_CHIP_CAPABILITY_RSP_LEN_L_RELEASE 9
 
 #define BTM_BLE_GAP_ADV_RPT_BATCH_SIZE           (10)
+/* Upper bound on the host-side adv report queue to prevent unbounded heap
+ * growth (DoS) when the BTU task drains slower than reports arrive. Aligned
+ * with the BTC layer limit (BTC_GAP_BLE_ADV_RPT_QUEUE_LEN_MAX = 200) rather
+ * than the much smaller controller flow-control discard threshold, so that
+ * normal bursts are not dropped prematurely. */
+#ifndef BTM_BLE_ADV_RPT_QUEUE_LEN_MAX
+#define BTM_BLE_ADV_RPT_QUEUE_LEN_MAX            (200)
+#endif
 
 // BLE vendor HCI event callback
 #if (BLE_VENDOR_HCI_EN == TRUE)
@@ -2225,113 +2232,6 @@ tBTM_STATUS btm_ble_set_connectability(UINT16 combined_mode)
         btm_ble_disable_resolving_list(BTM_BLE_RL_ADV, TRUE);
 #endif
     }
-    return status;
-}
-
-/*******************************************************************************
-**
-** Function         btm_ble_read_remote_name_cmpl
-**
-** Description      This function is called when BLE remote name is received.
-**
-** Returns          void
-**
-*******************************************************************************/
-void btm_ble_read_remote_name_cmpl(BOOLEAN status, BD_ADDR bda, UINT16 length, char *p_name)
-{
-    UINT8   hci_status = HCI_SUCCESS;
-    BD_NAME bd_name;
-
-    memset(bd_name, 0, (BD_NAME_LEN + 1));
-    if (length > BD_NAME_LEN) {
-        length = BD_NAME_LEN;
-    }
-    memcpy((UINT8 *)bd_name, p_name, length);
-
-    if ((!status) || (length == 0)) {
-        hci_status = HCI_ERR_HOST_TIMEOUT;
-    }
-
-    btm_process_remote_name(bda, bd_name, length + 1, hci_status);
-#if (SMP_INCLUDED == TRUE)
-    btm_sec_rmt_name_request_complete (bda, (UINT8 *)bd_name, hci_status);
-#endif  ///SMP_INCLUDED == TRUE
-}
-
-/*******************************************************************************
-**
-** Function         btm_ble_read_remote_name
-**
-** Description      This function read remote LE device name using GATT read
-**                  procedure.
-**
-** Parameters:       None.
-**
-** Returns          void
-**
-*******************************************************************************/
-tBTM_STATUS btm_ble_read_remote_name(BD_ADDR remote_bda, tBTM_INQ_INFO *p_cur, tBTM_CMPL_CB *p_cb)
-{
-    tBTM_INQUIRY_VAR_ST      *p_inq = &btm_cb.btm_inq_vars;
-
-    if (!controller_get_interface()->supports_ble()) {
-        return BTM_ERR_PROCESSING;
-    }
-
-    if (p_cur &&
-            p_cur->results.ble_evt_type != BTM_BLE_EVT_CONN_ADV &&
-            p_cur->results.ble_evt_type != BTM_BLE_EVT_CONN_DIR_ADV) {
-        BTM_TRACE_DEBUG("name request to non-connectable device failed.");
-        return BTM_ERR_PROCESSING;
-    }
-
-    /* read remote device name using GATT procedure */
-    if (p_inq->remname_active) {
-        return BTM_BUSY;
-    }
-
-#if (defined(GAP_INCLUDED) && GAP_INCLUDED == TRUE && GATTS_INCLUDED == TRUE)
-    if (!GAP_BleReadPeerDevName(remote_bda, btm_ble_read_remote_name_cmpl)) {
-        return BTM_BUSY;
-    }
-#endif
-
-    p_inq->p_remname_cmpl_cb = p_cb;
-    p_inq->remname_active = TRUE;
-
-    memcpy(p_inq->remname_bda, remote_bda, BD_ADDR_LEN);
-
-    btu_start_timer (&p_inq->rmt_name_timer_ent,
-                     BTU_TTYPE_BTM_RMT_NAME,
-                     BTM_EXT_BLE_RMT_NAME_TIMEOUT);
-
-    return BTM_CMD_STARTED;
-}
-
-/*******************************************************************************
-**
-** Function         btm_ble_cancel_remote_name
-**
-** Description      This function cancel read remote LE device name.
-**
-** Parameters:       None.
-**
-** Returns          void
-**
-*******************************************************************************/
-BOOLEAN btm_ble_cancel_remote_name(BD_ADDR remote_bda)
-{
-    tBTM_INQUIRY_VAR_ST      *p_inq = &btm_cb.btm_inq_vars;
-    BOOLEAN     status = TRUE;
-
-#if (defined(GAP_INCLUDED) && GAP_INCLUDED == TRUE && GATTS_INCLUDED == TRUE)
-    status = GAP_BleCancelReadPeerDevName(remote_bda);
-#endif
-
-    p_inq->remname_active = FALSE;
-    memset(p_inq->remname_bda, 0, BD_ADDR_LEN);
-    btu_stop_timer(&p_inq->rmt_name_timer_ent);
-
     return status;
 }
 

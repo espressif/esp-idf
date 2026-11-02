@@ -368,12 +368,14 @@ INQ_GENERAL
 typedef UINT8 tBTM_INQ_TYPE;
 
 typedef struct {
+#if (CLASSIC_BT_INCLUDED == TRUE)
     tBTM_CMPL_CB *p_remname_cmpl_cb;
 
 #define BTM_EXT_RMT_NAME_TIMEOUT    40
 
 
     TIMER_LIST_ENT  rmt_name_timer_ent;
+#endif
 
     UINT16           discoverable_mode;
     UINT16           connectable_mode;
@@ -386,12 +388,14 @@ typedef struct {
     tBTM_INQ_TYPE    scan_type;
     UINT16           page_timeout;
 
+#if (CLASSIC_BT_INCLUDED == TRUE)
     BD_ADDR          remname_bda;           /* Name of bd addr for active remote name request */
 #define BTM_RMT_NAME_INACTIVE       0
 #define BTM_RMT_NAME_EXT            0x1     /* Initiated through API */
 #define BTM_RMT_NAME_SEC            0x2     /* Initiated internally by security manager */
 #define BTM_RMT_NAME_INQ            0x4     /* Remote name initiated internally by inquiry */
     BOOLEAN          remname_active;        /* State of a remote name request by external API */
+#endif
 
     tBTM_CMPL_CB    *p_inq_cmpl_cb;
     tBTM_INQ_RESULTS_CB *p_inq_results_cb;
@@ -1092,6 +1096,7 @@ void         btm_free (void);
 /* Internal functions provided by btm_inq.c
 *******************************************
 */
+#if (CLASSIC_BT_INCLUDED == TRUE)
 tBTM_STATUS  btm_initiate_rem_name (BD_ADDR remote_bda,
                                     tBTM_INQ_INFO *p_cur,
                                     UINT8 origin, UINT32 timeout,
@@ -1100,6 +1105,7 @@ tBTM_STATUS  btm_initiate_rem_name (BD_ADDR remote_bda,
 void         btm_process_remote_name (BD_ADDR bda, BD_NAME name, UINT16 evt_len,
                                       UINT8 hci_status);
 void         btm_inq_rmt_name_failed(void);
+#endif
 
 /* Inquiry related functions */
 void         btm_clr_inq_db (BD_ADDR p_bda);
@@ -1319,7 +1325,9 @@ void  btm_sec_encrypt_change (UINT16 handle, UINT8 status, UINT8 encr_enable);
 void  btm_sec_connected (UINT8 *bda, UINT16 handle, UINT8 status, UINT8 enc_mode);
 tBTM_STATUS btm_sec_disconnect (UINT16 handle, UINT8 reason);
 BOOLEAN  btm_sec_disconnected (UINT16 handle, UINT8 reason);
+#if (CLASSIC_BT_INCLUDED == TRUE)
 void  btm_sec_rmt_name_request_complete (UINT8 *bd_addr, UINT8 *bd_name, UINT8 status);
+#endif
 void  btm_sec_rmt_host_support_feat_evt (UINT8 *p);
 void  btm_io_capabilities_req (UINT8 *p);
 void  btm_io_capabilities_rsp (UINT8 *p);

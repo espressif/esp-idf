@@ -876,6 +876,7 @@ tBTM_STATUS BTM_StartInquiry (tBTM_INQ_PARMS *p_inqparms, tBTM_INQ_RESULTS_CB *p
 }
 
 
+#if (CLASSIC_BT_INCLUDED == TRUE)
 /*******************************************************************************
 **
 ** Function         BTM_ReadRemoteDeviceName
@@ -917,7 +918,9 @@ tBTM_STATUS  BTM_ReadRemoteDeviceName (BD_ADDR remote_bda, tBTM_CMPL_CB *p_cb
 
 #if (BLE_INCLUDED == TRUE)
     if (transport == BT_TRANSPORT_LE) {
-        return btm_ble_read_remote_name(remote_bda, p_cur, p_cb);
+        /* BLE GATT remote name is not supported; use advertising Local Name
+         * or a GATTC read of GAP Device Name (0x2A00). */
+        return BTM_MODE_UNSUPPORTED;
     } else
 #endif
     {
@@ -925,6 +928,7 @@ tBTM_STATUS  BTM_ReadRemoteDeviceName (BD_ADDR remote_bda, tBTM_CMPL_CB *p_cb
                                        BTM_EXT_RMT_NAME_TIMEOUT, p_cb));
     }
 }
+#endif /* CLASSIC_BT_INCLUDED == TRUE */
 
 /*******************************************************************************
 **
@@ -942,6 +946,7 @@ tBTM_STATUS  BTM_ReadRemoteDeviceName (BD_ADDR remote_bda, tBTM_CMPL_CB *p_cb
 **                  BTM_WRONG_MODE if there is not an active remote name request.
 **
 *******************************************************************************/
+#if (CLASSIC_BT_INCLUDED == TRUE)
 tBTM_STATUS  BTM_CancelRemoteDeviceName (void)
 {
     tBTM_INQUIRY_VAR_ST *p_inq = &btm_cb.btm_inq_vars;
@@ -950,26 +955,16 @@ tBTM_STATUS  BTM_CancelRemoteDeviceName (void)
 
     /* Make sure there is not already one in progress */
     if (p_inq->remname_active) {
-#if BLE_INCLUDED == TRUE
-        if (BTM_UseLeLink(p_inq->remname_bda)) {
-            if (btm_ble_cancel_remote_name(p_inq->remname_bda)) {
-                return (BTM_CMD_STARTED);
-            } else {
-                return (BTM_UNKNOWN_ADDR);
-            }
-        } else
-#endif
-        {
-            if (btsnd_hcic_rmt_name_req_cancel (p_inq->remname_bda)) {
-                return (BTM_CMD_STARTED);
-            } else {
-                return (BTM_NO_RESOURCES);
-            }
+        if (btsnd_hcic_rmt_name_req_cancel (p_inq->remname_bda)) {
+            return (BTM_CMD_STARTED);
+        } else {
+            return (BTM_NO_RESOURCES);
         }
     } else {
         return (BTM_WRONG_MODE);
     }
 }
+#endif /* CLASSIC_BT_INCLUDED == TRUE */
 
 /*******************************************************************************
 **
@@ -1195,7 +1190,9 @@ tBTM_STATUS BTM_WriteInquiryTxPower(INT8 tx_power, tBTM_CMPL_CB *p_cb)
 *******************************************************************************/
 void btm_inq_db_reset (void)
 {
+#if (CLASSIC_BT_INCLUDED == TRUE)
     tBTM_REMOTE_DEV_NAME     rem_name = {0};
+#endif
     tBTM_INQUIRY_CMPL        cmpl_param = {0};
     tBTM_INQUIRY_VAR_ST     *p_inq = &btm_cb.btm_inq_vars;
     UINT8                    temp_inq_active;
@@ -1220,6 +1217,7 @@ void btm_inq_db_reset (void)
         }
     }
 
+#if (CLASSIC_BT_INCLUDED == TRUE)
     /* Cancel a remote name request if active, and notify the caller (if waiting) */
     if (p_inq->remname_active) {
         btu_stop_timer (&p_inq->rmt_name_timer_ent);
@@ -1234,6 +1232,7 @@ void btm_inq_db_reset (void)
             p_inq->p_remname_cmpl_cb = NULL;
         }
     }
+#endif
 
     /* Cancel an inquiry filter request if active, and notify the caller (if waiting) */
     if (p_inq->inqfilt_active) {
@@ -1280,8 +1279,10 @@ void btm_inq_db_init (void)
     memset (&btm_cb.btm_inq_vars, 0, sizeof (tBTM_INQUIRY_VAR_ST));
 #endif
 
+#if (CLASSIC_BT_INCLUDED == TRUE)
     btu_free_timer(&btm_cb.btm_inq_vars.rmt_name_timer_ent);
     memset(&btm_cb.btm_inq_vars.rmt_name_timer_ent, 0, sizeof(TIMER_LIST_ENT));
+#endif
     btu_free_timer(&btm_cb.btm_inq_vars.inq_timer_ent);
     memset(&btm_cb.btm_inq_vars.inq_timer_ent, 0, sizeof(TIMER_LIST_ENT));
 
@@ -2081,6 +2082,7 @@ void btm_process_cancel_complete(UINT8 status, UINT8 mode)
     btm_acl_update_busy_level (BTM_BLI_INQ_CANCEL_EVT);
     btm_process_inq_complete(status, mode);
 }
+#if (CLASSIC_BT_INCLUDED == TRUE)
 /*******************************************************************************
 **
 ** Function         btm_initiate_rem_name
@@ -2191,13 +2193,9 @@ void btm_process_remote_name (BD_ADDR bda, BD_NAME bdn, UINT16 evt_len, UINT8 hc
               (memcmp(bda, p_inq->remname_bda, BD_ADDR_LEN) == 0)) || bda == NULL))
 
     {
-#if BLE_INCLUDED == TRUE
-        if (BTM_UseLeLink(p_inq->remname_bda)) {
-            if (hci_status == HCI_ERR_UNSPECIFIED) {
-                btm_ble_cancel_remote_name(p_inq->remname_bda);
-            }
-        }
-#endif
+        BD_ADDR saved_remname_bda;
+
+        memcpy(saved_remname_bda, p_inq->remname_bda, BD_ADDR_LEN);
         btu_stop_timer (&p_inq->rmt_name_timer_ent);
         p_inq->remname_active = FALSE;
         /* Clean up and return the status if the command was not successful */
@@ -2226,7 +2224,7 @@ void btm_process_remote_name (BD_ADDR bda, BD_NAME bdn, UINT16 evt_len, UINT8 hc
             rem_name.length = 0;
             rem_name.remote_bd_name[0] = '\0';
         }
-        memcpy(rem_name.bd_addr, p_inq->remname_bda, BD_ADDR_LEN);
+        memcpy(rem_name.bd_addr, saved_remname_bda, BD_ADDR_LEN);
         /* Reset the remote BAD to zero and call callback if possible */
         memset(p_inq->remname_bda, 0, BD_ADDR_LEN);
 
@@ -2261,6 +2259,7 @@ void btm_inq_rmt_name_failed (void)
     btm_sec_rmt_name_request_complete (NULL, NULL, HCI_ERR_UNSPECIFIED);
 #endif  ///SMP_INCLUDED == TRUE
 }
+#endif /* CLASSIC_BT_INCLUDED == TRUE */
 
 #if (CLASSIC_BT_INCLUDED == TRUE)
 /*******************************************************************************

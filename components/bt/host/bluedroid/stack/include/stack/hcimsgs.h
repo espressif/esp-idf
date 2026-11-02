@@ -249,6 +249,7 @@ BOOLEAN btsnd_hcic_set_conn_encrypt (UINT16 handle, BOOLEAN enable);
 #define HCI_SET_ENCRYPT_ENABLE_OFF      2
 /* Set Connection Encryption */
 
+#if (CLASSIC_BT_INCLUDED == TRUE)
 /* Remote Name Request */
 BOOLEAN btsnd_hcic_rmt_name_req (BD_ADDR bd_addr,
                                  UINT8 page_scan_rep_mode,
@@ -265,6 +266,7 @@ BOOLEAN btsnd_hcic_rmt_name_req (BD_ADDR bd_addr,
 
 /* Remote Name Request Cancel */
 BOOLEAN btsnd_hcic_rmt_name_req_cancel(BD_ADDR bd_addr);
+#endif /* CLASSIC_BT_INCLUDED == TRUE */
 
 #define HCIC_PARAM_SIZE_RMT_NAME_REQ_CANCEL   6
 

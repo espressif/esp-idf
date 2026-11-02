@@ -630,9 +630,11 @@ static void btu_general_alarm_process(void *param)
         sdp_conn_timeout ((tCONN_CB *)p_tle->param);
         break;
 #endif
+#if (CLASSIC_BT_INCLUDED == TRUE)
     case BTU_TTYPE_BTM_RMT_NAME:
         btm_inq_rmt_name_failed();
         break;
+#endif /* CLASSIC_BT_INCLUDED == TRUE */
 #if (defined(RFCOMM_INCLUDED) && RFCOMM_INCLUDED == TRUE)
     case BTU_TTYPE_RFCOMM_MFC:
     case BTU_TTYPE_RFCOMM_PORT:
