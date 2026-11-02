@@ -154,6 +154,8 @@ typedef struct {
 #endif // #if (BLE_50_FEATURE_SUPPORT == TRUE)
 
 #define BTM_BLE_ISVALID_PARAM(x, min, max)  (((x) >= (min) && (x) <= (max)) || ((x) == BTM_BLE_CONN_PARAM_UNDEF))
+/* Scan interval/window must be in range; unlike conn params, UNDEF (0xffff) is not allowed. */
+#define BTM_BLE_SCAN_ISVALID_PARAM(x, min, max)  (((x) >= (min) && (x) <= (max)))
 
 typedef struct {
     UINT16 discoverable_mode;
@@ -306,11 +308,17 @@ typedef UINT16 tBTM_BLE_STATE_MASK;
 #define BTM_DUPLICATE_SCAN_EXCEPTIONAL_INFO_MESH_PROV_SRV_ADV    3
 #define BTM_DUPLICATE_SCAN_EXCEPTIONAL_INFO_MESH_PROXY_SRV_ADV   4
 
+/* Align with esp_bt_duplicate_exceptional_subcode_type_t */
+#define BTM_DUPLICATE_SCAN_EXCEPTIONAL_SUBCODE_ADD               0
+#define BTM_DUPLICATE_SCAN_EXCEPTIONAL_SUBCODE_REMOVE            1
+#define BTM_DUPLICATE_SCAN_EXCEPTIONAL_SUBCODE_CLEAN             2
+
 typedef struct {
     BD_ADDR         *resolve_q_random_pseudo;
     UINT8           *resolve_q_action;
-    UINT8           q_next;
-    UINT8           q_pending;
+    UINT16          q_next;
+    UINT16          q_pending;
+    UINT16          q_cap;
 } tBTM_BLE_RESOLVE_Q;
 
 typedef struct {
