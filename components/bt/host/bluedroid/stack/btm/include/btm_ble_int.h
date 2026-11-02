@@ -328,6 +328,19 @@ typedef struct {
 #define BTM_PRIVACY_MIXED   3              /* BLE privacy mixed mode, broadcom proprietary mode */
 typedef UINT8 tBTM_PRIVACY_MODE;
 
+#if BLE_PRIVACY_SPT == TRUE
+/* RPA offload / resolving list meta op-codes (shared by btm_ble_gap.c) */
+#define BTM_BLE_META_IRK_ENABLE         0x01
+#define BTM_BLE_META_ADD_IRK_ENTRY      0x02
+#define BTM_BLE_META_REMOVE_IRK_ENTRY   0x03
+#define BTM_BLE_META_CLEAR_IRK_LIST     0x04
+#define BTM_BLE_META_READ_IRK_ENTRY     0x05
+
+/* Multi-step BTM_BleConfigPrivacy() state */
+#define BTM_PRIVACY_CFG_PENDING_AR      0x01
+#define BTM_PRIVACY_CFG_PENDING_RPA     0x02
+#endif
+
 /* data length change event callback */
 typedef void (tBTM_DATA_LENGTH_CHANGE_CBACK) (UINT16 max_tx_length, UINT16 max_rx_length);
 
@@ -385,6 +398,7 @@ typedef struct {
     tBTM_BLE_RL_STATE suspended_rl_state; /* Suspended resolving list state */
     UINT8 *irk_list_mask; /* IRK list availability mask, up to max entry bits */
     tBTM_BLE_RL_STATE rl_state; /* Resolving list state */
+    UINT8 privacy_cfg_pending; /* pending steps for BTM_BleConfigPrivacy */
 #endif
 
     tBTM_BLE_WL_OP wl_op_q[BTM_BLE_MAX_BG_CONN_DEV_NUM];
@@ -524,6 +538,13 @@ void btm_ble_resolving_list_init(UINT8 max_irk_list_sz);
 void btm_ble_resolving_list_cleanup(void);
 void btm_ble_add_default_entry_to_resolving_list(void);
 void btm_ble_set_privacy_mode_complete(UINT8 *p, UINT16 evt_len);
+BOOLEAN btm_ble_enq_resolving_list_pending(BD_ADDR pseudo_bda, UINT8 op_code);
+BOOLEAN btm_ble_deq_resolving_pending(BD_ADDR pseudo_addr);
+BOOLEAN btm_ble_undo_resolving_list_pending(void);
+void btm_ble_update_resolving_list(BD_ADDR pseudo_bda, BOOLEAN add);
+void btm_ble_privacy_config_begin(UINT8 pending_mask);
+void btm_ble_privacy_config_step_done(UINT8 step, tBTM_STATUS status);
+BOOLEAN btm_ble_disable_resolving_list_locked(UINT8 rl_mask, BOOLEAN to_resume);
 #endif
 
 #if (BLE_50_FEATURE_SUPPORT == TRUE) && (BLE_50_EXTEND_ADV_EN == TRUE) && (CONTROLLER_RPA_LIST_ENABLE == TRUE)

@@ -4239,22 +4239,40 @@ BOOLEAN BTM_BleAddDevToResolvingList(BD_ADDR addr,
                                       uint8_t irk[])
 {
     UINT8 *local_irk = btm_cb.devcb.id_keys.irk;
-    if ((btsnd_hcic_ble_add_device_resolving_list(addr_type, addr, irk, local_irk)) != TRUE) {
-        BTM_TRACE_ERROR("Add device to resolving list error");
+#if (defined BLE_PRIVACY_SPT && BLE_PRIVACY_SPT == TRUE)
+    if (!btm_ble_enq_resolving_list_pending(addr, BTM_BLE_META_ADD_IRK_ENTRY)) {
+        tBTM_BLE_LEGACY_GAP_CB_PARAMS cb_params = {0};
+        BTM_TRACE_ERROR("resolving pending queue full");
+        cb_params.status = BTM_NO_RESOURCES;
+        BTM_BleLegacyGapOneshotArm(BTM_BLE_LEGACY_GAP_ADD_DEV_TO_RPA_LIST_EVT);
+        BTM_BleLegacyGapOneshotFireIfArmed(BTM_BLE_LEGACY_GAP_ADD_DEV_TO_RPA_LIST_EVT, &cb_params);
         return FALSE;
     }
+    /* FALSE is only HCI_GET_CMD_BUF OOM. Host heap exhaustion is unrecoverable. */
+    btsnd_hcic_ble_add_device_resolving_list(addr_type, addr, irk, local_irk);
+    btm_ble_update_resolving_list(addr, TRUE);
+#else
+    btsnd_hcic_ble_add_device_resolving_list(addr_type, addr, irk, local_irk);
+#endif
     BTM_BleLegacyGapOneshotArm(BTM_BLE_LEGACY_GAP_ADD_DEV_TO_RPA_LIST_EVT);
     return TRUE;
 }
 
 BOOLEAN BTM_BleSetPrivacyMode(UINT8 addr_type, BD_ADDR bd_addr, UINT8 privacy_mode)
 {
+#if BLE_PRIVACY_SPT != TRUE
+    UNUSED(addr_type);
+    UNUSED(bd_addr);
+    UNUSED(privacy_mode);
+    return FALSE;
+#else
     if (btsnd_hcic_ble_set_privacy_mode(addr_type, bd_addr, privacy_mode) != TRUE) {
         BTM_TRACE_ERROR("LE SetPrivacyMode Mode=%d: error", privacy_mode);
         return FALSE;
     }
 
     return TRUE;
+#endif
 }
 
 #if (BLE_42_SCAN_EN == TRUE)
@@ -4285,6 +4303,10 @@ bool btm_ble_adv_pkt_post(pkt_linked_item_t *pkt)
 bool BTM_GetLocalIRK(uint8_t *irk)
 {
     if (!irk) {
+        return false;
+    }
+
+    if (memcmp(btm_cb.devcb.id_keys.irk, "\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0", sizeof(btm_cb.devcb.id_keys.irk)) == 0) {
         return false;
     }
 
