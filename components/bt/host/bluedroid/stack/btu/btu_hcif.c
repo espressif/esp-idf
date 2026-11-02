@@ -1902,7 +1902,7 @@ static void btu_hcif_hdl_command_status (UINT16 opcode, UINT8 status, UINT8 *p_c
                 btm_ble_create_ll_conn_complete(status);
                 break;
             case HCI_BLE_UPD_LL_CONN_PARAMS:
-                if (p_cmd != NULL){
+                if (p_cmd != NULL && status != HCI_SUCCESS) {
                     p_cmd++;
                     STREAM_TO_UINT16 (handle, p_cmd);
                     btu_ble_ll_get_conn_param_format_err_from_contoller(status, handle);
