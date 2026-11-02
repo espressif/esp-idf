@@ -256,6 +256,9 @@ void BTU_ShutDown(void)
 #endif
     btu_acl_queue_close();
 
+    /* Stop the BTU worker before tearing down stack modules: BTE_DeinitStack()
+     * must run after the BTU task is gone, and btm_ble_lock_free() must not
+     * run while btu_thread may still handle GAP/HCI events. */
     if (btu_thread) {
         osi_thread_free(btu_thread);
         btu_thread = NULL;
