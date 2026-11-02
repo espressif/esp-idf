@@ -768,7 +768,24 @@ void BTM_BleSetPrefConnParams (BD_ADDR bd_addr,
     if (BTM_BLE_ISVALID_PARAM(min_conn_int, BLE_CONN_INT_MIN_HOST_CHECK, BTM_BLE_CONN_INT_MAX) &&
             BTM_BLE_ISVALID_PARAM(max_conn_int, BLE_CONN_INT_MIN_HOST_CHECK, BTM_BLE_CONN_INT_MAX) &&
             BTM_BLE_ISVALID_PARAM(supervision_tout, BTM_BLE_CONN_SUP_TOUT_MIN, BTM_BLE_CONN_SUP_TOUT_MAX) &&
-            (slave_latency <= BTM_BLE_CONN_LATENCY_MAX || slave_latency == BTM_BLE_CONN_PARAM_UNDEF)) {
+            (slave_latency <= BTM_BLE_CONN_LATENCY_MAX || slave_latency == BTM_BLE_CONN_PARAM_UNDEF) &&
+            (min_conn_int == BTM_BLE_CONN_PARAM_UNDEF || max_conn_int == BTM_BLE_CONN_PARAM_UNDEF ||
+             min_conn_int <= max_conn_int)) {
+        if (min_conn_int != BTM_BLE_CONN_PARAM_UNDEF || max_conn_int != BTM_BLE_CONN_PARAM_UNDEF) {
+            UINT16 eff_min = (min_conn_int != BTM_BLE_CONN_PARAM_UNDEF) ? min_conn_int : max_conn_int;
+            UINT16 eff_max = (max_conn_int != BTM_BLE_CONN_PARAM_UNDEF) ? max_conn_int : min_conn_int;
+            /* UNDEF falls back to the same defaults the store path writes below. */
+            UINT16 eff_lat = (slave_latency != BTM_BLE_CONN_PARAM_UNDEF) ?
+                             slave_latency : BTM_BLE_CONN_SLAVE_LATENCY_DEF;
+            UINT16 eff_tout = (supervision_tout != BTM_BLE_CONN_PARAM_UNDEF) ?
+                              supervision_tout : BTM_BLE_CONN_TIMEOUT_DEF;
+
+            if (eff_min > eff_max ||
+                    (UINT32)eff_tout * 4 <= (UINT32)(1 + eff_lat) * eff_max) {
+                BTM_TRACE_ERROR("BTM_BleSetPrefConnParams: invalid parameter relationship");
+                return;
+            }
+        }
         if (p_dev_rec) {
             /* expect conn int and stout and slave latency to be updated all together */
             if (min_conn_int != BTM_BLE_CONN_PARAM_UNDEF || max_conn_int != BTM_BLE_CONN_PARAM_UNDEF) {
