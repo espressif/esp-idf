@@ -566,7 +566,22 @@ BOOLEAN BTM_BleConfigPrivacy(BOOLEAN privacy_mode)
     }
 
     if (random_cb){
-        BTM_BleLegacyGapOneshotArm(BTM_BLE_LEGACY_GAP_SET_PRIVACY_EVT);
+        UINT8 pending = 0;
+        if (controller_get_interface()->supports_ble_privacy()) {
+            pending |= BTM_PRIVACY_CFG_PENDING_AR;
+        }
+#if (CONTROLLER_RPA_LIST_ENABLE == FALSE)
+        if (privacy_mode) {
+            pending |= BTM_PRIVACY_CFG_PENDING_RPA;
+        }
+#endif
+        btm_ble_privacy_config_begin(pending);
+        if (pending == 0) {
+            tBTM_BLE_LEGACY_GAP_CB_PARAMS cb_params = {0};
+            cb_params.status = BTM_SUCCESS;
+            BTM_BleLegacyGapOneshotArm(BTM_BLE_LEGACY_GAP_SET_PRIVACY_EVT);
+            BTM_BleLegacyGapOneshotFireIfArmed(BTM_BLE_LEGACY_GAP_SET_PRIVACY_EVT, &cb_params);
+        }
     }else{
         BTM_TRACE_ERROR("%s,random_cb = NULL", __func__);
     }
@@ -580,7 +595,9 @@ BOOLEAN BTM_BleConfigPrivacy(BOOLEAN privacy_mode)
         p_cb->addr_mgnt_cb.own_addr_type = BLE_ADDR_PUBLIC;
         p_cb->privacy_mode = BTM_PRIVACY_NONE;
         // Disable RPA function
-        btsnd_hcic_ble_set_addr_resolution_enable(FALSE);
+        if (controller_get_interface()->supports_ble_privacy()) {
+            btsnd_hcic_ble_set_addr_resolution_enable(FALSE);
+        }
     } else { /* privacy is turned on*/
 #if (CONTROLLER_RPA_LIST_ENABLE == FALSE)
         /* always set host random address, used when privacy 1.1 or priavcy 1.2 is disabled */
@@ -598,11 +615,15 @@ BOOLEAN BTM_BleConfigPrivacy(BOOLEAN privacy_mode)
             p_cb->privacy_mode = BTM_PRIVACY_1_1;
         }
         // Enable RPA function
-        btsnd_hcic_ble_set_addr_resolution_enable(TRUE);
+        if (controller_get_interface()->supports_ble_privacy()) {
+            btsnd_hcic_ble_set_addr_resolution_enable(TRUE);
+        }
     }
 
 #if (defined(GAP_INCLUDED) && GAP_INCLUDED == TRUE && GATTS_INCLUDED == TRUE)
-    GAP_BleAttrDBUpdate (GATT_UUID_GAP_CENTRAL_ADDR_RESOL, (tGAP_BLE_ATTR_VALUE *)&addr_resolution);
+    tGAP_BLE_ATTR_VALUE p_value;
+    p_value.addr_resolution = addr_resolution;
+    GAP_BleAttrDBUpdate (GATT_UUID_GAP_CENTRAL_ADDR_RESOL, &p_value);
 #endif
 
     return TRUE;
