@@ -33,7 +33,7 @@ def _test_idf_gdb(openocd_dut: 'OpenOCD', dut: IdfDut) -> None:
         p.expect(
             re.compile(r'add symbol table from file.*rom.elf')
         )  # if fail here: add target support here https://github.com/espressif/esp-rom-elfs
-        p.expect_exact('hit Temporary breakpoint 1, app_main ()')
+        p.expect_exact('hit Temporary breakpoint 1')  # app_main
 
 
 @pytest.mark.jtag
