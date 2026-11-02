@@ -91,6 +91,28 @@ static BOOLEAN btm_ble_conn_comp_evt_len_valid(UINT16 evt_len, BOOLEAN enhanced,
     return TRUE;
 }
 
+BOOLEAN btm_ble_hci_evt_has_len(const char *tag, UINT16 evt_len, UINT16 min_len)
+{
+    if (evt_len >= min_len) {
+        return TRUE;
+    }
+    if (min_len <= 1) {
+        BTM_TRACE_ERROR("%s: invalid evt_len=%d", tag, evt_len);
+    } else {
+        BTM_TRACE_ERROR("%s: bad len %d", tag, evt_len);
+    }
+    return FALSE;
+}
+
+BOOLEAN btm_ble_hci_evt_has_ptr_status(const char *tag, const UINT8 *p, UINT16 evt_len)
+{
+    if (p != NULL && evt_len >= 1) {
+        return TRUE;
+    }
+    BTM_TRACE_ERROR("%s: invalid params evt_len=%d", tag, evt_len);
+    return FALSE;
+}
+
 #if SMP_INCLUDED == TRUE
 #include "smp_int.h"
 /* Parsed before async RPA resolve; used by btm_ble_resolve_random_addr_on_conn_cmpl(). */
@@ -1269,35 +1291,47 @@ BOOLEAN btm_ble_start_sec_check(BD_ADDR bd_addr, UINT16 psm, BOOLEAN is_originat
 ** Returns          void
 **
 *******************************************************************************/
-void btm_ble_rand_enc_complete (UINT8 *p, UINT16 op_code, tBTM_RAND_ENC_CB *p_enc_cplt_cback)
+void btm_ble_rand_enc_complete (UINT8 *p, UINT16 evt_len, UINT16 op_code, tBTM_RAND_ENC_CB *p_enc_cplt_cback)
 {
     tBTM_RAND_ENC   params;
     UINT8           *p_dest = params.param_buf;
+    UINT16          min_len = 1;
 
     BTM_TRACE_DEBUG ("btm_ble_rand_enc_complete");
 
     memset(&params, 0, sizeof(tBTM_RAND_ENC));
 
-    /* If there was a callback address for vcs complete, call it */
-    if (p_enc_cplt_cback && p) {
-        /* Pass parameters to the callback function */
-        STREAM_TO_UINT8(params.status, p); /* command status */
-
-        if (params.status == HCI_SUCCESS) {
-            params.opcode = op_code;
-
-            if (op_code == HCI_BLE_RAND) {
-                params.param_len = BT_OCTET8_LEN;
-            } else {
-                params.param_len = BT_OCTET16_LEN;
-            }
-
-            memcpy(p_dest, p, params.param_len);  /* Fetch return info from HCI event message */
-        }
-        if (p_enc_cplt_cback) {
-            (*p_enc_cplt_cback)(&params);    /* Call the Encryption complete callback function */
-        }
+    if (!p_enc_cplt_cback || !p) {
+        return;
     }
+
+    if (op_code == HCI_BLE_RAND) {
+        min_len = 1 + BT_OCTET8_LEN;
+    } else if (op_code == HCI_BLE_ENCRYPT) {
+        min_len = 1 + BT_OCTET16_LEN;
+    }
+
+    if (!btm_ble_hci_evt_has_len("rand_enc_cmpl", evt_len, min_len)) {
+        params.status = HCI_ERR_UNSPECIFIED;
+        (*p_enc_cplt_cback)(&params);
+        return;
+    }
+
+    /* Pass parameters to the callback function */
+    STREAM_TO_UINT8(params.status, p); /* command status */
+
+    if (params.status == HCI_SUCCESS) {
+        params.opcode = op_code;
+
+        if (op_code == HCI_BLE_RAND) {
+            params.param_len = BT_OCTET8_LEN;
+        } else {
+            params.param_len = BT_OCTET16_LEN;
+        }
+
+        memcpy(p_dest, p, params.param_len);  /* Fetch return info from HCI event message */
+    }
+    (*p_enc_cplt_cback)(&params);
 }
 #endif  ///SMP_INCLUDED == TRUE
 

@@ -2839,6 +2839,17 @@ static void btm_adv_pkt_handler(void *arg)
         uint8_t *p = packet->data + packet->offset;
         STREAM_TO_UINT8  (hci_evt_code, p);
         STREAM_TO_UINT8  (hci_evt_len, p);
+        /* Subevent code is the first payload byte. A zero-length LE meta
+         * event must not be passed as (UINT8)(len - 1), which wraps to 255
+         * and skips the short-packet checks below. */
+        if (hci_evt_len < 1) {
+            BTM_TRACE_ERROR("LE meta event truncated, len %u", hci_evt_len);
+            osi_free(linked_pkt);
+#if (BLE_ADV_REPORT_FLOW_CONTROL == TRUE)
+            hci_adv_credits_try_release(1);
+#endif
+            continue;
+        }
         STREAM_TO_UINT8  (ble_sub_code, p);
         if (ble_sub_code == HCI_BLE_ADV_PKT_RPT_EVT) {
             btm_ble_process_adv_pkt(p, hci_evt_len);
@@ -3133,11 +3144,15 @@ static void btm_ble_process_adv_pkt_cont(BD_ADDR bda, UINT8 addr_type, UINT8 evt
     }
 }
 
-void btm_ble_process_adv_discard_evt(UINT8 *p)
+void btm_ble_process_adv_discard_evt(UINT8 *p, UINT8 evt_len)
 {
 #if (BLE_42_SCAN_EN == TRUE)
 #if (BLE_ADV_REPORT_FLOW_CONTROL == TRUE)
     uint32_t num_dis = 0;
+    if (evt_len < 4) {
+        BTM_TRACE_ERROR("truncated discard evt len %d", evt_len);
+        return;
+    }
     STREAM_TO_UINT32 (num_dis, p);
     tBTM_INQ_DIS_CB *p_obs_discard_cb = btm_cb.ble_ctr_cb.p_obs_discard_cb;
     if(p_obs_discard_cb) {
@@ -3147,27 +3162,41 @@ void btm_ble_process_adv_discard_evt(UINT8 *p)
 #endif // #if (BLE_42_SCAN_EN == TRUE)
 }
 
-void btm_ble_process_direct_adv_pkt(UINT8 *p)
+void btm_ble_process_direct_adv_pkt(UINT8 *p, UINT8 evt_len)
 {
-    // TODO
+    /* LE Direct Advertising Report: Num_Reports(1) + Event_Type(1) + addr_type(1) + addr(6) + dir_addr_type(1) + dir_addr(6) + rssi(1) = 17 */
+    if (evt_len < 17) {
+        BTM_TRACE_ERROR("truncated direct adv evt len %d", evt_len);
+        return;
+    }
+    (void)p;
 }
 
 
 /*******************************************************************************
 **
-** Function         btm_ble_start_scan
+** Function         btm_ble_start_scan_locked
 **
-** Description      Start the BLE scan.
+** Description      Start BLE scan. Caller must hold btm_lock.
 **
-** Returns          void
+** Returns          status
 **
 *******************************************************************************/
-tBTM_STATUS btm_ble_start_scan(void)
+static tBTM_STATUS btm_ble_start_scan_locked(void)
 {
     tBTM_BLE_INQ_CB *p_inq = &btm_cb.ble_ctr_cb.inq_var;
     tBTM_STATUS status = BTM_CMD_STARTED;
 
-    osi_mutex_lock(&btm_lock, OSI_MUTEX_MAX_TIMEOUT);
+#if (BLE_TOPOLOGY_CHECK == TRUE)
+    tBTM_BLE_STATE_MASK scan_bit = BTM_BLE_STATE_PASSIVE_SCAN_BIT;
+
+    if (p_inq->scan_type == BTM_BLE_SCAN_MODE_ACTI) {
+        scan_bit = BTM_BLE_STATE_ACTIVE_SCAN_BIT;
+    }
+    if (!btm_ble_topology_check(scan_bit)) {
+        return BTM_WRONG_MODE;
+    }
+#endif // (BLE_TOPOLOGY_CHECK == TRUE)
 
     if(p_inq->scan_duplicate_filter > BTM_BLE_DUPLICATE_MAX) {
         p_inq->scan_duplicate_filter = BTM_BLE_DUPLICATE_DISABLE;
@@ -3594,18 +3623,33 @@ void btm_ble_read_remote_features_complete(UINT8 *p)
 
     BTM_TRACE_EVENT ("btm_ble_read_remote_features_complete ");
 
+    BTM_BLE_HCI_EVT_CHECK_STATUS("read_remote_feat", evt_len);
+
     STREAM_TO_UINT8(status, p);
+    evt_len--;
 
     // if LE read remote feature failed for HCI_ERR_CONN_FAILED_ESTABLISHMENT,
     // expect disconnect complete to be received
     if (status != HCI_ERR_CONN_FAILED_ESTABLISHMENT) {
+        BTM_BLE_HCI_EVT_CHECK_LEN("read_remote_feat", evt_len, 2);
         STREAM_TO_UINT16 (handle, p);
+        evt_len -= 2;
 
         /* Look up the connection by handle and copy features */
         p_acl_cb = btm_handle_to_acl(handle);
 	if (p_acl_cb) {
 	    {
-                STREAM_TO_ARRAY(p_acl_cb->peer_le_features, p, BD_FEATURES_LEN);
+                /* LE_Features is only valid on success. On other errors (e.g. 0x1A
+                 * Unsupported Remote Feature from a 4.0 peer) peer_le_features stays
+                 * all-zero, but link-up below must still proceed. */
+                if (status == HCI_SUCCESS) {
+                    BTM_BLE_HCI_EVT_CHECK_LEN("read_remote_feat", evt_len, BD_FEATURES_LEN);
+                    STREAM_TO_ARRAY(p_acl_cb->peer_le_features, p, BD_FEATURES_LEN);
+                    evt_len -= BD_FEATURES_LEN;
+                } else {
+                    BTM_TRACE_WARNING("read_remote_feat failed, status 0x%02x, handle 0x%04x",
+                                      status, handle);
+                }
 #if BLE_INCLUDED == TRUE
                 /* In the original Bluedroid version, slave need to send LL_VERSION_IND(call btsnd_hcic_rmt_ver_req)
                  * to remote device if it has not received ll_version_ind.

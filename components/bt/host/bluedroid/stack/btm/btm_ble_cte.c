@@ -212,6 +212,7 @@ void btm_ble_cte_read_ant_infor_complete(UINT8 *p)
         cb_params.cte_read_ant_infor_cmpl.status = (BTM_HCI_ERROR | cb_params.cte_read_ant_infor_cmpl.status);
     }
 
+_error:
     BTM_CteBleCallbackTrigger(BTM_BLE_CTE_READ_ANT_INFOR_EVT, &cb_params);
 }
 

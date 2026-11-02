@@ -1364,20 +1364,22 @@ void btm_ble_monitor_adv_report_evt(tBTM_BLE_MONITOR_ADV_REPORT *params)
     BTM_ExtBleCallbackTrigger(BTM_BLE_5_GAP_MONITOR_ADV_REPORT_EVT, &cb_params);
 }
 
-void btm_ble_read_monitor_adv_list_size_complete(UINT8 *p)
+void btm_ble_read_monitor_adv_list_size_complete(UINT8 *p, UINT16 evt_len)
 {
     tBTM_BLE_5_GAP_CB_PARAMS cb_params = {0};
     UINT8 status;
 
-    if (!p) {
-        BTM_TRACE_ERROR("%s, Invalid params.", __func__);
-        return;
-    }
+    BTM_BLE_HCI_EVT_CHECK_PTR_STATUS("read_mon_adv_list_size", p, evt_len);
 
     STREAM_TO_UINT8(status, p);
+    evt_len--;
     cb_params.monitor_adv_list_size.status = (status == HCI_SUCCESS) ? BTM_SUCCESS : (BTM_HCI_ERROR | status);
     if (status == HCI_SUCCESS) {
-        STREAM_TO_UINT8(cb_params.monitor_adv_list_size.list_size, p);
+        if (!btm_ble_hci_evt_has_len("read_mon_adv_list_size", evt_len, 1)) {
+            cb_params.monitor_adv_list_size.status = BTM_HCI_ERROR | HCI_ERR_UNSPECIFIED;
+        } else {
+            STREAM_TO_UINT8(cb_params.monitor_adv_list_size.list_size, p);
+        }
     }
 
     BTM_ExtBleCallbackTrigger(BTM_BLE_5_GAP_READ_MONITOR_ADV_LIST_SIZE_COMPLETE_EVT, &cb_params);
@@ -1571,17 +1573,27 @@ tBTM_STATUS BTM_BleReadAllLocalSuppFeatures(void)
     return BTM_CMD_STARTED;
 }
 
-void btm_ble_read_all_local_supp_features_complete(UINT8 *p)
+void btm_ble_read_all_local_supp_features_complete(UINT8 *p, UINT16 evt_len)
 {
     tBTM_BLE_5_GAP_CB_PARAMS cb_params = {0};
 
-    STREAM_TO_UINT8(cb_params.read_all_local_supp_feat.status, p);
-    if (cb_params.read_all_local_supp_feat.status == HCI_SUCCESS) {
-        STREAM_TO_UINT8(cb_params.read_all_local_supp_feat.max_page, p);
-        cb_params.read_all_local_supp_feat.le_features = btm_ble_local_supp_le_features;
-        STREAM_TO_ARRAY(btm_ble_local_supp_le_features, p, BLE_LL_EXT_FEAT_DATA_LEN);
+    if (!btm_ble_hci_evt_has_len("read_all_local_feat", evt_len, 1)) {
+        cb_params.read_all_local_supp_feat.status = BTM_HCI_ERROR | HCI_ERR_UNSPECIFIED;
     } else {
-        cb_params.read_all_local_supp_feat.status |= BTM_HCI_ERROR;
+        STREAM_TO_UINT8(cb_params.read_all_local_supp_feat.status, p);
+        evt_len--;
+
+        if (cb_params.read_all_local_supp_feat.status == HCI_SUCCESS) {
+            BTM_BLE_HCI_EVT_MARK_BAD_PAYLOAD("read_all_local_feat", evt_len, (1 + BLE_LL_EXT_FEAT_DATA_LEN),
+                                              cb_params.read_all_local_supp_feat.status);
+            if (cb_params.read_all_local_supp_feat.status == HCI_SUCCESS) {
+                STREAM_TO_UINT8(cb_params.read_all_local_supp_feat.max_page, p);
+                cb_params.read_all_local_supp_feat.le_features = btm_ble_local_supp_le_features;
+                STREAM_TO_ARRAY(btm_ble_local_supp_le_features, p, BLE_LL_EXT_FEAT_DATA_LEN);
+            }
+        } else {
+            cb_params.read_all_local_supp_feat.status |= BTM_HCI_ERROR;
+        }
     }
 
     BTM_ExtBleCallbackTrigger(BTM_BLE_5_GAP_READ_ALL_LOCAL_SUPP_FEAT_COMPLETE_EVT, &cb_params);
@@ -1732,30 +1744,40 @@ void btm_ble_read_min_supp_conn_interval_cmd_status(UINT8 status)
     BTM_ExtBleCallbackTrigger(BTM_BLE_5_GAP_READ_MIN_SUPP_CONN_INTERVAL_COMPLETE_EVT, &cb_params);
 }
 
-void btm_ble_read_min_supp_conn_interval_complete(UINT8 *p)
+void btm_ble_read_min_supp_conn_interval_complete(UINT8 *p, UINT16 evt_len)
 {
     tBTM_BLE_5_GAP_CB_PARAMS cb_params = {0};
     UINT8 num_groups;
 
-    if (!p) {
-        return;
-    }
+    BTM_BLE_HCI_EVT_CHECK_PTR_STATUS("read_min_conn_int", p, evt_len);
 
     STREAM_TO_UINT8(cb_params.read_min_supp_conn_interval.status, p);
+    evt_len--;
+
     if (cb_params.read_min_supp_conn_interval.status == HCI_SUCCESS) {
-        STREAM_TO_UINT8(cb_params.read_min_supp_conn_interval.min_supported_conn_interval, p);
-        STREAM_TO_UINT8(num_groups, p);
-        if (num_groups > BTM_BLE_MAX_CONN_INTERVAL_GROUPS) {
-            BTM_TRACE_WARNING("%s num_groups %u exceeds max %u", __func__, num_groups,
-                              BTM_BLE_MAX_CONN_INTERVAL_GROUPS);
-            num_groups = BTM_BLE_MAX_CONN_INTERVAL_GROUPS;
-        }
-        cb_params.read_min_supp_conn_interval.num_groups = num_groups;
-        cb_params.read_min_supp_conn_interval.groups = btm_ble_min_conn_interval_groups;
-        for (UINT8 i = 0; i < num_groups; i++) {
-            STREAM_TO_UINT16(btm_ble_min_conn_interval_groups[i].min_125us, p);
-            STREAM_TO_UINT16(btm_ble_min_conn_interval_groups[i].max_125us, p);
-            STREAM_TO_UINT16(btm_ble_min_conn_interval_groups[i].stride_125us, p);
+        if (!btm_ble_hci_evt_has_len("read_min_conn_int", evt_len, 2)) {
+            cb_params.read_min_supp_conn_interval.status = BTM_HCI_ERROR | HCI_ERR_UNSPECIFIED;
+        } else {
+            STREAM_TO_UINT8(cb_params.read_min_supp_conn_interval.min_supported_conn_interval, p);
+            STREAM_TO_UINT8(num_groups, p);
+            evt_len -= 2;
+            if (num_groups > BTM_BLE_MAX_CONN_INTERVAL_GROUPS) {
+                BTM_TRACE_WARNING("num_groups %u exceeds max %u", num_groups,
+                                  BTM_BLE_MAX_CONN_INTERVAL_GROUPS);
+                num_groups = BTM_BLE_MAX_CONN_INTERVAL_GROUPS;
+            }
+            if (evt_len < (UINT16)(num_groups * 6)) {
+                BTM_TRACE_ERROR("read_min_conn_int: truncated groups len %d", evt_len);
+                cb_params.read_min_supp_conn_interval.status = BTM_HCI_ERROR | HCI_ERR_UNSPECIFIED;
+                num_groups = 0;
+            }
+            cb_params.read_min_supp_conn_interval.num_groups = num_groups;
+            cb_params.read_min_supp_conn_interval.groups = btm_ble_min_conn_interval_groups;
+            for (UINT8 i = 0; i < num_groups; i++) {
+                STREAM_TO_UINT16(btm_ble_min_conn_interval_groups[i].min_125us, p);
+                STREAM_TO_UINT16(btm_ble_min_conn_interval_groups[i].max_125us, p);
+                STREAM_TO_UINT16(btm_ble_min_conn_interval_groups[i].stride_125us, p);
+            }
         }
     } else {
         cb_params.read_min_supp_conn_interval.status |= BTM_HCI_ERROR;
@@ -2187,16 +2209,34 @@ void BTM_BleSetTransPwrRptEnable(uint16_t conn_handle, uint8_t local_enable, uin
     BTM_ExtBleCallbackTrigger(BTM_BLE_GAP_SET_TRANS_POWER_REPORTING_ENABLE_EVT, &cb_params);
 }
 
-void btm_enh_read_trans_pwr_level_cmpl_evt(uint8_t *p)
+void btm_enh_read_trans_pwr_level_cmpl_evt(uint8_t *p, UINT16 evt_len)
 {
     uint8_t hci_status;
     tBTM_BLE_5_GAP_CB_PARAMS cb_params = {0};
 
+    BTM_BLE_HCI_EVT_CHECK_STATUS("enh_read_tx_pwr_cmpl", evt_len);
+
     STREAM_TO_UINT8(hci_status, p);
-    STREAM_TO_UINT16(cb_params.enh_trans_pwr_level_cmpl.conn_handle, p);
-    STREAM_TO_UINT8(cb_params.enh_trans_pwr_level_cmpl.phy, p);
-    STREAM_TO_UINT8(cb_params.enh_trans_pwr_level_cmpl.cur_tx_pwr_level, p);
-    STREAM_TO_UINT8(cb_params.enh_trans_pwr_level_cmpl.max_tx_pwr_level, p);
+    evt_len--;
+
+    /* Connection_Handle follows Status even when the command fails. */
+    if (evt_len >= 2) {
+        STREAM_TO_UINT16(cb_params.enh_trans_pwr_level_cmpl.conn_handle, p);
+        evt_len -= 2;
+    } else if (hci_status == HCI_SUCCESS) {
+        BTM_TRACE_ERROR("enh_read_tx_pwr_cmpl: bad len %d", evt_len);
+        hci_status = HCI_ERR_UNSPECIFIED;
+    }
+
+    if (hci_status == HCI_SUCCESS) {
+        if (!btm_ble_hci_evt_has_len("enh_read_tx_pwr_cmpl", evt_len, 3)) {
+            hci_status = HCI_ERR_UNSPECIFIED;
+        } else {
+            STREAM_TO_UINT8(cb_params.enh_trans_pwr_level_cmpl.phy, p);
+            STREAM_TO_UINT8(cb_params.enh_trans_pwr_level_cmpl.cur_tx_pwr_level, p);
+            STREAM_TO_UINT8(cb_params.enh_trans_pwr_level_cmpl.max_tx_pwr_level, p);
+        }
+    }
 
     if(hci_status != HCI_SUCCESS) {
         hci_status = BTM_HCI_ERROR | hci_status;
@@ -2385,14 +2425,23 @@ void BTM_BleCSReadLocalSuppCaps(void)
     btsnd_hcic_ble_cs_read_local_supported_caps();
 }
 
-void btm_ble_cs_read_local_supp_caps_cmpl_evt(uint8_t *p)
+void btm_ble_cs_read_local_supp_caps_cmpl_evt(uint8_t *p, UINT16 evt_len)
 {
     tBTM_BLE_5_GAP_CB_PARAMS cb_params = {0};
 
+    BTM_BLE_HCI_EVT_CHECK_STATUS("cs_read_local_caps_cmpl", evt_len);
+
     STREAM_TO_UINT8(cb_params.cs_read_local_supp_caps.status, p);
+    evt_len--;
+
     if (cb_params.cs_read_local_supp_caps.status != HCI_SUCCESS) {
         BTM_TRACE_ERROR("%s cmd err = 0x%x", __func__, cb_params.cs_read_local_supp_caps.status);
         cb_params.cs_read_local_supp_caps.status |= BTM_HCI_ERROR;
+        goto _error;
+    }
+
+    if (!btm_ble_hci_evt_has_len("cs_read_local_caps_cmpl", evt_len, 28)) {
+        cb_params.cs_read_local_supp_caps.status = BTM_HCI_ERROR | HCI_ERR_UNSPECIFIED;
         goto _error;
     }
 

@@ -152,7 +152,7 @@ static void btu_hcif_ssr_evt (UINT8 *p, UINT16 evt_len);
 
 #if BLE_INCLUDED == TRUE
 static void btu_ble_ll_conn_complete_evt (UINT8 *p, UINT16 evt_len);
-static void btu_ble_read_remote_feat_evt (UINT8 *p);
+static void btu_ble_read_remote_feat_evt (UINT8 *p, UINT16 evt_len);
 static void btu_ble_ll_conn_param_upd_evt (UINT8 *p, UINT16 evt_len);
 static void btu_ble_ll_get_conn_param_format_err_from_contoller (UINT8 status, UINT16 handle);
 #if (SMP_INCLUDED == TRUE)
@@ -506,7 +506,7 @@ void btu_hcif_process_event (UNUSED_ATTR UINT8 controller_id, BT_HDR *p_msg)
             btu_ble_ll_conn_param_upd_evt(p, hci_evt_len);
             break;
         case HCI_BLE_READ_REMOTE_FEAT_CMPL_EVT:
-            btu_ble_read_remote_feat_evt(p);
+            btu_ble_read_remote_feat_evt(p, hci_evt_len);
             break;
         case HCI_BLE_LTK_REQ_EVT: /* received only at slave device */
 #if (SMP_INCLUDED == TRUE)
@@ -1394,7 +1394,7 @@ static void btu_hcif_hdl_command_complete (UINT16 opcode, UINT8 *p, UINT16 evt_l
     case HCI_BLE_RAND:
     case HCI_BLE_ENCRYPT:
 #if (SMP_INCLUDED == TRUE)
-        btm_ble_rand_enc_complete (p, opcode, (tBTM_RAND_ENC_CB *)p_cplt_cback);
+        btm_ble_rand_enc_complete (p, evt_len, opcode, (tBTM_RAND_ENC_CB *)p_cplt_cback);
 #endif  ///SMP_INCLUDED == TRUE
         break;
 
@@ -1516,16 +1516,16 @@ static void btu_hcif_hdl_command_complete (UINT16 opcode, UINT8 *p, UINT16 evt_l
         btm_ble_iso_data_path_update_complete(opcode, status, conn_handle);
         break;
     case HCI_BLE_ISO_READ_TX_SYNC:
-        btm_ble_iso_read_iso_tx_sync_complete(p);
+        btm_ble_iso_read_iso_tx_sync_complete(p, evt_len);
         break;
     case HCI_BLE_ISO_READ_ISO_LINK_QUALITY:
-        btm_ble_iso_read_iso_link_quality_complete(p);
+        btm_ble_iso_read_iso_link_quality_complete(p, evt_len);
         break;
 
 #if (BLE_FEAT_ISO_CIG_CENTRAL_EN == TRUE)
     case HCI_BLE_ISO_SET_CIG_PARAMS:
     case HCI_BLE_ISO_SET_CIG_PARAMS_TEST:
-        btm_ble_iso_set_cig_params_complete(p);
+        btm_ble_iso_set_cig_params_complete(p, evt_len);
         break;
     case HCI_BLE_ISO_REMOVE_CIG:
         // do nothing
@@ -1542,33 +1542,33 @@ static void btu_hcif_hdl_command_complete (UINT16 opcode, UINT8 *p, UINT16 evt_l
 #endif // #if (BLE_FEAT_ISO_EN == TRUE)
 #if (BLE_FEAT_CTE_EN == TRUE)
     case HCI_BLE_READ_ANT_INFOR:
-        btm_ble_cte_read_ant_infor_complete(p);
+        btm_ble_cte_read_ant_infor_complete(p, evt_len);
         break;
 #endif // #if (BLE_FEAT_CTE_EN == TRUE)
 
 #if (BLE_FEAT_POWER_CONTROL_EN == TRUE)
     case HCI_BLE_ENH_READ_TRANS_POWER_LEVEL:
-        btm_enh_read_trans_pwr_level_cmpl_evt(p);
+        btm_enh_read_trans_pwr_level_cmpl_evt(p, evt_len);
         break;
 #endif //#if (BLE_FEAT_POWER_CONTROL_EN == TRUE)
 #if (BT_BLE_FEAT_CHANNEL_SOUNDING == TRUE)
     case HCI_BLE_CS_READ_LOCAL_SUPP_CAPS:
-        btm_ble_cs_read_local_supp_caps_cmpl_evt(p);
+        btm_ble_cs_read_local_supp_caps_cmpl_evt(p, evt_len);
         break;
 #endif // (BT_BLE_FEAT_CHANNEL_SOUNDING == TRUE)
 #if (BLE_FEAT_ADV_MONITOR == TRUE)
     case HCI_BLE_READ_MONITOR_ADV_LIST_SIZE:
-        btm_ble_read_monitor_adv_list_size_complete(p);
+        btm_ble_read_monitor_adv_list_size_complete(p, evt_len);
         break;
 #endif // #if (BLE_FEAT_ADV_MONITOR == TRUE)
 #if (BLE_FEAT_LL_EXT_FEAT == TRUE)
     case HCI_BLE_READ_ALL_LOCAL_SUPP_FEATURES:
-        btm_ble_read_all_local_supp_features_complete(p);
+        btm_ble_read_all_local_supp_features_complete(p, evt_len);
         break;
 #endif // #if (BLE_FEAT_LL_EXT_FEAT == TRUE)
 #if (BLE_FEAT_SHORTER_CONN_INTERVALS == TRUE)
     case HCI_BLE_READ_MIN_SUPP_CONN_INTERVAL:
-        btm_ble_read_min_supp_conn_interval_complete(p);
+        btm_ble_read_min_supp_conn_interval_complete(p, evt_len);
         break;
 #endif // #if (BLE_FEAT_SHORTER_CONN_INTERVALS == TRUE)
 #endif /* (BLE_INCLUDED == TRUE) */
@@ -2617,9 +2617,9 @@ static void btu_ble_ll_get_conn_param_format_err_from_contoller (UINT8 status, U
 
 }
 
-static void btu_ble_read_remote_feat_evt (UINT8 *p)
+static void btu_ble_read_remote_feat_evt (UINT8 *p, UINT16 evt_len)
 {
-    btm_ble_read_remote_features_complete(p);
+    btm_ble_read_remote_features_complete(p, evt_len);
 }
 
 #if BLE_INCLUDED == TRUE && SMP_INCLUDED == TRUE

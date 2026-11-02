@@ -1206,7 +1206,7 @@ void btm_ble_periodic_adv_sync_trans_complete(UINT16 op_code, UINT8 hci_status, 
 void btm_ble_big_sync_terminate_complete(UINT8 hci_status, UINT8 big_handle);
 
 #if (BLE_FEAT_POWER_CONTROL_EN == TRUE)
-void btm_enh_read_trans_pwr_level_cmpl_evt(uint8_t *p);
+void btm_enh_read_trans_pwr_level_cmpl_evt(uint8_t *p, UINT16 evt_len);
 void btm_read_remote_trans_pwr_level_cmpl(UINT8 status);
 #endif // #if (BLE_FEAT_POWER_CONTROL_EN == TRUE)
 
@@ -1228,7 +1228,7 @@ void btm_ble_read_min_supp_conn_interval_cmd_status(UINT8 status);
 #endif // #if (BLE_FEAT_SHORTER_CONN_INTERVALS == TRUE)
 
 #if (BT_BLE_FEAT_CHANNEL_SOUNDING == TRUE)
-void btm_ble_cs_read_local_supp_caps_cmpl_evt(UINT8 *p);
+void btm_ble_cs_read_local_supp_caps_cmpl_evt(UINT8 *p, UINT16 evt_len);
 void btm_ble_cs_read_remote_supp_caps_cmd_status(UINT8 status);
 void btm_ble_cs_security_enable_cmd_status(UINT8 status);
 void btm_ble_cs_read_remote_fae_table_cmd_status(UINT8 status);

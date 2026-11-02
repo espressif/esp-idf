@@ -260,8 +260,9 @@ void btm_ble_clear_resolving_list_complete(UINT8 *p, UINT16 evt_len)
                 btm_ble_resolving_list_init(irk_list_sz_max);
             }
             if (btm_cb.ble_ctr_cb.irk_list_mask != NULL) {
-                uint8_t irk_mask_size = (irk_list_sz_max % 8) ?
-                                    (irk_list_sz_max / 8 + 1) : (irk_list_sz_max / 8);
+                uint8_t max_irk_list_sz = controller_get_interface()->get_ble_resolving_list_max_size();
+                uint8_t irk_mask_size = (max_irk_list_sz % 8) ?
+                                    (max_irk_list_sz / 8 + 1) : (max_irk_list_sz / 8);
                 memset(btm_cb.ble_ctr_cb.irk_list_mask, 0, irk_mask_size);
             }
         }
@@ -294,10 +295,22 @@ void btm_ble_clear_resolving_list_complete(UINT8 *p, UINT16 evt_len)
 void btm_ble_add_resolving_list_entry_complete(UINT8 *p, UINT16 evt_len)
 {
     UINT8 status;
+
+    if (!btm_ble_hci_evt_has_len("add_rpa_list_cmpl", evt_len, 1)) {
+        BD_ADDR pseudo_bda;
+        tBTM_BLE_LEGACY_GAP_CB_PARAMS cb_params = {0};
+        if (btm_ble_deq_resolving_pending(pseudo_bda)) {
+            btm_ble_update_resolving_list(pseudo_bda, FALSE);
+        }
+        cb_params.status = BTM_ILLEGAL_VALUE;
+        BTM_BleLegacyGapOneshotFireIfArmed(BTM_BLE_LEGACY_GAP_ADD_DEV_TO_RPA_LIST_EVT, &cb_params);
+        return;
+    }
+
     STREAM_TO_UINT8(status, p);
 
     tBTM_BLE_LEGACY_GAP_CB_PARAMS cb_params = {0};
-    cb_params.status = status;
+    cb_params.status = btm_ble_status_from_hci(status);
     BTM_BleLegacyGapOneshotFireIfArmed(BTM_BLE_LEGACY_GAP_ADD_DEV_TO_RPA_LIST_EVT, &cb_params);
 
     BTM_TRACE_DEBUG("%s status = %d", __func__, status);
@@ -340,6 +353,17 @@ void btm_ble_remove_resolving_list_entry_complete(UINT8 *p, UINT16 evt_len)
 {
     BD_ADDR pseudo_bda;
     UINT8 status;
+
+    if (!btm_ble_hci_evt_has_len("rm_rpa_list_cmpl", evt_len, 1)) {
+        BD_ADDR pseudo_bda;
+        if (btm_ble_deq_resolving_pending(pseudo_bda)) {
+            btm_ble_update_resolving_list(pseudo_bda, TRUE);
+        }
+#if CONTROLLER_RPA_LIST_ENABLE && BLE_SMP_ID_RESET_ENABLE
+        is_deleting_zero_addr = false;
+#endif
+        return;
+    }
 
     STREAM_TO_UINT8(status, p);
 
@@ -391,7 +415,15 @@ void btm_ble_read_resolving_list_entry_complete(UINT8 *p, UINT16 evt_len)
     UINT8           status, rra_type = BTM_BLE_ADDR_PSEUDO;
     BD_ADDR         rra, pseudo_bda;
 
+    if (!btm_ble_hci_evt_has_len("read_rpa_list_cmpl", evt_len, 1)) {
+        if (btm_ble_deq_resolving_pending(pseudo_bda)) {
+            BTM_TRACE_DEBUG("read_rpa_list_cmpl: no pending op on short evt");
+        }
+        return;
+    }
+
     STREAM_TO_UINT8  (status, p);
+    evt_len--;
 
     BTM_TRACE_DEBUG("%s status = %d", __func__, status);
 
@@ -403,6 +435,7 @@ void btm_ble_read_resolving_list_entry_complete(UINT8 *p, UINT16 evt_len)
     if (status == HCI_SUCCESS) {
         /* proprietary spec has extra bytes */
         if (evt_len > 8) {
+            BTM_BLE_HCI_EVT_CHECK_LEN("read_rpa_list_cmpl", evt_len, (2 + 16 + 1 + 6 + 6));
             p += (2 + 16 + 1 + 6); /* skip subcode, index, IRK value, address type, identity addr type */
             STREAM_TO_BDADDR(rra, p);
 
@@ -431,6 +464,11 @@ void btm_ble_read_resolving_list_entry_complete(UINT8 *p, UINT16 evt_len)
 void btm_ble_set_addr_resolution_enable_complete(UINT8 *p, UINT16 evt_len)
 {
     UINT8 status;
+
+    if (!btm_ble_hci_evt_has_len("set_addr_resolution_cmpl", evt_len, 1)) {
+        btm_ble_privacy_config_step_done(BTM_PRIVACY_CFG_PENDING_AR, BTM_ILLEGAL_VALUE);
+        return;
+    }
 
     STREAM_TO_UINT8(status, p);
 
@@ -461,6 +499,13 @@ void btm_ble_set_rpa_timeout_complete(UINT8 *p, UINT16 evt_len)
 {
     UINT8 status;
 
+    if (!btm_ble_hci_evt_has_len("set_rpa_timeout_cmpl", evt_len, 1)) {
+        tBTM_BLE_LEGACY_GAP_CB_PARAMS cb_params = {0};
+        cb_params.status = BTM_ILLEGAL_VALUE;
+        BTM_LegacyBleCallbackTrigger(BTM_BLE_LEGACY_GAP_RPA_TIMEOUT_EVT, &cb_params);
+        return;
+    }
+
     // Extract the status of the command completion from the event data
     STREAM_TO_UINT8(status, p);
 
@@ -487,6 +532,13 @@ void btm_ble_set_rpa_timeout_complete(UINT8 *p, UINT16 evt_len)
 void btm_ble_set_privacy_mode_complete(UINT8 *p, UINT16 evt_len)
 {
     UINT8 status;
+
+    if (!btm_ble_hci_evt_has_len("set_privacy_mode_cmpl", evt_len, 1)) {
+        tBTM_BLE_LEGACY_GAP_CB_PARAMS cb_params = {0};
+        cb_params.status = BTM_ILLEGAL_VALUE;
+        BTM_LegacyBleCallbackTrigger(BTM_BLE_LEGACY_GAP_SET_PRIVACY_MODE_COMPLETE_EVT, &cb_params);
+        return;
+    }
 
     // Extract the status of the command completion from the event data
     STREAM_TO_UINT8(status, p);
