@@ -527,6 +527,8 @@ esp_err_t esp_wifi_deauth_sta(uint16_t aid);
   *            so call any one to free the memory once the scan is done.
   * @attention The values of maximum active scan time and passive scan time per channel are limited to 1500 milliseconds.
   *            Values above 1500ms may cause station to disconnect from AP and are not recommended.
+  * @attention A scan in progress is cancelled when a CSA is received or initiated and when the
+  *            channel switch takes effect.
   *
   * @param     config  configuration settings for scanning, if set to NULL default settings will be used
   *                    of which default values are show_hidden:false, scan_type:active, scan_time.active.min:0,
@@ -1832,24 +1834,30 @@ esp_err_t esp_wifi_get_bandwidths(wifi_interface_t ifx, wifi_bandwidths_t *bw);
 /**
   * @brief      Send action frame on target channel
   *
+  * @attention The API returns ESP_FAIL while a CSA is pending. An ongoing operation is cancelled
+  *            when a CSA is received or initiated.
+  *
   * @param    req   action tx request structure containing relevant fields
   *
   * @return
   *    - ESP_OK: succeed
   *    - ESP_ERR_NO_MEM: failed to allocate memory
-  *    - ESP_FAIL: failed to send frame
+  *    - ESP_FAIL: failed to send frame or a CSA is pending
   */
 esp_err_t esp_wifi_action_tx_req(wifi_action_tx_req_t *req);
 
 /**
   * @brief      Remain on the target channel for required duration
   *
+  * @attention The API returns ESP_FAIL while a CSA is pending. An ongoing operation is cancelled
+  *            when a CSA is received or initiated.
+  *
   * @param    req  roc request structure containing relevant fields
   *
   * @return
   *    - ESP_OK: succeed
   *    - ESP_ERR_NO_MEM: failed to allocate memory
-  *    - ESP_FAIL: failed to perform roc operation
+  *    - ESP_FAIL: failed to perform roc operation or a CSA is pending
   */
 esp_err_t esp_wifi_remain_on_channel(wifi_roc_req_t * req);
 #ifdef __cplusplus
