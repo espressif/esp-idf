@@ -26,7 +26,7 @@
 #include "hal/efuse_ll.h"
 #include "hal/efuse_hal.h"
 #include "hal/mspi_ll.h"
-#include "esp_hw_log.h"
+#include "esp_log.h"
 #if !BOOTLOADER_BUILD && CONFIG_SPIRAM
 #include "esp_private/esp_psram_impl.h"
 #include "hal/psram_ctrlr_ll.h"
@@ -37,7 +37,7 @@
 
 #include "esp_private/rtc_clk.h"
 
-ESP_HW_LOG_ATTR_TAG(TAG, "pmu_sleep");
+ESP_LOG_ATTR_TAG(TAG, "pmu_sleep");
 
 #define HP(state)   (PMU_MODE_HP_ ## state)
 #define LP(state)   (PMU_MODE_LP_ ## state)

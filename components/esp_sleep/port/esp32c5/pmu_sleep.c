@@ -22,9 +22,9 @@
 #include "pmu_param.h"
 #include "hal/efuse_ll.h"
 #include "hal/efuse_hal.h"
-#include "esp_hw_log.h"
+#include "esp_log.h"
 
-ESP_HW_LOG_ATTR_TAG(TAG, "pmu_sleep");
+ESP_LOG_ATTR_TAG(TAG, "pmu_sleep");
 
 #define HP(state)   (PMU_MODE_HP_ ## state)
 #define LP(state)   (PMU_MODE_LP_ ## state)
@@ -42,7 +42,7 @@ static uint32_t get_lslp_dbg(void)
     if ((chip_version == 1 && blk_version >= 1) || (chip_version >= 100 && blk_version >= 2)) {
         pmu_dbg_atten_lightsleep = pmu_ll_get_lslp_dbg();
     } else {
-        ESP_HW_LOGD(TAG, "lslp dbg not burnt in efuse\n");
+        ESP_EARLY_LOGD(TAG, "lslp dbg not burnt in efuse\n");
     }
 
     return pmu_dbg_atten_lightsleep;
@@ -56,7 +56,7 @@ static uint32_t get_lslp_hp_dbias(void)
     if ((chip_version == 1 && blk_version >= 1) || (chip_version >= 100 && blk_version >= 2)) {
         pmu_hp_dbias_lightsleep_0v6 = pmu_ll_get_lslp_hp_dbias();
     } else {
-        ESP_HW_LOGD(TAG, "lslp hp dbias not burnt in efuse\n");
+        ESP_EARLY_LOGD(TAG, "lslp hp dbias not burnt in efuse\n");
     }
 
     return pmu_hp_dbias_lightsleep_0v6;
@@ -70,7 +70,7 @@ static uint32_t get_dslp_dbg(void)
     if ((chip_version == 1 && blk_version >= 1) || (chip_version >= 100 && blk_version >= 2)) {
         pmu_dbg_atten_deepsleep = pmu_ll_get_dslp_dbg();
     } else {
-        ESP_HW_LOGD(TAG, "dslp dbg not burnt in efuse\n");
+        ESP_EARLY_LOGD(TAG, "dslp dbg not burnt in efuse\n");
     }
 
     return pmu_dbg_atten_deepsleep;
@@ -84,7 +84,7 @@ static uint32_t get_dslp_lp_dbias(void)
     if ((chip_version == 1 && blk_version >= 1) || (chip_version >= 100 && blk_version >= 2)) {
         pmu_lp_dbias_deepsleep_0v7 = pmu_ll_get_dslp_lp_dbias();
     } else {
-        ESP_HW_LOGD(TAG, "dslp lp dbias not burnt in efuse\n");
+        ESP_EARLY_LOGD(TAG, "dslp lp dbias not burnt in efuse\n");
     }
 
     return pmu_lp_dbias_deepsleep_0v7;

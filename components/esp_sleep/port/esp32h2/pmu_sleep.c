@@ -18,11 +18,11 @@
 #include "esp_private/esp_pmu.h"
 #include "pmu_param.h"
 #include "hal/efuse_hal.h"
-#include "esp_hw_log.h"
+#include "esp_log.h"
 #include "soc/regi2c_bias.h"
 #include "esp_private/regi2c_ctrl.h"
 
-ESP_HW_LOG_ATTR_TAG(TAG, "pmu_sleep");
+ESP_LOG_ATTR_TAG(TAG, "pmu_sleep");
 
 #define HP(state)   (PMU_MODE_HP_ ## state)
 #define LP(state)   (PMU_MODE_LP_ ## state)
@@ -38,10 +38,10 @@ uint32_t get_slp_lp_dbias(void)
         pmu_lp_dbias_sleep_0v7 = pmu_ll_get_dslp_dbias();
         if (pmu_lp_dbias_sleep_0v7 == 0) {
             pmu_lp_dbias_sleep_0v7 = PMU_LP_DBIAS_SLEEP_0V7_DEFAULT;
-            ESP_HW_LOGD(TAG, "slp dbias not burnt in efuse or wrong value was burnt in blk version: %d\n", blk_version);
+            ESP_EARLY_LOGD(TAG, "slp dbias not burnt in efuse or wrong value was burnt in blk version: %d\n", blk_version);
         }
     } else {
-        ESP_HW_LOGD(TAG, "blk_version is less than 3, slp dbias not burnt in efuse\n");
+        ESP_EARLY_LOGD(TAG, "blk_version is less than 3, slp dbias not burnt in efuse\n");
     }
 
     return pmu_lp_dbias_sleep_0v7;

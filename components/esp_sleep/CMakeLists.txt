@@ -106,12 +106,8 @@ if(CONFIG_SOC_RTC_FAST_MEM_SUPPORTED AND CONFIG_ESP_ROM_SUPPORT_DEEP_SLEEP_WAKEU
     list(APPEND srcs "sleep_wake_stub.c")
 endif()
 
-# Sleep code uses esp_hw_support internals (e.g. esp_hw_log.h) which are not exported as public headers
-idf_component_get_property(hw_support_dir esp_hw_support COMPONENT_DIR)
-
 idf_component_register(SRCS ${srcs}
                        INCLUDE_DIRS ${public_include_dirs}
-                       PRIV_INCLUDE_DIRS "${hw_support_dir}/port/include"
                        REQUIRES esp_hw_support
                        PRIV_REQUIRES ${priv_requires}
                        LDFRAGMENTS linker.lf)
