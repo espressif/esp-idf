@@ -330,8 +330,6 @@ tBTM_STATUS BTM_BleBigCreate(uint8_t big_handle, uint8_t adv_handle, uint8_t num
         return BTM_ILLEGAL_VALUE;
     }
 
-    /* btsnd_hcic_ble_big_create() returns FALSE only when HCI_GET_CMD_BUF()
-     * fails (out of memory). That path is not surfaced to the caller by design. */
     btsnd_hcic_ble_big_create(big_handle, adv_handle, num_bis, sdu_interval, max_sdu, max_transport_latency,
                               rtn, phy, packing, framing, encryption, broadcast_code);
 
@@ -350,7 +348,6 @@ tBTM_STATUS BTM_BleBigCreateTest(uint8_t big_handle, uint8_t adv_handle, uint8_t
         return BTM_ILLEGAL_VALUE;
     }
 
-    /* See BTM_BleBigCreate: HCI cmd buffer alloc failure is not checked. */
     btsnd_hcic_ble_big_create_test(big_handle, adv_handle, num_bis, sdu_interval, iso_interval, nse,
                                     max_sdu, max_pdu, phy, packing, framing, bn, irc, pto, encryption,
                                     broadcast_code);

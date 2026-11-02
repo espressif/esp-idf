@@ -60,7 +60,12 @@ size_t fixed_queue_length(fixed_queue_t *queue);
 size_t fixed_queue_capacity(fixed_queue_t *queue);
 
 // Enqueues the given |data| into the |queue|. The caller will be blocked or immediately return or wait for timeout according to the parameter timeout.
-// If enqueue failed, it will return false, otherwise return true
+// If enqueue failed, it will return false, otherwise return true.
+//
+// false has two sources. osi_sem_take() failing means the queue stayed full
+// until timeout; callers that pass timeout 0 use that as backpressure and may
+// retry. list_append() failing is a list-node allocation failure. Host heap
+// exhaustion is not recoverable, but a false return is not by itself OOM.
 bool fixed_queue_enqueue(fixed_queue_t *queue, void *data, uint32_t timeout);
 
 // Dequeues the next element from |queue|. If the queue is currently empty,

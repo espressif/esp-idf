@@ -1686,6 +1686,8 @@ void gatt_attr_process_prepare_write (tGATT_TCB *p_tcb, UINT8 i_rcb, UINT16 hand
     }
 
     if (is_need_queue_data){
+        /* osi_malloc / fixed_queue_new OOM: reported as GATT_PREPARE_Q_FULL to the
+         * peer; no further host-side recovery — see btm_ble_int.h memory policy. */
         queue_data = (tGATT_PREPARE_WRITE_QUEUE_DATA *)osi_malloc(len + sizeof(tGATT_PREPARE_WRITE_QUEUE_DATA));
         if (queue_data == NULL){
             status = GATT_PREPARE_Q_FULL;

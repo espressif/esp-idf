@@ -14,6 +14,11 @@
 #include "device/controller.h"
 #include <string.h>
 #include "l2c_int.h"
+
+/* HCI command buffer OOM (HCI_ERR_MEMORY_FULL from HCIC_BLE_CMD_CREATED_U8) is an
+ * unrecoverable host condition; != HCI_SUCCESS checks below are not required to
+ * special-case memory exhaustion — see btm_ble_int.h memory policy. */
+
 #if (BLE_50_FEATURE_SUPPORT == TRUE)
 #define SET_BIT(t, n)  (t |= 1UL << (n))
 tBTM_BLE_EXTENDED_CB extend_adv_cb;

@@ -11,9 +11,28 @@
 #include <string.h>
 #include "l2c_int.h"
 
+/* HCI command buffer OOM (HCI_ERR_MEMORY_FULL from HCIC_BLE_CMD_CREATED_U8) is an
+ * unrecoverable host condition; != HCI_SUCCESS checks below are not required to
+ * special-case memory exhaustion — see btm_ble_int.h memory policy. */
+
 tBTM_BLE_CTE_CBACK ble_cte_cb;
 
 extern void btm_ble_inter_set(bool extble_inter);
+
+#define BTM_BLE_CTE_MIN_SWITCHING_PATTERN_LEN  0x02
+#define BTM_BLE_CTE_MAX_SWITCHING_PATTERN_LEN  0x4B
+#define BTM_BLE_CTE_TYPE_AOA                   0x00
+#define BTM_BLE_CTE_TYPES_AOD_MASK             0x06
+
+static BOOLEAN btm_ble_cte_validate_switching_pattern(uint8_t switching_pattern_len, const uint8_t *antenna_ids)
+{
+    if (switching_pattern_len < BTM_BLE_CTE_MIN_SWITCHING_PATTERN_LEN ||
+            switching_pattern_len > BTM_BLE_CTE_MAX_SWITCHING_PATTERN_LEN) {
+        return FALSE;
+    }
+
+    return (antenna_ids != NULL);
+}
 
 void BTM_BleCteRegisterCallback(tBTM_BLE_CTE_CBACK cb)
 {

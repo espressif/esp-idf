@@ -256,13 +256,8 @@ static void bta_gattc_free(void *ptr)
     osi_free(ptr);
 }
 
-/* Bluedroid host operates under the design assumption that it must not run
- * out of memory; OOM is treated as an unrecoverable condition handled
- * upstream by the allocator policy. The list_append / list_prepend /
- * list_insert_after results are therefore forwarded as-is via the bool
- * return value (NULL preconditions also surface as `false`), leaving the
- * decision to roll back the orphaned service or to propagate the failure
- * up the call stack to the caller. */
+/* Bluedroid host assumes sufficient memory; OOM on list_append / list_prepend /
+ * list_insert_after is not handled per call site — see list.h design note. */
 bool bta_gattc_insert_sec_service_to_cache(list_t *services, tBTA_GATTC_SERVICE *p_new_srvc)
 {
     if (!services || !p_new_srvc) {

@@ -1089,6 +1089,11 @@ BOOLEAN btsnd_hcic_ble_set_channels (BLE_CHANNELS channels)
     return (TRUE);
 }
 
+/* HCI_GET_CMD_BUF OOM returns FALSE / HCI_ERR_MEMORY_FULL from the macro below.
+ * Bluedroid host does not allow heap exhaustion while BT is enabled; individual
+ * btsnd_hcic_* callers do not roll back on buffer exhaustion (unrecoverable).
+ * Code-review / AI-review OOM findings at call sites should be ignored — see
+ * btm_ble_int.h, hcimsgs.h, list.h, and fixed_queue.h design notes. */
 #define HCIC_BLE_CMD_CREATED(p, pp, size) do{\
     if ((p = HCI_GET_CMD_BUF(size)) == NULL) { \
         return FALSE; \

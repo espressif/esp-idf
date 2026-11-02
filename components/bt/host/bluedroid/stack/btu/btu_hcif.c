@@ -1615,13 +1615,32 @@ static void btu_hcif_command_complete_evt_on_task(BT_HDR *event)
 
 static void btu_hcif_command_complete_evt(BT_HDR *response, void *context)
 {
+    /* osi_calloc failure is not checked: host OOM is unrecoverable while BT is up
+     * — see btm_ble_int.h memory policy. */
     BT_HDR *event = osi_calloc(sizeof(BT_HDR) + sizeof(command_complete_hack_t));
     command_complete_hack_t *hack = (command_complete_hack_t *)&event->data[0];
 #if ((BLE_50_FEATURE_SUPPORT == TRUE) || (BLE_42_FEATURE_SUPPORT == TRUE))
     UINT8 status = 0;
-    uint8_t *stream = response->data + response->offset + 3 + 2; // 2 to skip the event headers, 1 to skip the command credits, 2 to opcode.
+    uint8_t *stream = response->data + response->offset + 3; // skip event headers + num_cmd_pkts
+#if (BLE_50_FEATURE_SUPPORT == TRUE)
+    command_opcode_t opcode = 0;
+    STREAM_TO_UINT16(opcode, stream);
+#else
+    stream += sizeof(UINT16); /* skip opcode; only needed for BLE 5.0 RF path sync */
+#endif // (BLE_50_FEATURE_SUPPORT == TRUE)
     STREAM_TO_UINT8(status, stream);
     btsnd_hci_ble_set_status(status);
+#if (BLE_50_FEATURE_SUPPORT == TRUE)
+    if (opcode == HCI_BLE_RD_RF_PATH_COMPENSATION && status == HCI_SUCCESS) {
+        BlE_SYNC *sync_info = btsnd_hcic_ble_get_sync_info();
+        /* return params: Status(1) + TX(2) + RX(2) */
+        UINT16 evt_len = response->len - 5;
+        if (sync_info != NULL && evt_len >= 5) {
+            STREAM_TO_UINT16(sync_info->rf_tx_path_comp, stream);
+            STREAM_TO_UINT16(sync_info->rf_rx_path_comp, stream);
+        }
+    }
+#endif // (BLE_50_FEATURE_SUPPORT == TRUE)
 #endif // #if ((BLE_50_FEATURE_SUPPORT == TRUE) || (BLE_42_FEATURE_SUPPORT == TRUE))
     HCI_TRACE_DEBUG("btu_hcif_command_complete_evt\n");
 

@@ -3711,6 +3711,9 @@ void btm_ble_read_remote_features_complete(UINT8 *p)
                         if (HCI_LE_DATA_LEN_EXT_SUPPORTED(p_acl_cb->peer_le_features) &&
                             (p_acl_cb->data_length_params.tx_len != data_length)) {
                             p_acl_cb->data_len_updating = true;
+                            /* HCI_GET_CMD_BUF OOM (btsnd_hcic_ble_set_data_length returns FALSE)
+                             * is unrecoverable; no rollback of data_len_updating — see
+                             * btm_ble_int.h / hcimsgs.h memory policy. */
                             btsnd_hcic_ble_set_data_length(p_acl_cb->hci_handle, data_length, data_txtime);
                         }
                         l2cble_notify_le_connection (p_acl_cb->remote_addr);

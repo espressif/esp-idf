@@ -1121,6 +1121,8 @@ void btm_ble_enable_resolving_list_for_platform (UINT8 rl_mask)
 *******************************************************************************/
 void btm_ble_resolving_list_init(UINT8 max_irk_list_sz)
 {
+    /* Host OOM during resolving-list buffer setup is unrecoverable; _mem_error only
+     * best-effort cleans partial allocations — see btm_ble_int.h memory policy. */
     tBTM_BLE_RESOLVE_Q *p_q = &btm_cb.ble_ctr_cb.resolving_list_pend_q;
     UINT8 irk_mask_size =  (max_irk_list_sz % 8) ?
                            (max_irk_list_sz / 8 + 1) : (max_irk_list_sz / 8);

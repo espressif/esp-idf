@@ -77,6 +77,11 @@ static inline void hci_free_cmd_buf(BT_HDR *buf)
     osi_free(linked_pkt);
 }
 
+/* Bluedroid host design: the stack assumes sufficient host memory to operate.
+ * HCI_GET_CMD_BUF / hci_get_cmd_buf exhaustion (returning NULL) is not handled
+ * with per-call rollback at every btsnd_hcic_* site — OOM is unrecoverable.
+ * Code-review / AI-review findings that only apply under host OOM should be
+ * ignored; see btm_ble_int.h for the full memory policy. */
 #define HCI_GET_CMD_BUF(param_len)       hci_get_cmd_buf(param_len)
 #define HCI_FREE_CMD_BUF(buf)            hci_free_cmd_buf(buf)
 

@@ -59,18 +59,27 @@ list_node_t *list_back_node(const list_t *list);
 // must remain valid at least until the element is removed from the list or the
 // list is freed. Returns true if |data| could be inserted, false otherwise
 // (e.g. out of memory).
+// Bluedroid host design: OOM on list node allocation is unrecoverable — see the
+// note on list_append() below; callers need not handle OOM-only failure paths.
 bool list_insert_after(list_t *list, list_node_t *prev_node, void *data);
 
 // Inserts |data| at the beginning of |list|. Neither |data| nor |list| may be NULL.
 // This function does not make a copy of |data| so the pointer must remain valid
 // at least until the element is removed from the list or the list is freed.
 // Returns true if |data| could be inserted, false otherwise (e.g. out of memory).
+// Bluedroid host design: OOM on list node allocation is unrecoverable — see the
+// note on list_append() below; callers need not handle OOM-only failure paths.
 bool list_prepend(list_t *list, void *data);
 
 // Inserts |data| at the end of |list|. Neither |data| nor |list| may be NULL.
 // This function does not make a copy of |data| so the pointer must remain valid
 // at least until the element is removed from the list or the list is freed.
 // Returns true if |data| could be inserted, false otherwise (e.g. out of memory).
+//
+// Bluedroid host design: the stack assumes sufficient host memory to operate.
+// OOM on list node allocation is not handled at individual call sites — it is
+// treated as an unrecoverable condition. Callers need not check the return
+// value solely for OOM; propagate the bool only when semantic rollback is needed.
 bool list_append(list_t *list, void *data);
 
 // Removes |data| from the list. Neither |list| nor |data| may be NULL. If |data|

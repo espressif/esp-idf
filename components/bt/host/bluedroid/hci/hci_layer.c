@@ -445,6 +445,7 @@ static void event_command_ready(fixed_pkt_queue_t *queue)
     hci_host_env.command_credits--;
     // Move it to the list of commands awaiting response
     osi_mutex_lock(&cmd_wait_q->commands_pending_response_lock, OSI_MUTEX_MAX_TIMEOUT);
+    /* list_append OOM: host cannot operate without memory; see list.h design note */
     list_append(cmd_wait_q->commands_pending_response, wait_entry);
     osi_mutex_unlock(&cmd_wait_q->commands_pending_response_lock);
 
