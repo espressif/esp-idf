@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -85,15 +85,15 @@ static int encode_rsa_pubkey_der(const uint8_t *modulus, size_t modulus_len,
     return 0;
 }
 
-esp_err_t verify_rsa_signature_block(const ets_secure_boot_signature_t *sig_block, const uint8_t *image_digest, const ets_secure_boot_sig_block_t *trusted_block)
+esp_err_t verify_rsa_signature_block(const uint8_t *image_digest, const ets_secure_boot_sig_block_t *trusted_block)
 {
-    if (!sig_block || !image_digest || !trusted_block) {
+    if (!image_digest || !trusted_block) {
         return ESP_ERR_INVALID_ARG;
     }
 
     esp_err_t ret = ESP_OK;
     psa_status_t status;
-    const unsigned rsa_key_size = sizeof(sig_block->block[0].signature);
+    const unsigned rsa_key_size = sizeof(trusted_block->signature);
     unsigned char *sig_be = NULL;
     unsigned char *pubkey_der_buf = NULL;
 
