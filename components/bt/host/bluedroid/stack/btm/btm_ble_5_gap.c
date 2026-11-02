@@ -386,7 +386,7 @@ tBTM_STATUS BTM_BleConfigExtendedAdvDataRaw(BOOLEAN is_scan_rsp, UINT8 instance,
     UINT16 data_offset = 0;
 
 
-    if ((status = btm_ble_ext_adv_set_data_validate(instance, len, data)) != BTM_SUCCESS) {
+    if ((status = btm_ble_ext_adv_set_data_validate(instance, len, data, is_scan_rsp, FALSE)) != BTM_SUCCESS) {
         BTM_TRACE_ERROR("%s, invalid extend adv data.", __func__);
         goto end;
     }
@@ -792,7 +792,7 @@ tBTM_STATUS BTM_BlePeriodicAdvCfgDataRaw(UINT8 instance, UINT16 len, UINT8 *data
         operation = BTM_BLE_ADV_DATA_OP_UNCHANGED_DATA;
     }
 
-    if ((status = btm_ble_ext_adv_set_data_validate(instance, len, data)) != BTM_SUCCESS) {
+    if ((status = btm_ble_ext_adv_set_data_validate(instance, len, data, FALSE, TRUE)) != BTM_SUCCESS) {
        BTM_TRACE_ERROR("%s, invalid extend adv data.", __func__);
        goto end;
     }
@@ -1219,8 +1219,9 @@ static tBTM_STATUS btm_ble_ext_adv_params_validate(tBTM_BLE_GAP_EXT_ADV_PARAMS *
         return BTM_ILLEGAL_VALUE;
     }
 
+    /* interval/primary_phy range: validated by controller on HCI LE Set Extended Advertising Parameters */
+
     if (params->type & BTM_BLE_GAP_SET_EXT_ADV_PROP_LEGACY) {
-        /* Not allowed for legacy PDUs. */
         if (params->type & BTM_BLE_GAP_SET_EXT_ADV_PROP_INCLUDE_TX_PWR) {
 	    BTM_TRACE_ERROR("%s, The Legacy adv can't include tx power bit, line %d", __func__, __LINE__);
             return BTM_ILLEGAL_VALUE;
@@ -1240,12 +1241,14 @@ static tBTM_STATUS btm_ble_ext_adv_params_validate(tBTM_BLE_GAP_EXT_ADV_PARAMS *
             BTM_TRACE_ERROR("%s, HD directed advertising allowed only for legacy PDUs. line %d", __func__, __LINE__);
             return BTM_ILLEGAL_VALUE;
         }
+
     }
 
     return BTM_SUCCESS;
 }
 
-static tBTM_STATUS btm_ble_ext_adv_set_data_validate(UINT8 instance, UINT16 len, UINT8 *data)
+static tBTM_STATUS btm_ble_ext_adv_set_data_validate(UINT8 instance, UINT16 len, UINT8 *data,
+                                                     BOOLEAN is_scan_rsp, BOOLEAN is_periodic)
 {
     if (data == NULL && len > 0) {
         BTM_TRACE_ERROR("%s, the extend adv data is NULL. line %d", __func__, __LINE__);
@@ -1262,9 +1265,15 @@ static tBTM_STATUS btm_ble_ext_adv_set_data_validate(UINT8 instance, UINT16 len,
         return BTM_ILLEGAL_VALUE;
     }
 
+    if (!is_periodic && !is_scan_rsp && extend_adv_cb.inst[instance].scannable &&
+            !extend_adv_cb.inst[instance].legacy_pdu && len > 0) {
+        BTM_TRACE_ERROR("scannable ext adv: no primary PDU data");
+        return BTM_ILLEGAL_VALUE;
+    }
+
     /* Not allowed with the direted advertising for legacy */
     if (extend_adv_cb.inst[instance].legacy_pdu && extend_adv_cb.inst[instance].directed) {
-	BTM_TRACE_ERROR("%s, Not allowed with the direted advertising for legacy. line %d", __func__, __LINE__);
+        BTM_TRACE_ERROR("legacy directed adv not allowed line %d", __LINE__);
         return BTM_ILLEGAL_VALUE;
     }
 

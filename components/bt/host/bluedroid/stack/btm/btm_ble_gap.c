@@ -1675,6 +1675,13 @@ UINT8 *BTM_CheckAdvData( UINT8 *p_adv, UINT16 adv_data_len, UINT8 type, UINT8 *p
     UINT8 length;
     UINT8 adv_type;
 
+    if (p_adv == NULL || p_length == NULL || adv_data_len == 0) {
+        if (p_length) {
+            *p_length = 0;
+        }
+        return NULL;
+    }
+
     STREAM_TO_UINT8(length, p);
 
     while ( length && (p - p_adv < adv_data_len)) {
@@ -1682,7 +1689,7 @@ UINT8 *BTM_CheckAdvData( UINT8 *p_adv, UINT16 adv_data_len, UINT8 type, UINT8 *p
 
         if ( adv_type == type ) {
 
-            if((p + length - 1) > (p_adv + adv_data_len)) {
+            if (length < 1 || (UINT16)(p - p_adv) + length - 1 > adv_data_len) {
                 /* avoid memory overflow*/
                 *p_length = 0;
                 return NULL;
@@ -1690,6 +1697,9 @@ UINT8 *BTM_CheckAdvData( UINT8 *p_adv, UINT16 adv_data_len, UINT8 type, UINT8 *p
 
             /* length doesn't include itself */
             *p_length = length - 1; /* minus the length of type */
+            if (*p_length == 0) {
+                return NULL;
+            }
             return p;
         }
 
