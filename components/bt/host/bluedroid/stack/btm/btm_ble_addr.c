@@ -60,7 +60,13 @@ static void btm_gen_resolve_paddr_cmpl(tSMP_ENC *p)
         p_cb->private_addr[3] = p->param_buf[2];
 
         /* set it to controller */
-        btm_ble_set_random_addr(p_cb->private_addr);
+        if (btm_ble_set_random_addr(p_cb->private_addr) != BTM_SUCCESS) {
+            BTM_TRACE_DEBUG("set random address failed");
+            status = BTM_SET_PRIVACY_FAIL;
+            btu_start_timer_oneshot(&p_cb->raddr_timer_ent, BTU_TTYPE_BLE_RANDOM_ADDR,
+                                    BTM_BLE_PRIVATE_ADDR_INT / 4);
+            goto end_set_privacy;
+        }
 
         p_cb->exist_addr_bit |= BTM_BLE_GAP_ADDR_BIT_RESOLVABLE;
         memcpy(p_cb->resolvale_addr, p_cb->private_addr, BD_ADDR_LEN);
@@ -76,13 +82,19 @@ static void btm_gen_resolve_paddr_cmpl(tSMP_ENC *p)
                                 BTM_BLE_PRIVATE_ADDR_INT);
 #endif
     } else {
-        /* random address set failure */
+        /* random address set failure - retry after short interval */
         BTM_TRACE_DEBUG("set random address failed");
         status = BTM_SET_PRIVACY_FAIL;
+        btu_start_timer_oneshot(&p_cb->raddr_timer_ent, BTU_TTYPE_BLE_RANDOM_ADDR,
+                                BTM_BLE_PRIVATE_ADDR_INT / 4);
     }
-    tBTM_BLE_LEGACY_GAP_CB_PARAMS cb_params = {0};
-    cb_params.status = status;
-    BTM_BleLegacyGapOneshotFireIfArmed(BTM_BLE_LEGACY_GAP_SET_PRIVACY_EVT, &cb_params);
+end_set_privacy:
+#if (defined BLE_PRIVACY_SPT && BLE_PRIVACY_SPT == TRUE)
+    btm_ble_privacy_config_step_done(BTM_PRIVACY_CFG_PENDING_RPA,
+                                     (status == BTM_SET_PRIVACY_SUCCESS) ? BTM_SUCCESS : BTM_SET_PRIVACY_FAIL);
+#else
+    (void)status;
+#endif
 }
 /*******************************************************************************
 **
@@ -101,7 +113,7 @@ void btm_gen_resolve_paddr_low(tBTM_RAND_ENC *p)
     tSMP_ENC    output;
 
     BTM_TRACE_EVENT ("btm_gen_resolve_paddr_low");
-    if (p) {
+    if (p && p->status == HCI_SUCCESS) {
         p->param_buf[2] &= (~BLE_RESOLVE_ADDR_MASK);
         p->param_buf[2] |= BLE_RESOLVE_ADDR_MSB;
 
@@ -115,6 +127,8 @@ void btm_gen_resolve_paddr_low(tBTM_RAND_ENC *p)
         } else {
             btm_gen_resolve_paddr_cmpl(&output);
         }
+    } else {
+        btm_gen_resolve_paddr_cmpl(NULL);
     }
 #endif
 }
@@ -156,7 +170,7 @@ static void btm_gen_non_resolve_paddr_cmpl(tBTM_RAND_ENC *p)
     BTM_TRACE_EVENT ("btm_gen_non_resolve_paddr_cmpl");
 
     p_cb->p_generate_cback = NULL;
-    if (p) {
+    if (p && p->status == HCI_SUCCESS) {
 
         pp = p->param_buf;
         STREAM_TO_BDADDR(static_random, pp);
@@ -191,6 +205,10 @@ void btm_gen_non_resolvable_private_addr (tBTM_BLE_ADDR_CBACK *p_cback, void *p)
     BTM_TRACE_EVENT ("btm_gen_non_resolvable_private_addr");
 
     if (p_mgnt_cb->p_generate_cback != NULL) {
+        BTM_TRACE_WARNING("addr gen in progress");
+        if (p_cback) {
+            (*p_cback)(NULL, p);
+        }
         return;
     }
 
@@ -220,7 +238,7 @@ static void btm_ble_resolve_address_cmpl(void)
 {
     tBTM_LE_RANDOM_CB   *p_mgnt_cb = &btm_cb.ble_ctr_cb.addr_mgnt_cb;
 
-    BTM_TRACE_EVENT ("btm_ble_resolve_address_cmpl p_mgnt_cb->p_dev_rec = 0x%08x", p_mgnt_cb->p_dev_rec ? (uint32_t)p_mgnt_cb->p_dev_rec : 0);
+    BTM_TRACE_EVENT("btm_ble_resolve_address_cmpl p_dev_rec=%p", (void *)p_mgnt_cb->p_dev_rec);
 
     p_mgnt_cb->busy = FALSE;
 
