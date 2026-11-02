@@ -636,15 +636,21 @@ tGATT_STATUS attp_cl_send_cmd(tGATT_TCB *p_tcb, UINT16 clcb_idx, UINT8 cmd_code,
             if (att_ret == GATT_CONGESTED || att_ret == GATT_SUCCESS) {
                 /* do not enq cmd if handle value confirmation or set request */
                 if (cmd_code != GATT_HANDLE_VALUE_CONF && cmd_code != GATT_CMD_WRITE) {
-                    gatt_start_rsp_timer (clcb_idx);
-                    gatt_cmd_enq(p_tcb, clcb_idx, FALSE, cmd_code, NULL);
+                    if (!gatt_cmd_enq(p_tcb, clcb_idx, FALSE, cmd_code, NULL)) {
+                        att_ret = GATT_INTERNAL_ERROR;
+                    } else {
+                        gatt_start_rsp_timer(clcb_idx);
+                    }
                 }
             } else {
                 att_ret = GATT_INTERNAL_ERROR;
             }
         } else {
             att_ret = GATT_CMD_STARTED;
-            gatt_cmd_enq(p_tcb, clcb_idx, TRUE, cmd_code, p_cmd);
+            if (!gatt_cmd_enq(p_tcb, clcb_idx, TRUE, cmd_code, p_cmd)) {
+                att_ret = GATT_NO_RESOURCES;
+                osi_free(p_cmd);
+            }
         }
     } else {
         att_ret = GATT_ERROR;

@@ -77,6 +77,7 @@ static BOOLEAN gatt_sign_data (tGATT_CLCB *p_clcb)
             gatt_set_ch_state(p_clcb->p_tcb, GATT_CH_OPEN);
 #if (GATTC_INCLUDED == TRUE)
             gatt_act_write(p_clcb, GATT_SEC_SIGN_DATA);
+            status = TRUE;
 #endif  ///GATTC_INCLUDED == TRUE
         } else {
             gatt_end_operation(p_clcb, GATT_INTERNAL_ERROR, NULL);
@@ -111,9 +112,9 @@ void gatt_verify_signature(tGATT_TCB *p_tcb, BT_HDR *p_buf)
     UINT8   *p, *p_orig = (UINT8 *)(p_buf + 1) + p_buf->offset;
     UINT32  counter;
 
-    if (p_buf->len < GATT_AUTH_SIGN_LEN + 4) {
+    if (p_buf->len < GATT_AUTH_SIGN_LEN + 3) {
         GATT_TRACE_ERROR("%s: Data length %u less than expected %u",
-                         __func__, p_buf->len, GATT_AUTH_SIGN_LEN + 4);
+                         __func__, p_buf->len, GATT_AUTH_SIGN_LEN + 3);
         return;
     }
     cmd_len = p_buf->len - GATT_AUTH_SIGN_LEN + 4;
@@ -323,7 +324,7 @@ tGATT_SEC_ACTION gatt_determine_sec_act(tGATT_CLCB *p_clcb )
     BOOLEAN             is_link_key_known = FALSE;
     BOOLEAN             is_key_mitm = FALSE;
 #if (SMP_INCLUDED == TRUE)
-    UINT8               key_type;
+    UINT8               key_type = 0;
     tBTM_BLE_SEC_REQ_ACT    sec_act = BTM_LE_SEC_NONE;
 #endif  ///SMP_INCLUDED == TRUE
     if (auth_req == GATT_AUTH_REQ_NONE ) {
@@ -335,13 +336,15 @@ tGATT_SEC_ACTION gatt_determine_sec_act(tGATT_CLCB *p_clcb )
     btm_ble_link_sec_check(p_tcb->peer_bda, auth_req, &sec_act);
 #endif  ///SMP_INCLUDED == TRUE
     /* if a encryption is pending, need to wait */
-    if (
 #if (SMP_INCLUDED == TRUE)
-    sec_act == BTM_BLE_SEC_REQ_ACT_DISCARD &&
-#endif  ///SMP_INCLUDED == TRUE
-            auth_req != GATT_AUTH_REQ_NONE) {
+    if (sec_act == BTM_BLE_SEC_REQ_ACT_DISCARD && auth_req != GATT_AUTH_REQ_NONE) {
         return GATT_SEC_ENC_PENDING;
     }
+#else
+    if (auth_req != GATT_AUTH_REQ_NONE) {
+        return GATT_SEC_ENC_PENDING;
+    }
+#endif
 
     if (sec_flag & (BTM_SEC_FLAG_ENCRYPTED | BTM_SEC_FLAG_LKEY_KNOWN)) {
         if (sec_flag & BTM_SEC_FLAG_ENCRYPTED) {
@@ -383,18 +386,19 @@ tGATT_SEC_ACTION gatt_determine_sec_act(tGATT_CLCB *p_clcb )
                check data signing required or not */
             if (!is_link_encrypted) {
 #if (SMP_INCLUDED == TRUE)
-                btm_ble_get_enc_key_type(p_tcb->peer_bda, &key_type);
-#endif  ///SMP_INCLUDED == TRUE
-                if (
-#if (SMP_INCLUDED == TRUE)
-                    (key_type & BTM_LE_KEY_LCSRK) &&
-#endif  ///SMP_INCLUDED == TRUE
-                        ((auth_req == GATT_AUTH_REQ_SIGNED_NO_MITM) ||
-                         (auth_req == GATT_AUTH_REQ_SIGNED_MITM))) {
+                if (!btm_ble_get_enc_key_type(p_tcb->peer_bda, &key_type)) {
+                    act = GATT_SEC_ENCRYPT;
+                } else if ((key_type & BTM_LE_KEY_LCSRK) &&
+                           ((auth_req == GATT_AUTH_REQ_SIGNED_NO_MITM) ||
+                            (auth_req == GATT_AUTH_REQ_SIGNED_MITM))) {
                     act = GATT_SEC_SIGN_DATA;
                 } else {
                     act = GATT_SEC_ENCRYPT;
                 }
+#else  ///SMP_INCLUDED == TRUE
+                /* Without SMP no signing keys are available, fall back to encryption */
+                act = GATT_SEC_ENCRYPT;
+#endif  ///SMP_INCLUDED == TRUE
             }
         } else {
             if (!is_link_encrypted) {
@@ -427,7 +431,7 @@ tGATT_STATUS gatt_get_link_encrypt_status(tGATT_TCB *p_tcb)
 
     BTM_GetSecurityFlagsByTransport(p_tcb->peer_bda, &sec_flag, p_tcb->transport);
 
-    if ((sec_flag & BTM_SEC_FLAG_ENCRYPTED) && (sec_flag & BTM_SEC_FLAG_LKEY_KNOWN)) {
+    if ((sec_flag & BTM_SEC_FLAG_ENCRYPTED)) {
         encrypt_status = GATT_ENCRYPED_NO_MITM;
         if (sec_flag & BTM_SEC_FLAG_LKEY_AUTHED) {
             encrypt_status = GATT_ENCRYPED_MITM;
@@ -509,19 +513,32 @@ BOOLEAN gatt_security_check_start(tGATT_CLCB *p_clcb)
             gatt_convert_sec_action(gatt_sec_act, &btm_ble_sec_act);
 #if (SMP_INCLUDED == TRUE)
             btm_status = BTM_SetEncryption(p_tcb->peer_bda, p_tcb->transport , gatt_enc_cmpl_cback, &btm_ble_sec_act);
-            if ( (btm_status != BTM_SUCCESS) && (btm_status != BTM_CMD_STARTED)) {
+            if (btm_status == BTM_SUCCESS || btm_status == BTM_CMD_STARTED) {
+                gatt_add_pending_enc_channel_clcb (p_tcb, p_clcb);
+            } else {
                 GATT_TRACE_ERROR("gatt_security_check_start BTM_SetEncryption failed btm_status=%d", btm_status);
                 status = FALSE;
             }
 #endif  ///SMP_INCLUDED == TRUE
-        }
-        if (status) {
+        } else {
+#if (SMP_INCLUDED == TRUE)
             gatt_add_pending_enc_channel_clcb (p_tcb, p_clcb);
+#endif  ///SMP_INCLUDED == TRUE
         }
         break;
     case GATT_SEC_ENC_PENDING:
+#if (SMP_INCLUDED == TRUE)
         gatt_add_pending_enc_channel_clcb (p_tcb, p_clcb);
         /* wait for link encrypotion to finish */
+#else
+        /* gatt_sec_check_complete(FALSE) ends the op and frees p_clcb.
+         * Leave status TRUE so GATTC_Read/Write do not free it again.
+         * Reset the channel first; the post-switch failure path must not
+         * touch this clcb. */
+        gatt_set_sec_act(p_tcb, GATT_SEC_NONE);
+        gatt_set_ch_state(p_tcb, GATT_CH_OPEN);
+        gatt_sec_check_complete(FALSE, p_clcb, gatt_sec_act);
+#endif  ///SMP_INCLUDED == TRUE
         break;
     default:
         gatt_sec_check_complete(TRUE, p_clcb, gatt_sec_act);

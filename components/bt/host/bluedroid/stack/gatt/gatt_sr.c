@@ -2189,6 +2189,9 @@ void gatt_server_handle_client_req (tGATT_TCB *p_tcb, UINT8 op_code,
 
         default:
             GATT_TRACE_ERROR("%s unknown command opcode=%02x", __func__, op_code);
+            if (!(op_code & GATT_COMMAND_FLAG)) {
+                gatt_send_error_rsp(p_tcb, GATT_REQ_NOT_SUPPORTED, op_code, 0, FALSE);
+            }
             break;
         }
     }

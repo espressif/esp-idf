@@ -1053,7 +1053,9 @@ extern tGATT_STATUS GATTC_SendHandleValueConfirm (UINT16 conn_id, UINT16 handle)
 **
 ** Function         GATTC_AutoDiscoverEnable
 **
-** Description      This function is called to enable/disable auto discover.
+** Description      Internal PTS/test hook only; not for application use.
+**                  gatt_cb.auto_disc defaults to TRUE; clearing it enables
+**                  GATT_DISC_INFO diagnostic logs during service discovery.
 **
 ** Parameters       enable: 0 for disable, otherwise enable.
 **

@@ -804,7 +804,16 @@ void gatt_process_notification(tGATT_TCB *p_tcb, UINT8 op_code,
         STREAM_TO_UINT16(value.handle, p);
         STREAM_TO_UINT16(value.len, p);
         len -= 4;
-        value.len = MIN(len, value.len);
+        /* Declared value length must fit remaining PDU; otherwise discard. */
+        if (value.len > len) {
+            GATT_TRACE_ERROR("illegal multi notification value length, discard");
+            return;
+        }
+        if (!GATT_HANDLE_IS_VALID(value.handle)) {
+            p += value.len;
+            len -= value.len;
+            continue;
+        }
         if (value.len > GATT_MAX_ATTR_LEN) {
             GATT_TRACE_ERROR("value length larger than GATT_MAX_ATTR_LEN, discard");
             return;
