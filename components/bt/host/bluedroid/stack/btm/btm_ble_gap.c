@@ -3631,15 +3631,64 @@ static tBTM_STATUS btm_ble_start_scan_locked(void)
 #if (BLE_TOPOLOGY_CHECK == TRUE)
         if (p_inq->scan_type == BTM_BLE_SCAN_MODE_ACTI) {
             btm_ble_set_topology_mask(BTM_BLE_STATE_ACTIVE_SCAN_BIT);
-        } else {
+        } else if (p_inq->scan_type == BTM_BLE_SCAN_MODE_PASS) {
             btm_ble_set_topology_mask(BTM_BLE_STATE_PASSIVE_SCAN_BIT);
         }
 #endif // (BLE_TOPOLOGY_CHECK == TRUE)
     }
-    osi_mutex_unlock(&btm_lock);
+    return status;
+}
+
+/*******************************************************************************
+**
+** Function         btm_ble_start_scan
+**
+** Description      Start the BLE scan.
+**
+** Returns          tBTM_STATUS
+**
+*******************************************************************************/
+tBTM_STATUS btm_ble_start_scan(void)
+{
+    tBTM_STATUS status;
+
+    btm_lock_take();
+    status = btm_ble_start_scan_locked();
+    btm_lock_give();
     return status;
 }
 #endif  // #if (BLE_42_SCAN_EN == TRUE)
+
+#if ((BLE_42_ADV_EN == TRUE) || (BLE_42_SCAN_EN == TRUE))
+/*******************************************************************************
+**
+** Function         btm_ble_stop_scan_locked
+**
+** Description      Stop BLE scan. Caller must hold btm_lock.
+**
+** Returns          void
+**
+*******************************************************************************/
+void btm_ble_stop_scan_locked(void)
+{
+    BTM_TRACE_EVENT ("btm_ble_stop_scan ");
+
+    /* Clear the inquiry callback if set */
+    btm_cb.ble_ctr_cb.inq_var.scan_type = BTM_BLE_SCAN_MODE_NONE;
+    btm_cb.ble_ctr_cb.inq_var.state &= ~BTM_BLE_SCANNING;
+#if (BLE_TOPOLOGY_CHECK == TRUE)
+    btm_ble_clear_topology_mask(BTM_BLE_STATE_ACTIVE_SCAN_BIT | BTM_BLE_STATE_PASSIVE_SCAN_BIT);
+#endif // (BLE_TOPOLOGY_CHECK == TRUE)
+    /* stop discovery now */
+    if (btsnd_hcic_ble_set_scan_enable (BTM_BLE_SCAN_DISABLE, BTM_BLE_DUPLICATE_ENABLE) != HCI_SUCCESS) {
+        BTM_TRACE_WARNING("stop scan failed\n");
+    }
+
+    btm_update_scanner_filter_policy(SP_ADV_ALL);
+
+    btm_cb.ble_ctr_cb.wl_state &= ~BTM_BLE_WL_SCAN;
+}
+#endif // ((BLE_42_ADV_EN == TRUE) || (BLE_42_SCAN_EN == TRUE))
 
 /*******************************************************************************
 **
@@ -3652,19 +3701,23 @@ static tBTM_STATUS btm_ble_start_scan_locked(void)
 *******************************************************************************/
 void btm_ble_stop_scan(void)
 {
+#if ((BLE_42_ADV_EN == TRUE) || (BLE_42_SCAN_EN == TRUE))
+    btm_lock_take();
+    btm_ble_stop_scan_locked();
+    btm_lock_give();
+#else
     BTM_TRACE_EVENT ("btm_ble_stop_scan ");
-
-    /* Clear the inquiry callback if set */
     btm_cb.ble_ctr_cb.inq_var.scan_type = BTM_BLE_SCAN_MODE_NONE;
     btm_cb.ble_ctr_cb.inq_var.state &= ~BTM_BLE_SCANNING;
-    /* stop discovery now */
+#if (BLE_TOPOLOGY_CHECK == TRUE)
+    btm_ble_clear_topology_mask(BTM_BLE_STATE_ACTIVE_SCAN_BIT | BTM_BLE_STATE_PASSIVE_SCAN_BIT);
+#endif
     if (btsnd_hcic_ble_set_scan_enable (BTM_BLE_SCAN_DISABLE, BTM_BLE_DUPLICATE_ENABLE) != HCI_SUCCESS) {
         BTM_TRACE_WARNING("stop scan failed\n");
     }
-
     btm_update_scanner_filter_policy(SP_ADV_ALL);
-
     btm_cb.ble_ctr_cb.wl_state &= ~BTM_BLE_WL_SCAN;
+#endif
 }
 
 #if (BLE_42_SCAN_EN == TRUE)
@@ -3683,7 +3736,7 @@ static tBTM_STATUS btm_ble_stop_discover(void)
     tBTM_BLE_CB *p_ble_cb = & btm_cb.ble_ctr_cb;
     btu_stop_timer (&p_ble_cb->scan_timer_ent);
 
-    osi_mutex_lock(&btm_lock, OSI_MUTEX_MAX_TIMEOUT);
+    btm_lock_take();
 
     tBTM_CMPL_CB *p_scan_cb = p_ble_cb->p_scan_cmpl_cb;
     p_ble_cb->scan_activity &= ~BTM_LE_DISCOVER_ACTIVE;
@@ -3711,7 +3764,7 @@ static tBTM_STATUS btm_ble_stop_discover(void)
      * callback may call BTM APIs that take btm_lock (non-recursive mutex). */
     tBTM_INQUIRY_CMPL inq_cmpl_info;
     memcpy(&inq_cmpl_info, &btm_cb.btm_inq_vars.inq_cmpl_info, sizeof(inq_cmpl_info));
-    osi_mutex_unlock(&btm_lock);
+    btm_lock_give();
 
     if (p_scan_cb) {
         (p_scan_cb)((tBTM_INQUIRY_CMPL *) &inq_cmpl_info);
@@ -3766,28 +3819,16 @@ static BOOLEAN btm_ble_adv_states_operation(BTM_TOPOLOGY_FUNC_PTR *p_handler, UI
 }
 #endif // (BLE_TOPOLOGY_CHECK == TRUE)
 
-/*******************************************************************************
-**
-** Function         btm_ble_start_adv
-**
-** Description      start the BLE advertising.
-**
-** Returns          void
-**
-*******************************************************************************/
-tBTM_STATUS btm_ble_start_adv(void)
+static tBTM_STATUS btm_ble_start_adv_locked(void)
 {
     tBTM_BLE_INQ_CB *p_cb = &btm_cb.ble_ctr_cb.inq_var;
     tBTM_STATUS     rt = BTM_SUCCESS;
-    BTM_TRACE_EVENT ("btm_ble_start_adv\n");
 
 #if (BLE_TOPOLOGY_CHECK == TRUE)
     if (!btm_ble_adv_states_operation (btm_ble_topology_check, p_cb->evt_type)) {
         return BTM_WRONG_MODE;
     }
 #endif // (BLE_TOPOLOGY_CHECK == TRUE)
-
-    osi_mutex_lock(&btm_lock, OSI_MUTEX_MAX_TIMEOUT);
 
 #if (defined BLE_PRIVACY_SPT && BLE_PRIVACY_SPT == TRUE)
     /* To relax resolving list,  always have resolving list enabled, unless directed adv */
@@ -3808,6 +3849,9 @@ tBTM_STATUS btm_ble_start_adv(void)
     this causes the 'adv_mode' and 'state' not be set yet, so we set the state first */
     tBTM_BLE_GAP_STATE temp_state = p_cb->state;
     UINT8 adv_mode = p_cb->adv_mode;
+#if (BLE_TOPOLOGY_CHECK == TRUE)
+    tBTM_BLE_STATE_MASK temp_mask = btm_ble_get_topology_mask();
+#endif
     p_cb->adv_mode = BTM_BLE_ADV_ENABLE;
     p_cb->state |= BTM_BLE_ADVERTISING;
 #if (BLE_TOPOLOGY_CHECK == TRUE)
@@ -3820,11 +3864,82 @@ tBTM_STATUS btm_ble_start_adv(void)
         p_cb->state = temp_state;
         p_cb->adv_mode = adv_mode;
 #if (BLE_TOPOLOGY_CHECK == TRUE)
-        btm_ble_adv_states_operation(btm_ble_clear_topology_mask, p_cb->evt_type);
+        /* set_topology_mask is |= ; assign back the pre-call snapshot. */
+        btm_cb.ble_ctr_cb.cur_states = temp_mask;
 #endif // (BLE_TOPOLOGY_CHECK == TRUE)
         btm_cb.ble_ctr_cb.wl_state = wl_state;
     }
-    osi_mutex_unlock(&btm_lock);
+    return rt;
+}
+
+/*******************************************************************************
+**
+** Function         btm_ble_start_adv
+**
+** Description      start the BLE advertising.
+**
+** Returns          void
+**
+*******************************************************************************/
+tBTM_STATUS btm_ble_start_adv(void)
+{
+    tBTM_STATUS rt;
+
+    BTM_TRACE_EVENT ("btm_ble_start_adv\n");
+
+    btm_lock_take();
+    rt = btm_ble_start_adv_locked();
+    btm_lock_give();
+    return rt;
+}
+
+/*******************************************************************************
+**
+** Function         btm_ble_stop_adv_locked
+**
+** Description      Stop BLE advertising. Caller must hold btm_lock.
+**
+** Returns          status
+**
+*******************************************************************************/
+static tBTM_STATUS btm_ble_stop_adv_locked(void)
+{
+    tBTM_BLE_INQ_CB *p_cb = &btm_cb.ble_ctr_cb.inq_var;
+    tBTM_STATUS rt = BTM_SUCCESS;
+
+    if (p_cb == NULL) {
+        return rt;
+    }
+
+    UINT8 temp_adv_mode = p_cb->adv_mode;
+    BOOLEAN temp_fast_adv_on = p_cb->fast_adv_on;
+    tBTM_BLE_GAP_STATE temp_state = p_cb->state;
+    tBTM_BLE_WL_STATE temp_wl_state = btm_cb.ble_ctr_cb.wl_state;
+#if (BLE_TOPOLOGY_CHECK == TRUE)
+    tBTM_BLE_STATE_MASK temp_mask = btm_ble_get_topology_mask ();
+#endif // (BLE_TOPOLOGY_CHECK == TRUE)
+
+    p_cb->fast_adv_on = FALSE;
+    p_cb->adv_mode = BTM_BLE_ADV_DISABLE;
+    p_cb->state &= ~BTM_BLE_ADVERTISING;
+    btm_cb.ble_ctr_cb.wl_state &= ~BTM_BLE_WL_ADV;
+#if (BLE_TOPOLOGY_CHECK == TRUE)
+    /* clear all adv states */
+    btm_ble_clear_topology_mask (BTM_BLE_STATE_ALL_ADV_MASK);
+#endif // (BLE_TOPOLOGY_CHECK == TRUE)
+    UINT8 hci_status = btsnd_hcic_ble_set_adv_enable (BTM_BLE_ADV_DISABLE);
+    if (hci_status != HCI_SUCCESS) {
+        // reset state
+        p_cb->fast_adv_on = temp_fast_adv_on;
+        p_cb->adv_mode = temp_adv_mode;
+        p_cb->state = temp_state;
+        btm_cb.ble_ctr_cb.wl_state = temp_wl_state;
+#if (BLE_TOPOLOGY_CHECK == TRUE)
+        btm_ble_set_topology_mask (temp_mask);
+#endif // (BLE_TOPOLOGY_CHECK == TRUE)
+        BTM_TRACE_ERROR("HCI cmd fail status 0x%x", hci_status);
+        rt = btm_ble_status_from_hci(hci_status);
+    }
     return rt;
 }
 
@@ -3839,44 +3954,11 @@ tBTM_STATUS btm_ble_start_adv(void)
 *******************************************************************************/
 tBTM_STATUS btm_ble_stop_adv(void)
 {
-    tBTM_BLE_INQ_CB *p_cb = &btm_cb.ble_ctr_cb.inq_var;
     tBTM_STATUS rt = BTM_SUCCESS;
-    if (p_cb) {
-        osi_mutex_lock(&btm_lock, OSI_MUTEX_MAX_TIMEOUT);
-        UINT8 temp_adv_mode = p_cb->adv_mode;
-        BOOLEAN temp_fast_adv_on = p_cb->fast_adv_on;
-        tBTM_BLE_GAP_STATE temp_state = p_cb->state;
-        tBTM_BLE_WL_STATE temp_wl_state = btm_cb.ble_ctr_cb.wl_state;
-#if (BLE_TOPOLOGY_CHECK == TRUE)
-        tBTM_BLE_STATE_MASK temp_mask = btm_ble_get_topology_mask ();
-#endif // (BLE_TOPOLOGY_CHECK == TRUE)
 
-        p_cb->fast_adv_on = FALSE;
-        p_cb->adv_mode = BTM_BLE_ADV_DISABLE;
-        p_cb->state &= ~BTM_BLE_ADVERTISING;
-        btm_cb.ble_ctr_cb.wl_state &= ~BTM_BLE_WL_ADV;
-#if (BLE_TOPOLOGY_CHECK == TRUE)
-        /* clear all adv states */
-        btm_ble_clear_topology_mask (BTM_BLE_STATE_ALL_ADV_MASK);
-#endif // (BLE_TOPOLOGY_CHECK == TRUE)
-        UINT8 hci_status = btsnd_hcic_ble_set_adv_enable (BTM_BLE_ADV_DISABLE);
-        if (hci_status != HCI_SUCCESS) {
-            // reset state
-            p_cb->fast_adv_on = temp_fast_adv_on;
-            p_cb->adv_mode = temp_adv_mode;
-            p_cb->state = temp_state;
-            btm_cb.ble_ctr_cb.wl_state = temp_wl_state;
-#if (BLE_TOPOLOGY_CHECK == TRUE)
-            btm_ble_set_topology_mask (temp_mask);
-#endif // (BLE_TOPOLOGY_CHECK == TRUE)
-            BTM_BLE_TRACE_HCI_CMD_FAIL(__func__, hci_status);
-            rt = btm_ble_status_from_hci(hci_status);
-        }
-        if(rt != HCI_SUCCESS) {
-            p_cb->adv_mode = temp_adv_mode;
-        }
-        osi_mutex_unlock(&btm_lock);
-    }
+    btm_lock_take();
+    rt = btm_ble_stop_adv_locked();
+    btm_lock_give();
     return rt;
 }
 #endif // #if (BLE_42_ADV_EN == TRUE)
@@ -3885,7 +3967,7 @@ tBTM_STATUS btm_ble_set_random_addr(BD_ADDR random_bda)
 {
     tBTM_STATUS rt = BTM_SUCCESS;
 #if ((BLE_42_ADV_EN == TRUE) || (BLE_42_SCAN_EN == TRUE))
-    osi_mutex_lock(&btm_lock, OSI_MUTEX_MAX_TIMEOUT);
+    btm_lock_take();
 #endif // ((BLE_42_ADV_EN == TRUE) || (BLE_42_SCAN_EN == TRUE))
 
 #if (BLE_42_ADV_EN == TRUE)
@@ -3898,7 +3980,7 @@ tBTM_STATUS btm_ble_set_random_addr(BD_ADDR random_bda)
 #endif // #if (BLE_42_ADV_EN == TRUE)
 
 #if (BLE_42_SCAN_EN == TRUE)
-    if (BTM_BLE_IS_DISCO_ACTIVE(btm_cb.ble_ctr_cb.scan_activity)) {
+    if (BTM_BLE_IS_SCAN_ACTIVE(btm_cb.ble_ctr_cb.scan_activity)) {
         if ((btsnd_hcic_ble_set_scan_enable (BTM_BLE_SCAN_DISABLE, BTM_BLE_SCAN_DUPLICATE_DISABLE)) != HCI_SUCCESS) {
             rt = BTM_BAD_VALUE_RET;
             BTM_TRACE_WARNING ("Disable scan failed");
@@ -3920,7 +4002,7 @@ tBTM_STATUS btm_ble_set_random_addr(BD_ADDR random_bda)
 #endif // #if (BLE_42_ADV_EN == TRUE)
 
 #if (BLE_42_SCAN_EN == TRUE)
-    if (BTM_BLE_IS_DISCO_ACTIVE(btm_cb.ble_ctr_cb.scan_activity)) {
+    if (BTM_BLE_IS_SCAN_ACTIVE(btm_cb.ble_ctr_cb.scan_activity)) {
         if ((btsnd_hcic_ble_set_scan_enable (BTM_BLE_SCAN_ENABLE, btm_cb.ble_ctr_cb.inq_var.scan_duplicate_filter)) != HCI_SUCCESS) {
             rt = BTM_BAD_VALUE_RET;
             BTM_TRACE_WARNING ("restart scan failed");
@@ -3929,7 +4011,7 @@ tBTM_STATUS btm_ble_set_random_addr(BD_ADDR random_bda)
 #endif // #if (BLE_42_SCAN_EN == TRUE)
 
 #if ((BLE_42_ADV_EN == TRUE) || (BLE_42_SCAN_EN == TRUE))
-    osi_mutex_unlock(&btm_lock);
+    btm_lock_give();
 #endif // ((BLE_42_ADV_EN == TRUE) || (BLE_42_SCAN_EN == TRUE))
 
     return rt;
@@ -3949,13 +4031,18 @@ static void btm_ble_start_slow_adv (void)
 {
     tBTM_BLE_INQ_CB *p_cb = &btm_cb.ble_ctr_cb.inq_var;
 
+    if (p_cb->adv_mode != BTM_BLE_ADV_ENABLE) {
+        return;
+    }
+
+    btm_lock_take();
+
     if (p_cb->adv_mode == BTM_BLE_ADV_ENABLE) {
-        tBTM_LE_RANDOM_CB *p_addr_cb = &btm_cb.ble_ctr_cb.addr_mgnt_cb;
         BD_ADDR p_addr_ptr = {0};
         tBLE_ADDR_TYPE init_addr_type = BLE_ADDR_PUBLIC;
-        tBLE_ADDR_TYPE own_addr_type = p_addr_cb->own_addr_type;
+        tBLE_ADDR_TYPE own_addr_type = p_cb->adv_addr_type;
 
-        btm_ble_stop_adv();
+        btm_ble_stop_adv_locked();
 
         p_cb->evt_type = btm_set_conn_mode_adv_init_addr(p_cb, p_addr_ptr, &init_addr_type,
                          &own_addr_type);
@@ -3965,8 +4052,10 @@ static void btm_ble_start_slow_adv (void)
                                          p_cb->evt_type, own_addr_type,
                                          init_addr_type, p_addr_ptr,
                                          p_cb->adv_chnl_map, p_cb->afp);
-        btm_ble_start_adv();
+        btm_ble_start_adv_locked();
     }
+
+    btm_lock_give();
 }
 #endif // #if (BLE_42_ADV_EN == TRUE)
 /*******************************************************************************
@@ -3995,8 +4084,14 @@ void btm_ble_timeout(TIMER_LIST_ENT *p_tle)
 
     case BTU_TTYPE_BLE_GAP_LIM_DISC:
         /* lim_timeout expired, limited discovery should exit now */
+#if ((BLE_42_ADV_EN == TRUE) || (BLE_42_SCAN_EN == TRUE))
+        btm_lock_take();
+#endif
         btm_cb.btm_inq_vars.discoverable_mode &= ~BTM_BLE_LIMITED_DISCOVERABLE;
         btm_ble_set_adv_flag(btm_cb.btm_inq_vars.connectable_mode, btm_cb.btm_inq_vars.discoverable_mode);
+#if ((BLE_42_ADV_EN == TRUE) || (BLE_42_SCAN_EN == TRUE))
+        btm_lock_give();
+#endif
         break;
 
     case BTU_TTYPE_BLE_RANDOM_ADDR:
@@ -4035,7 +4130,7 @@ void btm_ble_timeout(TIMER_LIST_ENT *p_tle)
 ** Returns          void
 **
 *******************************************************************************/
-void btm_ble_read_remote_features_complete(UINT8 *p)
+void btm_ble_read_remote_features_complete(UINT8 *p, UINT16 evt_len)
 {
     tACL_CONN        *p_acl_cb = NULL;
     UINT16            handle;
