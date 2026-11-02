@@ -28,6 +28,7 @@ This app is **source-frozen**. The application code should never change unless f
 - Build configs:
   - `default`: no power management
   - `pm`: `CONFIG_PM_ENABLE` with tickless idle, so the automatic light sleep path (`esp_pm`, `esp_sleep`) is linked and tracked. This config is build-only
+  - `pm_pd`: as `pm`, plus `CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP`, so the peripheral retention code is tracked. Only built for targets that can power down the TOP domain. This config is build-only
 
 ## Metrics Tracked
 

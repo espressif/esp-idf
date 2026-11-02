@@ -10,3 +10,4 @@ by the linker, but it is intentionally skipped by the target-test pipeline.
 Build configs:
 - `default`: Wi-Fi station with default modem sleep, no power management
 - `pm`: adds `CONFIG_PM_ENABLE` with tickless idle, so automatic light sleep code (`esp_pm`, `esp_sleep`) is linked and tracked
+- `pm_pd`: as `pm`, plus `CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP` and `CONFIG_ESP_PHY_MAC_BB_PD`, so peripheral and Wi-Fi MAC/BB retention code is tracked. Only built for targets that can power down the TOP domain

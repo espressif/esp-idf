@@ -55,12 +55,14 @@ tools/test_apps/size_metrics/minimal_baseline:
   configs:
     - default
     - pm
+    - pm_pd
 
 tools/test_apps/size_metrics/wifi_ota:
   libs: all
   configs:
     - default
     - pm
+    - pm_pd
 
 components/esp_timer/test_apps/size_metrics:
   libs: all
