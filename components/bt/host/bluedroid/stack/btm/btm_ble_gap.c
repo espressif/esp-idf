@@ -817,10 +817,10 @@ static void btm_ble_resolve_random_addr_on_adv(void *p_rec, void *p)
         match_rec->ble.active_addr_type = BTM_BLE_ADDR_RRA;
         memcpy(match_rec->ble.cur_rand_addr, bda, BD_ADDR_LEN);
 
-        if (btm_ble_init_pseudo_addr(match_rec, bda)) {
+        if (btm_ble_init_pseudo_addr(match_rec, bda, BLE_ADDR_RANDOM)) {
             memcpy(bda, match_rec->bd_addr, BD_ADDR_LEN);
         } else {
-            // Assign the original address to be the current report address
+            /* Report the address the rest of the stack keys this peer by. */
             memcpy(bda, match_rec->ble.pseudo_addr, BD_ADDR_LEN);
         }
         addr_type = match_rec->ble.ble_addr_type;

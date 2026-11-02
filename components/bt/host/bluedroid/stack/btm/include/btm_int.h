@@ -1348,7 +1348,8 @@ void  btm_sec_clear_ble_keys (tBTM_SEC_DEV_REC  *p_dev_rec);
 BOOLEAN btm_sec_is_a_bonded_dev (BD_ADDR bda);
 void btm_consolidate_dev(tBTM_SEC_DEV_REC *p_target_rec);
 BOOLEAN btm_sec_is_le_capable_dev (BD_ADDR bda);
-BOOLEAN btm_ble_init_pseudo_addr (tBTM_SEC_DEV_REC *p_dev_rec, BD_ADDR new_pseudo_addr);
+BOOLEAN btm_ble_init_pseudo_addr (tBTM_SEC_DEV_REC *p_dev_rec, BD_ADDR new_pseudo_addr,
+                                  tBLE_ADDR_TYPE addr_type);
 extern BOOLEAN btm_ble_start_sec_check(BD_ADDR bd_addr, UINT16 psm, BOOLEAN is_originator,
                             tBTM_SEC_CALLBACK *p_callback, void *p_ref_data);
 #endif /* BLE_INCLUDED */

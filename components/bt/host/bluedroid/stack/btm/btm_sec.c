@@ -1083,7 +1083,11 @@ tBTM_STATUS btm_sec_bond_by_transport (BD_ADDR bd_addr, tBT_TRANSPORT transport,
 
 #if BLE_INCLUDED == TRUE && SMP_INCLUDED == TRUE
     if (transport == BT_TRANSPORT_LE) {
-        btm_ble_init_pseudo_addr (p_dev_rec, bd_addr);
+        tBLE_ADDR_TYPE init_type = p_dev_rec->ble.ble_addr_type;
+        if (p != NULL) {
+            init_type = p->active_remote_addr_type;
+        }
+        btm_ble_init_pseudo_addr (p_dev_rec, bd_addr, init_type);
         p_dev_rec->sec_flags &= ~ BTM_SEC_LE_MASK;
 
         if (SMP_Pair(bd_addr) == SMP_STARTED) {

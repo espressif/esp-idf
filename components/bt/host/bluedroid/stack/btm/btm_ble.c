@@ -1468,7 +1468,7 @@ void btm_sec_save_le_key(BD_ADDR bd_addr, tBTM_LE_KEY_TYPE key_type, tBTM_LE_KEY
                     bd_addr[4], bd_addr[5]);
 
     if ((p_rec = btm_find_dev (bd_addr)) != NULL && (p_keys || key_type == BTM_LE_KEY_LID)) {
-        btm_ble_init_pseudo_addr (p_rec, bd_addr);
+        btm_ble_init_pseudo_addr (p_rec, bd_addr, p_rec->ble.ble_addr_type);
 
         switch (key_type) {
         case BTM_LE_KEY_PENC:
@@ -2299,7 +2299,7 @@ static void btm_ble_resolve_random_addr_on_conn_cmpl(void *p_rec, void *p_data)
         match = TRUE;
         match_rec->ble.active_addr_type = BTM_BLE_ADDR_RRA;
         memcpy(match_rec->ble.cur_rand_addr, bda, BD_ADDR_LEN);
-        if (!btm_ble_init_pseudo_addr (match_rec, bda)) {
+        if (!btm_ble_init_pseudo_addr (match_rec, bda, BLE_ADDR_RANDOM)) {
             /* assign the original address to be the current report address */
             memcpy(bda, match_rec->ble.pseudo_addr, BD_ADDR_LEN);
         } else {
@@ -2476,13 +2476,24 @@ static BOOLEAN btm_ble_resolve_conn_local(UINT16 handle, tBLE_CONN_IDENTITY *id)
     UINT8 inst = BTM_BleGetExtAdvInstByConHandle(handle);
     if (inst < MAX_BLE_ADV_INSTANCE) {
         tBLE_ADDR_TYPE own = extend_adv_cb.inst[inst].own_addr_type;
-        if (own == BLE_ADDR_PUBLIC || own == BLE_ADDR_PUBLIC_ID) {
+        tBLE_ADDR_TYPE idt = extend_adv_cb.inst[inst].id_addr_type;
+        /* Host-RPA rewrite stores the on-air RPA in rand_addr. Only a static
+         * random address is an identity; an RPA must not be used as one. */
+        BOOLEAN static_set = extend_adv_cb.inst[inst].rand_addr_set &&
+                BTM_BLE_IS_STATIC_RAND_BDA(extend_adv_cb.inst[inst].rand_addr);
+
+        if (own == BLE_ADDR_PUBLIC || own == BLE_ADDR_PUBLIC_ID ||
+                (!static_set && (idt == BLE_ADDR_PUBLIC || idt == BLE_ADDR_PUBLIC_ID))) {
             memcpy(id->local, controller_get_interface()->get_address()->address, BD_ADDR_LEN);
             id->local_type = BLE_ADDR_PUBLIC;
             return TRUE;
-        } else if ((own == BLE_ADDR_RANDOM || own == BLE_ADDR_RANDOM_ID) &&
-                   extend_adv_cb.inst[inst].rand_addr_set) {
+        } else if ((own == BLE_ADDR_RANDOM || own == BLE_ADDR_RANDOM_ID) && static_set) {
             memcpy(id->local, extend_adv_cb.inst[inst].rand_addr, BD_ADDR_LEN);
+            id->local_type = BLE_ADDR_RANDOM;
+            return TRUE;
+        } else if (!static_set && idt == BLE_ADDR_RANDOM_ID &&
+                   BTM_BLE_IS_STATIC_RAND_BDA(btm_cb.ble_ctr_cb.addr_mgnt_cb.static_rand_addr)) {
+            memcpy(id->local, btm_cb.ble_ctr_cb.addr_mgnt_cb.static_rand_addr, BD_ADDR_LEN);
             id->local_type = BLE_ADDR_RANDOM;
             return TRUE;
         }

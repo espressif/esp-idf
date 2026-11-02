@@ -264,18 +264,22 @@ static BOOLEAN btm_ble_proc_resolve_x(tSMP_ENC *p)
 ** Function         btm_ble_init_pseudo_addr
 **
 ** Description      This function is used to initialize pseudo address.
-**                  If pseudo address is not available, use dummy address
+**                  If pseudo address is not available, use dummy address.
+**                  Address type must be supplied by the caller; it cannot be
+**                  derived from the address bytes (Core Vol 6 Part B 1.3).
 **
 ** Returns          TRUE is updated; FALSE otherwise.
 **
 *******************************************************************************/
-BOOLEAN btm_ble_init_pseudo_addr (tBTM_SEC_DEV_REC *p_dev_rec, BD_ADDR new_pseudo_addr)
+BOOLEAN btm_ble_init_pseudo_addr (tBTM_SEC_DEV_REC *p_dev_rec, BD_ADDR new_pseudo_addr,
+                                  tBLE_ADDR_TYPE addr_type)
 {
 #if (SMP_INCLUDED == TRUE)
     BD_ADDR dummy_bda = {0};
 
     if (memcmp(p_dev_rec->ble.pseudo_addr, dummy_bda, BD_ADDR_LEN) == 0) {
         memcpy(p_dev_rec->ble.pseudo_addr, new_pseudo_addr, BD_ADDR_LEN);
+        p_dev_rec->ble.ble_addr_type = addr_type;
         return TRUE;
     }
 #endif  ///SMP_INCLUDED == TRUE
@@ -310,15 +314,17 @@ BOOLEAN btm_ble_addr_resolvable (BD_ADDR rpa, tBTM_SEC_DEV_REC *p_dev_rec)
         rand[2] = rpa[0];
 
         /* generate X = E irk(R0, R1, R2) and R is random address 3 LSO */
-        SMP_Encrypt(p_dev_rec->ble.keys.irk, BT_OCTET16_LEN,
-                    &rand[0], 3, &output);
+        if (!SMP_Encrypt(p_dev_rec->ble.keys.irk, BT_OCTET16_LEN,
+                    &rand[0], 3, &output)) {
+            return rt;
+        }
 
         rand[0] = rpa[5];
         rand[1] = rpa[4];
         rand[2] = rpa[3];
 
         if (!memcmp(output.param_buf, &rand[0], 3)) {
-            btm_ble_init_pseudo_addr (p_dev_rec, rpa);
+            btm_ble_init_pseudo_addr (p_dev_rec, rpa, BLE_ADDR_RANDOM);
             rt = TRUE;
         }
     }
@@ -348,7 +354,7 @@ static BOOLEAN btm_ble_match_random_bda(tBTM_SEC_DEV_REC *p_dev_rec)
     rand[1] = p_mgnt_cb->random_bda[1];
     rand[2] = p_mgnt_cb->random_bda[0];
 
-    BTM_TRACE_EVENT("%s p_dev_rec = 0x%08x", __func__, (uint32_t)p_dev_rec);
+    BTM_TRACE_EVENT("p_dev_rec=%p", (void *)p_dev_rec);
 
     {
         tSMP_ENC output;
@@ -359,8 +365,10 @@ static BOOLEAN btm_ble_match_random_bda(tBTM_SEC_DEV_REC *p_dev_rec)
         if ((p_dev_rec->device_type & BT_DEVICE_TYPE_BLE) &&
                 (p_dev_rec->ble.key_type & BTM_LE_KEY_PID)) {
             /* generate X = E irk(R0, R1, R2) and R is random address 3 LSO */
-            SMP_Encrypt(p_dev_rec->ble.keys.irk, BT_OCTET16_LEN,
-                        &rand[0], 3, &output);
+            if (!SMP_Encrypt(p_dev_rec->ble.keys.irk, BT_OCTET16_LEN,
+                        &rand[0], 3, &output)) {
+                return FALSE;
+            }
             return btm_ble_proc_resolve_x(&output);
         } else {
             // not completed
@@ -478,7 +486,7 @@ BOOLEAN btm_identity_addr_to_random_pseudo(BD_ADDR bd_addr, UINT8 *p_addr_type, 
         }
 
         /* assign the original address to be the current report address */
-        if (!btm_ble_init_pseudo_addr (p_dev_rec, bd_addr)) {
+        if (!btm_ble_init_pseudo_addr (p_dev_rec, bd_addr, *p_addr_type)) {
             memcpy(bd_addr, p_dev_rec->ble.pseudo_addr, BD_ADDR_LEN);
         }
 
@@ -636,7 +644,9 @@ BOOLEAN btm_ble_resolve_rpa(BD_ADDR rpa, uint8_t *irk)
     hash[2] = rpa[3];
 
     /* generate X = E irk(R0, R1, R2) and R is random address 3 LSO */
-    SMP_Encrypt(irk, BT_OCTET16_LEN, &rand[0], 3, &output);
+    if (!SMP_Encrypt(irk, BT_OCTET16_LEN, &rand[0], 3, &output)) {
+        return FALSE;
+    }
     if (!memcmp(output.param_buf, &hash[0], 3)) {
         return TRUE;
     }
@@ -676,10 +686,14 @@ bool btm_ble_rpa_resolve(uint8_t *rpa, uint8_t *ida, uint8_t *ida_type)
     }
 
     // Iterate through all local IRKs to resolve the RPA
-    if (btm_ble_resolve_rpa(rpa, btm_cb.devcb.id_keys.irk)) {
-        memset(ida, 0, BD_ADDR_LEN);
-        *ida_type = 0;
-        return true;
+    {
+        UINT8 zero_irk[BT_OCTET16_LEN] = {0};
+        if (memcmp(btm_cb.devcb.id_keys.irk, zero_irk, BT_OCTET16_LEN) != 0 &&
+                btm_ble_resolve_rpa(rpa, btm_cb.devcb.id_keys.irk)) {
+            memset(ida, 0, BD_ADDR_LEN);
+            *ida_type = 0;
+            return true;
+        }
     }
 
     return false;
