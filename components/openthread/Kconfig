@@ -115,7 +115,7 @@ menu "OpenThread"
 
             config OPENTHREAD_NETWORK_PANID
                 hex "OpenThread network pan id"
-                range 0 0xFFFE
+                range 0x0 0xFFFE
                 default 0x1234
 
             config OPENTHREAD_NETWORK_EXTPANID

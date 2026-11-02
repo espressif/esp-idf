@@ -709,7 +709,7 @@ menu "Controller debug log Options (Experimental)"
     config BT_CTRL_LE_LOG_MODE_EN
         depends on BT_CTRL_LE_LOG_EN
         hex "Enable log for specified BLE mode"
-        range 0 0xFFFF
+        range 0x0 0xFFFF
         default 0xDB7F
 
     config BT_CTRL_LE_LOG_LEVEL

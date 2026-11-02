@@ -50,7 +50,7 @@ menu "Cache config"
 
     config ESP32S2_DATA_CACHE_SIZE
         hex
-        default 0 if ESP32S2_DATA_CACHE_0KB
+        default 0x0 if ESP32S2_DATA_CACHE_0KB
         default 0x2000 if ESP32S2_DATA_CACHE_8KB
         default 0x4000 if ESP32S2_DATA_CACHE_16KB
 

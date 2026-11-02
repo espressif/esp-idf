@@ -20,7 +20,7 @@ menu "ESP-MM: Memory Management Configurations"
     config ESP_MM_CACHE_MSYNC_C2M_CHUNKED_OPS_MAX_LEN
         hex "Max len in bytes per C2M chunk"
         depends on ESP_MM_CACHE_MSYNC_C2M_CHUNKED_OPS
-        range 0 0x80000
+        range 0x0 0x80000
         default 0x20000 if IDF_TARGET_ESP32P4
         default 0x2000 if IDF_TARGET_ESP32S2
         default 0x8000 if IDF_TARGET_ESP32S3

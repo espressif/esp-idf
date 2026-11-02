@@ -192,7 +192,7 @@ menu "BT Logs"
         config BT_LE_CONTROLLER_LOG_MOD_OUTPUT_SWITCH
             hex "Controller log module output switch"
             depends on BT_LE_CONTROLLER_LOG_ENABLED
-            range 0 0xFFFFFFFF
+            range 0x0 0xFFFFFFFF
             default 0xFFFFFFFF
             help
                 Bitmask to enable/disable logging for individual controller

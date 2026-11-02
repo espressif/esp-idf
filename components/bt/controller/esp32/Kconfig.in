@@ -573,7 +573,7 @@ config BTDM_CTRL_CONTROLLER_DEBUG_MODE_1
 config BTDM_RESERVE_DRAM
     hex
     default 0xdb5c if BT_ENABLED
-    default 0
+    default 0x0
 
 config BTDM_CTRL_HLI
     bool "High level interrupt"
