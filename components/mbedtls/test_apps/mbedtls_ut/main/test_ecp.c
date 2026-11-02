@@ -575,6 +575,26 @@ static void test_ecc_mul_scalar_range(mbedtls_ecp_group_id id)
     TEST_ASSERT_MBEDTLS_OK(mbedtls_mpi_lset(&k, 1));
     ecc_mul_expect_point(&point, &k, &grp.G.MBEDTLS_PRIVATE(X), &grp.G.MBEDTLS_PRIVATE(Y));
 
+    uint8_t one[MAX_SIZE] = {1};
+    ecc_point_t zero;
+    ecc_point_t result;
+    ecc_point_t off_curve = point;
+
+    memset(&zero, 0, sizeof(zero));
+    TEST_ASSERT_EQUAL_INT(0, esp_ecc_point_multiply(&point, one, &result, true));
+    TEST_ASSERT_EQUAL_HEX8_ARRAY(point.x, result.x, point.len);
+    TEST_ASSERT_EQUAL_HEX8_ARRAY(point.y, result.y, point.len);
+
+    off_curve.y[0] ^= 1;
+    memset(&result, 0xa5, sizeof(result));
+    TEST_ASSERT_EQUAL_INT(-1, esp_ecc_point_multiply(&off_curve, one, &result, true));
+    TEST_ASSERT_EQUAL_MEMORY(&zero, &result, sizeof(result));
+
+    result = point;
+    TEST_ASSERT_EQUAL_INT(0, esp_ecc_point_multiply(&result, one, &result, false));
+    TEST_ASSERT_EQUAL_HEX8_ARRAY(point.x, result.x, point.len);
+    TEST_ASSERT_EQUAL_HEX8_ARRAY(point.y, result.y, point.len);
+
     TEST_ASSERT_MBEDTLS_OK(mbedtls_mpi_sub_int(&k, &grp.N, 1));
     TEST_ASSERT_MBEDTLS_OK(mbedtls_mpi_sub_mpi(&neg_y, &grp.P, &grp.G.MBEDTLS_PRIVATE(Y)));
     ecc_mul_expect_point(&point, &k, &grp.G.MBEDTLS_PRIVATE(X), &neg_y);

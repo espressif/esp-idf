@@ -139,6 +139,17 @@ static bool ecc_scalar_in_range(const uint8_t *scalar_le, uint16_t len)
     return n_le != NULL && ecc_scalar_bounds_ok(scalar_le, n_le, len);
 }
 
+static bool ecc_scalar_is_one(const uint8_t *scalar_le, uint16_t len)
+{
+    uint8_t fold = scalar_le[0] ^ 1;
+
+    for (uint16_t i = 1; i < len; i++) {
+        fold |= scalar_le[i];
+    }
+
+    return fold == 0;
+}
+
 int esp_ecc_point_multiply(const ecc_point_t *point, const uint8_t *scalar, ecc_point_t *result, bool verify_first)
 {
     int ret = -1;
@@ -164,6 +175,20 @@ int esp_ecc_point_multiply(const ecc_point_t *point, const uint8_t *scalar, ecc_
     if (verify_first && !ecc_point_coords_in_range(point)) {
         memset(result, 0, sizeof(ecc_point_t));
         return -1;
+    }
+
+    if (ecc_scalar_is_one(scalar, len)) {
+        if (verify_first && !esp_ecc_point_verify(point)) {
+            memset(result, 0, sizeof(ecc_point_t));
+            return -1;
+        }
+
+        ecc_point_t out = {0};
+        memcpy(out.x, point->x, len);
+        memcpy(out.y, point->y, len);
+        out.len = len;
+        *result = out;
+        return 0;
     }
 
     esp_ecc_acquire_hardware();
