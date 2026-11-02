@@ -54,11 +54,13 @@ tools/test_apps/size_metrics/minimal_baseline:
   bootloader: true
   configs:
     - default
+    - pm
 
 tools/test_apps/size_metrics/wifi_ota:
   libs: all
   configs:
     - default
+    - pm
 
 components/esp_timer/test_apps/size_metrics:
   libs: all

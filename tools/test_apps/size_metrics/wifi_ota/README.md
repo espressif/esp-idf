@@ -6,3 +6,7 @@
 This build-only app tracks the size of a minimal application using Wi-Fi and
 HTTPS OTA. It calls the production APIs so their implementations are retained
 by the linker, but it is intentionally skipped by the target-test pipeline.
+
+Build configs:
+- `default`: Wi-Fi station with default modem sleep, no power management
+- `pm`: adds `CONFIG_PM_ENABLE` with tickless idle, so automatic light sleep code (`esp_pm`, `esp_sleep`) is linked and tracked

@@ -25,6 +25,9 @@ This app is **source-frozen**. The application code should never change unless f
 - Disables WDT, assertions, and other noise-inducing features
 - Trimmed build: only includes `main` component and its dependencies
 - Targets: ESP32 (Xtensa) and ESP32-C6 (RISC-V)
+- Build configs:
+  - `default`: no power management
+  - `pm`: `CONFIG_PM_ENABLE` with tickless idle, so the automatic light sleep path (`esp_pm`, `esp_sleep`) is linked and tracked. This config is build-only
 
 ## Metrics Tracked
 
