@@ -267,23 +267,74 @@ const UINT8 btm_le_state_combo_tbl[BTM_BLE_STATE_MAX][BTM_BLE_STATE_MAX][2] = {
 #define BTM_LE_STATES_SUPPORTED(x, y, z)      ((x)[(z)] & (y))
 #endif // (BLE_TOPOLOGY_CHECK == TRUE)
 
-#if ((BLE_42_ADV_EN == TRUE) || (BLE_42_SCAN_EN == TRUE))
+#if (BLE_INCLUDED == TRUE)
 static osi_mutex_t btm_lock;
+
+/* btm_lock is a *recursive* mutex on purpose: several BLE GAP / privacy /
+ * resolving-list paths legitimately re-enter it on the same task, e.g.
+ * BTM_BleAdvStop / btm_set_conn_mode_adv_init_addr (lock held) ->
+ * btm_ble_disable_resolving_list -> btm_ble_suspend/resume_resolving_list_activity
+ * -> btm_ble_start_adv() / btm_ble_start_scan() / btm_ble_stop_* (which lock again).
+ * A plain (non-recursive) mutex self-deadlocks the BTU task in those chains. */
+static inline void btm_lock_take(void)
+{
+    xSemaphoreTakeRecursive(btm_lock, portMAX_DELAY);
+}
+
+static inline void btm_lock_give(void)
+{
+    xSemaphoreGiveRecursive(btm_lock);
+}
+#endif // (BLE_INCLUDED == TRUE)
+
+#if ((BLE_42_ADV_EN == TRUE) || (BLE_42_SCAN_EN == TRUE))
+#if (BLE_42_SCAN_EN == TRUE)
+static tBTM_STATUS btm_ble_start_scan_locked(void);
+#endif
+static void btm_ble_stop_scan_locked(void);
+static uint32_t btm_ble_update_own_type_locked(uint8_t *own_bda_type, BOOLEAN for_scan);
+#if (CONTROLLER_RPA_LIST_ENABLE == FALSE)
+static uint32_t btm_ble_apply_random_addr_to_controller_locked(BD_ADDR random_bda);
+#endif
+#if (BLE_42_ADV_EN == TRUE)
+static tBTM_STATUS btm_ble_start_adv_locked(void);
+static tBTM_STATUS btm_ble_stop_adv_locked(void);
+#endif
+static BOOLEAN btm_get_local_resolvable_private_addr_locked(BD_ADDR bda);
+static void btm_update_addr_infor_locked(uint8_t addr_type, BD_ADDR bda);
+static void btm_ble_set_static_addr_locked(BD_ADDR rand_addr);
+static void btm_ble_clear_rand_address_locked(void);
+static BOOLEAN btm_ble_get_current_address_locked(BD_ADDR addr, uint8_t *addr_type);
 #endif // ((BLE_42_ADV_EN == TRUE) || (BLE_42_SCAN_EN == TRUE))
 
 void btm_ble_lock_init(void)
 {
-#if ((BLE_42_ADV_EN == TRUE) || (BLE_42_SCAN_EN == TRUE))
-    osi_mutex_new(&btm_lock);
-#endif // ((BLE_42_ADV_EN == TRUE) || (BLE_42_SCAN_EN == TRUE))
+#if (BLE_INCLUDED == TRUE)
+    /* Intentionally not checking xSemaphoreCreateRecursiveMutex() return value:
+     * on OOM the mutex may be NULL, but the host cannot recover at that point
+     * and there is no safe fallback — same pattern as other BT stack init paths. */
+    btm_lock = xSemaphoreCreateRecursiveMutex();
+#endif // (BLE_INCLUDED == TRUE)
 }
 
 void btm_ble_lock_free(void)
 {
-#if ((BLE_42_ADV_EN == TRUE) || (BLE_42_SCAN_EN == TRUE))
+#if (BLE_INCLUDED == TRUE)
     osi_mutex_free(&btm_lock);
-#endif // ((BLE_42_ADV_EN == TRUE) || (BLE_42_SCAN_EN == TRUE))
+#endif // (BLE_INCLUDED == TRUE)
 }
+
+#if (BLE_INCLUDED == TRUE)
+void btm_ble_gap_mutex_lock(void)
+{
+    btm_lock_take();
+}
+
+void btm_ble_gap_mutex_unlock(void)
+{
+    btm_lock_give();
+}
+#endif // (BLE_INCLUDED == TRUE)
 
 #if (BLE_VENDOR_HCI_EN == TRUE)
 void BTM_BleRegisterVendorHciEventCallback(tBTM_BLE_VENDOR_HCI_EVT_CBACK *vendor_hci_evt_cb)
@@ -571,7 +622,7 @@ BOOLEAN BTM_BleConfigPrivacy(BOOLEAN privacy_mode)
 **
 *******************************************************************************/
 
-BOOLEAN BTM_GetLocalResolvablePrivateAddr(BD_ADDR bda)
+static BOOLEAN btm_get_local_resolvable_private_addr_locked(BD_ADDR bda)
 {
     tBTM_LE_RANDOM_CB *p_cb = &btm_cb.ble_ctr_cb.addr_mgnt_cb;
     BTM_TRACE_DEBUG ("get owm resolvable random address");
@@ -593,6 +644,16 @@ BOOLEAN BTM_GetLocalResolvablePrivateAddr(BD_ADDR bda)
    return FALSE;
 }
 
+BOOLEAN BTM_GetLocalResolvablePrivateAddr(BD_ADDR bda)
+{
+    BOOLEAN ret;
+
+    btm_lock_take();
+    ret = btm_get_local_resolvable_private_addr_locked(bda);
+    btm_lock_give();
+    return ret;
+}
+
 /*******************************************************************************
 **
 ** Function         BTM_UpdateAddrInfor
@@ -604,10 +665,17 @@ BOOLEAN BTM_GetLocalResolvablePrivateAddr(BD_ADDR bda)
 **
 **
 *******************************************************************************/
-void BTM_UpdateAddrInfor(uint8_t addr_type, BD_ADDR bda)
+static void btm_update_addr_infor_locked(uint8_t addr_type, BD_ADDR bda)
 {
     btm_cb.ble_ctr_cb.addr_mgnt_cb.own_addr_type = addr_type;
     memcpy(btm_cb.ble_ctr_cb.addr_mgnt_cb.private_addr, bda, BD_ADDR_LEN);
+}
+
+void BTM_UpdateAddrInfor(uint8_t addr_type, BD_ADDR bda)
+{
+    btm_lock_take();
+    btm_update_addr_infor_locked(addr_type, bda);
+    btm_lock_give();
 }
 
 /*******************************************************************************
@@ -620,13 +688,58 @@ void BTM_UpdateAddrInfor(uint8_t addr_type, BD_ADDR bda)
 **
 **
 *******************************************************************************/
-void BTM_BleSetStaticAddr(BD_ADDR rand_addr)
+static void btm_ble_set_static_addr_locked(BD_ADDR rand_addr)
 {
+    BD_ADDR invalid_rand_addr_a, invalid_rand_addr_b;
+
+    /* rand_addr: BTA embedded member or local stack buffer from ext-adv path */
+    memset(invalid_rand_addr_a, 0xff, sizeof(BD_ADDR));
+    memset(invalid_rand_addr_b, 0x00, sizeof(BD_ADDR));
+    if ((rand_addr[0] & BT_STATIC_RAND_ADDR_MASK) == BT_STATIC_RAND_ADDR_MASK) {
+        invalid_rand_addr_b[0] = invalid_rand_addr_b[0] | BT_STATIC_RAND_ADDR_MASK;
+        if (memcmp(invalid_rand_addr_a, rand_addr, BD_ADDR_LEN) == 0
+                || memcmp(invalid_rand_addr_b, rand_addr, BD_ADDR_LEN) == 0) {
+            BTM_TRACE_ERROR("set_static_addr: reserved addr pattern");
+            return;
+        }
+    } else {
+        BTM_TRACE_ERROR("set_static_addr: not static random type");
+        return;
+    }
+
     memcpy(btm_cb.ble_ctr_cb.addr_mgnt_cb.static_rand_addr, rand_addr, BD_ADDR_LEN);
     btm_cb.ble_ctr_cb.addr_mgnt_cb.exist_addr_bit |= BTM_BLE_GAP_ADDR_BIT_RANDOM;
 }
 
+void BTM_BleSetStaticAddr(BD_ADDR rand_addr)
+{
+    btm_lock_take();
+    btm_ble_set_static_addr_locked(rand_addr);
+    btm_lock_give();
+}
+
 #if (CONTROLLER_RPA_LIST_ENABLE == FALSE)
+static uint32_t btm_ble_apply_random_addr_to_controller_locked(BD_ADDR random_bda)
+{
+#if (BLE_42_SCAN_EN == TRUE)
+    BOOLEAN scan_active = BTM_BLE_IS_SCAN_ACTIVE(btm_cb.ble_ctr_cb.scan_activity);
+#endif
+
+#if (BLE_42_SCAN_EN == TRUE)
+    if (scan_active) {
+        btsnd_hcic_ble_set_scan_enable(BTM_BLE_SCAN_DISABLE, BTM_BLE_DUPLICATE_ENABLE);
+    }
+#endif
+    /* Host OOM on HCI cmd buf is unrecoverable — see btm_ble_int.h memory policy. */
+    btsnd_hcic_ble_set_random_addr(random_bda);
+#if (BLE_42_SCAN_EN == TRUE)
+    if (scan_active) {
+        btsnd_hcic_ble_set_scan_enable(BTM_BLE_SCAN_ENABLE, btm_cb.ble_ctr_cb.inq_var.scan_duplicate_filter);
+    }
+#endif
+    return BTM_SUCCESS;
+}
+
 #if (BLE_SCAN_OWN_ADDR_SEPARATE == TRUE)
 static BOOLEAN btm_ble_privacy_is_on(void)
 {
@@ -718,6 +831,7 @@ static uint32_t btm_ble_update_own_type_locked(uint8_t *own_bda_type, BOOLEAN fo
 #else
     UNUSED(for_scan);
 #endif
+    uint32_t rt = BTM_SUCCESS;
 
     if(*own_bda_type == BLE_ADDR_RANDOM) {
         if((btm_cb.ble_ctr_cb.addr_mgnt_cb.exist_addr_bit & BTM_BLE_GAP_ADDR_BIT_RANDOM) == BTM_BLE_GAP_ADDR_BIT_RANDOM) {
@@ -729,28 +843,29 @@ static uint32_t btm_ble_update_own_type_locked(uint8_t *own_bda_type, BOOLEAN fo
             #endif
             btm_cb.ble_ctr_cb.addr_mgnt_cb.own_addr_type = BLE_ADDR_RANDOM;
             memcpy(btm_cb.ble_ctr_cb.addr_mgnt_cb.private_addr, btm_cb.ble_ctr_cb.addr_mgnt_cb.static_rand_addr, BD_ADDR_LEN);
-            // set address to controller
-            btsnd_hcic_ble_set_random_addr(btm_cb.ble_ctr_cb.addr_mgnt_cb.static_rand_addr);
+            btm_ble_apply_random_addr_to_controller_locked(btm_cb.ble_ctr_cb.addr_mgnt_cb.static_rand_addr);
 
         } else if((btm_cb.ble_ctr_cb.addr_mgnt_cb.exist_addr_bit & BTM_BLE_GAP_ADDR_BIT_RESOLVABLE) == BTM_BLE_GAP_ADDR_BIT_RESOLVABLE) {
             btm_cb.ble_ctr_cb.addr_mgnt_cb.own_addr_type = BLE_ADDR_RANDOM;
             memcpy(btm_cb.ble_ctr_cb.addr_mgnt_cb.private_addr, btm_cb.ble_ctr_cb.addr_mgnt_cb.resolvale_addr, BD_ADDR_LEN);
-            btsnd_hcic_ble_set_random_addr(btm_cb.ble_ctr_cb.addr_mgnt_cb.resolvale_addr);
+            btm_ble_apply_random_addr_to_controller_locked(btm_cb.ble_ctr_cb.addr_mgnt_cb.resolvale_addr);
         }else {
             BTM_TRACE_ERROR ("No random address yet, please set random address using API \"esp_ble_gap_set_rand_addr\" and retry\n");
-            return BTM_ILLEGAL_VALUE;
+            rt = BTM_ILLEGAL_VALUE;
+            goto cleanup;
         }
     } else if(*own_bda_type == BLE_ADDR_PUBLIC_ID || *own_bda_type == BLE_ADDR_RANDOM_ID) {
         if((btm_cb.ble_ctr_cb.addr_mgnt_cb.exist_addr_bit & BTM_BLE_GAP_ADDR_BIT_RESOLVABLE) == BTM_BLE_GAP_ADDR_BIT_RESOLVABLE) {
             *own_bda_type = BLE_ADDR_RANDOM;
             btm_cb.ble_ctr_cb.addr_mgnt_cb.own_addr_type = BLE_ADDR_RANDOM;
             memcpy(btm_cb.ble_ctr_cb.addr_mgnt_cb.private_addr, btm_cb.ble_ctr_cb.addr_mgnt_cb.resolvale_addr, BD_ADDR_LEN);
-            btsnd_hcic_ble_set_random_addr(btm_cb.ble_ctr_cb.addr_mgnt_cb.resolvale_addr);
+            btm_ble_apply_random_addr_to_controller_locked(btm_cb.ble_ctr_cb.addr_mgnt_cb.resolvale_addr);
         } else {
             #if BLE_PRIVACY_SPT == TRUE
             if(btm_cb.ble_ctr_cb.privacy_mode != BTM_PRIVACY_NONE) {
                 BTM_TRACE_ERROR ("Error state\n");
-                return BTM_ILLEGAL_VALUE;
+                rt = BTM_ILLEGAL_VALUE;
+                goto cleanup;
             }
             #endif
             if(*own_bda_type == BLE_ADDR_PUBLIC_ID) {
@@ -761,10 +876,11 @@ static uint32_t btm_ble_update_own_type_locked(uint8_t *own_bda_type, BOOLEAN fo
                     *own_bda_type = BLE_ADDR_RANDOM;
                     btm_cb.ble_ctr_cb.addr_mgnt_cb.own_addr_type = BLE_ADDR_RANDOM;
                     memcpy(btm_cb.ble_ctr_cb.addr_mgnt_cb.private_addr, btm_cb.ble_ctr_cb.addr_mgnt_cb.static_rand_addr, BD_ADDR_LEN);
-                    btsnd_hcic_ble_set_random_addr(btm_cb.ble_ctr_cb.addr_mgnt_cb.static_rand_addr);
+                    btm_ble_apply_random_addr_to_controller_locked(btm_cb.ble_ctr_cb.addr_mgnt_cb.static_rand_addr);
                 } else {
                     BTM_TRACE_ERROR ("No RPA and no random address yet, please set RPA or random address and try\n");
-                    return BTM_ILLEGAL_VALUE;
+                    rt = BTM_ILLEGAL_VALUE;
+                    goto cleanup;
                 }
             }
         }
@@ -773,6 +889,9 @@ static uint32_t btm_ble_update_own_type_locked(uint8_t *own_bda_type, BOOLEAN fo
     }
 
     return BTM_SUCCESS;
+
+cleanup:
+    return rt;
 }
 #else
 static uint32_t btm_ble_update_own_type_locked(uint8_t *own_bda_type, BOOLEAN for_scan)
@@ -1583,23 +1702,28 @@ tBTM_STATUS BTM_BleWriteAdvDataRaw(UINT8 *p_raw_adv, UINT32 raw_adv_len)
 *******************************************************************************/
 tBTM_STATUS BTM_BleSetRandAddress(BD_ADDR rand_addr)
 {
-	if (rand_addr == NULL) {
-		return BTM_SET_STATIC_RAND_ADDR_FAIL;
-    }
+    tBTM_STATUS status;
 
-    if (btm_cb.ble_ctr_cb.inq_var.state != BTM_BLE_IDLE) {
-        BTM_TRACE_ERROR("Advertising or scanning now, can't set randaddress %d", btm_cb.ble_ctr_cb.inq_var.state);
+    /* rand_addr: BTA p_data->set_addr.address (embedded), never NULL */
+    btm_lock_take();
+    if (btm_cb.ble_ctr_cb.inq_var.state != BTM_BLE_IDLE ||
+            btm_cb.ble_ctr_cb.conn_state == BLE_DIR_CONN) {
+        BTM_TRACE_ERROR("Advertising, scanning, or connection now, can't set randaddress %d",
+                        btm_cb.ble_ctr_cb.inq_var.state);
+        btm_lock_give();
         return BTM_SET_STATIC_RAND_ADDR_FAIL;
     }
-    memcpy(btm_cb.ble_ctr_cb.addr_mgnt_cb.private_addr, rand_addr, BD_ADDR_LEN);
-    memcpy(btm_cb.ble_ctr_cb.addr_mgnt_cb.static_rand_addr, rand_addr, BD_ADDR_LEN);
-    //send the set random address to the controller
-    if(btsnd_hcic_ble_set_random_addr(rand_addr)) {
+    /* Update host buffers only after controller accepts the new random address. */
+    if (btsnd_hcic_ble_set_random_addr(rand_addr)) {
+        memcpy(btm_cb.ble_ctr_cb.addr_mgnt_cb.private_addr, rand_addr, BD_ADDR_LEN);
+        memcpy(btm_cb.ble_ctr_cb.addr_mgnt_cb.static_rand_addr, rand_addr, BD_ADDR_LEN);
         btm_cb.ble_ctr_cb.addr_mgnt_cb.exist_addr_bit |= BTM_BLE_GAP_ADDR_BIT_RANDOM;
-        return BTM_SUCCESS;
+        status = BTM_SUCCESS;
     } else {
-        return BTM_SET_STATIC_RAND_ADDR_FAIL;
+        status = BTM_SET_STATIC_RAND_ADDR_FAIL;
     }
+    btm_lock_give();
+    return status;
 }
 
 /*******************************************************************************
@@ -1613,16 +1737,23 @@ tBTM_STATUS BTM_BleSetRandAddress(BD_ADDR rand_addr)
 ** Returns          void
 **
 *******************************************************************************/
-void BTM_BleClearRandAddress(void)
+static void btm_ble_clear_rand_address_locked(void)
 {
     tBTM_BLE_CB  *p_cb = &btm_cb.ble_ctr_cb;
-    if (btm_cb.ble_ctr_cb.addr_mgnt_cb.own_addr_type == BLE_ADDR_RANDOM && (p_cb->inq_var.state != BTM_BLE_IDLE)) {
+    if (p_cb->inq_var.state != BTM_BLE_IDLE) {
         BTM_TRACE_ERROR("Advertising or scanning now, can't restore public address ");
         return;
     }
     memset(btm_cb.ble_ctr_cb.addr_mgnt_cb.static_rand_addr, 0, BD_ADDR_LEN);
     btm_cb.ble_ctr_cb.addr_mgnt_cb.exist_addr_bit &= (~BTM_BLE_GAP_ADDR_BIT_RANDOM);
     btm_cb.ble_ctr_cb.addr_mgnt_cb.own_addr_type = BLE_ADDR_PUBLIC;
+}
+
+void BTM_BleClearRandAddress(void)
+{
+    btm_lock_take();
+    btm_ble_clear_rand_address_locked();
+    btm_lock_give();
 }
 /*******************************************************************************
 **
@@ -1635,12 +1766,9 @@ void BTM_BleClearRandAddress(void)
 ** Returns          success or fail
 **
 *******************************************************************************/
-BOOLEAN BTM_BleGetCurrentAddress(BD_ADDR addr, uint8_t *addr_type)
+static BOOLEAN btm_ble_get_current_address_locked(BD_ADDR addr, uint8_t *addr_type)
 {
-    if(addr == NULL || addr_type == NULL) {
-        BTM_TRACE_ERROR("%s addr or addr_type is NULL\n", __func__);
-        return FALSE;
-    }
+    /* addr / addr_type: ESP GAP API passes stack buffers, never NULL */
     if(btm_cb.ble_ctr_cb.addr_mgnt_cb.own_addr_type == BLE_ADDR_RANDOM) {
         *addr_type = BLE_ADDR_RANDOM;
         memcpy(addr, btm_cb.ble_ctr_cb.addr_mgnt_cb.private_addr, BD_ADDR_LEN);
@@ -1648,11 +1776,20 @@ BOOLEAN BTM_BleGetCurrentAddress(BD_ADDR addr, uint8_t *addr_type)
         *addr_type = BLE_ADDR_PUBLIC;
         memcpy(addr, &controller_get_interface()->get_address()->address, BD_ADDR_LEN);
     } else {
-        BTM_TRACE_ERROR("%s\n", __func__);
-        memset(addr, 0, BD_ADDR_LEN);
+        BTM_TRACE_ERROR("unsupported own_addr_type=%d", btm_cb.ble_ctr_cb.addr_mgnt_cb.own_addr_type);
         return FALSE;
     }
     return TRUE;
+}
+
+BOOLEAN BTM_BleGetCurrentAddress(BD_ADDR addr, uint8_t *addr_type)
+{
+    BOOLEAN ret;
+
+    btm_lock_take();
+    ret = btm_ble_get_current_address_locked(addr, addr_type);
+    btm_lock_give();
+    return ret;
 }
 
 #if ((BLE_42_SCAN_EN == TRUE) || (BLE_50_EXTEND_SCAN_EN == TRUE))
