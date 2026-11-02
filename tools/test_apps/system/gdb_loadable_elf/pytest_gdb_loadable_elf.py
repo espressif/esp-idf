@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2022-2026 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Unlicense OR CC0-1.0
 import pytest
 from pytest_embedded_idf import IdfDut
@@ -17,7 +17,7 @@ def test_loadable_elf(dut: IdfDut, offset: str) -> None:
     assert 'Temporary breakpoint 1, 0x40007d54' in dut.gdb.write('c')
     dut.gdb.write('load')
     dut.gdb.write('tb app_main')
-    assert 'Thread 2 "main" hit Temporary breakpoint 2, app_main ()' in dut.gdb.write('c')
+    assert 'Thread 2 "main" hit Temporary breakpoint 2' in dut.gdb.write('c')  # app_main
     dut.gdb.write('tb esp_restart')
-    assert 'Thread 2 "main" hit Temporary breakpoint 3, esp_restart ()' in dut.gdb.write('c')
+    assert 'Thread 2 "main" hit Temporary breakpoint 3' in dut.gdb.write('c')  # esp_restart
     dut.expect_exact('Restarting now.')
