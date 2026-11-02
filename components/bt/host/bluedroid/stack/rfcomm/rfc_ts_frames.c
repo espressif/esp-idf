@@ -661,7 +661,10 @@ UINT8 rfc_parse_data (tRFC_MCB *p_mcb, MX_FRAME *p_frame, BT_HDR *p_buf)
     UINT8     *p_start = p_data;
     UINT16    len;
 
-
+    if (p_buf->len < RFCOMM_CTRL_FRAME_LEN) {
+        RFCOMM_TRACE_ERROR ("Frame too short: %d", p_buf->len);
+        return (RFC_EVENT_BAD_FRAME);
+    }
 
     RFCOMM_PARSE_CTRL_FIELD (ead, p_frame->cr, p_frame->dlci, p_data);
     if ( !ead ) {
