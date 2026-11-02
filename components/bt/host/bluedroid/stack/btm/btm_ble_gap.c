@@ -92,6 +92,10 @@ uint32_t BTM_BleUpdateOwnType(uint8_t *own_bda_type);
 #define BTM_BLE_DISCO_RESULT        0x08
 
 static bool is_ble50_inter = false;
+/* Bluedroid design (review 0027, intentionally not fixed): set when a BLE 5.0
+ * HCI path completes successfully; read by l2c_ble/l2c_link for aux-connect and
+ * adv-restart policy. Legacy vs extended advertising is a Kconfig choice (4.2/5.0),
+ * not a runtime switch — this flag is not reset in btm_ble_init(). */
 
 void btm_ble_inter_set(bool extble_inter)
 {
@@ -102,6 +106,12 @@ bool btm_ble_inter_get(void)
 {
     return is_ble50_inter;
 }
+
+/* Legacy and BLE 5.0 GAP entry points below are reached from BTA (bta_dm_act.c)
+ * or ESP GAP shim (esp_gap_ble_api.c) with BD_ADDR / payload buffers taken from
+ * embedded struct members or caller stack arrays — never NULL. Intentionally no
+ * pointer-NULL checks here; validate semantic preconditions only (state, ranges,
+ * p_lcb existence). Do not file duplicate "missing NULL check" reports for these. */
 
 #if (BLE_TOPOLOGY_CHECK == TRUE)
 /* LE states combo bit to check */
@@ -3991,6 +4001,9 @@ void btm_ble_free (void)
 }
 
 static bool enable_topology_check_flag = true;
+/* Internal QA/test hook only — not a public API. Used by QA to disable
+ * BLE topology ("Supported States") checks during host bring-up tests.
+ * External applications must not call this. */
 void esp_qa_enable_topology_check(bool enable)
 {
     // This is a workaround: If the topology check is disabled, the 'Supported States' will not be checked.
@@ -4072,13 +4085,12 @@ BOOLEAN btm_ble_topology_check(tBTM_BLE_STATE_MASK request_state_mask)
  ** Returns          TRUE or FALSE
  **
  *******************************************************************************/
+/* Bluedroid design: synchronous authorization helper for
+ * esp_gap_ble_set_authorization; updates the security device list from the
+ * application task without btc_transfer_context. */
 BOOLEAN BTM_Ble_Authorization(BD_ADDR bd_addr, BOOLEAN authorize)
 {
-    if (bd_addr == NULL) {
-        BTM_TRACE_ERROR("bd_addr is NULL");
-        return FALSE;
-    }
-
+    /* bd_addr: esp_gap_ble_api.c validates before calling; never NULL here */
     if (btm_sec_dev_authorization(bd_addr, authorize)) {
         return TRUE;
     }
@@ -4093,8 +4105,6 @@ BOOLEAN BTM_Ble_Authorization(BD_ADDR bd_addr, BOOLEAN authorize)
 ** Function         BTM_BleClearAdv
 **
 ** Description      This function is called to clear legacy advertising
-**
-** Parameter        p_clear_adv_cback - Command complete callback
 **
 *******************************************************************************/
 BOOLEAN BTM_BleClearAdv(void)
@@ -4171,6 +4181,8 @@ bool btm_ble_adv_pkt_ready(void)
 
 bool btm_ble_adv_pkt_post(pkt_linked_item_t *pkt)
 {
+    /* pkt==NULL: valid drain-only post from btu_task (not a missing check).
+     * Non-NULL pkt from hci_layer; queue cap bounds heap use (see BTM_BLE_ADV_RPT_QUEUE_LEN_MAX). */
     if (pkt == NULL) {
         return false;
     }

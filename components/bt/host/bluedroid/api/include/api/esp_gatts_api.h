@@ -550,6 +550,10 @@ esp_err_t esp_ble_gatts_set_attr_value(uint16_t attr_handle, uint16_t length, co
  * @note
  *      1. This function does not trigger any event.
  *      2. `attr_handle` must be greater than 0.
+ *      3. Synchronous path: runs in the application task and returns a pointer
+ *         into the internal GATT database (no btc_transfer_context). Do not
+ *         delete the service or change the attribute while using *value; do not
+ *         call during stack teardown.
  *
  * @return
  *        - ESP_GATT_OK: Success

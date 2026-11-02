@@ -1069,6 +1069,8 @@ tBTM_STATUS BTM_BleSetExtendedScanParams(tBTM_BLE_EXT_SCAN_PARAMS *params)
         goto end;
     }
 
+    /* scan_duplicate/cfg_mask/phy: validated by controller on HCI LE Set Extended Scan Parameters */
+
     if (params->cfg_mask & BTM_BLE_GAP_EXT_SCAN_UNCODE_MASK) {
         phy_mask |= 0x01;
         memcpy(&hci_params[phy_count], &params->uncoded_cfg, sizeof(tHCI_EXT_SCAN_PARAMS));
@@ -1392,6 +1394,8 @@ tBTM_STATUS BTM_BleAddMonitorAdvList(UINT8 addr_type, BD_ADDR addr, INT8 rssi_lo
         BTM_TRACE_ERROR("%s invalid addr_type %d", __func__, addr_type);
         goto end;
     }
+
+    /* rssi_low/rssi_high/timeout: validated by controller on vendor HCI command */
 
     if ((err = btsnd_hcic_ble_add_monitor_adv_list(addr_type, addr, rssi_low, rssi_high, timeout)) != HCI_SUCCESS) {
         BTM_TRACE_ERROR("LE AddMonitorAdvList: cmd err=0x%x", err);
@@ -1949,6 +1953,8 @@ void btm_ble_periodic_adv_sync_establish_evt(tBTM_BLE_PERIOD_ADV_SYNC_ESTAB *par
 #endif // #if (BLE_50_EXTEND_SYNC_EN == TRUE)
 
 #if (BLE_50_EXTEND_ADV_EN == TRUE)
+/* Internal helper for btc_get_ble_status (diagnostics only): best-effort count
+ * of active extended-adv instances; adv_record is not synchronized with BTU. */
 uint8_t btm_ble_ext_adv_active_count(void)
 {
     uint8_t count = 0;
@@ -2115,11 +2121,17 @@ void btm_ble_periodic_adv_sync_trans_recv_evt(tBTM_BLE_PERIOD_ADV_SYNC_TRANS_REC
 #if (BLE_FEAT_POWER_CONTROL_EN == TRUE)
 void BTM_BleEnhReadTransPowerLevel(uint16_t conn_handle, uint8_t phy)
 {
+    /* Result is reported only via HCI Command Complete (btm_enh_read_trans_pwr_level_cmpl_evt).
+     * Do not fire BTM_BLE_GAP_ENH_READ_TRANS_POWER_LEVEL_EVT here on btsnd_hcic return
+     * value: send_cmd_sync already waited for that complete event, so an immediate callback
+     * would duplicate the one dispatched from btu_hcif_hdl_command_complete. */
     btsnd_hcic_ble_enh_read_trans_power_level(conn_handle, phy);
 }
 
 void BTM_BleReadRemoteTransPwrLevel(uint16_t conn_handle, uint8_t phy)
 {
+    /* Async: result via Transmit Power Reporting event. Return is BOOLEAN,
+     * not tHCI_STATUS — do not compare with HCI_SUCCESS. */
     btsnd_hcic_ble_read_remote_trans_power_level(conn_handle, phy);
 }
 
@@ -2255,6 +2267,8 @@ void BTM_BleSetDefaultSubrate(UINT16 subrate_min, UINT16 subrate_max, UINT16 max
 
 void BTM_BleSubrateRequest(UINT16 conn_handle, UINT16 subrate_min, UINT16 subrate_max, UINT16 max_latency, UINT16 continuation_number, UINT16 supervision_timeout)
 {
+    /* Async: result via btm_subrate_req_cmd_status. Return is BOOLEAN,
+     * not tHCI_STATUS — do not compare with HCI_SUCCESS. */
     btsnd_hcic_ble_subrate_request(conn_handle, subrate_min, subrate_max, max_latency, continuation_number, supervision_timeout);
 }
 
@@ -2530,6 +2544,8 @@ void BTM_BleGapCsCreateConfig(UINT16 conn_handle, UINT8 config_id, UINT8 create_
 
 void BTM_BleGapCsRemoveConfig(UINT16 conn_handle, UINT8 config_id)
 {
+    /* Async: result via btm_ble_cs_update_config_cmd_status. Return is BOOLEAN,
+     * not tHCI_STATUS — do not compare with HCI_SUCCESS. */
     btsnd_hcic_ble_cs_remove_config(conn_handle, config_id);
 }
 
@@ -2586,6 +2602,8 @@ void BTM_BleGapCsSetProcPatams(UINT16 conn_handle, UINT8 config_id, UINT16 max_p
 
 void BTM_BleGapCsProcEnable(UINT16 conn_handle, UINT8 config_id, UINT8 enable)
 {
+    /* Async: result via CS procedure enable complete event. Return is BOOLEAN,
+     * not tHCI_STATUS — do not compare with HCI_SUCCESS. */
     btsnd_hcic_ble_cs_procedure_enable(conn_handle, config_id, enable);
 }
 

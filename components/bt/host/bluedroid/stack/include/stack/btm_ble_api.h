@@ -3130,8 +3130,6 @@ BOOLEAN BTM_Ble_Authorization(BD_ADDR bd_addr, BOOLEAN authorize);
 **
 ** Description      This function is called to clear legacy advertising
 **
-** Parameter        p_clear_adv_cback - Command complete callback
-**
 *******************************************************************************/
 BOOLEAN BTM_BleClearAdv(void);
 

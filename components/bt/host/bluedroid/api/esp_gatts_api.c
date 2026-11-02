@@ -382,6 +382,10 @@ esp_err_t esp_ble_gatts_set_attr_value(uint16_t attr_handle, uint16_t length, co
                 btc_gatts_arg_deep_free) == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
 }
 
+/* Bluedroid design: synchronous read-only snapshot of a local GATT attribute.
+ * Returns a pointer into the internal GATT database (no btc_transfer_context).
+ * Caller must not modify *value and must finish using it before deleting the
+ * service or changing the attribute. Do not call during stack teardown. */
 esp_gatt_status_t esp_ble_gatts_get_attr_value(uint16_t attr_handle, uint16_t *length, const uint8_t **value)
 {
     if (esp_bluedroid_get_status() != ESP_BLUEDROID_STATUS_ENABLED) {

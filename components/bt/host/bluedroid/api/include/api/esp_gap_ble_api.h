@@ -4069,6 +4069,10 @@ esp_err_t esp_ble_gap_disconnect(esp_bd_addr_t remote_device);
 * @brief           This function is called to read the connection
 *                  parameters information of the device
 *
+* @note            Synchronous read-only query from the application task context.
+*                  Does not use btc_transfer_context; see implementation comment
+*                  in esp_gap_ble_api.c.
+*
 * @param[in]       bd_addr: BD address of the peer device.
 * @param[out]      conn_params: the connection parameters information
 *
@@ -4111,6 +4115,10 @@ esp_err_t esp_ble_gap_read_channel_map(esp_bd_addr_t bd_addr);
 *
 * @param[in]       bd_addr: BD address of the peer device.
 * @param[out]      authorize: Authorized the link or not.
+*
+* @note            Synchronous path: runs in the application task and calls the BTM
+*                  layer directly (no btc_transfer_context). Do not call during
+*                  stack teardown.
 *
 * @return          - ESP_OK : success
 *                  - other  : failed
