@@ -2128,8 +2128,11 @@ static bool trigger_targeted_reconnect(struct cand_bss *bss, bool disconnect_fir
 
     if (ap_record) {
         err = esp_wifi_sta_connect_bss_internal(ap_record);
-        if (err == ESP_ERR_NOT_FOUND) {
-            ESP_LOGI(ROAMING_TAG, "No cached IEs for " MACSTR ", using normal connect", MAC2STR(bss->bssid));
+        if (err == ESP_ERR_NOT_FOUND || err == ESP_ERR_WIFI_CONN) {
+            /* NOT_FOUND: no cached IEs. WIFI_CONN: STA still connecting after
+             * disconnect_first — keep bssid/channel hint and use normal connect. */
+            ESP_LOGI(ROAMING_TAG, "Bypass-scan connect unavailable for " MACSTR " (%s), using normal connect",
+                     MAC2STR(bss->bssid), esp_err_to_name(err));
             err = esp_wifi_connect();
         } else if (err == ESP_ERR_NOT_SUPPORTED) {
             /* Open half of an OWE transition pair. Drop the pinned BSSID and
