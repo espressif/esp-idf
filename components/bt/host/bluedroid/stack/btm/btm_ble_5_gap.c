@@ -2574,7 +2574,7 @@ void BTM_BleGapCsSetChannelClass(UINT8 *channel_class)
     BTM_ExtBleCallbackTrigger(BTM_BLE_GAP_CS_SET_CHANNEL_CLASS_CMPL_EVT, &cb_params);
 }
 
-void BTM_BleGapCsSetProcPatams(UINT16 conn_handle, UINT8 config_id, UINT16 max_procedure_len,
+void BTM_BleGapCsSetProcParams(UINT16 conn_handle, UINT8 config_id, UINT16 max_procedure_len,
                                 UINT16 min_procedure_interval, UINT16 max_procedure_interval,
                                 UINT16 max_procedure_count, UINT32 min_subevent_len,
                                 UINT32 max_subevent_len, UINT8 tone_ant_config_selection,

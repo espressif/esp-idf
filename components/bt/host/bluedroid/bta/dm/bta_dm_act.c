@@ -6032,7 +6032,7 @@ void bta_dm_ble_gap_ext_scan(tBTA_DM_MSG *p_data)
 
 void bta_dm_ble_gap_set_prefer_ext_conn_params(tBTA_DM_MSG *p_data)
 {
-    tBTM_EXT_CONN_PARAMS conn_params;
+    tBTM_EXT_CONN_PARAMS conn_params = {0};
     conn_params.phy_mask = p_data->ble_set_per_ext_conn_params.phy_mask;
 
     APPL_TRACE_API("%s, phy_mask %d", __func__, p_data->ble_set_per_ext_conn_params.phy_mask);
@@ -6533,7 +6533,7 @@ void bta_dm_api_cs_set_channel_classification(tBTA_DM_MSG *p_data)
 void bta_dm_api_cs_set_procedure_params(tBTA_DM_MSG *p_data)
 {
     tBTA_DM_API_CS_SET_PROC_PARAMS *p = &p_data->set_proc_params;
-    BTM_BleGapCsSetProcPatams(p->conn_handle, p->config_id, p->max_procedure_len,
+    BTM_BleGapCsSetProcParams(p->conn_handle, p->config_id, p->max_procedure_len,
                                 p->min_procedure_interval, p->max_procedure_interval,
                                 p->max_procedure_count, p->min_subevent_len,
                                 p->max_subevent_len, p->tone_ant_config_selection,

@@ -3454,12 +3454,13 @@ void BTM_BleGapCsCreateConfig(UINT16 conn_handle, UINT8 config_id, UINT8 create_
                                 UINT8 ch3c_jump,UINT8 reserved);
 void BTM_BleGapCsRemoveConfig(UINT16 conn_handle, UINT8 config_id);
 void BTM_BleGapCsSetChannelClass(UINT8 *channel_class);
-void BTM_BleGapCsSetProcPatams(UINT16 conn_handle, UINT8 config_id, UINT16 max_procedure_len,
+void BTM_BleGapCsSetProcParams(UINT16 conn_handle, UINT8 config_id, UINT16 max_procedure_len,
                                 UINT16 min_procedure_interval, UINT16 max_procedure_interval,
                                 UINT16 max_procedure_count, UINT32 min_subevent_len,
                                 UINT32 max_subevent_len, UINT8 tone_ant_config_selection,
                                 UINT8 phy, UINT8 tx_power_delta, UINT8 preferred_peer_antenna,
                                 UINT8 SNR_control_initiator, UINT8 SNR_control_reflector);
+#define BTM_BleGapCsSetProcPatams BTM_BleGapCsSetProcParams
 void BTM_BleGapCsProcEnable(UINT16 conn_handle, UINT8 config_id, UINT8 enable);
 #endif // (BT_BLE_FEAT_CHANNEL_SOUNDING == TRUE)
 #if (BT_BLE_FEAT_CS_SECURITY_REQUIREMENTS == TRUE)
