@@ -262,7 +262,7 @@ int wpa_sta_connect(uint8_t *bssid)
 
 #ifdef CONFIG_DPP
     struct wpa_sm *sm = &gWpaSm;
-    if (wpa_key_mgmt_dpp(sm->key_mgmt)) {
+    if (sm->key_mgmt == WPA_KEY_MGMT_DPP) {
         ret = dpp_connect(bssid, false);
     } else
 #endif
