@@ -1409,7 +1409,7 @@ static void roaming_app_connected_event_handler(void *ctx, void *data)
     g_roaming_app.force_roam_ongoing = false;
 #endif /*LEGACY_ROAM_ENABLED*/
     g_roaming_app.allow_reconnect = true;
-    esp_wifi_set_fast_roaming_internal(false);
+    roaming_app_disable_fast_roaming();
 }
 
 void roam_sta_connected(void)
