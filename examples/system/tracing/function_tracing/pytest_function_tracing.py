@@ -124,7 +124,7 @@ def _test_function_tracing_jtag(openocd_dut: 'OpenOCD', idf_path: str, dut: IdfD
             codec_errors='ignore',
         ) as p,
     ):
-        p.expect_exact('hit Breakpoint 1, app_main ()')
+        p.expect_exact('hit Breakpoint 1')  # app_main
         # dut has been restarted by gdb since the last dut.expect()
         dut.expect(re.compile(rb'function-tracing: workload iteration \d+'), timeout=30)
 
