@@ -92,6 +92,9 @@ static tBTM_STATUS btm_ble_stop_discover(void);
 static void btm_adv_pkt_handler(void *arg);
 #endif // #if (BLE_42_SCAN_EN == TRUE)
 uint32_t BTM_BleUpdateOwnType(uint8_t *own_bda_type);
+#if (BLE_SCAN_OWN_ADDR_SEPARATE == TRUE)
+uint32_t BTM_BleUpdateOwnTypeForScan(uint8_t *own_bda_type);
+#endif
 
 #define BTM_BLE_INQ_RESULT          0x01
 #define BTM_BLE_OBS_RESULT          0x02
@@ -624,8 +627,98 @@ void BTM_BleSetStaticAddr(BD_ADDR rand_addr)
 }
 
 #if (CONTROLLER_RPA_LIST_ENABLE == FALSE)
-uint32_t BTM_BleUpdateOwnType(uint8_t *own_bda_type)
+#if (BLE_SCAN_OWN_ADDR_SEPARATE == TRUE)
+static BOOLEAN btm_ble_privacy_is_on(void)
 {
+#if BLE_PRIVACY_SPT == TRUE
+    return btm_cb.ble_ctr_cb.privacy_mode != BTM_PRIVACY_NONE;
+#else
+    return FALSE;
+#endif
+}
+
+/* Accept a random scan address only when the controller already has it.
+ * Advertising and scanning share one LE random address on this controller.
+ * Installing a different value would replace the address used by advertising,
+ * the initiator and BTM_BleGetCurrentAddress, or would leave the host holding
+ * an RPA while the controller holds the static address. */
+static uint32_t btm_ble_scan_use_random_locked(uint8_t *own_bda_type, BD_ADDR random_bda)
+{
+    tBTM_LE_RANDOM_CB *p_addr = &btm_cb.ble_ctr_cb.addr_mgnt_cb;
+
+    if (memcmp(p_addr->private_addr, random_bda, BD_ADDR_LEN) != 0) {
+        BTM_TRACE_ERROR("scan random address would replace the identity address\n");
+        return BTM_ILLEGAL_VALUE;
+    }
+
+    *own_bda_type = BLE_ADDR_RANDOM;
+    btm_cb.ble_ctr_cb.inq_var.scan_addr_type = BLE_ADDR_RANDOM;
+    return BTM_SUCCESS;
+}
+
+/* Record scan_addr_type only. Does not call BTM_BleConfigPrivacy and does not
+ * modify addr_mgnt_cb. */
+static uint32_t btm_ble_set_scan_own_type_locked(uint8_t *own_bda_type)
+{
+    tBTM_LE_RANDOM_CB *p_addr = &btm_cb.ble_ctr_cb.addr_mgnt_cb;
+    BOOLEAN has_static =
+        (p_addr->exist_addr_bit & BTM_BLE_GAP_ADDR_BIT_RANDOM) == BTM_BLE_GAP_ADDR_BIT_RANDOM;
+    BOOLEAN has_rpa =
+        (p_addr->exist_addr_bit & BTM_BLE_GAP_ADDR_BIT_RESOLVABLE) == BTM_BLE_GAP_ADDR_BIT_RESOLVABLE;
+
+    if (*own_bda_type == BLE_ADDR_RANDOM) {
+        /* Legacy prefers the static random address and turns privacy off.
+         * That cannot be isolated from advertising on this controller. */
+        if (has_static && btm_ble_privacy_is_on()) {
+            BTM_TRACE_ERROR("scan own addr RANDOM cannot disable privacy; "
+                            "this controller has one LE random address\n");
+            return BTM_ILLEGAL_VALUE;
+        }
+        if (has_static) {
+            return btm_ble_scan_use_random_locked(own_bda_type, p_addr->static_rand_addr);
+        }
+        if (has_rpa) {
+            return btm_ble_scan_use_random_locked(own_bda_type, p_addr->resolvale_addr);
+        }
+        BTM_TRACE_ERROR("No random address yet, please set random address using API \"esp_ble_gap_set_rand_addr\" and retry\n");
+        return BTM_ILLEGAL_VALUE;
+    }
+
+    if (*own_bda_type == BLE_ADDR_PUBLIC_ID || *own_bda_type == BLE_ADDR_RANDOM_ID) {
+        if (has_rpa) {
+            return btm_ble_scan_use_random_locked(own_bda_type, p_addr->resolvale_addr);
+        }
+        if (btm_ble_privacy_is_on()) {
+            BTM_TRACE_ERROR("Error state\n");
+            return BTM_ILLEGAL_VALUE;
+        }
+        if (*own_bda_type == BLE_ADDR_PUBLIC_ID) {
+            *own_bda_type = BLE_ADDR_PUBLIC;
+            btm_cb.ble_ctr_cb.inq_var.scan_addr_type = BLE_ADDR_PUBLIC;
+            return BTM_SUCCESS;
+        }
+        if (has_static) {
+            return btm_ble_scan_use_random_locked(own_bda_type, p_addr->static_rand_addr);
+        }
+        BTM_TRACE_ERROR("No RPA and no random address yet, please set RPA or random address and try\n");
+        return BTM_ILLEGAL_VALUE;
+    }
+
+    btm_cb.ble_ctr_cb.inq_var.scan_addr_type = *own_bda_type;
+    return BTM_SUCCESS;
+}
+#endif
+
+static uint32_t btm_ble_update_own_type_locked(uint8_t *own_bda_type, BOOLEAN for_scan)
+{
+#if (BLE_SCAN_OWN_ADDR_SEPARATE == TRUE)
+    if (for_scan) {
+        return btm_ble_set_scan_own_type_locked(own_bda_type);
+    }
+#else
+    UNUSED(for_scan);
+#endif
+
     if(*own_bda_type == BLE_ADDR_RANDOM) {
         if((btm_cb.ble_ctr_cb.addr_mgnt_cb.exist_addr_bit & BTM_BLE_GAP_ADDR_BIT_RANDOM) == BTM_BLE_GAP_ADDR_BIT_RANDOM) {
             //close privacy
@@ -682,9 +775,14 @@ uint32_t BTM_BleUpdateOwnType(uint8_t *own_bda_type)
     return BTM_SUCCESS;
 }
 #else
-uint32_t BTM_BleUpdateOwnType(uint8_t *own_bda_type)
+static uint32_t btm_ble_update_own_type_locked(uint8_t *own_bda_type, BOOLEAN for_scan)
 {
     tBTM_LE_RANDOM_CB *p_cb = &btm_cb.ble_ctr_cb.addr_mgnt_cb;
+#if (BLE_SCAN_OWN_ADDR_SEPARATE == TRUE)
+    tBLE_ADDR_TYPE saved_own = p_cb->own_addr_type;
+#else
+    UNUSED(for_scan);
+#endif
 
     if((*own_bda_type == BLE_ADDR_RANDOM) || (*own_bda_type == BLE_ADDR_RANDOM_ID)) {
         if((p_cb->exist_addr_bit & BTM_BLE_GAP_ADDR_BIT_RANDOM) != BTM_BLE_GAP_ADDR_BIT_RANDOM) {
@@ -693,7 +791,8 @@ uint32_t BTM_BleUpdateOwnType(uint8_t *own_bda_type)
         }
 
         // If a device is using RPA, it shall also have an Identity Address
-        if ((*own_bda_type == BLE_ADDR_RANDOM_ID) && BTM_BLE_IS_NON_RESLVE_BDA(p_cb->static_rand_addr)) {
+        if ((*own_bda_type == BLE_ADDR_RANDOM_ID) &&
+                !BTM_BLE_IS_STATIC_RAND_BDA(p_cb->static_rand_addr)) {
             BTM_TRACE_ERROR("No identity address yet, please set static random address and try\n");
             return BTM_ILLEGAL_VALUE;
         }
@@ -701,7 +800,37 @@ uint32_t BTM_BleUpdateOwnType(uint8_t *own_bda_type)
 
     p_cb->own_addr_type = *own_bda_type;
 
+#if (BLE_SCAN_OWN_ADDR_SEPARATE == TRUE)
+    if (for_scan) {
+        btm_cb.ble_ctr_cb.inq_var.scan_addr_type = *own_bda_type;
+        /* Keep scan type off the global identity used by adv / initiator. */
+        p_cb->own_addr_type = saved_own;
+    }
+#endif
+
     return BTM_SUCCESS;
+}
+#endif
+
+uint32_t BTM_BleUpdateOwnType(uint8_t *own_bda_type)
+{
+    uint32_t ret;
+
+    btm_lock_take();
+    ret = btm_ble_update_own_type_locked(own_bda_type, FALSE);
+    btm_lock_give();
+    return ret;
+}
+
+#if (BLE_SCAN_OWN_ADDR_SEPARATE == TRUE)
+uint32_t BTM_BleUpdateOwnTypeForScan(uint8_t *own_bda_type)
+{
+    uint32_t ret;
+
+    btm_lock_take();
+    ret = btm_ble_update_own_type_locked(own_bda_type, TRUE);
+    btm_lock_give();
+    return ret;
 }
 #endif
 
@@ -1180,7 +1309,11 @@ tBTM_STATUS BTM_BleSetScanFilterParams(tGATT_IF client_if, UINT32 scan_interval,
     if (!controller_get_interface()->supports_ble()) {
         return BTM_ILLEGAL_VALUE;
     }
-    if (BTM_BleUpdateOwnType(&addr_type_own) != 0) {
+
+    btm_lock_take();
+
+    if (btm_ble_update_own_type_locked(&addr_type_own, BLE_SCAN_OWN_ADDR_SEPARATE) != 0) {
+        btm_lock_give();
         return BTM_ILLEGAL_VALUE;
     }
 

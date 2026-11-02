@@ -163,6 +163,9 @@ typedef struct {
     UINT32 scan_interval;
     UINT8 scan_type; /* current scan type: active or passive */
     UINT8 scan_duplicate_filter; /* duplicate filter enabled for scan */
+#if (BLE_SCAN_OWN_ADDR_SEPARATE == TRUE)
+    tBLE_ADDR_TYPE scan_addr_type; /* own address type used for scan, isolated from addr_mgnt_cb */
+#endif
     UINT16 adv_interval_min;
     UINT16 adv_interval_max;
     tBTM_BLE_AFP afp; /* advertising filter policy */

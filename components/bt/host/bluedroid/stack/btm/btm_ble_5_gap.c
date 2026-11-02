@@ -41,10 +41,15 @@ static tBTM_BLE_MIN_CONN_INTERVAL_GROUP btm_ble_min_conn_interval_groups[BTM_BLE
 extern BOOLEAN BTM_GetLocalResolvablePrivateAddr(BD_ADDR bda);
 extern void BTM_UpdateAddrInfor(uint8_t addr_type, BD_ADDR bda);
 extern void BTM_BleSetStaticAddr(BD_ADDR rand_addr);
+#if (BLE_SCAN_OWN_ADDR_SEPARATE == TRUE)
+extern uint32_t BTM_BleUpdateOwnTypeForScan(uint8_t *own_bda_type);
+#else
 extern uint32_t BTM_BleUpdateOwnType(uint8_t *own_bda_type);
+#endif
 #if (BLE_50_EXTEND_ADV_EN == TRUE)
 static tBTM_STATUS btm_ble_ext_adv_params_validate(tBTM_BLE_GAP_EXT_ADV_PARAMS *params);
-static tBTM_STATUS btm_ble_ext_adv_set_data_validate(UINT8 instance, UINT16 len, UINT8 *data);
+static tBTM_STATUS btm_ble_ext_adv_set_data_validate(UINT8 instance, UINT16 len, UINT8 *data,
+                                                       BOOLEAN is_scan_rsp, BOOLEAN is_periodic);
 
 typedef struct {
     uint16_t ter_con_handle;
@@ -1110,18 +1115,22 @@ tBTM_STATUS BTM_BleSetExtendedScanParams(tBTM_BLE_EXT_SCAN_PARAMS *params)
         phy_count++;
     }
 
+#if (BLE_SCAN_OWN_ADDR_SEPARATE == TRUE)
+    if (BTM_BleUpdateOwnTypeForScan(&params->own_addr_type) != 0 ) {
+#else
     if (BTM_BleUpdateOwnType(&params->own_addr_type) != 0 ) {
+#endif
         status = BTM_ILLEGAL_VALUE;
         BTM_TRACE_ERROR("LE UpdateOwnType err");
         goto end;
     }
 
-    extend_adv_cb.scan_duplicate = params->scan_duplicate;
-
     if ((err = btsnd_hcic_ble_set_ext_scan_params(params->own_addr_type, params->filter_policy, phy_mask, phy_count,
                                       hci_params)) != HCI_SUCCESS) {
         BTM_TRACE_ERROR("LE ES SetParams: cmd err=0x%x", err);
         status = BTM_HCI_ERROR | err;
+    } else {
+        extend_adv_cb.scan_duplicate = params->scan_duplicate;
     }
 
 end:
