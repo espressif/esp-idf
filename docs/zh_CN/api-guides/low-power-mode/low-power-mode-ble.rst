@@ -31,6 +31,8 @@
 
     :menuitem:`CONFIG_BT_CTRL_LP_CLK_SRC` = Use main XTAL as RTC clock source (`CONFIG_BT_CTRL_LP_CLK_SRC_MAIN_XTAL`)
 
+    :menuitem:`CONFIG_BT_CTRL_LP_CLK_SRC` 依赖 :menuitem:`CONFIG_BT_CTRL_SLEEP_ENABLE`。请先使能 Bluetooth Controller Sleep Mode，该选项才会可用。
+
 选择主晶振后，light-sleep 模式下主晶振电源不会关闭，因此电流消耗更高。有关使用主晶振与 32 kHz 外部晶振在 light-sleep 模式下的典型电流消耗，请参考 :example_file:`Power Save README <bluetooth/nimble/power_save/README.md>` 。
 
 选择 32 kHz 外部晶振
@@ -55,6 +57,8 @@
 .. only:: esp32s31
 
     :menuitem:`CONFIG_BT_CTRL_LP_CLK_SRC` = Use system RTC slow clock source (`CONFIG_BT_CTRL_LP_CLK_SRC_DEFAULT`)
+
+    :menuitem:`CONFIG_BT_CTRL_LP_CLK_SRC` 依赖 :menuitem:`CONFIG_BT_CTRL_SLEEP_ENABLE`。请先使能 Bluetooth Controller Sleep Mode，该选项才会可用。
 
 **配置路径 2：**
 
@@ -91,9 +95,13 @@
 
     要使用 136 kHz 内部 RC 振荡器作为低功耗蓝牙内部时钟源，请配置以下选项：
 
+    :menuitem:`CONFIG_BT_CTRL_LP_CLK_SRC` 依赖 :menuitem:`CONFIG_BT_CTRL_SLEEP_ENABLE`。请先使能 Bluetooth Controller Sleep Mode，该选项才会可用。
+
     **配置路径 1：**
 
     :menuitem:`CONFIG_BT_CTRL_LP_CLK_SRC` = Use system RTC slow clock source (`CONFIG_BT_CTRL_LP_CLK_SRC_DEFAULT`)
+
+    136 kHz 内部 RC 时钟配置仅适用于 BLE-only 模式。启用经典蓝牙时，该配置不可用。
 
 .. only:: not esp32
 

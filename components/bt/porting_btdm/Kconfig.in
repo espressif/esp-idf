@@ -56,7 +56,10 @@ choice BT_CTRL_LP_CLK_SRC
         depends on (RTC_CLK_SRC_EXT_CRYS || !BT_CTRL_BREDR_ENABLE)
         bool "Use system RTC slow clock source"
         help
-            Use the same slow clock source as system RTC
+            Use the same slow clock source as system RTC.
+            The 136 kHz internal RC clock is not supported in Classic Bluetooth
+            (BR/EDR) mode because its clock accuracy is insufficient to maintain
+            a stable Bluetooth connection.
             Using any clock source other than external 32.768 kHz XTAL supports only
             legacy ADV and SCAN due to low clock accuracy.
 
