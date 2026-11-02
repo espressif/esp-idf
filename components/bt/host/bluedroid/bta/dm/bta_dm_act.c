@@ -482,6 +482,10 @@ static void bta_dm_sys_hw_cback( tBTA_SYS_HW_EVT status )
     }
 
     if ( status == BTA_SYS_HW_OFF_EVT ) {
+        /* Disable has completed. Stop delivering DM events until the next
+         * BTA_EnableBluetooth() registers DM again. */
+        bta_sys_deregister(BTA_ID_DM);
+
         if ( bta_dm_cb.p_sec_cback != NULL ) {
             bta_dm_cb.p_sec_cback(BTA_DM_DISABLE_EVT, NULL);
         }
@@ -719,18 +723,17 @@ static void bta_dm_disable_timer_cback (TIMER_LIST_ENT *p_tle)
             bta_dm_cb.disable_timer.p_cback = (TIMER_CBACK *)&bta_dm_disable_timer_cback;
             bta_dm_cb.disable_timer.param = 1;
             bta_sys_start_timer(&bta_dm_cb.disable_timer, 0, 1500);
-        }
-    } else {
-        bta_dm_cb.disabling = FALSE;
-#if (CLASSIC_BT_INCLUDED == TRUE)
-        bta_sys_remove_uuid(UUID_SERVCLASS_PNP_INFORMATION);
-#endif // #if (CLASSIC_BT_INCLUDED == TRUE)
-        if (bta_dm_cb.p_sec_cback) {
-            bta_dm_cb.p_sec_cback(BTA_DM_DISABLE_EVT, NULL);
-        } else {
-            APPL_TRACE_ERROR("%s, security callback is not registered", __func__);
+            return;
         }
     }
+
+#if (CLASSIC_BT_INCLUDED == TRUE)
+    bta_sys_remove_uuid(UUID_SERVCLASS_PNP_INFORMATION);
+#endif // #if (CLASSIC_BT_INCLUDED == TRUE)
+    /* No ACL left, disconnect already retried, or ACL exists without a peer
+     * record to disconnect. Finish through the BTA SYS HW-off path so the next
+     * enable runs BTM_DeviceReset() and re-inits the resolving list. */
+    bta_dm_disable_conn_down_timer_cback(NULL);
 }
 
 

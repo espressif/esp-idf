@@ -575,7 +575,10 @@ const tBTA_DM_ST_TBL bta_dm_search_st_tbl[] = {
 *******************************************************************************/
 void bta_dm_sm_disable(void)
 {
-    bta_sys_deregister( BTA_ID_DM );
+    /* Keep BTA DM registered while disabling. bta_dm_acl_change() must still
+     * receive the link-down event so it can arm the conn-down timer and finish
+     * the BTA SYS HW disable. DM is deregistered in bta_dm_sys_hw_cback() once
+     * BTA_SYS_HW_OFF_EVT is delivered. */
 }
 
 void bta_dm_sm_deinit(void)
