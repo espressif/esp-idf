@@ -77,6 +77,10 @@ extern void btu_task_thread_handler(void *arg);
 void btu_task_start_up(void * param);
 void btu_task_shut_down(void);
 
+#if (BLE_50_FEATURE_SUPPORT == TRUE)
+extern void btm_ble_extendadvcb_deinit(void);
+#endif
+
 /*****************************************************************************
 **                          V A R I A B L E S                                *
 ******************************************************************************/
@@ -149,6 +153,9 @@ void btu_free_core(void)
     SMP_Free();
 #endif
     btm_ble_free();
+#if (BLE_50_FEATURE_SUPPORT == TRUE)
+    btm_ble_extendadvcb_deinit();
+#endif
 #endif
     btm_free();
 }

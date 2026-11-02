@@ -89,6 +89,23 @@ extern void btm_ble_inter_set(bool extble_inter);
 void btm_ble_extendadvcb_init(void)
 {
     memset(&extend_adv_cb, 0, sizeof(tBTM_BLE_EXTENDED_CB));
+    /* Do not clear ble_5_hci_cb here: BTM_BleGapRegisterCallback() is called
+     * from btc_init() before btu_init_core()/btm_init(). Clearing it would
+     * drop the already-registered BTC/ISO/Mesh GAP callback. BSS starts as
+     * NULL; btm_ble_extendadvcb_deinit() clears it on stack teardown. */
+#if (BLE_50_EXTEND_SYNC_EN == TRUE) && (BLE_FEAT_CREATE_SYNC_RETRY_MAX > 0)
+    memset(&sync_retry_cb, 0, sizeof(sync_retry_cb));
+#endif
+}
+
+void btm_ble_extendadvcb_deinit(void)
+{
+    ble_5_hci_cb = NULL;
+#if (BLE_50_EXTEND_SYNC_EN == TRUE) && (BLE_FEAT_CREATE_SYNC_RETRY_MAX > 0)
+    sync_retry_cb.in_use = false;
+    sync_retry_cb.retry_count = 0;
+    memset(&sync_retry_cb.params, 0, sizeof(sync_retry_cb.params));
+#endif
 }
 #if (BLE_50_EXTEND_ADV_EN == TRUE)
 void btm_ble_advrecod_init(void)
@@ -100,7 +117,6 @@ void btm_ble_advrecod_init(void)
         adv_record[i].instance = INVALID_VALUE_8BIT;
         adv_record[i].duration = INVALID_VALUE_32BIT;
         adv_record[i].max_events = INVALID_VALUE_32BIT;
-        adv_record[i].retry_count = 0;
     }
 }
 #endif // #if (BLE_50_EXTEND_ADV_EN == TRUE)
@@ -110,19 +126,79 @@ void BTM_BleGapRegisterCallback(tBTM_BLE_5_HCI_CBACK cb)
     if (cb) {
         ble_5_hci_cb = cb;
     } else {
-        BTM_TRACE_ERROR("%s, register fail, the cb function is NULL.", __func__);
+        BTM_TRACE_ERROR("register fail, cb is NULL");
+    }
+}
+
+static BOOLEAN btm_ble_5_gap_is_cmd_complete_evt(tBTM_BLE_5_GAP_EVENT event)
+{
+    switch (event) {
+#if (BLE_50_EXTEND_SCAN_EN == TRUE)
+    case BTM_BLE_5_GAP_EXT_ADV_REPORT_EVT:
+    case BTM_BLE_5_GAP_SCAN_TIMEOUT_EVT:
+#endif
+#if (BLE_50_EXTEND_ADV_EN == TRUE)
+    case BTM_BLE_5_GAP_SCAN_REQ_RECEIVED_EVT:
+    case BTM_BLE_5_GAP_ADV_TERMINATED_EVT:
+#endif
+    case BTM_BLE_5_GAP_CHANNEL_SELETE_ALGORITHM_EVT:
+#if (BLE_50_EXTEND_SYNC_EN == TRUE)
+    case BTM_BLE_5_GAP_PERIODIC_ADV_REPORT_EVT:
+    case BTM_BLE_5_GAP_PERIODIC_ADV_SYNC_LOST_EVT:
+    case BTM_BLE_5_GAP_PERIODIC_ADV_SYNC_ESTAB_EVT:
+#endif
+#if (BLE_FEAT_PERIODIC_ADV_SYNC_TRANSFER == TRUE)
+    case BTM_BLE_GAP_PERIODIC_ADV_SYNC_TRANS_RECV_EVT:
+#endif
+#if (BLE_FEAT_POWER_CONTROL_EN == TRUE)
+    case BTM_BLE_GAP_PATH_LOSS_THRESHOLD_EVT:
+    case BTM_BLE_GAP_TRANMIT_POWER_REPORTING_EVT:
+#endif
+#if (BLE_FEAT_CONN_SUBRATING == TRUE)
+    case BTM_BLE_GAP_SUBRATE_CHANGE_EVT:
+#endif
+#if (BT_BLE_FEAT_PAWR_EN == TRUE)
+    case BTM_BLE_GAP_PERIODIC_ADV_SUBEVT_DATA_REQUEST_EVT:
+    case BTM_BLE_GAP_PERIODIC_ADV_RESPONSE_REPORT_EVT:
+#endif
+#if (BT_BLE_FEAT_CHANNEL_SOUNDING == TRUE)
+    case BTM_BLE_GAP_CS_SUBEVENT_RESULT_EVT:
+    case BTM_BLE_GAP_CS_SUBEVENT_RESULT_CONTINUE_EVT:
+#endif
+#if (BLE_FEAT_ADV_MONITOR == TRUE)
+    case BTM_BLE_5_GAP_MONITOR_ADV_REPORT_EVT:
+#endif
+#if (BLE_FEAT_SHORTER_CONN_INTERVALS == TRUE)
+    case BTM_BLE_5_GAP_CONN_RATE_CHANGE_EVT:
+#endif
+#if (BLE_FEAT_LE_UTP == TRUE)
+    case BTM_BLE_5_GAP_UTP_RECEIVE_EVT:
+#endif
+        return FALSE;
+    default:
+        return TRUE;
     }
 }
 
 void BTM_ExtBleCallbackTrigger(tBTM_BLE_5_GAP_EVENT event, tBTM_BLE_5_GAP_CB_PARAMS *params)
 {
-    if(params && params->status == BTM_SUCCESS) {
+    if (params && btm_ble_5_gap_is_cmd_complete_evt(event) && params->status == BTM_SUCCESS) {
         btm_ble_inter_set(true);
     }
     if (ble_5_hci_cb) {
         ble_5_hci_cb(event, params);
+    } else {
+        BTM_TRACE_ERROR("ble_5_hci_cb is NULL");
     }
 }
+
+/* BLE 5.0 GAP APIs below are only invoked from BTA (bta_dm_act.c), which passes
+ * BD_ADDR and payload buffers as embedded struct members or stack locals — never
+ * NULL. Pointer NULL checks are done in BTC/BTA where needed; BTM only validates
+ * semantic preconditions that affect host state (e.g. p_lcb exists, adv instance
+ * configured). HCI parameter range/format checks (addr_type, sid, scan_duplicate,
+ * phy_mask, interval, etc.) are left to the controller — invalid values are
+ * rejected via Command Status/Complete and do not corrupt host state. */
 
 tBTM_STATUS BTM_BleReadPhy(BD_ADDR bd_addr, UINT8 *tx_phy, UINT8 *rx_phy)
 {
@@ -1362,6 +1438,8 @@ void btm_ble_update_phy_evt(tBTM_BLE_UPDATE_PHY *params)
 #if (BLE_50_EXTEND_SCAN_EN == TRUE)
 void btm_ble_scan_timeout_evt(void)
 {
+    /* Extended scan only tracks BTM_BLE_SCANNING in inq_var.state; do not touch
+     * legacy scan_activity / scan_type here. */
     btm_cb.ble_ctr_cb.inq_var.state &= ~BTM_BLE_SCANNING;
     BTM_ExtBleCallbackTrigger(BTM_BLE_5_GAP_SCAN_TIMEOUT_EVT, NULL);
 }
