@@ -27,6 +27,7 @@ static esp_pm_lock_handle_t s_usb_serial_jtag_pm_lock;
 #define ALLOWED_NO_SOF_TICKS                pdMS_TO_TICKS(USJ_DISCONNECT_CONFIRM_PERIOD_MS)
 
 static uint32_t remaining_allowed_no_sof_ticks;
+static uint32_t s_last_frame_num;
 
 static __attribute__((unused)) const char *USB_SERIAL_JTAG_CONN_MONITOR_TAG = "usb_serial_jtag";
 
@@ -44,6 +45,20 @@ static void IRAM_ATTR usb_serial_jtag_sof_tick_hook(void)
     // Consider it is disconnected only if SOF intr bit is not raised within (ALLOWED_NO_SOF_TICKS + 1) tick periods
     bool sof_received = (usb_serial_jtag_ll_get_intraw_mask() & USB_SERIAL_JTAG_INTR_SOF);
     usb_serial_jtag_ll_clr_intsts_mask(USB_SERIAL_JTAG_INTR_SOF);
+    // The SOF bit is read and cleared in two steps: a SOF arriving between them is cleared without being seen.
+    // The tick and the host's 1 ms frames run on independent clocks a few ppm apart, so their phase drifts through
+    // that window periodically (every few minutes) and produces runs of false "no SOF" samples. The frame number
+    // advances with every received SOF and is not lost this way, so a change in it also counts as a SOF.
+    uint32_t frame_num = usb_serial_jtag_ll_get_frame_num();
+    if (frame_num != s_last_frame_num) {
+        s_last_frame_num = frame_num;
+        sof_received = true;
+    }
+    // A SOF while connected restores the tolerance, so only consecutive SOF-less ticks lead to a disconnection.
+    // Otherwise isolated misses (e.g. a delayed tick) accumulate over the whole uptime.
+    if (sof_received && s_usb_serial_jtag_conn_status) {
+        remaining_allowed_no_sof_ticks = ALLOWED_NO_SOF_TICKS;
+    }
     if (s_usb_serial_jtag_conn_status != sof_received) {
         if (!sof_received) {
             if (remaining_allowed_no_sof_ticks > 0) {
@@ -86,6 +101,7 @@ ESP_SYSTEM_INIT_FN(usb_serial_jtag_conn_status_init, SECONDARY, BIT(0), 230)
 #endif
     s_usb_serial_jtag_conn_status = true;
     remaining_allowed_no_sof_ticks = ALLOWED_NO_SOF_TICKS;
+    s_last_frame_num = usb_serial_jtag_ll_get_frame_num();
 
     return esp_register_freertos_tick_hook(usb_serial_jtag_sof_tick_hook);
 }
