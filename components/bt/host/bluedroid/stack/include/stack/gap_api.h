@@ -139,8 +139,6 @@ typedef union {
 
 } tGAP_BLE_ATTR_VALUE;
 
-typedef void (tGAP_BLE_CMPL_CBACK)(BOOLEAN status, BD_ADDR addr, UINT16 length, char *p_name);
-
 
 /*****************************************************************************
 **  External Function Declarations
@@ -369,54 +367,6 @@ extern void GAP_Deinit(void);
 **
 *******************************************************************************/
 extern void GAP_BleAttrDBUpdate(UINT16 attr_uuid, tGAP_BLE_ATTR_VALUE *p_value);
-
-
-/*******************************************************************************
-**
-** Function         GAP_BleReadPeerPrefConnParams
-**
-** Description      Start a process to read a connected peripheral's preferred
-**                  connection parameters
-**
-** Returns          TRUE if read started, else FALSE if GAP is busy
-**
-*******************************************************************************/
-extern BOOLEAN GAP_BleReadPeerPrefConnParams (BD_ADDR peer_bda);
-
-/*******************************************************************************
-**
-** Function         GAP_BleReadPeerDevName
-**
-** Description      Start a process to read a connected peripheral's device name.
-**
-** Returns          TRUE if request accepted
-**
-*******************************************************************************/
-extern BOOLEAN GAP_BleReadPeerDevName (BD_ADDR peer_bda, tGAP_BLE_CMPL_CBACK *p_cback);
-
-
-/*******************************************************************************
-**
-** Function         GAP_BleReadPeerAddressResolutionCap
-**
-** Description      Start a process to read peer address resolution capability
-**
-** Returns          TRUE if request accepted
-**
-*******************************************************************************/
-extern BOOLEAN GAP_BleReadPeerAddressResolutionCap (BD_ADDR peer_bda,
-        tGAP_BLE_CMPL_CBACK *p_cback);
-
-/*******************************************************************************
-**
-** Function         GAP_BleCancelReadPeerDevName
-**
-** Description      Cancel reading a peripheral's device name.
-**
-** Returns          TRUE if request accepted
-**
-*******************************************************************************/
-extern BOOLEAN GAP_BleCancelReadPeerDevName (BD_ADDR peer_bda);
 
 
 #endif

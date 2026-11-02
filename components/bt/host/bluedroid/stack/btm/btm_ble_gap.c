@@ -768,7 +768,7 @@ void BTM_BleSetKeyMaterial(const uint8_t *session_key, const uint8_t *iv)
 void BTM_BleConfigConnParams(uint16_t int_min, uint16_t int_max, uint16_t latency, uint16_t timeout)
 {
 #if (defined(GAP_INCLUDED) && GAP_INCLUDED == TRUE && GATTS_INCLUDED == TRUE)
-    tGAP_BLE_ATTR_VALUE p_value;
+    tGAP_BLE_ATTR_VALUE p_value = {0};
 
     p_value.conn_param.int_min = int_min;
     p_value.conn_param.int_max = int_max;

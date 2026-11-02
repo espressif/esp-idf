@@ -36,7 +36,6 @@
 #include "stack/sdp_api.h"
 #include "stack/l2c_api.h"
 #include "bta/utl.h"
-#include "stack/gap_api.h"    /* For GAP_BleReadPeerPrefConnParams */
 #include <string.h>
 #include <stdint.h>
 #include "device/controller.h"
@@ -3105,12 +3104,6 @@ static void bta_dm_remname_cback (tBTM_REMOTE_DEV_NAME *p_remote_name)
     BCM_STRLCPY_S((char *)bta_dm_search_cb.peer_name, (char *)p_remote_name->remote_bd_name, BD_NAME_LEN + 1);
 
     BTM_SecDeleteRmtNameNotifyCallback(&bta_dm_service_search_remname_cback);
-
-#if BLE_INCLUDED == TRUE && GATTS_INCLUDED == TRUE
-    if (bta_dm_search_cb.transport == BT_TRANSPORT_LE ) {
-        GAP_BleReadPeerPrefConnParams (bta_dm_search_cb.peer_bdaddr);
-    }
-#endif
 
     if ((p_msg = (tBTA_DM_REM_NAME *) osi_malloc(sizeof(tBTA_DM_REM_NAME))) != NULL) {
         bdcpy (p_msg->result.disc_res.bd_addr, bta_dm_search_cb.peer_bdaddr);

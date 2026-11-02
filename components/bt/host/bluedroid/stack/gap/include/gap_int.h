@@ -109,24 +109,6 @@ typedef struct {
 ** M A I N   C O N T R O L   B L O C K
 ***********************************************************************/
 
-#define GAP_MAX_CL GATT_CL_MAX_LCB
-
-typedef struct {
-    UINT16 uuid;
-    tGAP_BLE_CMPL_CBACK *p_cback;
-} tGAP_BLE_REQ;
-
-typedef struct {
-    BD_ADDR                 bda;
-    tGAP_BLE_CMPL_CBACK     *p_cback;
-    UINT16                  conn_id;
-    UINT16                  cl_op_uuid;
-    BOOLEAN                 in_use;
-    BOOLEAN                 connected;
-    fixed_queue_t           *pending_req_q;
-
-} tGAP_CLCB;
-
 typedef struct {
 #if (CLASSIC_BT_INCLUDED == TRUE)
     tGAP_INFO        blk[GAP_MAX_BLOCKS];
@@ -142,7 +124,6 @@ typedef struct {
     /* LE GAP attribute database */
 #if BLE_INCLUDED == TRUE && GATTS_INCLUDED == TRUE
     tGAP_ATTR               gap_attr[GAP_MAX_CHAR_NUM];
-    tGAP_CLCB               clcb[GAP_MAX_CL]; /* connection link*/
     tGATT_IF                gatt_if;
 #endif
 } tGAP_CB;
