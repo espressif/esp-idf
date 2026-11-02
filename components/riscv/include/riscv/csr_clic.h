@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2025-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -64,6 +64,12 @@
  */
 #define MINTSTATUS_MIL_S        24
 #define MINTSTATUS_MIL_V        0xFF
+/* In the uintstatus CSR, the `uil` field is in bits [7:0] */
+#define UINTSTATUS_UIL_S        0
+#define UINTSTATUS_UIL_V        0xFF
+/* In the ucause CSR, the previous interrupt level (`upil`) is in bits [23:16] */
+#define UCAUSE_UPIL_S           16
+#define UCAUSE_UPIL_V           0xFF
 
 
 #if INTTHRESH_STANDARD
@@ -75,6 +81,9 @@
 
     /* Helper macro to translate a CLIC status threshold bits to an absolute interrupt level */
     #define CLIC_STATUS_TO_INT(status)      (BYTE_TO_NLBITS((status >> MINTSTATUS_MIL_S) & MINTSTATUS_MIL_V))
+
+    /* Helper macro to translate the uintstatus CSR to an absolute U-mode interrupt level */
+    #define CLIC_USTATUS_TO_INT(status)     (BYTE_TO_NLBITS(((status) >> UINTSTATUS_UIL_S) & UINTSTATUS_UIL_V))
 #else
     /* For the non-standard intthresh implementation the threshold is stored in the upper 8 bits of CLIC_CPU_INT_THRESH reg */
     /* Helper macro to translate absolute interrupt level to CLIC interrupt threshold bits in the mintthresh reg */
