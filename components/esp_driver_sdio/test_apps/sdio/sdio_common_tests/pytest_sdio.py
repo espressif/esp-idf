@@ -1,9 +1,11 @@
-# SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2022-2026 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: CC0-1.0
 import os.path
 
 import pytest
 from pytest_embedded_idf import IdfDut
+from pytest_embedded_idf.utils import idf_parametrize
+from pytest_embedded_idf.utils import soc_filtered_targets
 
 
 def parameter_expand(existing_parameters: list[list[str]], value_list: list[str]) -> list[list[str]]:
@@ -256,6 +258,15 @@ def test_sdio_speed_tohost_esp32p4_esp32c5(dut: tuple[IdfDut, IdfDut]) -> None:
 @pytest.mark.parametrize('app_path, target, config', c61_param_default, indirect=True)
 def test_sdio_speed_tohost_esp32_esp32c61(dut: tuple[IdfDut, IdfDut]) -> None:
     test_sdio_speed_tohost_flow(dut, 8500, 4000)
+
+
+# Standalone tests, no host required
+@pytest.mark.generic
+@pytest.mark.parametrize('app_path', [os.path.join(os.path.dirname(__file__), 'sdio')], indirect=True)
+@pytest.mark.parametrize('config', ['default', 'opt_perf'], indirect=True)
+@idf_parametrize('target', soc_filtered_targets('SOC_SDIO_SLAVE_SUPPORTED == 1'), indirect=['target'])
+def test_sdio_slave_standalone(dut: IdfDut) -> None:
+    dut.run_all_single_board_cases(group='sdio_standalone')
 
 
 # Retention tests
