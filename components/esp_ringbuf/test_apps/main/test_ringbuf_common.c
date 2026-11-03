@@ -385,7 +385,7 @@ TEST_CASE("TC#3: No-Split", "[esp_ringbuf][linux]")
     TEST_ASSERT_MESSAGE(xRingbufferGetMaxItemSize(buffer_handle) == ((BUFFER_SIZE >> 1) - ITEM_HDR_SIZE), "Incorrect max item size received");
 
     //Calculate number of medium items to send. Aim to almost fill the buffer
-    int no_of_medium_items = (BUFFER_SIZE - (ITEM_HDR_SIZE + MEDIUM_ITEM_SIZE)) / (ITEM_HDR_SIZE + MEDIUM_ITEM_SIZE);
+    int no_of_medium_items = (BUFFER_SIZE - (ITEM_HDR_SIZE + ITEM_SPACE(MEDIUM_ITEM_SIZE))) / (ITEM_HDR_SIZE + ITEM_SPACE(MEDIUM_ITEM_SIZE));
 
     //Test sending items
     for (int i = 0; i < no_of_medium_items; i++) {
@@ -527,7 +527,7 @@ TEST_CASE("TC#3: Allow-Split", "[esp_ringbuf][linux]")
     TEST_ASSERT_MESSAGE(xRingbufferGetMaxItemSize(buffer_handle) == (BUFFER_SIZE - (ITEM_HDR_SIZE * 2)), "Incorrect max item size received");
 
     //Calculate number of medium items to send. Aim to almost fill the buffer
-    int no_of_medium_items = (BUFFER_SIZE - (ITEM_HDR_SIZE + MEDIUM_ITEM_SIZE)) / (ITEM_HDR_SIZE + MEDIUM_ITEM_SIZE);
+    int no_of_medium_items = (BUFFER_SIZE - (ITEM_HDR_SIZE + ITEM_SPACE(MEDIUM_ITEM_SIZE))) / (ITEM_HDR_SIZE + ITEM_SPACE(MEDIUM_ITEM_SIZE));
 
     //Test sending items
     for (int i = 0; i < no_of_medium_items; i++) {
@@ -1049,6 +1049,47 @@ TEST_CASE("Test ringbuffer 0 item size", "[esp_ringbuf][linux]")
     vRingbufferDelete(byte_rb);
 }
 
+/* ------------------------------------------- Test item alignment ---------------------------------------------
+ * Item headers hold a size_t, so items of any length must leave the next header aligned for it, including where
+ * size_t is wider than 32 bits (e.g. the Linux target on a 64-bit host).
+ */
+TEST_CASE("Test ring buffer items of any length stay aligned", "[esp_ringbuf][linux]")
+{
+    RingbufHandle_t no_split_rb = xRingbufferCreate(BUFFER_SIZE, RINGBUF_TYPE_NOSPLIT);
+    RingbufHandle_t allow_split_rb = xRingbufferCreate(BUFFER_SIZE, RINGBUF_TYPE_ALLOWSPLIT);
+    TEST_ASSERT_MESSAGE(no_split_rb && allow_split_rb, "Failed to create ring buffers");
+
+    for (size_t xLength = 1; xLength <= LARGE_ITEM_SIZE; xLength++) {
+        void *pvItem1;
+        void *pvItem2;
+        size_t xItemSize1;
+        size_t xItemSize2;
+
+        //Two items each time, so the second one follows an item of this length
+        for (int i = 0; i < 2; i++) {
+            TEST_ASSERT_EQUAL(pdTRUE, xRingbufferSend(no_split_rb, large_item, xLength, 0));
+            pvItem1 = xRingbufferReceive(no_split_rb, &xItemSize1, 0);
+            TEST_ASSERT_NOT_EQUAL(NULL, pvItem1);
+            TEST_ASSERT_EQUAL(xLength, xItemSize1);
+            TEST_ASSERT_EQUAL(0, (uintptr_t)pvItem1 % _Alignof(size_t));
+            vRingbufferReturnItem(no_split_rb, pvItem1);
+
+            TEST_ASSERT_EQUAL(pdTRUE, xRingbufferSend(allow_split_rb, large_item, xLength, 0));
+            TEST_ASSERT_EQUAL(pdTRUE, xRingbufferReceiveSplit(allow_split_rb, &pvItem1, &pvItem2, &xItemSize1, &xItemSize2, 0));
+            TEST_ASSERT_EQUAL(0, (uintptr_t)pvItem1 % _Alignof(size_t));
+            vRingbufferReturnItem(allow_split_rb, pvItem1);
+            if (pvItem2 != NULL) {
+                TEST_ASSERT_EQUAL(0, (uintptr_t)pvItem2 % _Alignof(size_t));
+                vRingbufferReturnItem(allow_split_rb, pvItem2);
+            }
+        }
+    }
+
+    //Cleanup
+    vRingbufferDelete(no_split_rb);
+    vRingbufferDelete(allow_split_rb);
+}
+
 /* ---------------------------- Test no-split ring buffer SendAquire and SendComplete ---------------------------
  * The following test case tests the SendAquire and SendComplete functions of the no-split ring buffer.
  *
@@ -1093,7 +1134,7 @@ TEST_CASE("Test no-split buffers always receive items in order", "[esp_ringbuf][
     TEST_ASSERT_MESSAGE(items_waiting == 0, "Incorrect items waiting");
 
     // Acquire space on the buffer until the buffer is full
-#define MAX_NUM_ITEMS ( BUFFER_SIZE / ( MEDIUM_ITEM_SIZE + ITEM_HDR_SIZE ) )
+#define MAX_NUM_ITEMS ( BUFFER_SIZE / ( ITEM_SPACE(MEDIUM_ITEM_SIZE) + ITEM_HDR_SIZE ) )
     void *items[MAX_NUM_ITEMS];
     for (int i = 0; i < MAX_NUM_ITEMS; i++) {
         TEST_ASSERT_EQUAL(pdTRUE, xRingbufferSendAcquire(buffer_handle, &items[i], MEDIUM_ITEM_SIZE, TIMEOUT_TICKS));
@@ -1260,7 +1301,7 @@ TEST_CASE("Test no-split buffers returning oldest item when full frees one slot"
     // Create buffer
     RingbufHandle_t buffer_handle = xRingbufferCreate(BUFFER_SIZE, RINGBUF_TYPE_NOSPLIT);
     TEST_ASSERT_MESSAGE(buffer_handle != NULL, "Failed to create ring buffer");
-    const int capacity = BUFFER_SIZE / (ITEM_HDR_SIZE + MEDIUM_ITEM_SIZE);
+    const int capacity = BUFFER_SIZE / (ITEM_HDR_SIZE + ITEM_SPACE(MEDIUM_ITEM_SIZE));
     TEST_ASSERT_EQUAL(4, capacity);
     void *rx_items[capacity];
     uint8_t data[] = {10, 11, 12, 13};
@@ -1313,7 +1354,7 @@ TEST_CASE("Test no-split buffers returning non-oldest item when full does not fr
     // Create buffer
     RingbufHandle_t buffer_handle = xRingbufferCreate(BUFFER_SIZE, RINGBUF_TYPE_NOSPLIT);
     TEST_ASSERT_MESSAGE(buffer_handle != NULL, "Failed to create ring buffer");
-    const int capacity = BUFFER_SIZE / (ITEM_HDR_SIZE + MEDIUM_ITEM_SIZE);
+    const int capacity = BUFFER_SIZE / (ITEM_HDR_SIZE + ITEM_SPACE(MEDIUM_ITEM_SIZE));
     TEST_ASSERT_EQUAL(4, capacity);
     void *rx_items[capacity];
     uint8_t data[] = {10, 11, 12, 13};
@@ -1356,7 +1397,7 @@ TEST_CASE("Test no-split full buffer becomes empty when oldest is returned last"
 {
     RingbufHandle_t buffer_handle = xRingbufferCreate(BUFFER_SIZE, RINGBUF_TYPE_NOSPLIT);
     TEST_ASSERT_MESSAGE(buffer_handle != NULL, "Failed to create ring buffer");
-    const int capacity = BUFFER_SIZE / (ITEM_HDR_SIZE + MEDIUM_ITEM_SIZE);
+    const int capacity = BUFFER_SIZE / (ITEM_HDR_SIZE + ITEM_SPACE(MEDIUM_ITEM_SIZE));
     TEST_ASSERT_EQUAL(4, capacity);
     uint8_t data[] = {10, 11, 12, 13};
 
