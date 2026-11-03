@@ -490,6 +490,7 @@ static bool nan_security_fill_from_paired_cache(struct ndl_info *ndl, const uint
     ndl->security_ctx.type = WIFI_NAN_SECURITY_ENCRYPTED;
     ndl->security_ctx.csid_bitmap = (uint16_t)(1u << paired->ndp_csid);
     memcpy(ndl->security_ctx.nd_pmk, paired->nd_pmk, ESP_WIFI_NAN_NDP_PMK_LEN);
+    ndl->key_source_akmp = paired->pairing_akmp;   /* PASN pairing sourced this PMK */
 
     ESP_LOGD(TAG, "Loaded ND-PMK from paired-peer cache for peer "MACSTR" (csid=%u)",
              MAC2STR(peer_nmi), paired->ndp_csid);
@@ -1497,11 +1498,13 @@ esp_err_t nan_security_populate_initiator_ndl(struct ndl_info *ndl,
     }
 
     uint8_t ndp_csid = 0;
+    int key_source_akmp = 0;   /* passphrase/PMK credential by default */
 #if defined(CONFIG_ESP_WIFI_NAN_PAIRING)
     if (paired && paired->valid && paired->ndp_csid >= WIFI_NAN_CSID_NCS_SK_128 &&
             paired->ndp_csid <= WIFI_NAN_CSID_NCS_SK_256) {
         memcpy(pmk, paired->nd_pmk, ESP_WIFI_NAN_NDP_PMK_LEN);
         ndp_csid = paired->ndp_csid;
+        key_source_akmp = paired->pairing_akmp;   /* PASN pairing sourced this PMK */
         ESP_LOGD(TAG, "NDP req security: using paired-peer cached ND-PMK for " MACSTR
                  " (csid=%u)", MAC2STR(peer_nmi), ndp_csid);
     } else
@@ -1566,6 +1569,7 @@ esp_err_t nan_security_populate_initiator_ndl(struct ndl_info *ndl,
     }
     memcpy(ndl->security_ctx.nd_pmk,   pmk,        ESP_WIFI_NAN_NDP_PMK_LEN);
     memcpy(ndl->security_ctx.nd_pmkid, pair_pmkid, ESP_WIFI_NAN_NDP_PMKID_LEN);
+    ndl->key_source_akmp = key_source_akmp;
 
     ESP_LOGD(TAG, "NDP req security: derived ND-PMK + pair PMKID for peer "MACSTR, MAC2STR(peer_nmi));
     ESP_LOG_BUFFER_HEXDUMP(TAG, pair_pmkid, ESP_WIFI_NAN_NDP_PMKID_LEN, ESP_LOG_DEBUG);
@@ -2475,11 +2479,13 @@ void nan_security_apply_pending(struct ndl_info *ndl,
                 memcpy(ndl->security_ctx.nd_pmk,
                        p_own_svc->derived_security[matched_idx].nd_pmk,
                        ESP_WIFI_NAN_NDP_PMK_LEN);
+                ndl->key_source_akmp = 0;   /* passphrase/PMK credential */
                 ESP_LOGD(TAG, "NDP Indication: PMKID validated via cred slot %d", matched_idx);
                 pmk_resolved = true;
             }
 #if defined(CONFIG_ESP_WIFI_NAN_PAIRING)
             else if (nan_security_fill_from_paired_cache(ndl, peer_nmi)) {
+                /* fill_from_paired_cache sets ndl->key_source_akmp from the paired entry */
                 ESP_LOGD(TAG, "NDP Indication: PMK sourced from paired-peer cache");
                 pmk_resolved = true;
             }
@@ -3083,13 +3089,11 @@ bool nan_sec_ndp_should_install_keys(uint8_t csid, int pairing_akmp)
     return true;
 }
 
-void nan_sec_ndp_commit_keys(const uint8_t *peer_ndi, const uint8_t *local_ndi,
-                             uint8_t csid, int pairing_akmp,
-                             const uint8_t *tk, uint8_t tk_len)
+void nan_sec_ndp_commit_keys(const uint8_t *peer_ndi, uint8_t csid, int pairing_akmp)
 {
     struct nan_ndi_sec_sa *sa = &s_nan_ctx.ndi_sec_sa;
 
-    if (!peer_ndi || !local_ndi || !tk || tk_len == 0 || tk_len > NAN_ND_TK_MAX_LEN) {
+    if (!peer_ndi) {
         return;
     }
 

@@ -317,6 +317,13 @@ struct ndl_info {
     uint8_t anonce[NAN_NONCE_LEN];
     uint8_t snonce[NAN_NONCE_LEN];
 
+    /* AKMP used to source this NDP's ND-PMK (0 = passphrase/PMK credential,
+     * WPA_KEY_MGMT_SAE / WPA_KEY_MGMT_PASN = PASN pairing). Recorded where the
+     * PMK is chosen (initiator populate / responder apply-pending) so the
+     * confirm-time §7.4 gate ranks the SA by the actual key source instead of
+     * re-looking up the paired-peer cache, which may have expired on one side. */
+    int      key_source_akmp;
+
     uint8_t nd_kck[NAN_ND_KCK_MAX_LEN];
     uint8_t nd_kek[NAN_ND_KEK_MAX_LEN];
     uint8_t nd_tk[NAN_ND_TK_MAX_LEN];
@@ -569,9 +576,7 @@ bool nan_sec_ndp_should_install_keys(uint8_t csid, int pairing_akmp);
  * Commit NDI pairwise SA into the cache after successful ND-TK (/NM-TK) install.
  * Caller must hold NAN_DATA_LOCK and only call when should_install_keys was true.
  */
-void nan_sec_ndp_commit_keys(const uint8_t *peer_ndi, const uint8_t *local_ndi,
-                             uint8_t csid, int pairing_akmp,
-                             const uint8_t *tk, uint8_t tk_len);
+void nan_sec_ndp_commit_keys(const uint8_t *peer_ndi, uint8_t csid, int pairing_akmp);
 
 /* Clear SA entries matching peer_ndi (or all if peer_ndi is NULL). Holds no lock. */
 void nan_sec_ndp_clear_sa(const uint8_t *peer_ndi);
