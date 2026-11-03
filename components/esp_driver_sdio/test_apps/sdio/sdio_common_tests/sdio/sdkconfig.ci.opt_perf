@@ -1,0 +1,2 @@
+# -O2 shortens the time between the recv link reset and start in sdio_slave_start()
+CONFIG_COMPILER_OPTIMIZATION_PERF=y
