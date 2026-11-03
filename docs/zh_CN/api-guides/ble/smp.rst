@@ -17,7 +17,6 @@ GAP SMP 允许两台设备通过设置适当的安全级别在数据链路层加
 
 - **授权 (Authorization):** 指应用层授予执行某些操作的权限。一些应用可能需要额外的授权，只有在用户明确授权后才能继续操作。如果未获得授权，相关操作将失败。
 
-
 低功耗蓝牙加密
 -------------------
 
@@ -106,6 +105,7 @@ Passkey Entry 模式下，Master 主动发起加密请求的流程图如下 （*
     }
 
 
+
 低功耗蓝牙绑定
 -----------------
 
@@ -161,3 +161,19 @@ Passkey Entry 模式下，Master 主动发起加密请求的流程图如下 （*
 -----------------
 
 低功耗蓝牙安全管理是采用调用低功耗蓝牙 GAP 的 API 相关的加密函数，注册低功耗蓝牙 GAP 回调，并通过事件返回获取当前的加密状态。
+
+
+隐私模式
+-----------------
+
+低功耗蓝牙有两种隐私模式：
+
+- **Network Privacy Mode（网络隐私模式）**：只接受对端用已分发的 IRK 生成的可解析私有地址（RPA）。如果对端已经分发过 IRK，就不接受它使用身份地址（Identity Address）的广播包、扫描请求和连接请求。
+- **Device Privacy Mode（设备隐私模式）**：只关心本设备自己的隐私。对端的身份地址（Identity Address） 和用其 IRK 生成的 RPA 都接受。
+
+.. note::
+
+   协议要求默认为 **Network Privacy Mode**。Espressif 控制器为了提高兼容性，会默认将配对的设备设为 **Device Privacy Mode**。若需要提高隐私等级，请调用如下接口配置成 **Network Privacy Mode**。
+
+   - :cpp:func:`ble_gap_set_priv_mode`，用于 NimBLE 主机
+   - :cpp:func:`esp_ble_gap_set_privacy_mode`，用于 Bluedroid 主机
