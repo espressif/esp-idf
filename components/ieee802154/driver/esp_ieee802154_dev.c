@@ -4,6 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <stdint.h>
 #include <string.h>
 #include "sdkconfig.h"
 #include "freertos/portmacro.h"
@@ -118,14 +119,28 @@ static void ieee802154_transmit_done(const uint8_t *frame, const uint8_t *ack, e
     }
 }
 
+static inline bool ptr_in_buffer(const void *ptr, const void *buffer, size_t buffer_size)
+{
+    uintptr_t addr = (uintptr_t)ptr;
+    uintptr_t start = (uintptr_t)buffer;
+
+    return addr >= start && (addr - start) < buffer_size;
+}
+
 esp_err_t ieee802154_receive_handle_done(const uint8_t *data)
 {
-    uint16_t size = data - &s_rx_frame[0][0];
-    if ((size % IEEE802154_RX_FRAME_SIZE) != 0
-            || (size / IEEE802154_RX_FRAME_SIZE) >= CONFIG_IEEE802154_RX_BUFFER_SIZE) {
+    const size_t valid_buffer_size = CONFIG_IEEE802154_RX_BUFFER_SIZE * sizeof(s_rx_frame[0]);
+    if (!ptr_in_buffer(data, &s_rx_frame[0][0], valid_buffer_size)) {
         return ESP_FAIL;
     }
-    s_rx_frame_info[size / IEEE802154_RX_FRAME_SIZE].process = false;
+
+    const size_t offset = (uintptr_t)data - (uintptr_t)&s_rx_frame[0][0];
+    if ((offset % sizeof(s_rx_frame[0])) != 0) {
+        return ESP_FAIL;
+    }
+
+    const size_t index = offset / sizeof(s_rx_frame[0]);
+    s_rx_frame_info[index].process = false;
     IEEE802154_RX_BUFFER_STAT_IS_FREE(true);
     return ESP_OK;
 }
@@ -206,6 +221,9 @@ IEEE802154_STATIC IEEE802154_NOINLINE void update_mpf_index(void)
         is_target_panid_present = (ieee802154_frame_get_dest_panid(frame, target_panid) == ESP_OK) ? true : false;
     }
     dest_addr_mode = ieee802154_frame_get_dst_addr(frame, dest_addr);
+    if (dest_addr_mode == IEEE802154_FRAME_INVALID_VALUE) {
+        return;
+    }
     // Check is this packet is Broadcast
     if (is_broadcast_addr(dest_addr, dest_addr_mode) || (is_target_panid_present && is_broadcast_panid(target_panid))) {
         return;
