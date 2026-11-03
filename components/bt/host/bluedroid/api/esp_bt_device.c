@@ -39,6 +39,10 @@ esp_err_t esp_bt_dev_coex_status_config(esp_bt_dev_coex_type_t type, esp_bt_dev_
 {
     ESP_BLUEDROID_STATUS_CHECK(ESP_BLUEDROID_STATUS_ENABLED);
 
+    if (type < ESP_BT_DEV_COEX_TYPE_BLE || type >= ESP_BT_DEV_COEX_TYPE_MAX) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
     btc_msg_t msg = {0};
     msg.sig = BTC_SIG_API_CALL;
     msg.pid = BTC_PID_DEV;
@@ -58,6 +62,10 @@ esp_err_t esp_bt_config_file_path_get(char *file_path)
 {
     ESP_BLUEDROID_STATUS_CHECK(ESP_BLUEDROID_STATUS_ENABLED);
 
+    if (file_path == NULL) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
     int ret = btc_config_file_path_get(file_path);
     return (ret == 0) ? ESP_OK : ESP_FAIL;
 }
@@ -65,6 +73,10 @@ esp_err_t esp_bt_config_file_path_get(char *file_path)
 esp_err_t esp_bt_config_file_path_update(const char *file_path)
 {
     ESP_BLUEDROID_STATUS_CHECK(ESP_BLUEDROID_STATUS_UNINITIALIZED);
+
+    if (file_path == NULL) {
+        return ESP_ERR_INVALID_ARG;
+    }
 
     int ret = btc_config_file_path_update(file_path);
     return (ret == 0) ? ESP_OK : ESP_FAIL;

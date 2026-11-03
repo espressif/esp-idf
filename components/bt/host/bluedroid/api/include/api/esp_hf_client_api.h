@@ -323,7 +323,7 @@ typedef void (* esp_hf_client_cb_t)(esp_hf_client_cb_event_t event, esp_hf_clien
  * @return
  *                  - ESP_OK: success
  *                  - ESP_ERR_INVALID_STATE: if bluetooth stack is not yet enabled
- *                  - ESP_FAIL: if callback is a NULL function pointer
+ *                  - ESP_ERR_INVALID_ARG: if callback is a NULL function pointer
  *
  */
 esp_err_t esp_hf_client_register_callback(esp_hf_client_cb_t callback);
@@ -451,6 +451,8 @@ esp_err_t esp_hf_client_stop_voice_recognition(void);
  * @return
  *                  - ESP_OK: volume update is sent to lower layer
  *                  - ESP_ERR_INVALID_STATE: if bluetooth stack is not yet enabled
+ *                  - ESP_ERR_INVALID_ARG: if type is neither ESP_HF_VOLUME_CONTROL_TARGET_SPK
+ *                    nor ESP_HF_VOLUME_CONTROL_TARGET_MIC, or volume is outside 0–15
  *                  - ESP_FAIL: others
  *
  */
@@ -481,6 +483,7 @@ esp_err_t esp_hf_client_dial(const char *number);
  * @return
  *                  - ESP_OK: a memory call placing is sent to lower layer
  *                  - ESP_ERR_INVALID_STATE: if bluetooth stack is not yet enabled
+ *                  - ESP_ERR_INVALID_ARG: if location is less than 1
  *                  - ESP_FAIL: others
  *
  */
@@ -499,6 +502,7 @@ esp_err_t esp_hf_client_dial_memory(int location);
  * @return
  *                  - ESP_OK: command AT+CHLD is sent to lower layer
  *                  - ESP_ERR_INVALID_STATE: if bluetooth stack is not yet enabled
+ *                  - ESP_ERR_INVALID_ARG: if chld is invalid, or idx is less than 1 for REL_X or PRIV_X
  *                  - ESP_FAIL: others
  *
  */
@@ -514,6 +518,7 @@ esp_err_t esp_hf_client_send_chld_cmd(esp_hf_chld_type_t chld, int idx);
  * @return
  *                  - ESP_OK: command AT+BTRH is sent to lower layer
  *                  - ESP_ERR_INVALID_STATE: if bluetooth stack is not yet enabled
+ *                  - ESP_ERR_INVALID_ARG: if btrh is invalid
  *                  - ESP_FAIL: others
  *
  */

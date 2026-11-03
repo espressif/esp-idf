@@ -20,7 +20,7 @@ esp_err_t esp_hf_client_register_callback(esp_hf_client_cb_t callback)
     ESP_BLUEDROID_STATUS_CHECK(ESP_BLUEDROID_STATUS_ENABLED);
 
     if (callback == NULL) {
-        return ESP_FAIL;
+        return ESP_ERR_INVALID_ARG;
     }
 
     int ret = btc_profile_cb_set(BTC_PID_HF_CLIENT, callback);
@@ -163,6 +163,10 @@ esp_err_t esp_hf_client_volume_update(esp_hf_volume_control_target_t type, int v
 {
     ESP_BLUEDROID_STATUS_CHECK(ESP_BLUEDROID_STATUS_ENABLED);
 
+    if (type != ESP_HF_VOLUME_CONTROL_TARGET_SPK && type != ESP_HF_VOLUME_CONTROL_TARGET_MIC) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
     if (volume < 0 || volume > 15) {
         return ESP_ERR_INVALID_ARG;
     }
@@ -208,6 +212,10 @@ esp_err_t esp_hf_client_dial_memory(int location)
 {
     ESP_BLUEDROID_STATUS_CHECK(ESP_BLUEDROID_STATUS_ENABLED);
 
+    if (location < 1) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
     btc_msg_t msg = {0};
     msg.sig = BTC_SIG_API_CALL;
     msg.pid = BTC_PID_HF_CLIENT;
@@ -223,6 +231,11 @@ esp_err_t esp_hf_client_dial_memory(int location)
 esp_err_t esp_hf_client_send_chld_cmd(esp_hf_chld_type_t chld, int idx)
 {
     ESP_BLUEDROID_STATUS_CHECK(ESP_BLUEDROID_STATUS_ENABLED);
+
+    if (chld < ESP_HF_CHLD_TYPE_REL || chld > ESP_HF_CHLD_TYPE_PRIV_X ||
+        ((chld == ESP_HF_CHLD_TYPE_REL_X || chld == ESP_HF_CHLD_TYPE_PRIV_X) && idx < 1)) {
+        return ESP_ERR_INVALID_ARG;
+    }
 
     btc_msg_t msg = {0};
     msg.sig = BTC_SIG_API_CALL;
@@ -240,6 +253,10 @@ esp_err_t esp_hf_client_send_chld_cmd(esp_hf_chld_type_t chld, int idx)
 esp_err_t esp_hf_client_send_btrh_cmd(esp_hf_btrh_cmd_t btrh)
 {
     ESP_BLUEDROID_STATUS_CHECK(ESP_BLUEDROID_STATUS_ENABLED);
+
+    if (btrh < ESP_HF_BTRH_CMD_HOLD || btrh > ESP_HF_BTRH_CMD_REJECT) {
+        return ESP_ERR_INVALID_ARG;
+    }
 
     btc_msg_t msg = {0};
     msg.sig = BTC_SIG_API_CALL;

@@ -76,7 +76,7 @@ esp_err_t esp_sdp_register_callback(esp_sdp_cb_t callback)
     ESP_BLUEDROID_STATUS_CHECK(ESP_BLUEDROID_STATUS_ENABLED);
 
     if (callback == NULL) {
-        return ESP_FAIL;
+        return ESP_ERR_INVALID_ARG;
     }
 
     int ret = btc_profile_cb_set(BTC_PID_SDP, callback);
@@ -112,6 +112,14 @@ esp_err_t esp_sdp_deinit(void)
 esp_err_t esp_sdp_search_record(esp_bd_addr_t bd_addr, esp_bt_uuid_t uuid)
 {
     ESP_BLUEDROID_STATUS_CHECK(ESP_BLUEDROID_STATUS_ENABLED);
+
+    if (bd_addr == NULL) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    if (uuid.len != ESP_UUID_LEN_16 && uuid.len != ESP_UUID_LEN_32 && uuid.len != ESP_UUID_LEN_128) {
+        return ESP_ERR_INVALID_ARG;
+    }
 
     btc_msg_t msg = {0};
     msg.sig = BTC_SIG_API_CALL;

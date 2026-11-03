@@ -44,7 +44,7 @@ esp_err_t esp_pbac_register_callback(esp_pbac_callback_t callback)
     ESP_BLUEDROID_STATUS_CHECK(ESP_BLUEDROID_STATUS_ENABLED);
 
     if (callback == NULL) {
-        return ESP_FAIL;
+        return ESP_ERR_INVALID_ARG;
     }
 
     int ret = btc_profile_cb_set(BTC_PID_PBA_CLIENT, callback);

@@ -73,7 +73,8 @@ typedef enum {
     ESP_HF_IND_TYPE_SIGNAL,         /*!< position of signal strength indicator, range: 0-5  */
     ESP_HF_IND_TYPE_ROAM,           /*!< position of roaming indicator */
     ESP_HF_IND_TYPE_BATTCHG,        /*!< position of battery charge indicator, range: 0-5 */
-    ESP_HF_IND_TYPE_CALLHELD        /*!< position of callheld indicator */
+    ESP_HF_IND_TYPE_CALLHELD,       /*!< position of callheld indicator */
+    ESP_HF_IND_TYPE_MAX,            /*!< maximum indicator type */
 } esp_hf_ciev_report_type_t;
 
 /** +CIEV Service type */
@@ -237,6 +238,7 @@ typedef enum {
     ESP_HF_AT_RESPONSE_CODE_DELAYED,        /*!< delayed */
     ESP_HF_AT_RESPONSE_CODE_BLACKLISTED,    /*!< blacklisted */
     ESP_HF_AT_RESPONSE_CODE_CME,            /*!< CME error */
+    ESP_HF_AT_RESPONSE_CODE_MAX,            /*!< maximum response code */
 } esp_hf_at_response_code_t;
 
 /* AT response code - OK/Error */

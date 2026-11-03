@@ -538,7 +538,7 @@ void esp_a2d_audio_buff_free(esp_a2d_audio_buff_t *audio_buf);
  * @return
  *                  - ESP_OK: success
  *                  - ESP_ERR_INVALID_STATE: if bluetooth stack is not yet enabled
- *                  - ESP_FAIL: if callback is a NULL function pointer
+ *                  - ESP_ERR_INVALID_ARG: if callback is a NULL function pointer
  *
  */
 esp_err_t esp_a2d_register_callback(esp_a2d_cb_t callback);
@@ -631,6 +631,7 @@ esp_err_t esp_a2d_sink_deinit(void);
  * @return
  *                  - ESP_OK: connect request is sent to lower layer successfully
  *                  - ESP_ERR_INVALID_STATE: if bluetooth stack is not yet enabled
+ *                  - ESP_ERR_INVALID_ARG: if remote_bda is a NULL pointer
  *                  - ESP_FAIL: others
  *
  */
@@ -646,6 +647,7 @@ esp_err_t esp_a2d_sink_connect(esp_bd_addr_t remote_bda);
  * @return
  *                  - ESP_OK: disconnect request is sent to lower layer successfully
  *                  - ESP_ERR_INVALID_STATE: if bluetooth stack is not yet enabled
+ *                  - ESP_ERR_INVALID_ARG: if remote_bda is a NULL pointer
  *                  - ESP_FAIL: others
  *
  * @deprecated      Please use esp_a2d_sink_disconnect_by_handle() instead.
@@ -910,6 +912,7 @@ esp_err_t esp_a2d_source_audio_data_send(esp_a2d_conn_hdl_t conn_hdl, esp_a2d_au
  * @return
  *                  - ESP_OK: connect request is sent to lower layer successfully
  *                  - ESP_ERR_INVALID_STATE: if bluetooth stack is not yet enabled
+ *                  - ESP_ERR_INVALID_ARG: if remote_bda is a NULL pointer
  *                  - ESP_FAIL: others
  *
  */
@@ -924,6 +927,7 @@ esp_err_t esp_a2d_source_connect(esp_bd_addr_t remote_bda);
  * @return
  *                  - ESP_OK: disconnect request is sent to lower layer
  *                  - ESP_ERR_INVALID_STATE: if bluetooth stack is not yet enabled
+ *                  - ESP_ERR_INVALID_ARG: if remote_bda is a NULL pointer
  *                  - ESP_FAIL: others
  *
  * @deprecated      Please use esp_a2d_source_disconnect_by_handle() instead.

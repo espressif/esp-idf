@@ -212,6 +212,7 @@ typedef void (*esp_pbac_callback_t)(esp_pbac_event_t event, esp_pbac_param_t *pa
  *
  * @return
  *                  - ESP_OK: success
+ *                  - ESP_ERR_INVALID_ARG: if callback is a NULL function pointer
  *                  - other: failed
  */
 esp_err_t esp_pbac_register_callback(esp_pbac_callback_t callback);

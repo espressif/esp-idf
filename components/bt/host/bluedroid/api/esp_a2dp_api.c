@@ -175,6 +175,10 @@ esp_err_t esp_a2d_sink_connect(esp_bd_addr_t remote_bda)
         return ESP_ERR_INVALID_STATE;
     }
 
+    if (remote_bda == NULL) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
     btc_msg_t msg = {0};
     msg.sig = BTC_SIG_API_CALL;
     msg.pid = BTC_PID_A2DP;
@@ -189,8 +193,8 @@ esp_err_t esp_a2d_sink_connect(esp_bd_addr_t remote_bda)
 
 esp_err_t esp_a2d_sink_disconnect(esp_bd_addr_t remote_bda)
 {
-    /* Keep the historical return set: ESP_OK, ESP_ERR_INVALID_STATE, ESP_FAIL.
-     * Resolve the address on the BTC task; this task does not read btc_av_cb.
+    /* NULL returns ESP_ERR_INVALID_ARG. Resolve the address on the BTC task;
+     * this task does not read btc_av_cb.
      */
     ESP_BLUEDROID_STATUS_CHECK(ESP_BLUEDROID_STATUS_ENABLED);
 
@@ -199,7 +203,7 @@ esp_err_t esp_a2d_sink_disconnect(esp_bd_addr_t remote_bda)
     }
 
     if (remote_bda == NULL) {
-        return ESP_FAIL;
+        return ESP_ERR_INVALID_ARG;
     }
 
     btc_msg_t msg = {0};
@@ -335,7 +339,7 @@ esp_err_t esp_a2d_register_callback(esp_a2d_cb_t callback)
     }
 
     if (callback == NULL) {
-        return ESP_FAIL;
+        return ESP_ERR_INVALID_ARG;
     }
 
     int ret = btc_profile_cb_set(BTC_PID_A2DP, callback);
@@ -520,6 +524,10 @@ esp_err_t esp_a2d_source_connect(esp_bd_addr_t remote_bda)
         return ESP_ERR_INVALID_STATE;
     }
 
+    if (remote_bda == NULL) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
     btc_msg_t msg = {0};
     msg.sig = BTC_SIG_API_CALL;
     msg.pid = BTC_PID_A2DP;
@@ -534,8 +542,8 @@ esp_err_t esp_a2d_source_connect(esp_bd_addr_t remote_bda)
 
 esp_err_t esp_a2d_source_disconnect(esp_bd_addr_t remote_bda)
 {
-    /* Keep the historical return set: ESP_OK, ESP_ERR_INVALID_STATE, ESP_FAIL.
-     * Resolve the address on the BTC task; this task does not read btc_av_cb.
+    /* NULL returns ESP_ERR_INVALID_ARG. Resolve the address on the BTC task;
+     * this task does not read btc_av_cb.
      */
     ESP_BLUEDROID_STATUS_CHECK(ESP_BLUEDROID_STATUS_ENABLED);
 
@@ -544,7 +552,7 @@ esp_err_t esp_a2d_source_disconnect(esp_bd_addr_t remote_bda)
     }
 
     if (remote_bda == NULL) {
-        return ESP_FAIL;
+        return ESP_ERR_INVALID_ARG;
     }
 
     btc_msg_t msg = {0};

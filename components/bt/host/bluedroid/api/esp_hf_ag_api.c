@@ -35,7 +35,7 @@ esp_err_t esp_hf_ag_register_callback(esp_hf_cb_t callback)
     ESP_BLUEDROID_STATUS_CHECK(ESP_BLUEDROID_STATUS_ENABLED);
 
     if (callback == NULL) {
-        return ESP_FAIL;
+        return ESP_ERR_INVALID_ARG;
     }
 
     int ret = btc_profile_cb_set(BTC_PID_HF, callback);
@@ -195,6 +195,9 @@ esp_err_t esp_hf_ag_vra_control(esp_bd_addr_t remote_addr, esp_hf_vr_state_t val
     if (remote_addr == NULL) {
         return ESP_ERR_INVALID_ARG;
     }
+    if (value != ESP_HF_VR_STATE_ENABLED && value != ESP_HF_VR_STATE_DISABLED) {
+        return ESP_ERR_INVALID_ARG;
+    }
 
     btc_msg_t msg = {0};
     msg.sig = BTC_SIG_API_CALL;
@@ -214,6 +217,9 @@ esp_err_t esp_hf_ag_volume_control(esp_bd_addr_t remote_addr, esp_hf_volume_cont
     ESP_BLUEDROID_STATUS_CHECK(ESP_BLUEDROID_STATUS_ENABLED);
 
     if (remote_addr == NULL) {
+        return ESP_ERR_INVALID_ARG;
+    }
+    if (type != ESP_HF_VOLUME_CONTROL_TARGET_SPK && type != ESP_HF_VOLUME_CONTROL_TARGET_MIC) {
         return ESP_ERR_INVALID_ARG;
     }
     if (volume < 0 || volume > 15) {
@@ -260,7 +266,9 @@ esp_err_t esp_hf_ag_cmee_send(esp_bd_addr_t remote_addr, esp_hf_at_response_code
 {
     ESP_BLUEDROID_STATUS_CHECK(ESP_BLUEDROID_STATUS_ENABLED);
 
-    if (remote_addr == NULL) {
+    if (remote_addr == NULL ||
+        response_code < ESP_HF_AT_RESPONSE_CODE_OK ||
+        response_code >= ESP_HF_AT_RESPONSE_CODE_MAX) {
         return ESP_ERR_INVALID_ARG;
     }
 
@@ -282,7 +290,7 @@ esp_err_t esp_hf_ag_ciev_report(esp_bd_addr_t remote_addr, esp_hf_ciev_report_ty
 {
     ESP_BLUEDROID_STATUS_CHECK(ESP_BLUEDROID_STATUS_ENABLED);
 
-    if (remote_addr == NULL) {
+    if (remote_addr == NULL || ind_type < ESP_HF_IND_TYPE_CALL || ind_type >= ESP_HF_IND_TYPE_MAX) {
         return ESP_ERR_INVALID_ARG;
     }
 
@@ -311,7 +319,13 @@ esp_err_t esp_hf_ag_cind_response(esp_bd_addr_t remote_addr,
     if (remote_addr == NULL) {
         return ESP_ERR_INVALID_ARG;
     }
-    if (signal < 0 || signal > 5 || batt_lev < 0 || batt_lev > 5) {
+    if (signal < 0 || signal > 5 || batt_lev < 0 || batt_lev > 5 ||
+        call_state < ESP_HF_CALL_STATUS_NO_CALLS || call_state > ESP_HF_CALL_STATUS_CALL_IN_PROGRESS ||
+        call_setup_state < ESP_HF_CALL_SETUP_STATUS_IDLE ||
+        call_setup_state > ESP_HF_CALL_SETUP_STATUS_OUTGOING_ALERTING ||
+        ntk_state < ESP_HF_NETWORK_STATE_NOT_AVAILABLE || ntk_state > ESP_HF_NETWORK_STATE_AVAILABLE ||
+        roam < ESP_HF_ROAMING_STATUS_INACTIVE || roam > ESP_HF_ROAMING_STATUS_ACTIVE ||
+        call_held_status < ESP_HF_CALL_HELD_STATUS_NONE || call_held_status > ESP_HF_CALL_HELD_STATUS_HELD) {
         return ESP_ERR_INVALID_ARG;
     }
 

@@ -252,6 +252,10 @@ esp_err_t esp_bt_gap_read_rssi_delta(esp_bd_addr_t remote_addr)
 {
     ESP_BLUEDROID_STATUS_CHECK(ESP_BLUEDROID_STATUS_ENABLED);
 
+    if (remote_addr == NULL) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
     btc_msg_t msg = {0};
     msg.sig = BTC_SIG_API_CALL;
     msg.pid = BTC_PID_GAP_BT;
@@ -268,6 +272,10 @@ esp_err_t esp_bt_gap_read_rssi_delta(esp_bd_addr_t remote_addr)
 esp_err_t esp_bt_gap_read_acl_real_rssi(esp_bd_addr_t remote_addr)
 {
     ESP_BLUEDROID_STATUS_CHECK(ESP_BLUEDROID_STATUS_ENABLED);
+
+    if (remote_addr == NULL) {
+        return ESP_ERR_INVALID_ARG;
+    }
 
     btc_msg_t msg = {0};
     msg.sig = BTC_SIG_API_CALL;
