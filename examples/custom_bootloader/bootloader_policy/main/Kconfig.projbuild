@@ -1,0 +1,14 @@
+menu "Bootloader policy example"
+
+    config EXAMPLE_CONFIRM_IMAGE
+        bool "confirm the image at startup"
+        default n
+        help
+            When disabled, which is the default, the application never confirms itself, so
+            every boot is an unconfirmed boot and the policy walks up to the attempt limit
+            and then enters safe mode. That is the path the automated test asserts.
+
+            Enable this to see the healthy path: the application records that it started
+            successfully, which resets the attempt counter and clears safe mode.
+
+endmenu
