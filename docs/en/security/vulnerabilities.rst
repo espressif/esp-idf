@@ -10,6 +10,46 @@ This page briefly lists all of the vulnerabilities that are discovered and fixed
 CVE-2026
 --------
 
+CVE-2026-113783
+~~~~~~~~~~~~~~~
+
+Stack-Based Buffer Overflow in lwIP DNS Cache Lookup with Multiple IP Addresses
+
+* Espressif Advisory: NA (Published on GitHub)
+* Impact: Applicable for ESP-IDF
+* Resolution: Please see advisory for details
+* Advisory pointer: `GHSA-ch63-jxm5-vmvf`_
+
+CVE-2026-113782
+~~~~~~~~~~~~~~~
+
+Stack-Based Out-of-Bounds Write in Thread Border Router ND6 Option Parsing
+
+* Espressif Advisory: NA (Published on GitHub)
+* Impact: Applicable for ESP-IDF
+* Resolution: Please see advisory for details
+* Advisory pointer: `GHSA-c26h-gm53-qg83`_
+
+CVE-2026-113781
+~~~~~~~~~~~~~~~
+
+Stack-Based Buffer Overflow in BLE Mesh GATT Server Read Handling
+
+* Espressif Advisory: NA (Published on GitHub)
+* Impact: Applicable for ESP-IDF
+* Resolution: Please see advisory for details
+* Advisory pointer: `GHSA-rjvf-fxv5-x87j`_
+
+CVE-2026-113780
+~~~~~~~~~~~~~~~
+
+Unvalidated Stack Pointer at the ESP-TEE Privilege-Switch Boundary
+
+* Espressif Advisory: NA (Published on GitHub)
+* Impact: Applicable for ESP-IDF
+* Resolution: Please see advisory for details
+* Advisory pointer: `GHSA-49x8-xqjg-2pjg`_
+
 CVE-2026-81508
 ~~~~~~~~~~~~~~
 
@@ -419,3 +459,7 @@ Security Advisory Concerning Wi-Fi Authentication Bypass
 .. _`GHSA-v6r2-f6p2-88cj` : https://github.com/espressif/esp-idf/security/advisories/GHSA-v6r2-f6p2-88cj
 .. _`GHSA-v335-fxwc-rc44` : https://github.com/espressif/esp-idf/security/advisories/GHSA-v335-fxwc-rc44
 .. _`GHSA-xcpr-5mqp-9qvv` : https://github.com/espressif/esp-idf/security/advisories/GHSA-xcpr-5mqp-9qvv
+.. _`GHSA-49x8-xqjg-2pjg` : https://github.com/espressif/esp-idf/security/advisories/GHSA-49x8-xqjg-2pjg
+.. _`GHSA-rjvf-fxv5-x87j` : https://github.com/espressif/esp-idf/security/advisories/GHSA-rjvf-fxv5-x87j
+.. _`GHSA-c26h-gm53-qg83` : https://github.com/espressif/esp-idf/security/advisories/GHSA-c26h-gm53-qg83
+.. _`GHSA-ch63-jxm5-vmvf` : https://github.com/espressif/esp-idf/security/advisories/GHSA-ch63-jxm5-vmvf
