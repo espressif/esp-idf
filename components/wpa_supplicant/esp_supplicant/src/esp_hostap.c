@@ -506,7 +506,8 @@ bool hostap_new_assoc_sta(struct sta_info *sta, uint8_t *bssid,
 
 #ifdef CONFIG_WPA3_COMPAT
 #define RSN_SELECTION_IE_OUI_LEN 4
-            if (assoc_req->rsn_selection_ie) {
+            if (assoc_req->rsn_selection_ie &&
+                    assoc_req->rsn_selection_ie[1] >= RSN_SELECTION_IE_OUI_LEN) {
                 rsn_selection_variant_len = assoc_req->rsn_selection_ie[1] - RSN_SELECTION_IE_OUI_LEN;
                 rsn_selection_variant_ie = &assoc_req->rsn_selection_ie[RSN_SELECTION_IE_OUI_LEN + 2];
             }
