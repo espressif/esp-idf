@@ -307,7 +307,7 @@ typedef void (* esp_hf_ag_audio_data_cb_t)(esp_hf_sync_conn_hdl_t sync_conn_hdl,
  * @return
  *                  - ESP_OK: success
  *                  - ESP_ERR_INVALID_STATE: if bluetooth stack is not yet enabled
- *                  - ESP_FAIL: if callback is a NULL function pointer
+ *                  - ESP_ERR_INVALID_ARG: if callback is a NULL function pointer
  *
  */
 esp_err_t esp_hf_ag_register_callback(esp_hf_cb_t callback);
@@ -456,11 +456,13 @@ esp_err_t esp_hf_ag_set_codec(esp_bd_addr_t remote_bda, esp_hf_codec_mode_t mode
  *
  * @param[in]       remote_bda: the device address of voice recognition initiator
  *
- * @param[in]       value: 0 - voice recognition disabled, 1- voice recognition enabled
+ * @param[in]       value: ``ESP_HF_VR_STATE_DISABLED`` or ``ESP_HF_VR_STATE_ENABLED``
  *
  * @return
  *                  - ESP_OK: response of volume recognition is sent to lower layer
  *                  - ESP_ERR_INVALID_STATE: if bluetooth stack is not yet enabled
+ *                  - ESP_ERR_INVALID_ARG: if remote_bda is NULL, or value is neither
+ *                    ESP_HF_VR_STATE_ENABLED nor ESP_HF_VR_STATE_DISABLED
  *                  - ESP_FAIL: others
  *
  */
@@ -514,6 +516,8 @@ esp_err_t esp_hf_ag_unknown_at_send(esp_bd_addr_t remote_addr, char *unat);
  * @return
  *                  - ESP_OK: extend error code is sent to lower layer
  *                  - ESP_ERR_INVALID_STATE: if bluetooth stack is not yet enabled
+ *                  - ESP_ERR_INVALID_ARG: if remote_bda is NULL, or response_code is outside
+ *                    [ESP_HF_AT_RESPONSE_CODE_OK, ESP_HF_AT_RESPONSE_CODE_MAX)
  *                  - ESP_FAIL: others
  *
  */
@@ -532,6 +536,8 @@ esp_err_t esp_hf_ag_cmee_send(esp_bd_addr_t remote_bda, esp_hf_at_response_code_
  * @return
  *                  - ESP_OK: indicator report is sent to lower layer
  *                  - ESP_ERR_INVALID_STATE: if bluetooth stack is not yet enabled
+ *                  - ESP_ERR_INVALID_ARG: if the address is NULL, or ind_type is outside
+ *                    [ESP_HF_IND_TYPE_CALL, ESP_HF_IND_TYPE_MAX)
  *                  - ESP_FAIL: others
  *
  */

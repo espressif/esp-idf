@@ -35,6 +35,7 @@ typedef uint8_t esp_bt_dev_coex_op_t;
 typedef enum {
     ESP_BT_DEV_COEX_TYPE_BLE = 1,
     ESP_BT_DEV_COEX_TYPE_BT,
+    ESP_BT_DEV_COEX_TYPE_MAX,
 } esp_bt_dev_coex_type_t;
 
 /// BT device callback events
@@ -90,7 +91,7 @@ const uint8_t *esp_bt_dev_get_address(void);
  *
  * @return
  *                  - ESP_OK : Succeed
- *                  - ESP_ERR_INVALID_ARG : if name is NULL pointer or empty, or string length out of limit
+ *                  - ESP_ERR_INVALID_ARG : invalid coexist type
  *                  - ESP_ERR_INVALID_STATE : if bluetooth stack is not yet enabled
  *                  - ESP_FAIL : others
  */
@@ -104,6 +105,7 @@ esp_err_t esp_bt_dev_coex_status_config(esp_bt_dev_coex_type_t type, esp_bt_dev_
  * @return
  *                   - ESP_OK: success
  *                   - ESP_ERR_INVALID_STATE: if bluetooth stack is not yet enabled
+ *                   - ESP_ERR_INVALID_ARG: if file_path is a NULL pointer
  *                   - ESP_FAIL: others
  *
  */
@@ -117,7 +119,8 @@ esp_err_t esp_bt_config_file_path_get(char *file_path);
  * @return
  *                   - ESP_OK: success
  *                   - ESP_ERR_INVALID_STATE: if bluetooth stack is already initialized
- *                   - ESP_FAIL: others
+ *                   - ESP_ERR_INVALID_ARG: if file_path is a NULL pointer
+ *                   - ESP_FAIL: if file_path length is not less than NVS_NS_NAME_MAX_SIZE
  *
  */
 esp_err_t esp_bt_config_file_path_update(const char *file_path);

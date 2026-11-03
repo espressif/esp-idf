@@ -848,6 +848,7 @@ esp_err_t esp_bt_gap_get_cod(esp_bt_cod_t *cod);
  * @param[in]       remote_addr - remote device address, corresponding to a certain connection handle
  * @return
  *                  - ESP_OK : Succeed
+ *                  - ESP_ERR_INVALID_ARG: if remote_addr is NULL
  *                  - ESP_FAIL: others
  *
  */
@@ -866,6 +867,7 @@ esp_err_t esp_bt_gap_read_rssi_delta(esp_bd_addr_t remote_addr);
  *
  * @return
  *                  - ESP_OK : Succeed
+ *                  - ESP_ERR_INVALID_ARG: if remote_addr is NULL
  *                  - ESP_FAIL: others
  */
 esp_err_t esp_bt_gap_read_acl_real_rssi(esp_bd_addr_t remote_addr);

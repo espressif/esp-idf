@@ -110,7 +110,9 @@ esp_err_t esp_spp_connect(esp_spp_sec_t sec_mask,
 {
     ESP_BLUEDROID_STATUS_CHECK(ESP_BLUEDROID_STATUS_ENABLED);
 
-    if (peer_bd_addr == NULL) {
+    if (peer_bd_addr == NULL ||
+        remote_scn == 0 || remote_scn >= ESP_SPP_MAX_SCN ||
+        (role != ESP_SPP_ROLE_MASTER && role != ESP_SPP_ROLE_SLAVE)) {
         return ESP_ERR_INVALID_ARG;
     }
 
@@ -174,6 +176,11 @@ esp_err_t esp_spp_start_srv_with_cfg(const esp_spp_start_srv_cfg_t *cfg)
         return ESP_ERR_INVALID_ARG;
     }
 
+    if (cfg->local_scn >= ESP_SPP_MAX_SCN ||
+        (cfg->role != ESP_SPP_ROLE_MASTER && cfg->role != ESP_SPP_ROLE_SLAVE)) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
     if (cfg->sec_mask != ESP_SPP_SEC_NONE &&
         cfg->sec_mask != ESP_SPP_SEC_AUTHENTICATE &&
         cfg->sec_mask != (ESP_SPP_SEC_AUTHENTICATE | ESP_SPP_SEC_ENCRYPT) &&
@@ -222,7 +229,7 @@ esp_err_t esp_spp_stop_srv_scn(uint8_t scn)
 {
     ESP_BLUEDROID_STATUS_CHECK(ESP_BLUEDROID_STATUS_ENABLED);
 
-    if ((scn == 0) || (scn >= PORT_MAX_RFC_PORTS)) {
+    if ((scn == 0) || (scn >= ESP_SPP_MAX_SCN)) {
         LOG_ERROR("Invalid SCN!");
         return ESP_ERR_INVALID_ARG;
     }

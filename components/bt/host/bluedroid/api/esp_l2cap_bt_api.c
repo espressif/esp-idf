@@ -4,6 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <stdbool.h>
 #include <string.h>
 
 #include "esp_bt_main.h"
@@ -15,12 +16,19 @@
 
 #if (defined BTC_L2CAP_INCLUDED && BTC_L2CAP_INCLUDED == TRUE)
 
+/* BR/EDR PSM: odd, and the least significant bit of the most significant
+   octet is zero. */
+static bool l2cap_psm_is_valid(uint16_t psm)
+{
+    return ((psm & 0x0101) == 0x0001);
+}
+
 esp_err_t esp_bt_l2cap_register_callback(esp_bt_l2cap_cb_t callback)
 {
     ESP_BLUEDROID_STATUS_CHECK(ESP_BLUEDROID_STATUS_ENABLED);
 
     if (callback == NULL) {
-        return ESP_FAIL;
+        return ESP_ERR_INVALID_ARG;
     }
 
     int ret = btc_profile_cb_set(BTC_PID_L2CAP, callback);
@@ -57,7 +65,7 @@ esp_err_t esp_bt_l2cap_connect(esp_bt_l2cap_cntl_flags_t cntl_flag, uint16_t rem
 {
     ESP_BLUEDROID_STATUS_CHECK(ESP_BLUEDROID_STATUS_ENABLED);
 
-    if (peer_bd_addr == NULL) {
+    if ((peer_bd_addr == NULL) || !l2cap_psm_is_valid(remote_psm)) {
         return ESP_ERR_INVALID_ARG;
     }
 
@@ -78,6 +86,10 @@ esp_err_t esp_bt_l2cap_connect(esp_bt_l2cap_cntl_flags_t cntl_flag, uint16_t rem
 esp_err_t esp_bt_l2cap_start_srv(esp_bt_l2cap_cntl_flags_t cntl_flag, uint16_t local_psm)
 {
     ESP_BLUEDROID_STATUS_CHECK(ESP_BLUEDROID_STATUS_ENABLED);
+
+    if (!l2cap_psm_is_valid(local_psm)) {
+        return ESP_ERR_INVALID_ARG;
+    }
 
     btc_msg_t msg = {0};
     msg.sig = BTC_SIG_API_CALL;

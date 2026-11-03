@@ -160,6 +160,7 @@ typedef void (* esp_bt_l2cap_cb_t)(esp_bt_l2cap_cb_event_t event, esp_bt_l2cap_c
  *
  * @return
  *              - ESP_OK: success
+ *              - ESP_ERR_INVALID_ARG: if callback is a NULL function pointer
  *              - other: failed
  */
 esp_err_t esp_bt_l2cap_register_callback(esp_bt_l2cap_cb_t callback);
@@ -200,6 +201,7 @@ esp_err_t esp_bt_l2cap_deinit(void);
  *
  * @return
  *              - ESP_OK: success
+ *              - ESP_ERR_INVALID_ARG: invalid PSM, or peer address is NULL
  *              - other: failed
  */
 esp_err_t esp_bt_l2cap_connect(esp_bt_l2cap_cntl_flags_t cntl_flag, uint16_t remote_psm, esp_bd_addr_t peer_bd_addr);
@@ -217,6 +219,7 @@ esp_err_t esp_bt_l2cap_connect(esp_bt_l2cap_cntl_flags_t cntl_flag, uint16_t rem
  *
  * @return
  *              - ESP_OK: success
+ *              - ESP_ERR_INVALID_ARG: invalid PSM
  *              - other: failed
  */
 esp_err_t esp_bt_l2cap_start_srv(esp_bt_l2cap_cntl_flags_t cntl_flag, uint16_t local_psm);
@@ -242,7 +245,7 @@ esp_err_t esp_bt_l2cap_stop_all_srv(void);
  *              When the operation is completed, the callback is called with ESP_BT_L2CAP_SRV_STOP_EVT.
  *              This function must be called after esp_bt_l2cap_init() successful and before esp_bt_l2cap_deinit().
  *
- * @param[in]   local_psm:    Dynamic PSM.
+ * @param[in]   local_psm:    Dynamic PSM. 0 stops every server, the same as esp_bt_l2cap_stop_all_srv().
  *
  * @return
  *              - ESP_OK: success
