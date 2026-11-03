@@ -330,7 +330,11 @@ esp_blufi_gap_event(struct ble_gap_event *event, void *arg)
             msg.act = ESP_BLUFI_EVENT_BLE_CONNECT;
 
             rc = ble_gap_conn_find(event->connect.conn_handle, &desc);
-            assert(rc == 0);
+            if (rc != 0) {
+                ESP_LOGE(TAG, "ble_gap_conn_find failed; rc=%d", rc);
+                blufi_env.is_connected = false;
+                return rc;
+            }
             memcpy(param.connect.remote_bda, desc.peer_id_addr.val, ESP_BLUFI_BD_ADDR_LEN);
 
             param.connect.conn_id = event->connect.conn_handle;
@@ -419,7 +423,10 @@ void esp_blufi_adv_start(void)
     int rc;
 
     rc = ble_hs_util_ensure_addr(0);
-    assert(rc == 0);
+    if (rc != 0) {
+        ESP_LOGE(TAG, "error ensuring address; rc=%d", rc);
+        return;
+    }
 
     /* Figure out address to use while advertising (no privacy for now) */
     rc = ble_hs_id_infer_auto(0, &own_addr_type);
@@ -575,11 +582,17 @@ void esp_blufi_send_encap(void *arg)
                            hdr->data_len + sizeof(struct blufi_hdr)));
 }
 
-void esp_blufi_btc_init(void)
+esp_err_t esp_blufi_btc_init(void)
 {
-    int rc;
+    bt_status_t rc;
+
     rc = btc_init();
-    assert(rc == 0);
+    if (rc == BT_STATUS_SUCCESS) {
+        return ESP_OK;
+    }
+
+    ESP_LOGE(TAG, "btc_init failed; rc=%d", rc);
+    return (rc == BT_STATUS_NOMEM) ? ESP_ERR_NO_MEM : ESP_FAIL;
 }
 
 void esp_blufi_btc_deinit(void)
@@ -604,14 +617,18 @@ int esp_blufi_handle_gap_events(struct ble_gap_event *event, void *arg)
 
                 blufi_env.is_connected = true;
                 blufi_env.recv_seq = blufi_env.send_seq = 0;
-                blufi_env.conn_id  = event->connect.conn_handle;
 
                 msg.sig = BTC_SIG_API_CB;
                 msg.pid = BTC_PID_BLUFI;
                 msg.act = ESP_BLUFI_EVENT_BLE_CONNECT;
 
                 rc = ble_gap_conn_find(event->connect.conn_handle, &desc);
-                assert(rc == 0);
+                if (rc != 0) {
+                    ESP_LOGE(TAG, "ble_gap_conn_find failed; rc=%d", rc);
+                    blufi_env.is_connected = false;
+                    return rc;
+                }
+                blufi_env.conn_id = event->connect.conn_handle;
                 memcpy(param.connect.remote_bda, desc.peer_id_addr.val, ESP_BLUFI_BD_ADDR_LEN);
 
                 param.connect.conn_id = event->connect.conn_handle;
