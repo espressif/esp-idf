@@ -183,6 +183,8 @@ static inline long time_diff_sec(const struct timeval *a, const struct timeval *
     return (a->tv_sec - b->tv_sec);
 }
 
+#if LOW_RSSI_ROAMING_ENABLED
+/* Only the low RSSI trigger sets thresholds: unused, and a build warning, without it. */
 static int32_t roaming_app_clamp_rssi_threshold(int threshold)
 {
     if (threshold < RSSI_THRESHOLD_DISABLED) {
@@ -195,6 +197,7 @@ static int32_t roaming_app_clamp_rssi_threshold(int threshold)
 
     return threshold;
 }
+#endif /*LOW_RSSI_ROAMING_ENABLED*/
 
 static uint8_t roaming_app_clamp_low_rssi_roam_diff(uint8_t diff)
 {
@@ -945,10 +948,13 @@ static void roaming_app_apply_low_rssi_config(void)
 
 static void roaming_app_apply_runtime_config(void)
 {
+#if LOW_RSSI_ROAMING_ENABLED || PERIODIC_SCAN_MONITORING
+    /* Only the low RSSI and periodic scan triggers use this: an unused variable warning without both. */
     bool methods_enabled = roaming_app_config_has_roam_method();
     bool methods_usable = methods_enabled &&
                           (!g_roaming_app.sta_connected ||
                            roaming_app_connected_roam_method_available());
+#endif
 
     roaming_app_stop_periodic_monitors();
 
