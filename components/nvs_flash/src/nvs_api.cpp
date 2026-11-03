@@ -82,8 +82,11 @@ static esp_err_t close_handles_and_deinit(const char* part_name)
 
     auto it = find_if(begin(s_nvs_handles), end(s_nvs_handles), belongs_to_part);
 
+    // Same as nvs_close(): unlink first, then delete. Deleting while still linked
+    // UAF-corrupts the intrusive list (hangs host tests).
     while (it != end(s_nvs_handles)) {
         s_nvs_handles.erase(it);
+        delete static_cast<NVSHandleEntry*>(it);
         it = find_if(begin(s_nvs_handles), end(s_nvs_handles), belongs_to_part);
     }
 
