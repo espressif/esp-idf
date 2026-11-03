@@ -5,7 +5,7 @@ from pytest_embedded import Dut
 from pytest_embedded_idf.utils import idf_parametrize
 
 
-@pytest.mark.adc
+@pytest.mark.generic
 @idf_parametrize('target', ['esp32'], indirect=['target'])
 def test_dac_cosine_wave_example_with_12bit_adc(dut: Dut) -> None:
     res = []
@@ -19,7 +19,7 @@ def test_dac_cosine_wave_example_with_12bit_adc(dut: Dut) -> None:
     assert max(chan0_val) - min(chan0_val) > 1000
 
 
-@pytest.mark.adc
+@pytest.mark.generic
 @idf_parametrize('target', ['esp32s2'], indirect=['target'])
 def test_dac_cosine_wave_example_with_13bit_adc(dut: Dut) -> None:
     res = []
