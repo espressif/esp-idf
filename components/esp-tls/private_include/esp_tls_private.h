@@ -83,8 +83,6 @@ struct esp_tls {
 
     fd_set wset;                                                                /*!< write file descriptors */
 
-    bool is_tls;                                                                /*!< indicates connection type (TLS or NON-TLS) */
-
     esp_tls_role_t role;                                                        /*!< esp-tls role
                                                                                      - ESP_TLS_CLIENT
                                                                                      - ESP_TLS_SERVER */
