@@ -41,6 +41,7 @@ extern int _bss_end;
 #include "soc/hp_sys_clkrst_reg.h"
 #include "soc/lp_clkrst_reg.h"
 #include "soc/hp_system_reg.h"
+#include "soc/cnnt_sys_struct.h"
 
 // TODO: [ESP32S31] IDF-14841
 
@@ -55,6 +56,17 @@ void esp_system_reset_modules_on_exit(void)
             esp_rom_output_tx_wait_idle(i);
         }
     }
+
+    // Stop the USB OTG 2.0 core: its dedicated DWC DMA can also move PSRAM data. Its AHB/APB
+    // reset enable defaults to 1 and is cleared at init, so assert it and keep it asserted.
+    CNNT_SYS_REG.sys_usb_otg20_ctrl.sys_usb_otg20_ahb_rst_en = 1;
+    CNNT_SYS_REG.sys_usb_otg20_ctrl.sys_usb_otg20_apb_rst_en = 1;
+
+    // Stop the SDMMC and EMAC: each has a dedicated DMA that can move PSRAM data.
+    CNNT_SYS_REG.sys_hp_sdmmc_ctrl.sys_sdmmc_rst_en = 1;
+    CNNT_SYS_REG.sys_hp_sdmmc_ctrl.sys_sdmmc_rst_en = 0;
+    CNNT_SYS_REG.sys_hp_emac_ctrl.sys_emac_rst_en = 1;
+    CNNT_SYS_REG.sys_hp_emac_ctrl.sys_emac_rst_en = 0;
 
     // Note: AXI bus doesn't allow an undergoing transaction to be interrupted in the middle
     // If you want to reset a AXI master, you should make sure that the master is in IDLE first

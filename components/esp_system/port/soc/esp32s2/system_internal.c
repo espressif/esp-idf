@@ -47,6 +47,19 @@ void esp_system_reset_modules_on_exit(void)
                             DPORT_RW_BTMAC_RST | DPORT_RW_BTLP_RST);
     DPORT_REG_WRITE(DPORT_CORE_RST_EN_REG, 0);
 
+    // Stop the USB OTG core
+    DPORT_SET_PERI_REG_MASK(DPORT_PERIP_RST_EN0_REG, DPORT_USB_RST);
+    DPORT_REG_WRITE(DPORT_PERIP_RST_EN0_REG, 0);
+
+    // Stop the I2S0 DMA before the SPI0/1 (flash and PSRAM) controller is reset below: it can
+    // still be moving data from/to PSRAM.
+    DPORT_SET_PERI_REG_MASK(DPORT_PERIP_RST_EN0_REG, DPORT_I2S0_RST);
+    DPORT_REG_WRITE(DPORT_PERIP_RST_EN0_REG, 0);
+
+    // Stop the crypto DMA before the same reset.
+    DPORT_SET_PERI_REG_MASK(DPORT_PERIP_RST_EN1_REG, DPORT_CRYPTO_DMA_RST);
+    DPORT_REG_WRITE(DPORT_PERIP_RST_EN1_REG, 0);
+
     // Reset timer/spi/uart
     DPORT_SET_PERI_REG_MASK(DPORT_PERIP_RST_EN0_REG,
                             DPORT_TIMERS_RST | DPORT_SPI01_RST | DPORT_SPI2_RST | DPORT_SPI3_RST |
@@ -56,7 +69,7 @@ void esp_system_reset_modules_on_exit(void)
     // Reset crypto peripherals. This ensures a clean state for the crypto peripherals after a CPU restart
     // and hence avoiding any possibility with crypto failure in ROM security workflows.
     DPORT_SET_PERI_REG_MASK(DPORT_PERIP_RST_EN1_REG,
-                            DPORT_CRYPTO_DMA_RST | DPORT_CRYPTO_AES_RST | DPORT_CRYPTO_DS_RST |
+                            DPORT_CRYPTO_AES_RST | DPORT_CRYPTO_DS_RST |
                             DPORT_CRYPTO_HMAC_RST | DPORT_CRYPTO_RSA_RST | DPORT_CRYPTO_SHA_RST);
     DPORT_REG_WRITE(DPORT_PERIP_RST_EN1_REG, 0);
 }
