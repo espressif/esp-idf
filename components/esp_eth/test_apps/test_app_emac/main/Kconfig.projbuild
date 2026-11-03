@@ -1,0 +1,83 @@
+menu "EMAC Test Configuration"
+
+    config EMAC_TEST_PHY_RST_GPIO
+        int "PHY Reset GPIO number"
+        range -1 56
+        default 5 if IDF_TARGET_ESP32
+        default 51 if IDF_TARGET_ESP32P4
+        default 7 if IDF_TARGET_ESP32S31
+        default 5
+        help
+            GPIO used to reset the PHY. Set to -1 to disable hardware reset.
+
+    config EMAC_TEST_PHY_HOLD_RESET_GPIO
+        bool "Hold PHY reset GPIO during sleep"
+        depends on SOC_EMAC_SUPPORT_SLEEP_RETENTION && EMAC_TEST_PHY_RST_GPIO >= 0
+        default n
+        help
+            Latch PHY nRST high after hardware reset so the PHY stays out of
+            reset when the GPIO/IOMUX domain is powered down (for example
+            during Light-sleep).
+
+    choice EMAC_TEST_SLEEP_MODE
+        prompt "EMAC Light-sleep mode"
+        depends on SOC_EMAC_SUPPORT_SLEEP_RETENTION
+        default EMAC_TEST_SLEEP_MODE_NO_SLEEP
+        help
+            Select internal EMAC behavior during system Light-sleep.
+
+        config EMAC_TEST_SLEEP_MODE_NO_SLEEP
+            bool "No sleep"
+            help
+                Do not allocate EMAC retention chains. On targets with a
+                connectivity power domain, EMAC driver keeps that domain
+                powered so it survives Light-sleep.
+
+        config EMAC_TEST_SLEEP_MODE_MAC_WAKE_ON_LAN
+            bool "Wake on LAN"
+            help
+                Keep the connectivity domain powered and wake on a magic
+                packet.
+
+        config EMAC_TEST_SLEEP_MODE_ALLOW_PD
+            bool "Allow power down"
+            help
+                Stop EMAC during Light-sleep and retain its registers.
+                Allow its power domain to power down if no other user
+                needs it.
+    endchoice
+
+    config EMAC_TEST_RMII_CLK_OUTPUT
+        bool "Output RMII CLK from internal"
+        default n
+        help
+            Generate RMII CLK by internal PLL. Default uses
+            ETH_ESP32_EMAC_DEFAULT_CONFIG (external clock input).
+            Enable this for RMII CLK_OUT tests.
+
+    config EMAC_TEST_RMII_CLK_GPIO
+        depends on EMAC_TEST_RMII_CLK_OUTPUT
+        int "RMII CLK output GPIO"
+        default 0 if IDF_TARGET_ESP32
+        default 23 if IDF_TARGET_ESP32P4
+        default 0
+        help
+            GPIO used to output the internally generated RMII clock.
+
+    config EMAC_TEST_RMII_CLK_EXT_LOOPBACK_EN
+        depends on EMAC_TEST_RMII_CLK_OUTPUT && !SOC_EMAC_RMII_CLK_OUT_INTERNAL_LOOPBACK
+        bool "Enable external RMII CLK loopback input"
+        default n
+        help
+            Loop the RMII CLK output back into the EMAC clock input GPIO.
+
+    config EMAC_TEST_RMII_CLK_EXT_LOOPBACK_IN_GPIO
+        depends on EMAC_TEST_RMII_CLK_EXT_LOOPBACK_EN
+        int "RMII CLK loopback input GPIO"
+        default 32 if IDF_TARGET_ESP32P4
+        default 0
+        help
+            GPIO used as RMII REF CLK input when looping back the internally
+            generated clock.
+
+endmenu
