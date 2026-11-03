@@ -1,0 +1,22 @@
+menu "Example Configuration"
+
+    config EXAMPLE_WIFI_SSID
+        string "Wi-Fi SSID"
+        default "myssid"
+        help
+            SSID (network name) for the example to connect to.
+
+    config EXAMPLE_WIFI_PASSWORD
+        string "Wi-Fi Password"
+        default "mypassword"
+        help
+            Wi-Fi password (WPA or WPA2) for the example to use.
+
+    config EXAMPLE_RESTART_INTERVAL
+        int "Restart this long after each boot's IP address (s)"
+        range 0 3600
+        default 0
+        help
+            Restart this many seconds after the boot's first IP address, so that boot to IP can be
+            measured over many boots, with the AP remembered. 0 never restarts.
+endmenu

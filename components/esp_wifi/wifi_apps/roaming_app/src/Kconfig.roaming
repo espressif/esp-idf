@@ -88,6 +88,34 @@ menu "Roaming triggers"
             to trigger a roaming attempt.
 endmenu #"Roaming triggers"
 
+menu "Fast connect"
+    config ESP_WIFI_ROAMING_FAST_CONNECT
+        bool "Remember the AP and connect to it directly next time"
+        default n
+        help
+            Remember the BSSID and channel of the AP each connection ends on, as a connect hint in the
+            station configuration (bssid_set, bssid and channel, with WIFI_FAST_SCAN and
+            WIFI_CONNECT_AP_BY_SIGNAL). The next connection, after a reboot or a lost link, then tries that
+            AP alone instead of scanning every channel first. If that connection fails, for any reason but
+            the station's own disconnect or a roam, the hint is cleared on the Wi-Fi task before the
+            disconnection event is posted, so the next connection attempt, whoever starts it, scans every
+            channel and connects to the strongest AP, and the AP that connection ends on is remembered
+            instead. Nothing is written when the AP connected to is the one already remembered.
+
+            Fast connect does not move off a remembered AP that still takes the connection but has grown
+            weak: the low RSSI and periodic scan triggers do that, as for any other connection.
+
+            With this option the roaming app owns scan_method, sort_method, bssid_set, bssid and channel of
+            the station configuration, and the supplicant leaves the hint in place when BTM or MBO is
+            enabled. The hint is saved with the rest of the station configuration (in NVS, unless the
+            application chose WIFI_STORAGE_RAM): an application that sets a new station configuration at
+            every boot replaces it, and so scans every channel at every boot, as without this option.
+
+            Turning fast connect off at run time (roam_config.fast_connect) clears the hint. Turning this
+            option off in a later firmware leaves the last hint in the saved station configuration, with
+            nothing to clear it after a failure: such a firmware should clear bssid_set once.
+endmenu #"Fast connect"
+
 menu "Roaming Methods"
     config ESP_WIFI_ROAMING_LEGACY_ROAMING
         bool "Support Legacy roaming approach"

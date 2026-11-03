@@ -546,6 +546,11 @@ static bool roaming_app_clear_connect_hint(void)
     if (wifi_cfg.sta.bssid_set || wifi_cfg.sta.channel) {
         wifi_cfg.sta.channel = 0;
         wifi_cfg.sta.bssid_set = 0;
+        if (g_roaming_app.config.fast_connect) {
+            /* Fast connect's record set WIFI_FAST_SCAN, which without a BSSID takes the first AP of the SSID it
+             * finds: scan every channel for the strongest, as forgetting the record does. */
+            wifi_cfg.sta.scan_method = WIFI_ALL_CHANNEL_SCAN;
+        }
         err = esp_wifi_set_config(WIFI_IF_STA, &wifi_cfg);
         if (err != ESP_OK) {
             ESP_LOGW(ROAMING_TAG, "failed to clear roam hint: %s", esp_err_to_name(err));
@@ -566,6 +571,139 @@ static void roaming_app_reset_connect_hint_state(void)
         g_roaming_app.connect_hint_active = false;
     }
 }
+
+/*
+ * Fast connect.
+ *
+ * A station on WIFI_ALL_CHANNEL_SCAN scans every channel before every connection, which takes much of
+ * the time from boot to an IP address. Fast connect remembers the AP a connection ends on as the station
+ * configuration's connect hint, so the next connection tries that AP alone, and clears the hint once a
+ * connection through it fails, so the attempt after it scans every channel and takes the strongest AP.
+ * Moving off a remembered AP that still works but has grown weak is left to the other triggers.
+ * README.md and ROAMING_FLOW.md, "Fast connect", have the flow and the configuration.
+ */
+#if FAST_CONNECT_ENABLED
+/* Set and read only on the Wi-Fi task, by roam_fast_connect_sta_connected() and
+ * roam_fast_connect_sta_disconnected(): a connection since the last disconnection. */
+static bool s_fast_connect_linked;
+
+static bool roaming_app_fast_connect_active(void)
+{
+    return g_roaming_app.app_active && g_roaming_app.config.fast_connect;
+}
+
+/* Fast connect's record: a fast scan that stops at one BSSID, strongest first. */
+static bool roaming_app_fast_connect_is_record(const wifi_sta_config_t *sta)
+{
+    return sta->ssid[0] != '\0' && sta->scan_method == WIFI_FAST_SCAN &&
+           sta->sort_method == WIFI_CONNECT_AP_BY_SIGNAL && sta->bssid_set && !is_zero_ether_addr(sta->bssid);
+}
+
+bool roam_fast_connect_owns_connect_hint(void)
+{
+    return roaming_app_fast_connect_active();
+}
+
+/* At a connection (Wi-Fi task): remember the AP connected to, unless it is the one remembered. */
+static void roaming_app_fast_connect_remember(const wifi_ap_record_t *ap)
+{
+    wifi_config_t wifi_cfg = {0};
+    esp_err_t err;
+
+    if (is_zero_ether_addr(ap->bssid) || ap->primary == 0) {
+        ESP_LOGW(ROAMING_TAG, "fast connect: nothing remembered: no BSSID or channel for this connection");
+        return;
+    }
+
+    err = esp_wifi_get_config(WIFI_IF_STA, &wifi_cfg);
+    if (err != ESP_OK) {
+        ESP_LOGW(ROAMING_TAG, "fast connect: nothing remembered: failed to read sta config: %s", esp_err_to_name(err));
+        return;
+    }
+
+    if (roaming_app_fast_connect_is_record(&wifi_cfg.sta) &&
+            os_memcmp(wifi_cfg.sta.bssid, ap->bssid, ETH_ALEN) == 0 && wifi_cfg.sta.channel == ap->primary) {
+        ESP_LOGI(ROAMING_TAG, "fast connect: connected to the remembered AP " MACSTR " on channel %d",
+                 MAC2STR(ap->bssid), ap->primary);
+        return;
+    }
+
+    wifi_cfg.sta.scan_method = WIFI_FAST_SCAN;
+    wifi_cfg.sta.sort_method = WIFI_CONNECT_AP_BY_SIGNAL;
+    wifi_cfg.sta.bssid_set = true;
+    os_memcpy(wifi_cfg.sta.bssid, ap->bssid, ETH_ALEN);
+    wifi_cfg.sta.channel = ap->primary;
+    err = esp_wifi_set_config(WIFI_IF_STA, &wifi_cfg);
+    if (err != ESP_OK) {
+        ESP_LOGE(ROAMING_TAG, "fast connect: failed to remember " MACSTR ": %s", MAC2STR(ap->bssid), esp_err_to_name(err));
+        return;
+    }
+    ESP_LOGI(ROAMING_TAG, "fast connect: remembered " MACSTR " on channel %d", MAC2STR(ap->bssid), ap->primary);
+}
+
+/* The supplicant's connection callback (Wi-Fi task): this attempt reached the AP. */
+void roam_fast_connect_sta_connected(void)
+{
+    s_fast_connect_linked = true;
+    ESP_LOGD(ROAMING_TAG, "fast connect: connected");
+}
+
+/*
+ * The supplicant's disconnection callback (Wi-Fi task). The driver calls it before it posts
+ * WIFI_EVENT_STA_DISCONNECTED, so the record is cleared before any handler of that event, whatever it is
+ * registered for, can call esp_wifi_connect() again; an esp_wifi_set_config() from such a handler would
+ * fail while the station is connecting. A connection through the remembered AP failed, for any reason but
+ * the station's own disconnect or a roam, so clear the record before the next attempt.
+ */
+void roam_fast_connect_sta_disconnected(uint8_t reason)
+{
+    bool was_linked = s_fast_connect_linked;
+    wifi_config_t wifi_cfg = {0};
+    uint8_t bssid[ETH_ALEN];
+    uint8_t channel;
+    esp_err_t err;
+
+    s_fast_connect_linked = false;
+    ESP_LOGD(ROAMING_TAG, "fast connect: disconnected (reason %d, connected before: %d)", reason, was_linked);
+    if (was_linked || !roaming_app_fast_connect_active() ||
+            reason == WIFI_REASON_ASSOC_LEAVE || reason == WIFI_REASON_ROAMING) {
+        return;
+    }
+
+    if (esp_wifi_get_config(WIFI_IF_STA, &wifi_cfg) != ESP_OK || !roaming_app_fast_connect_is_record(&wifi_cfg.sta)) {
+        return;
+    }
+
+    os_memcpy(bssid, wifi_cfg.sta.bssid, ETH_ALEN);
+    channel = wifi_cfg.sta.channel;
+    wifi_cfg.sta.scan_method = WIFI_ALL_CHANNEL_SCAN;
+    wifi_cfg.sta.sort_method = WIFI_CONNECT_AP_BY_SIGNAL;
+    wifi_cfg.sta.bssid_set = false;
+    os_memset(wifi_cfg.sta.bssid, 0, ETH_ALEN);
+    wifi_cfg.sta.channel = 0;
+    err = esp_wifi_set_config(WIFI_IF_STA, &wifi_cfg);
+    if (err != ESP_OK) {
+        ESP_LOGE(ROAMING_TAG, "fast connect: failed to forget " MACSTR ": %s; the next attempt tries it alone again",
+                 MAC2STR(bssid), esp_err_to_name(err));
+        return;
+    }
+    ESP_LOGW(ROAMING_TAG, "fast connect: the remembered AP " MACSTR " on channel %d failed the connection (reason %d): "
+             "every channel, strongest first, from the next attempt", MAC2STR(bssid), channel, reason);
+}
+#else
+bool roam_fast_connect_owns_connect_hint(void)
+{
+    return false;
+}
+
+void roam_fast_connect_sta_connected(void)
+{
+}
+
+void roam_fast_connect_sta_disconnected(uint8_t reason)
+{
+}
+#endif /* FAST_CONNECT_ENABLED */
 
 static void roaming_app_mark_roam_attempt(void)
 {
@@ -1377,13 +1515,26 @@ static void roaming_app_connected_event_handler(void *ctx, void *data)
 #if CONFIG_ESP_WIFI_ROAMING_BSSID_BLACKLIST
     eloop_cancel_timeout(roaming_app_blacklist_recovery_internal_handler, NULL, NULL);
 #endif
-    roaming_app_reset_connect_hint_state();
+#if FAST_CONNECT_ENABLED
+    if (g_roaming_app.config.fast_connect) {
+        /* Fast connect's record, written below, replaces any hint the roaming app set to roam. */
+        g_roaming_app.connect_hint_active = false;
+    } else
+#endif
+    {
+        roaming_app_reset_connect_hint_state();
+    }
     memset(&g_roaming_app.current_bss.ap, 0, sizeof(g_roaming_app.current_bss.ap));
     g_roaming_app.current_bss.ap.rssi = -128;
     ap_info_available = roaming_app_get_ap_info(&g_roaming_app.current_bss.ap);
     if (!ap_info_available) {
         ESP_LOGW(ROAMING_TAG, "Skipping AP info-dependent connected handling");
     }
+#if FAST_CONNECT_ENABLED
+    if (ap_info_available && g_roaming_app.config.fast_connect) {
+        roaming_app_fast_connect_remember(&g_roaming_app.current_bss.ap);
+    }
+#endif
 #if CONFIG_ESP_WIFI_ROAMING_BSSID_BLACKLIST
     if (ap_info_available) {
         roaming_app_reset_auto_blacklist_failures(g_roaming_app.current_bss.ap.bssid);
@@ -3052,6 +3203,8 @@ static esp_err_t init_config_params(void)
     g_roaming_app.config.rrm_monitor_time = RRM_MONITOR_TIME;
     g_roaming_app.config.rrm_monitor_rssi_threshold = RRM_MONITOR_RSSI_THRESHOLD;
 
+    g_roaming_app.config.fast_connect = FAST_CONNECT_ENABLED;
+
     ESP_LOGD(ROAMING_TAG, "Roaming app config :");
 
     ESP_LOGD(ROAMING_TAG, "backoff time=%d low_rssi_roam_trigger=%d low_rssi_threshold=%d rssi_threshold_reduction_offset=%d low_rssi_roam_diff=%d low_rssi_threshold_reset_sec=%" PRIu8,
@@ -3076,6 +3229,8 @@ static esp_err_t init_config_params(void)
                         g_roaming_app.config.rrm_monitor_time,
                         g_roaming_app.config.rrm_monitor_rssi_threshold);
 
+    ESP_LOGD(ROAMING_TAG, "fast_connect=%d", g_roaming_app.config.fast_connect);
+
     return ESP_OK;
 }
 
@@ -3095,7 +3250,7 @@ static esp_err_t init_scan_config(void)
 
 void roam_init_app(void)
 {
-#if !LOW_RSSI_ROAMING_ENABLED && !PERIODIC_SCAN_MONITORING
+#if !LOW_RSSI_ROAMING_ENABLED && !PERIODIC_SCAN_MONITORING && !FAST_CONNECT_ENABLED
     ESP_LOGE(ROAMING_TAG, "No roaming trigger enabled. Roaming app cannot be initialized");
     return;
 #endif
@@ -3175,7 +3330,7 @@ static int roaming_app_deinit_internal(void *ctx, void *data)
 
 void roam_deinit_app(void)
 {
-#if !LOW_RSSI_ROAMING_ENABLED && !PERIODIC_SCAN_MONITORING
+#if !LOW_RSSI_ROAMING_ENABLED && !PERIODIC_SCAN_MONITORING && !FAST_CONNECT_ENABLED
     ESP_LOGE(ROAMING_TAG, "No roaming trigger enabled. Roaming app cannot be de-initialized");
     return;
 #endif
@@ -3335,6 +3490,9 @@ static int update_config_params(void *data)
     uint8_t next_scan_filter_bssid[ROAM_SCAN_FILTER_BSSID_LEN] = {0};
     bool next_scan_filter_bssid_set = false;
     bool filters_changed;
+#if FAST_CONNECT_ENABLED
+    bool keep_fast_connect = false;
+#endif
 
     if (config->scan_filter_ssid[0] != '\0') {
         strlcpy((char *) next_scan_filter_ssid,
@@ -3355,9 +3513,44 @@ static int update_config_params(void *data)
                               next_scan_filter_bssid,
                               sizeof(next_scan_filter_bssid)) != 0);
 
+#if FAST_CONNECT_ENABLED
+    if (g_roaming_app.config.fast_connect && !config->fast_connect) {
+        wifi_config_t wifi_cfg = {0};
+        esp_err_t err;
+
+        /* Fast connect stops: nothing would clear its record after a failure any more, and the station would
+         * stay pinned to that one AP. If the record cannot be forgotten, fast connect stays on, so a failed
+         * connection still clears it; turning it off again retries the forget. */
+        err = esp_wifi_get_config(WIFI_IF_STA, &wifi_cfg);
+        if (err == ESP_OK && roaming_app_fast_connect_is_record(&wifi_cfg.sta)) {
+            uint8_t bssid[ETH_ALEN];
+
+            os_memcpy(bssid, wifi_cfg.sta.bssid, ETH_ALEN);
+            wifi_cfg.sta.scan_method = WIFI_ALL_CHANNEL_SCAN;
+            wifi_cfg.sta.bssid_set = false;
+            os_memset(wifi_cfg.sta.bssid, 0, ETH_ALEN);
+            wifi_cfg.sta.channel = 0;
+            err = esp_wifi_set_config(WIFI_IF_STA, &wifi_cfg);
+            if (err == ESP_OK) {
+                ESP_LOGI(ROAMING_TAG, "fast connect: turned off: forgot " MACSTR, MAC2STR(bssid));
+            }
+        }
+        if (err != ESP_OK) {
+            ESP_LOGE(ROAMING_TAG, "fast connect: not turned off: failed to forget its record: %s", esp_err_to_name(err));
+            keep_fast_connect = true;
+        }
+    }
+#endif
     g_roaming_app.config = *config;
     g_roaming_app.config.low_rssi_roam_diff =
         roaming_app_clamp_low_rssi_roam_diff(g_roaming_app.config.low_rssi_roam_diff);
+#if !FAST_CONNECT_ENABLED
+    g_roaming_app.config.fast_connect = false;
+#else
+    if (keep_fast_connect) {
+        g_roaming_app.config.fast_connect = true;
+    }
+#endif
     memset(g_roaming_app.config.scan_filter_ssid, 0, sizeof(g_roaming_app.config.scan_filter_ssid));
     memset(g_roaming_app.config.scan_filter_bssid, 0, sizeof(g_roaming_app.config.scan_filter_bssid));
     g_roaming_app.config.scan_filter_bssid_set = false;
@@ -3414,6 +3607,8 @@ static int update_config_params(void *data)
                         g_roaming_app.config.rrm_monitor,
                         g_roaming_app.config.rrm_monitor_time,
                         g_roaming_app.config.rrm_monitor_rssi_threshold);
+
+    ESP_LOGI(ROAMING_TAG, "fast_connect=%d", g_roaming_app.config.fast_connect);
 
     return ESP_OK;
 }
