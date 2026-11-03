@@ -20,6 +20,7 @@ esp_eth_phy_t *esp_eth_phy_new_generic(const eth_phy_config_t *config)
 {
     esp_eth_phy_t *ret = NULL;
     phy_802_3_t *phy_802_3 = calloc(1, sizeof(phy_802_3_t));
+    ESP_RETURN_ON_FALSE(phy_802_3, NULL, TAG, "no mem for PHY object");
     eth_phy_config_t phy_802_3_config = *config;
     // default chip specific configuration if not defined by user
     if (config->hw_reset_assert_time_us == 0) {
@@ -33,5 +34,6 @@ esp_eth_phy_t *esp_eth_phy_new_generic(const eth_phy_config_t *config)
 
     return &phy_802_3->parent;
 err:
+    free(phy_802_3);
     return ret;
 }

@@ -28,6 +28,7 @@ typedef struct {
     int reset_gpio_num;                /*!< Reset GPIO number, -1 means no hardware reset */
     int32_t hw_reset_assert_time_us;   /*!< Time the reset pin is asserted (Unit: us) */
     int32_t post_hw_reset_delay_ms;    /*!< Time to wait after the HW reset (Unit: ms) */
+    bool hold_reset_gpio;              /*!< Latch PHY nRST high after HW reset */
 } phy_802_3_t;
 
 /**
@@ -219,6 +220,10 @@ esp_err_t esp_eth_phy_802_3_deinit(phy_802_3_t *phy_802_3);
 /**
  * @brief Delete Ethernet PHY infostructure
  *
+ * @note De-initializes the IEEE 802.3 object configuration first. PHY drivers
+ *       that free the object through this function do not need to call
+ *       esp_eth_phy_802_3_obj_config_deinit() themselves.
+ *
  * @param phy_802_3 IEEE 802.3 PHY object infostructure
  * @return
  *      - ESP_OK: Ethernet PHY infostructure deleted
@@ -407,8 +412,21 @@ inline __attribute__((always_inline)) phy_802_3_t *esp_eth_phy_into_phy_802_3(es
  * @return
  *      - ESP_OK: configuration initialized successfully
  *      - ESP_ERR_INVALID_ARG: invalid @c config argument
+ *      - ESP_ERR_NOT_SUPPORTED: reset GPIO does not support pad hold
+ *      - ESP_ERR_INVALID_STATE: reset GPIO is already reserved
  */
 esp_err_t esp_eth_phy_802_3_obj_config_init(phy_802_3_t *phy_802_3, const eth_phy_config_t *config);
+
+/**
+ * @brief De-initializes configuration of parent IEEE 802.3 PHY object infostructure
+ *
+ * @note Revokes or frees resources possibly reserved or allocated by esp_eth_phy_802_3_obj_config_init
+ *
+ * @param phy_802_3 Address to IEEE 802.3 PHY object infostructure
+ * @return
+ *      - ESP_OK: configuration de-initialized successfully
+ */
+esp_err_t esp_eth_phy_802_3_obj_config_deinit(phy_802_3_t *phy_802_3);
 
 #ifdef __cplusplus
 }

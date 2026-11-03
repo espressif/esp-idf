@@ -314,6 +314,7 @@ typedef struct {
     int reset_gpio_num;               /*!< Reset GPIO number, -1 means no hardware reset */
     int32_t hw_reset_assert_time_us;  /*!< Time the reset pin is asserted (Unit: us), 0 to use chip specific default */
     int32_t post_hw_reset_delay_ms;   /*!< Time to wait after the HW reset (Unit: ms), 0 to use chip specific default, -1 means no wait */
+    bool hold_reset_gpio;             /*!< Latch PHY nRST high after hardware reset so the PHY stays out of reset when GPIO/IOMUX is powered down (e.g. Light-sleep) */
 } eth_phy_config_t;
 
 /**
@@ -326,8 +327,9 @@ typedef struct {
         .reset_timeout_ms = 100,               \
         .autonego_timeout_ms = 4000,           \
         .reset_gpio_num = 5,                   \
-        .hw_reset_assert_time_us = 0,         \
-        .post_hw_reset_delay_ms = 0           \
+        .hw_reset_assert_time_us = 0,          \
+        .post_hw_reset_delay_ms = 0,           \
+        .hold_reset_gpio = false               \
     }
 
 /**
