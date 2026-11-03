@@ -168,12 +168,12 @@ Passkey Entry 模式下，Master 主动发起加密请求的流程图如下 （*
 
 低功耗蓝牙有两种隐私模式：
 
-- **Network Privacy Mode（网络隐私模式）**：只接受对端用已分发的 IRK 生成的可解析私有地址（RPA）。如果对端已经分发过 IRK，就不接受它使用身份地址（Identity Address）的广播包、扫描请求和连接请求。
-- **Device Privacy Mode（设备隐私模式）**：只关心本设备自己的隐私。对端的身份地址（Identity Address） 和用其 IRK 生成的 RPA 都接受。
+- **Network Privacy Mode（网络隐私模式）**：只接受对端用已分发的 IRK 生成的可解析私有地址（RPA）。如果对端已经分发过 IRK，则不接受该设备以身份地址（Identity Address）发送的广播包、扫描请求和连接请求。
+- **Device Privacy Mode（设备隐私模式）**：本设备只关注自身隐私。对端的身份地址 (Identity Address) 和用其 IRK 生成的 RPA 都接受。
 
 .. note::
 
-   协议要求默认为 **Network Privacy Mode**。Espressif 控制器为了提高兼容性，会默认将配对的设备设为 **Device Privacy Mode**。若需要提高隐私等级，请调用如下接口配置成 **Network Privacy Mode**。
+   蓝牙协议规定默认使用 **Network Privacy Mode**。为提高兼容性，乐鑫控制器默认将已配对的设备设为 **Device Privacy Mode**。若需要提高隐私等级，请调用如下接口配置成 **Network Privacy Mode**。
 
    - :cpp:func:`ble_gap_set_priv_mode`，用于 NimBLE 主机
    - :cpp:func:`esp_ble_gap_set_privacy_mode`，用于 Bluedroid 主机
