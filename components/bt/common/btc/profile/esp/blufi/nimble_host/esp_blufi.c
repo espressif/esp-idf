@@ -637,7 +637,10 @@ void esp_blufi_adv_start(void)
     int rc;
 
     rc = ble_hs_util_ensure_addr(0);
-    assert(rc == 0);
+    if (rc != 0) {
+        ESP_LOGE(TAG, "error ensuring address; rc=%d", rc);
+        return;
+    }
 
     /* Figure out address to use while advertising (no privacy for now) */
     rc = ble_hs_id_infer_auto(0, &own_addr_type);
@@ -844,11 +847,17 @@ bool esp_blufi_send_encap(void *arg)
     return true;
 }
 
-void esp_blufi_btc_init(void)
+esp_err_t esp_blufi_btc_init(void)
 {
-    int rc;
+    bt_status_t rc;
+
     rc = btc_init();
-    assert(rc == 0);
+    if (rc == BT_STATUS_SUCCESS) {
+        return ESP_OK;
+    }
+
+    ESP_LOGE(TAG, "btc_init failed; rc=%d", rc);
+    return (rc == BT_STATUS_NOMEM) ? ESP_ERR_NO_MEM : ESP_FAIL;
 }
 
 void esp_blufi_btc_deinit(void)
