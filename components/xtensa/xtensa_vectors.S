@@ -120,7 +120,7 @@
     frame just in case the exception dispatcher's SP does not point to the exception
     frame (which is the case when switching from task to interrupt stack).
 
-    Clearing the pseudo base-save area is uncessary as the interrupt dispatcher
+    Clearing the pseudo base-save area is unnecessary as the interrupt dispatcher
     will restore the current SP to that of the pre-exception SP.
 --------------------------------------------------------------------------------
 */
@@ -450,8 +450,6 @@ _DebugExceptionVector:
     .align      4
 _xt_debugexception:
 #if (CONFIG_ESP32_ECO3_CACHE_LOCK_FIX && CONFIG_BTDM_CTRL_HLI)
-    s32i    a0, sp, XT_STK_EXIT
-
 #define XT_DEBUGCAUSE_DI        (5)
     getcoreid   a0
 #if (CONFIG_BTDM_CTRL_PINNED_TO_CORE == PRO_CPU_NUM)
@@ -627,7 +625,7 @@ _UserExceptionVector:
 /*
 --------------------------------------------------------------------------------
   Insert some waypoints for jumping beyond the signed 8-bit range of
-  conditional branch instructions, so the conditional branchces to specific
+  conditional branch instructions, so the conditional branches to specific
   exception handlers are not taken in the mainline. Saves some cycles in the
   mainline.
 --------------------------------------------------------------------------------
@@ -741,7 +739,7 @@ _xt_handle_exc:
     rsr     a0, EXCVADDR
     s32i    a0, sp, XT_STK_EXCVADDR
 
-    /* Set up PS for C, reenable debug and NMI interrupts, and clear EXCM. */
+    /* Set up PS for C, re-enable debug and NMI interrupts, and clear EXCM. */
     #ifdef __XTENSA_CALL0_ABI__
     movi    a0, PS_INTLEVEL(XCHAL_DEBUGLEVEL - 2) | PS_UM
     #else
