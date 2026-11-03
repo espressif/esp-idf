@@ -105,6 +105,9 @@
 #define BTC_AV_CA_INCLUDED          TRUE
 #define AVRC_CA_INCLUDED            TRUE
 #endif /* UC_BT_AVRCP_CT_COVER_ART_ENABLED */
+#if (UC_BT_A2DP_AUDIO_STATS == TRUE)
+#define BTC_A2DP_AUDIO_STATS        TRUE
+#endif
 #endif /* UC_BT_A2DP_ENABLED */
 
 #if (UC_BT_SPP_ENABLED == TRUE)
@@ -724,6 +727,10 @@
 
 #ifndef BTC_AV_INCLUDED
 #define BTC_AV_INCLUDED FALSE
+#endif
+
+#ifndef BTC_A2DP_AUDIO_STATS
+#define BTC_A2DP_AUDIO_STATS FALSE
 #endif
 
 #ifndef BTC_AV_CA_INCLUDED
