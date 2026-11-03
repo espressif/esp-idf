@@ -34,6 +34,12 @@ The connection between ESP Board and the LCD is as follows:
 
 The GPIO number used by this example can be changed in [lvgl_example_main.c](main/i2c_oled_example_main.c). Please pay attention to the I2C hardware device address as well, you should refer to your module's spec and schematic to determine that address.
 
+### Prepare this source code
+
+We suggest to use the vsCode ESP-IDF extension. In vsCode, press `Ctrl/cmd + Shift + P` shortcut will open the command panel and enter 'ESP-IDF Welcome' to open the ESP-IDF Welcome panel. Click on the "New Project" buttom and then "Choose Template". Select the 'ESP-IDF' template, you'll be able to search template by name with enter the name of the example projects such as "i2c_oled". 
+
+**Note:** Although here these example projects are displayed with different indentation levels, giving the impression that you can perform a fuzzy search or search based on their parent elements, the search mechanism is different. You can only search using the deepest level (the most specific level). That is to say, even though i2c_oled is located at examples/peripherals/lcd/i2c_oled, it cannot be found with keywords like 'peripheral' or 'lcd'. Its parent folder names are not searchable! You can only find it using keywords like 'i2c' or 'i2c_oled'!!
+
 ### Build and Flash
 
 Run `idf.py -p PORT build flash monitor` to build, flash and monitor the project. A scrolling text will show up on the LCD as expected.
