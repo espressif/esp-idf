@@ -105,7 +105,10 @@ TEST_CASE("see if fsync appears to work", "[usb_serial_jtag]")
     fsync(0);
     end_us = esp_timer_get_time();
     printf("No data in queue: %d us\n", (int)(end_us - start_us));
-    TEST_ASSERT_LESS_THAN_INT(100, end_us - start_us);
+    // Idle path is lock + tx_mux + already-available tx_idle_sem; keep well below
+    // the active lower bound (1000 us). 100 us is too tight under dual-core noise
+    // (e.g. ~113 us observed on ESP32-H4).
+    TEST_ASSERT_LESS_THAN_INT(500, end_us - start_us);
 
     vTaskDelay(pdMS_TO_TICKS(200));
 
