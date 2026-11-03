@@ -17,6 +17,9 @@ void spi_hal_init(spi_hal_context_t *hal, uint32_t host_id)
     spi_dev_t *hw = spi_periph_signal[host_id].hw;
     hal->hw = hw;
     spi_ll_master_init(hw);
+#ifdef SPI_LL_PERIPH_HAS_SCT
+    spi_ll_set_magic_number(hw, SPI_LL_SCT_MAGIC_NUMBER);
+#endif
 
     //Force a transaction done interrupt. This interrupt won't fire yet because
     //we initialized the SPI interrupt as disabled. This way, we can just

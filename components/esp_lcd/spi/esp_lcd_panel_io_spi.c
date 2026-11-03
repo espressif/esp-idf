@@ -18,7 +18,6 @@
 #include "driver/spi_master.h"
 #include "driver/gpio.h"
 #include "esp_private/gpio.h"
-#include "esp_private/spi_common_internal.h"
 #include "hal/gpio_ll.h"
 #include "hal/gpio_hal.h"
 #include "esp_log.h"
@@ -48,7 +47,6 @@ typedef struct {
 typedef struct {
     esp_lcd_panel_io_t base;     // Base class of generic lcd panel io
     spi_device_handle_t spi_dev; // SPI device handle
-    size_t spi_trans_max_bytes;  // Maximum bytes that can be transmitted in one spi transaction
     gpio_num_t dc_gpio_num;      // D/C line GPIO number
     esp_lcd_panel_io_color_trans_done_cb_t on_color_trans_done; // User register's callback, invoked when color data trans done
     void *user_ctx;           // User's private data, passed directly to callback on_color_trans_done
@@ -121,12 +119,8 @@ esp_err_t esp_lcd_new_panel_io_spi(esp_lcd_spi_bus_handle_t bus, const esp_lcd_p
     spi_panel_io->base.del = panel_io_spi_del;
     spi_panel_io->base.register_event_callbacks = panel_io_spi_register_event_callbacks;
 
-    size_t max_trans_bytes = 0;
-    ESP_GOTO_ON_ERROR(spi_bus_get_max_transaction_len((spi_host_device_t)bus, &max_trans_bytes), err, TAG, "get spi max transaction len failed");
-    spi_panel_io->spi_trans_max_bytes = max_trans_bytes;
-
     *ret_io = &(spi_panel_io->base);
-    ESP_LOGD(TAG, "new spi lcd panel io @%p, max_trans_bytes: %d", spi_panel_io, (int)max_trans_bytes);
+    ESP_LOGD(TAG, "new spi lcd panel io @%p", spi_panel_io);
 
     return ESP_OK;
 
@@ -356,60 +350,39 @@ static esp_err_t panel_io_spi_tx_color(esp_lcd_panel_io_t *io, int lcd_cmd, cons
         ESP_GOTO_ON_ERROR(ret, err, TAG, "spi transmit (polling) command failed");
     }
 
-    bool color_in_psram = color && color_size && esp_ptr_external_ram(color);
+    if (spi_panel_io->num_trans_inflight < spi_panel_io->queue_size) {
+        // get the next available transaction
+        lcd_trans = &spi_panel_io->trans_pool[spi_panel_io->num_trans_inflight];
+    } else {
+        // transaction pool has used up, recycle one transaction
+        ret = spi_device_get_trans_result(spi_panel_io->spi_dev, &spi_trans, portMAX_DELAY);
+        ESP_GOTO_ON_ERROR(ret, err, TAG, "recycle spi transactions failed");
+        lcd_trans = __containerof(spi_trans, lcd_spi_trans_descriptor_t, base);
+        spi_panel_io->num_trans_inflight--;
+    }
+    memset(lcd_trans, 0, sizeof(lcd_spi_trans_descriptor_t));
 
-    // if the color buffer is big, we want to split it into chunks, and queue the chunks one by one
-    do {
-        size_t chunk_size = color_size;
+    lcd_trans->base.user = spi_panel_io;
+    lcd_trans->flags.dc_gpio_level = spi_panel_io->flags.dc_data_level; // set D/C level in data phase
+    lcd_trans->flags.en_trans_done_cb = 1;
+    lcd_trans->base.length = color_size * 8; // transaction length is in bits
+    lcd_trans->base.tx_buffer = color;
+    if (color && color_size && esp_ptr_external_ram(color) && spi_panel_io->flags.psram_dma_direct) {
+        // When the color buffer resides in PSRAM, set the DMA PSRAM flag
+        lcd_trans->base.flags |= SPI_TRANS_DMA_USE_PSRAM;
+    }
+    if (spi_panel_io->flags.octal_mode) {
+        // use 8 lines for transmitting command, address and data
+        lcd_trans->base.flags |= (SPI_TRANS_MULTILINE_CMD | SPI_TRANS_MULTILINE_ADDR | SPI_TRANS_MODE_OCT);
+    } else if (spi_panel_io->flags.quad_mode) {
+        // use 4 lines only for transmitting data
+        lcd_trans->base.flags |= SPI_TRANS_MODE_QIO;
+    }
 
-        if (spi_panel_io->num_trans_inflight < spi_panel_io->queue_size) {
-            // get the next available transaction
-            lcd_trans = &spi_panel_io->trans_pool[spi_panel_io->num_trans_inflight];
-        } else {
-            // transaction pool has used up, recycle one transaction
-            ret = spi_device_get_trans_result(spi_panel_io->spi_dev, &spi_trans, portMAX_DELAY);
-            ESP_GOTO_ON_ERROR(ret, err, TAG, "recycle spi transactions failed");
-            lcd_trans = __containerof(spi_trans, lcd_spi_trans_descriptor_t, base);
-            spi_panel_io->num_trans_inflight--;
-        }
-        memset(lcd_trans, 0, sizeof(lcd_spi_trans_descriptor_t));
-        if (color_in_psram && spi_panel_io->flags.psram_dma_direct) {
-            // When the color buffer resides in PSRAM, set the DMA PSRAM flag
-            lcd_trans->base.flags |= SPI_TRANS_DMA_USE_PSRAM;
-        }
-
-        // SPI per-transfer size has its limitation, if the color buffer is too big, we need to split it into multiple chunks
-        if (chunk_size > spi_panel_io->spi_trans_max_bytes) {
-            // cap the transfer size to the maximum supported by the bus
-            chunk_size = spi_panel_io->spi_trans_max_bytes;
-            lcd_trans->base.flags |= SPI_TRANS_CS_KEEP_ACTIVE;
-        } else {
-            // mark en_trans_done_cb only at the last round to avoid premature completion callback
-            lcd_trans->flags.en_trans_done_cb = 1;
-            lcd_trans->base.flags &= ~SPI_TRANS_CS_KEEP_ACTIVE;
-        }
-
-        lcd_trans->base.user = spi_panel_io;
-        lcd_trans->flags.dc_gpio_level = spi_panel_io->flags.dc_data_level; // set D/C level in data phase
-        lcd_trans->base.length = chunk_size * 8; // transaction length is in bits
-        lcd_trans->base.tx_buffer = color;
-        if (spi_panel_io->flags.octal_mode) {
-            // use 8 lines for transmitting command, address and data
-            lcd_trans->base.flags |= (SPI_TRANS_MULTILINE_CMD | SPI_TRANS_MULTILINE_ADDR | SPI_TRANS_MODE_OCT);
-        } else if (spi_panel_io->flags.quad_mode) {
-            // use 4 lines only for transmitting data
-            lcd_trans->base.flags |= SPI_TRANS_MODE_QIO;
-        }
-
-        // color data is usually large, using queue+blocking mode
-        ret = spi_device_queue_trans(spi_panel_io->spi_dev, &lcd_trans->base, portMAX_DELAY);
-        ESP_GOTO_ON_ERROR(ret, err, TAG, "spi transmit (queue) color failed");
-        spi_panel_io->num_trans_inflight++;
-
-        // move on to the next chunk
-        color = (const uint8_t *)color + chunk_size;
-        color_size -= chunk_size;
-    } while (color_size > 0); // continue while we have remaining data to transmit
+    // color data is usually large, using queue+blocking mode
+    ret = spi_device_queue_trans(spi_panel_io->spi_dev, &lcd_trans->base, portMAX_DELAY);
+    ESP_GOTO_ON_ERROR(ret, err, TAG, "spi transmit (queue) color failed");
+    spi_panel_io->num_trans_inflight++;
 
 err:
     spi_device_release_bus(spi_panel_io->spi_dev);

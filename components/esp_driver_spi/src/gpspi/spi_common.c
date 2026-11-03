@@ -323,6 +323,25 @@ static esp_err_t alloc_dma_chan(spi_host_device_t host_id, spi_dma_chan_t dma_ch
 }
 #endif  //#if !SOC_GDMA_SUPPORTED
 
+static size_t s_spi_periph_max_aligned_chunk_len(const spi_bus_attr_t *bus_attr, const spi_dma_ctx_t *dma_ctx)
+{
+    size_t buffer_alignment = MAX(dma_ctx->dma_align_tx_int, dma_ctx->dma_align_rx_int);
+    if (dma_ctx->dma_align_tx_ext < BIT(31)) {
+        buffer_alignment = MAX(buffer_alignment, dma_ctx->dma_align_tx_ext);
+    }
+    if (dma_ctx->dma_align_rx_ext < BIT(31)) {
+        buffer_alignment = MAX(buffer_alignment, dma_ctx->dma_align_rx_ext);
+    }
+    buffer_alignment = MAX(buffer_alignment, bus_attr->cache_align_int);
+    if (bus_attr->cache_align_ext < BIT(31)) {
+        buffer_alignment = MAX(buffer_alignment, bus_attr->cache_align_ext);
+    }
+    buffer_alignment = MAX(buffer_alignment, 4);
+
+    size_t dma_desc_cap = ESP_ALIGN_DOWN(DMA_DESCRIPTOR_BUFFER_MAX_SIZE, buffer_alignment);
+    return (SPI_LL_DMA_MAX_BIT_LEN / 8 / dma_desc_cap) * dma_desc_cap;
+}
+
 esp_err_t spicommon_dma_chan_alloc(spi_host_device_t host_id, spi_dma_chan_t dma_chan, uint32_t dma_burst_size)
 {
     assert(is_valid_host(host_id));
@@ -367,7 +386,7 @@ static void spicommon_dma_link_free(spi_host_device_t host_id)
     }
 }
 
-esp_err_t spicommon_dma_desc_alloc(spi_host_device_t host_id, int cfg_max_sz, int *actual_max_sz)
+esp_err_t spicommon_dma_desc_alloc(spi_host_device_t host_id, int cfg_max_sz, int max_chunk_sz, int *actual_max_sz)
 {
     esp_err_t ret = ESP_OK;
     spi_dma_ctx_t *dma_ctx = spi_bus_get_dma_ctx(host_id);
@@ -381,20 +400,22 @@ esp_err_t spicommon_dma_desc_alloc(spi_host_device_t host_id, int cfg_max_sz, in
         rx_buffer_alignment = MAX(rx_buffer_alignment, dma_ctx->dma_align_rx_ext);
     }
 
+    size_t sct_item_num = howmany(cfg_max_sz, MAX(1, max_chunk_sz));
     size_t tx_item_num = esp_dma_calculate_node_count(cfg_max_sz, tx_buffer_alignment, DMA_DESCRIPTOR_BUFFER_MAX_SIZE);
     size_t rx_item_num = esp_dma_calculate_node_count(cfg_max_sz, rx_buffer_alignment, DMA_DESCRIPTOR_BUFFER_MAX_SIZE);
     gdma_link_list_config_t link_cfg = {
-        .num_items = MAX(MAX(tx_item_num, rx_item_num), 1), //default to 1 when 'cfg_max_sz' is not given
+        .num_items = MAX(MAX(tx_item_num, rx_item_num), 1) + sct_item_num, //default to 1 when 'cfg_max_sz' is not given
         .item_alignment = DMA_DESC_MEM_ALIGN_SIZE,
     };
     ESP_RETURN_ON_ERROR(gdma_new_link_list(&link_cfg, &dma_ctx->tx_link_handle), SPI_TAG, "failed to allocate tx dma link");
     ESP_GOTO_ON_ERROR(gdma_new_link_list(&link_cfg, &dma_ctx->rx_link_handle), cleanup, SPI_TAG, "failed to allocate rx dma link");
 
     // save link info
-    dma_ctx->dma_desc_num = link_cfg.num_items;
+    dma_ctx->dma_desc_num = link_cfg.num_items - sct_item_num;
     dma_ctx->dmadesc_tx = (spi_dma_desc_t *)gdma_link_get_head_addr(dma_ctx->tx_link_handle);
     dma_ctx->dmadesc_rx = (spi_dma_desc_t *)gdma_link_get_head_addr(dma_ctx->rx_link_handle);
     *actual_max_sz = dma_ctx->dma_desc_num * ESP_ALIGN_DOWN(DMA_DESCRIPTOR_BUFFER_MAX_SIZE, rx_buffer_alignment);
+    ESP_LOGV(SPI_TAG, "desc_num: %d, sct_item_num: %d", dma_ctx->dma_desc_num, sct_item_num);
     return ESP_OK;
 
 cleanup:
@@ -402,7 +423,7 @@ cleanup:
     return ret;
 }
 
-void SPI_COMMON_ISR_ATTR spicommon_dma_desc_setup_link(const spi_dma_ctx_t *dma_ctx, int offset, const void *data, int len, bool is_rx)
+void SPI_COMMON_ISR_ATTR spicommon_dma_desc_setup_link(const spi_dma_ctx_t *dma_ctx, int offset, const void *data, int len, bool is_rx, int *end_item_index)
 {
     size_t buffer_alignment = 0;
 #if SOC_GDMA_SUPPORTED
@@ -434,7 +455,7 @@ void SPI_COMMON_ISR_ATTR spicommon_dma_desc_setup_link(const spi_dma_ctx_t *dma_
             .bypass_buffer_size_align_check = true,
         }
     };
-    esp_err_t ret = gdma_link_mount_buffers(is_rx ? dma_ctx->rx_link_handle : dma_ctx->tx_link_handle, offset, &mount_config, 1, NULL);
+    esp_err_t ret = gdma_link_mount_buffers(is_rx ? dma_ctx->rx_link_handle : dma_ctx->tx_link_handle, offset, &mount_config, 1, end_item_index);
     assert(ret == ESP_OK);
     (void)ret;
 }
@@ -953,7 +974,8 @@ esp_err_t spi_bus_initialize(spi_host_device_t host_id, const spi_bus_config_t *
         if (err != ESP_OK) {
             goto cleanup;
         }
-        err = spicommon_dma_desc_alloc(host_id, bus_config->max_transfer_sz, &bus_attr->max_transfer_sz);
+        bus_attr->aligned_chunk_sz = s_spi_periph_max_aligned_chunk_len(bus_attr, spi_dma_ctx[host_id]);
+        err = spicommon_dma_desc_alloc(host_id, bus_config->max_transfer_sz, bus_attr->aligned_chunk_sz, &bus_attr->max_transfer_sz);
         if (err != ESP_OK) {
             goto cleanup;
         }

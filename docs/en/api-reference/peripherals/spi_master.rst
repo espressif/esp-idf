@@ -291,6 +291,10 @@ Normally, the data that needs to be transferred to or from a Device is read from
 
 If these requirements are not satisfied, the transaction efficiency will be affected due to the allocation and copying of temporary buffers.
 
+.. note::
+
+    When DMA is enabled, the maximum length of a single transaction on GP-SPI is no longer limited to 32 KB now. Configure the maximum length via :cpp:member:`spi_bus_config_t::max_transfer_sz`. For transfers longer than 32 KB, the driver will segment the transfer according to alignment requirements, keeping CS active between segments, SPI clock will briefly pause about 3-30us. The `spi_device_polling_xxx` interface still does not support long transfers.
+
 If using more than one data line to transmit, please set ``SPI_DEVICE_HALFDUPLEX`` flag for the member ``flags`` in the struct :cpp:type:`spi_device_interface_config_t`. And the member ``flags`` in the struct :cpp:type:`spi_transaction_t` should be set as described in :ref:`transaction-line-mode`.
 
 .. only:: esp32

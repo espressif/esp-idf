@@ -38,7 +38,6 @@ typedef dma_descriptor_align8_t spi_dma_desc_t;
 typedef dma_descriptor_align4_t spi_dma_desc_t;
 #endif
 
-
 // Status of a spi bus
 typedef enum {
     SPI_BUS_FSM_DISABLED,               ///< Bus is disabled, clock and power is allowed to be closed.
@@ -54,6 +53,7 @@ typedef struct {
     bool dma_enabled;                   ///< To enable DMA or not
     size_t cache_align_int;             ///< Internal memory align byte requirement
     size_t cache_align_ext;             ///< External memory align byte requirement
+    size_t aligned_chunk_sz;            ///< Peripheral maximum chunk size align to cache and "dma desc aligned length", in bytes.
     spi_bus_lock_handle_t lock;
 #ifdef CONFIG_PM_ENABLE
     esp_pm_lock_handle_t pm_lock;       ///< Power management lock
@@ -129,24 +129,27 @@ esp_err_t spicommon_dma_chan_alloc(spi_host_device_t host_id, spi_dma_chan_t dma
  *
  * @param[in]  host_id             SPI host ID
  * @param[in]  cfg_max_sz          Expected maximum transfer size, in bytes.
+ * @param[in]  max_chunk_sz        Maximum chunk size, in bytes.
  * @param[out] actual_max_sz       Actual max transfer size one transaction can be, in bytes.
  *
  * @return
  *        - ESP_OK:                On success
  *        - ESP_ERR_NO_MEM:        No enough memory
  */
-esp_err_t spicommon_dma_desc_alloc(spi_host_device_t host_id, int cfg_max_sz, int *actual_max_sz);
+esp_err_t spicommon_dma_desc_alloc(spi_host_device_t host_id, int cfg_max_sz, int max_chunk_sz, int *actual_max_sz);
 
 /**
  * Setupt/Configure dma descriptor link list
  *
- * @param dma_ctx DMA context pointer
- * @param offset  offset of the item in the link list
- * @param data    start of data buffer to be configured in
- * @param len     length of data buffer, in byte
- * @param is_rx   if descriptor is for rx/receive direction
+ * @param dma_ctx         DMA context pointer
+ * @param offset          offset of the item in the link list
+ * @param data            start of data buffer to be configured in
+ * @param len             length of data buffer, in byte
+ * @param is_rx           if descriptor is for rx/receive direction
+ * @param[out] end_item_index Same as `gdma_link_mount_buffers`: index of the last
+ *                            mounted item. Can be NULL if not needed.
  */
-void spicommon_dma_desc_setup_link(const spi_dma_ctx_t *dma_ctx, int offset, const void *data, int len, bool is_rx);
+void spicommon_dma_desc_setup_link(const spi_dma_ctx_t *dma_ctx, int offset, const void *data, int len, bool is_rx, int *end_item_index);
 
 /**
  * @brief Setup private buffer for DMA transfer
