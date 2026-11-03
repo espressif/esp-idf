@@ -83,6 +83,12 @@ void esp_system_reset_modules_on_exit(void)
         }
     }
 
+    // The DMA inside SDMMC Host needs to be reset to avoid memory corruption after restart.
+    // Reset it before the peripheral resets that follow: if its DMA is still active when those
+    // reset, the SDMMC DMA cannot access memory after the CPU reset, until a system reset.
+    SET_PERI_REG_MASK(LP_CLKRST_HP_SDMMC_EMAC_RST_CTRL_REG, LP_CLKRST_RST_EN_SDMMC);
+    CLEAR_PERI_REG_MASK(LP_CLKRST_HP_SDMMC_EMAC_RST_CTRL_REG, LP_CLKRST_RST_EN_SDMMC);
+
     // Set Peripheral clk rst
     SET_PERI_REG_MASK(HP_SYS_CLKRST_HP_RST_EN0_REG, HP_SYS_CLKRST_REG_RST_EN_MSPI_AXI);
     SET_PERI_REG_MASK(HP_SYS_CLKRST_HP_RST_EN0_REG, HP_SYS_CLKRST_REG_RST_EN_DUAL_MSPI_AXI);
@@ -113,11 +119,7 @@ void esp_system_reset_modules_on_exit(void)
     CLEAR_PERI_REG_MASK(HP_SYS_CLKRST_HP_RST_EN2_REG, HP_SYS_CLKRST_REG_RST_EN_ADC);
     CLEAR_PERI_REG_MASK(HP_SYS_CLKRST_HP_RST_EN2_REG, HP_SYS_CLKRST_REG_RST_EN_H264);
 
-    // The DMA inside SDMMC Host needs to be reset to avoid memory corruption after restart.
-    SET_PERI_REG_MASK(LP_CLKRST_HP_SDMMC_EMAC_RST_CTRL_REG, LP_CLKRST_RST_EN_SDMMC);
-    CLEAR_PERI_REG_MASK(LP_CLKRST_HP_SDMMC_EMAC_RST_CTRL_REG, LP_CLKRST_RST_EN_SDMMC);
-
-    // Likewise the EMAC DMA: its descriptor ring and receive buffers live in the
+    // Reset the EMAC DMA too: its descriptor ring and receive buffers live in the
     // heap, so a receive left running across a restart writes incoming frames
     // into memory the next boot has already handed out.
     SET_PERI_REG_MASK(LP_CLKRST_HP_SDMMC_EMAC_RST_CTRL_REG, LP_CLKRST_RST_EN_EMAC);
