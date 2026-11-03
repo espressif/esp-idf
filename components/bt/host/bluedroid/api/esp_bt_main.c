@@ -32,9 +32,6 @@ esp_bluedroid_status_t esp_bluedroid_get_status(void)
 
 esp_err_t esp_bluedroid_enable(void)
 {
-    btc_msg_t msg;
-    future_t **future_p;
-
     if (s_bt_host_state == ESP_BLUEDROID_STATUS_UNINITIALIZED) {
         LOG_ERROR("Bluedroid not initialised");
         return ESP_ERR_INVALID_STATE;
@@ -45,13 +42,13 @@ esp_err_t esp_bluedroid_enable(void)
         return ESP_ERR_INVALID_STATE;
     }
 
-    future_p = btc_main_get_future_p(BTC_MAIN_ENABLE_FUTURE);
-    *future_p = future_new();
-    if (*future_p == NULL) {
+    future_t **future_p = btc_main_get_future_p(BTC_MAIN_ENABLE_FUTURE);
+    if ((*future_p = future_new()) == NULL) {
         LOG_ERROR("Bluedroid enable failed");
         return ESP_ERR_NO_MEM;
     }
 
+    btc_msg_t msg = {0};
     msg.sig = BTC_SIG_API_CALL;
     msg.pid = BTC_PID_MAIN_INIT;
     msg.act = BTC_MAIN_ACT_ENABLE;
@@ -74,9 +71,6 @@ esp_err_t esp_bluedroid_enable(void)
 
 esp_err_t esp_bluedroid_disable(void)
 {
-    btc_msg_t msg;
-    future_t **future_p;
-
     if (s_bt_host_state != ESP_BLUEDROID_STATUS_ENABLED) {
         LOG_ERROR("Bluedroid already disabled");
         return ESP_ERR_INVALID_STATE;
@@ -84,14 +78,14 @@ esp_err_t esp_bluedroid_disable(void)
 
     s_bt_host_state = ESP_BLUEDROID_STATUS_DISABLING;
 
-    future_p = btc_main_get_future_p(BTC_MAIN_DISABLE_FUTURE);
-    *future_p = future_new();
-    if (*future_p == NULL) {
+    future_t **future_p = btc_main_get_future_p(BTC_MAIN_DISABLE_FUTURE);
+    if ((*future_p = future_new()) == NULL) {
         LOG_ERROR("Bluedroid disable failed");
         s_bt_host_state = ESP_BLUEDROID_STATUS_ENABLED;
         return ESP_ERR_NO_MEM;
     }
 
+    btc_msg_t msg = {0};
     msg.sig = BTC_SIG_API_CALL;
     msg.pid = BTC_PID_MAIN_INIT;
     msg.act = BTC_MAIN_ACT_DISABLE;
@@ -122,10 +116,6 @@ esp_err_t esp_bluedroid_init(void)
 
 esp_err_t esp_bluedroid_init_with_cfg(esp_bluedroid_config_t *cfg)
 {
-    btc_msg_t msg;
-    future_t **future_p;
-    bt_status_t ret;
-
     if (!cfg) {
         LOG_ERROR("%s cfg is NULL", __func__);
         return ESP_ERR_INVALID_ARG;
@@ -166,7 +156,7 @@ esp_err_t esp_bluedroid_init_with_cfg(esp_bluedroid_config_t *cfg)
     osi_mem_stats_reset();
 #endif
 
-    ret = bluedroid_config_init(cfg);
+    bt_status_t ret = bluedroid_config_init(cfg);
     if (ret != BT_STATUS_SUCCESS) {
         LOG_ERROR("Bluedroid stack initialize fail, ret:%d", ret);
         return ESP_FAIL;
@@ -183,9 +173,8 @@ esp_err_t esp_bluedroid_init_with_cfg(esp_bluedroid_config_t *cfg)
         return ESP_FAIL;
     }
 
-    future_p = btc_main_get_future_p(BTC_MAIN_INIT_FUTURE);
-    *future_p = future_new();
-    if (*future_p == NULL) {
+    future_t **future_p = btc_main_get_future_p(BTC_MAIN_INIT_FUTURE);
+    if ((*future_p = future_new()) == NULL) {
         LOG_ERROR("Bluedroid Initialize Fail!");
         btc_deinit();
         bluedroid_config_deinit();
@@ -193,6 +182,7 @@ esp_err_t esp_bluedroid_init_with_cfg(esp_bluedroid_config_t *cfg)
         return ESP_ERR_NO_MEM;
     }
 
+    btc_msg_t msg = {0};
     msg.sig = BTC_SIG_API_CALL;
     msg.pid = BTC_PID_MAIN_INIT;
     msg.act = BTC_MAIN_ACT_INIT;
@@ -244,9 +234,6 @@ esp_err_t esp_bluedroid_init_with_cfg(esp_bluedroid_config_t *cfg)
 
 esp_err_t esp_bluedroid_deinit(void)
 {
-    btc_msg_t msg;
-    future_t **future_p;
-
     if (s_bt_host_state == ESP_BLUEDROID_STATUS_UNINITIALIZED) {
         LOG_ERROR("Bluedroid already de-initialised");
         return ESP_ERR_INVALID_STATE;
@@ -258,9 +245,8 @@ esp_err_t esp_bluedroid_deinit(void)
         return ESP_ERR_INVALID_STATE;
     }
 
-    future_p = btc_main_get_future_p(BTC_MAIN_DEINIT_FUTURE);
-    *future_p = future_new();
-    if (*future_p == NULL) {
+    future_t **future_p = btc_main_get_future_p(BTC_MAIN_DEINIT_FUTURE);
+    if ((*future_p = future_new()) == NULL) {
         LOG_ERROR("Bluedroid de-initialise failed");
         return ESP_ERR_NO_MEM;
     }
@@ -269,6 +255,7 @@ esp_err_t esp_bluedroid_deinit(void)
     ble_log_deinit();
 #endif
 
+    btc_msg_t msg = {0};
     msg.sig = BTC_SIG_API_CALL;
     msg.pid = BTC_PID_MAIN_INIT;
     msg.act = BTC_MAIN_ACT_DEINIT;

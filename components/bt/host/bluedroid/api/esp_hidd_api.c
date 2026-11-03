@@ -23,8 +23,8 @@ esp_err_t esp_bt_hid_device_register_callback(esp_hd_cb_t callback)
         return ESP_ERR_INVALID_ARG;
     }
 
-    btc_profile_cb_set(BTC_PID_HD, callback);
-    return ESP_OK;
+    int ret = btc_profile_cb_set(BTC_PID_HD, callback);
+    return (ret == 0) ? ESP_OK : ESP_FAIL;
 }
 
 esp_err_t esp_bt_hid_device_init(void)
@@ -36,7 +36,6 @@ esp_err_t esp_bt_hid_device_init(void)
     msg.pid = BTC_PID_HD;
     msg.act = BTC_HD_INIT_EVT;
 
-    /* Switch to BTC context */
     bt_status_t stat = btc_transfer_context(&msg, NULL, 0, NULL, NULL);
     return (stat == BT_STATUS_SUCCESS) ? ESP_OK : ESP_FAIL;
 }
@@ -68,18 +67,18 @@ esp_err_t esp_bt_hid_device_register_app(esp_hidd_app_param_t* app_param, esp_hi
         return ESP_ERR_INVALID_ARG;
     }
 
-    btc_msg_t msg = {0};
     btc_hidd_args_t args = {0};
     args.register_app.app_param = app_param;
     args.register_app.in_qos = in_qos;
     args.register_app.out_qos = out_qos;
 
+    btc_msg_t msg = {0};
     msg.sig = BTC_SIG_API_CALL;
     msg.pid = BTC_PID_HD;
     msg.act = BTC_HD_REGISTER_APP_EVT;
 
     bt_status_t stat = btc_transfer_context(&msg, &args, sizeof(btc_hidd_args_t),
-                                                btc_hd_arg_deep_copy, btc_hd_call_arg_deep_free);
+                                            btc_hd_arg_deep_copy, btc_hd_call_arg_deep_free);
     return (stat == BT_STATUS_SUCCESS) ? ESP_OK : ESP_FAIL;
 }
 
@@ -104,10 +103,10 @@ esp_err_t esp_bt_hid_device_connect(esp_bd_addr_t bd_addr)
         return ESP_ERR_INVALID_ARG;
     }
 
-    btc_msg_t msg = {0};
     btc_hidd_args_t args = {0};
     memcpy(args.connect.bd_addr, bd_addr, sizeof(esp_bd_addr_t));
 
+    btc_msg_t msg = {0};
     msg.sig = BTC_SIG_API_CALL;
     msg.pid = BTC_PID_HD;
     msg.act = BTC_HD_CONNECT_EVT;
@@ -149,7 +148,7 @@ esp_err_t esp_bt_hid_device_send_report(esp_hidd_report_type_t type, uint8_t id,
     args.send_report.data = data;
 
     bt_status_t stat = btc_transfer_context(&msg, &args, sizeof(btc_hidd_args_t),
-                                                btc_hd_arg_deep_copy, btc_hd_call_arg_deep_free);
+                                            btc_hd_arg_deep_copy, btc_hd_call_arg_deep_free);
     return (stat == BT_STATUS_SUCCESS) ? ESP_OK : ESP_FAIL;
 }
 
@@ -190,6 +189,7 @@ esp_err_t esp_bt_hid_device_virtual_cable_unplug(void)
 esp_err_t esp_bt_hid_device_get_profile_status(esp_hidd_profile_status_t *profile_status)
 {
     ESP_BLUEDROID_STATUS_CHECK(ESP_BLUEDROID_STATUS_ENABLED);
+
     if (profile_status == NULL) {
         return ESP_ERR_INVALID_ARG;
     }

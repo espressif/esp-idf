@@ -289,10 +289,10 @@ typedef enum {
     ESP_A2D_MEDIA_CTRL_ACK_EVT,                /*!< acknowledge event in response to media control commands */
     ESP_A2D_PROF_STATE_EVT,                    /*!< indicate a2dp init&deinit complete */
     ESP_A2D_SEP_REG_STATE_EVT,                 /*!< indicate a2dp stream endpoint register status */
-    ESP_A2D_SNK_PSC_CFG_EVT,                   /*!< protocol service capabilities configured，only used for A2DP SINK */
-    ESP_A2D_SNK_SET_DELAY_VALUE_EVT,           /*!< indicate a2dp sink set delay report value complete,  only used for A2DP SINK */
-    ESP_A2D_SNK_GET_DELAY_VALUE_EVT,           /*!< indicate a2dp sink get delay report value complete,  only used for A2DP SINK */
-    ESP_A2D_REPORT_SNK_DELAY_VALUE_EVT,        /*!< report delay value,  only used for A2DP SRC */
+    ESP_A2D_SNK_PSC_CFG_EVT,                   /*!< protocol service capabilities configured, only used for A2DP SINK */
+    ESP_A2D_SNK_SET_DELAY_VALUE_EVT,           /*!< indicate a2dp sink set delay report value complete, only used for A2DP SINK */
+    ESP_A2D_SNK_GET_DELAY_VALUE_EVT,           /*!< indicate a2dp sink get delay report value complete, only used for A2DP SINK */
+    ESP_A2D_REPORT_SNK_DELAY_VALUE_EVT,        /*!< report delay value, only used for A2DP SRC */
     ESP_A2D_REPORT_SNK_CODEC_CAPS_EVT,         /*!< report currently selected sink codec capabilities, only used for A2DP SRC */
     ESP_A2D_SRC_SET_PREF_MCC_EVT,              /*!< indicate a2dp source set preferred media codec configuration status, only used for A2DP SRC */
     ESP_A2D_REPORT_SNK_ALL_CODEC_CAPS_EVT,     /*!< report all supported sink codec capabilities, only used for A2DP SRC */
@@ -510,18 +510,18 @@ typedef void (* esp_a2d_cb_t)(esp_a2d_cb_event_t event, esp_a2d_cb_param_t *para
 typedef void (* esp_a2d_sink_audio_data_cb_t)(esp_a2d_conn_hdl_t conn_hdl, esp_a2d_audio_buff_t *audio_buf);
 
 /**
- * @brief           Allocate a audio buffer to store and send audio data, can be used in both sink and source.
+ * @brief           Allocate an audio buffer to store and send audio data. It can be used by both sink and source.
  *
  * @param[in]       size: buffer size to allocate
  *
  * @return          allocated audio buffer, if Bluedroid is not enabled, no memory, or size is
- *                  zeros, will return NULL
+ *                  zero, will return NULL
  *
  */
 esp_a2d_audio_buff_t *esp_a2d_audio_buff_alloc(uint16_t size);
 
 /**
- * @brief           Free a audio buffer allocated by esp_a2d_audio_buff_alloc.
+ * @brief           Free an audio buffer allocated by esp_a2d_audio_buff_alloc.
  *
  * @param[in]       audio_buf: audio buffer to free
  *
@@ -562,7 +562,7 @@ esp_err_t esp_a2d_sink_register_audio_data_callback(esp_a2d_sink_audio_data_cb_t
  *
  * @brief           Initialize the bluetooth A2DP sink module. This function should be called
  *                  after esp_bluedroid_enable() completes successfully, and ESP_A2D_PROF_STATE_EVT
- *                  with ESP_A2D_INIT_SUCCESS will reported to the APP layer. Note: A2DP can work independently.
+ *                  with ESP_A2D_INIT_SUCCESS will be reported to the APP layer. Note: A2DP can work independently.
  *                  If you want to use AVRC together, you should initiate AVRC first. This
  *                  function should be called after esp_bluedroid_enable() completes successfully.
  *
@@ -575,7 +575,7 @@ esp_err_t esp_a2d_sink_register_audio_data_callback(esp_a2d_sink_audio_data_cb_t
 esp_err_t esp_a2d_sink_init(void);
 
 /**
- * @brief           Register a a2dp sink Stream Endpoint (SEP) with specific codec capability, shall register
+ * @brief           Register an A2DP sink Stream Endpoint (SEP) with specific codec capability, shall register
  *                  SEP after a2dp sink initializing and before a2dp connection establishing. Register the same
  *                  SEP index repeatedly will overwrite the old one.
  *                  It is necessary to set BT_A2DP_USE_EXTERNAL_CODEC to y.
@@ -604,7 +604,7 @@ esp_err_t esp_a2d_sink_register_stream_endpoint(uint8_t seid, const esp_a2d_mcc_
  *
  * @brief           De-initialize for A2DP sink module. This function
  *                  should be called only after esp_bluedroid_enable() completes successfully,
- *                  and ESP_A2D_PROF_STATE_EVT with ESP_A2D_DEINIT_SUCCESS will reported to APP layer.
+ *                  and ESP_A2D_PROF_STATE_EVT with ESP_A2D_DEINIT_SUCCESS will be reported to the APP layer.
  *
  * @note            If an A2DP connection exists when this function is called, reporting of
  *                  ESP_A2D_CONNECTION_STATE_EVT with ESP_A2D_CONNECTION_STATE_DISCONNECTED is not
@@ -733,9 +733,9 @@ esp_err_t esp_a2d_sink_get_active_device(void);
  * @note            With more than one source connected, this API uses AVRCP Controller
  *                  passthrough commands (Pause on the previously rendered device, Play on an
  *                  idle target) so the phones stop and start their players. Initialize AVRCP
- *                  with esp_avrc_ct_init()  before esp_a2d_sink_init(). If AVRCP is not initialized,
+ *                  with esp_avrc_ct_init() before esp_a2d_sink_init(). If AVRCP is not initialized,
  *                  those commands are silently skipped and only a local A2DP Suspend is sent;
- *                  the previously streaming phone may looks like still playing.
+ *                  the previously streaming phone may look like it is still playing.
  *
  * @return
  *                  - ESP_OK: if the request is sent successfully
@@ -749,13 +749,15 @@ esp_err_t esp_a2d_sink_set_active_device(esp_a2d_conn_hdl_t conn_hdl);
 /**
  *
  * @brief           Media control commands. This API can be used for both A2DP sink and source
- *                  and must be called after esp_a2d_sink_init() and before esp_a2d_sink_deinit().
+ *                  and must be called after esp_a2d_sink_init() or esp_a2d_source_init(), and
+ *                  before the corresponding deinit.
  *
  * @param[in]       ctrl: control commands for A2DP data channel
  *
  * @return
  *                  - ESP_OK: control command is sent to lower layer successfully
  *                  - ESP_ERR_INVALID_STATE: if bluetooth stack is not yet enabled
+ *                  - ESP_ERR_INVALID_ARG: invalid control command
  *                  - ESP_FAIL: others
  *
  * @deprecated      Please use esp_a2d_media_ctrl_by_handle() instead.
@@ -791,17 +793,17 @@ esp_err_t esp_a2d_media_ctrl_by_handle(esp_a2d_conn_hdl_t conn_hdl, esp_a2d_medi
  *
  * @return
  *              - ESP_OK: success
- *              - other: failed
+ *              - ESP_ERR_INVALID_STATE: if bluetooth stack is not yet enabled
+ *              - ESP_ERR_INVALID_ARG: if profile_status is a NULL pointer
  */
 esp_err_t esp_a2d_get_profile_status(esp_a2d_profile_status_t *profile_status);
 
 
 /**
  *
- * @brief           Initialize the bluetooth A2DP source module. A2DP can work independently.
- *                  If you want to use AVRC together, you should initiate AVRC first. This function should be called
+ * @brief           Initialize the bluetooth A2DP source module. This function should be called
  *                  after esp_bluedroid_enable() completes successfully, and ESP_A2D_PROF_STATE_EVT
- *                  with ESP_A2D_INIT_SUCCESS will reported to the APP layer. Note: A2DP can work independently.
+ *                  with ESP_A2D_INIT_SUCCESS will be reported to the APP layer. Note: A2DP can work independently.
  *                  If you want to use AVRC together, you should initiate AVRC first.
  *
  * @return
@@ -830,7 +832,7 @@ esp_err_t esp_a2d_source_init(void);
 esp_err_t esp_a2d_source_set_pref_mcc(esp_a2d_conn_hdl_t conn_hdl, const esp_a2d_mcc_t *pref_mcc);
 
 /**
- * @brief           Register a a2dp source Stream Endpoint (SEP) with specific codec capability, shall register
+ * @brief           Register an A2DP source Stream Endpoint (SEP) with specific codec capability, shall register
  *                  SEP after a2dp source initializing and before a2dp connection establishing. Register the same
  *                  SEP index repeatedly will overwrite the old one.
  *                  It is necessary to set BT_A2DP_USE_EXTERNAL_CODEC to y.
@@ -859,7 +861,7 @@ esp_err_t esp_a2d_source_register_stream_endpoint(uint8_t seid, const esp_a2d_mc
  *
  * @brief           De-initialize for A2DP source module. This function
  *                  should be called only after esp_bluedroid_enable() completes successfully,
- *                  and ESP_A2D_PROF_STATE_EVT with ESP_A2D_DEINIT_SUCCESS will reported to APP layer.
+ *                  and ESP_A2D_PROF_STATE_EVT with ESP_A2D_DEINIT_SUCCESS will be reported to the APP layer.
  *
  * @note            If an A2DP connection exists when this function is called, reporting of
  *                  ESP_A2D_CONNECTION_STATE_EVT with ESP_A2D_CONNECTION_STATE_DISCONNECTED is not
