@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -30,12 +30,15 @@ typedef enum {
 
 /* btc_l2cap_args_t */
 typedef union {
+    /* First member must not be empty due to compiler requirements */
     //BTC_L2CAP_ACT_INIT
     struct l2cap_init_arg {
+        UINT8 reserved;
     } init;
 
     //BTC_L2CAP_ACT_UNINIT
     struct l2cap_uninit_arg {
+        UINT8 reserved;
     } uninit;
 
     //BTC_L2CAP_ACT_START_DISCOVERY

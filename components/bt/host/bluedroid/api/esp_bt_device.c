@@ -22,8 +22,8 @@ esp_err_t esp_bt_dev_register_callback(esp_bt_dev_cb_t callback)
         return ESP_ERR_INVALID_ARG;
     }
 
-    btc_profile_cb_set(BTC_PID_DEV, callback);
-    return ESP_OK;
+    int ret = btc_profile_cb_set(BTC_PID_DEV, callback);
+    return (ret == 0) ? ESP_OK : ESP_FAIL;
 }
 
 const uint8_t *esp_bt_dev_get_address(void)
@@ -37,21 +37,20 @@ const uint8_t *esp_bt_dev_get_address(void)
 #if (ESP_COEX_VSC_INCLUDED == TRUE)
 esp_err_t esp_bt_dev_coex_status_config(esp_bt_dev_coex_type_t type, esp_bt_dev_coex_op_t op, uint8_t status)
 {
+    ESP_BLUEDROID_STATUS_CHECK(ESP_BLUEDROID_STATUS_ENABLED);
+
     btc_msg_t msg = {0};
-    btc_dev_args_t arg;
-
-    if (esp_bluedroid_get_status() != ESP_BLUEDROID_STATUS_ENABLED) {
-        return ESP_ERR_INVALID_STATE;
-    }
-
     msg.sig = BTC_SIG_API_CALL;
     msg.pid = BTC_PID_DEV;
     msg.act = BTC_DEV_ACT_CFG_COEX_STATUS;
+
+    btc_dev_args_t arg = {0};
     arg.cfg_coex_status.type = type;
     arg.cfg_coex_status.op = op;
     arg.cfg_coex_status.status = status;
 
-    return (btc_transfer_context(&msg, &arg, sizeof(btc_dev_args_t), NULL, NULL) == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
+    bt_status_t stat = btc_transfer_context(&msg, &arg, sizeof(btc_dev_args_t), NULL, NULL);
+    return (stat == BT_STATUS_SUCCESS) ? ESP_OK : ESP_FAIL;
 }
 #endif
 
@@ -59,12 +58,14 @@ esp_err_t esp_bt_config_file_path_get(char *file_path)
 {
     ESP_BLUEDROID_STATUS_CHECK(ESP_BLUEDROID_STATUS_ENABLED);
 
-    return btc_config_file_path_get(file_path);
+    int ret = btc_config_file_path_get(file_path);
+    return (ret == 0) ? ESP_OK : ESP_FAIL;
 }
 
 esp_err_t esp_bt_config_file_path_update(const char *file_path)
 {
     ESP_BLUEDROID_STATUS_CHECK(ESP_BLUEDROID_STATUS_UNINITIALIZED);
 
-    return btc_config_file_path_update(file_path);
+    int ret = btc_config_file_path_update(file_path);
+    return (ret == 0) ? ESP_OK : ESP_FAIL;
 }

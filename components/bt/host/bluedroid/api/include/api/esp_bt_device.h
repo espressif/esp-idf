@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -103,6 +103,8 @@ esp_err_t esp_bt_dev_coex_status_config(esp_bt_dev_coex_type_t type, esp_bt_dev_
  *
  * @return
  *                   - ESP_OK: success
+ *                   - ESP_ERR_INVALID_STATE: if bluetooth stack is not yet enabled
+ *                   - ESP_FAIL: others
  *
  */
 esp_err_t esp_bt_config_file_path_get(char *file_path);
@@ -114,7 +116,8 @@ esp_err_t esp_bt_config_file_path_get(char *file_path);
  *
  * @return
  *                   - ESP_OK: success
- *                   - other: failed
+ *                   - ESP_ERR_INVALID_STATE: if bluetooth stack is already initialized
+ *                   - ESP_FAIL: others
  *
  */
 esp_err_t esp_bt_config_file_path_update(const char *file_path);
