@@ -261,6 +261,8 @@ static void btc_a2dp_sink_handle_inc_media(BT_HDR *p_msg)
         return;
     }
 
+    UINT16 conn_hdl = btc_a2d_conn_handle_get();
+
     if (p_msg->layer_specific != a2dp_sink_local_param.media_pkt_seq_num.expected_seq_num) {
         /* Because the sequence number of some devices is not recounted */
         if (!a2dp_sink_local_param.media_pkt_seq_num.seq_num_recount ||
@@ -268,15 +270,20 @@ static void btc_a2dp_sink_handle_inc_media(BT_HDR *p_msg)
             APPL_TRACE_WARNING("Sequence numbers error, recv:0x%x, expect:0x%x, recount:0x%x",
                                 p_msg->layer_specific, a2dp_sink_local_param.media_pkt_seq_num.expected_seq_num,
                                 a2dp_sink_local_param.media_pkt_seq_num.seq_num_recount);
+            /* Only a forward gap counts as loss; a backward jump or repeat does not. */
+            int16_t gap = (int16_t)(p_msg->layer_specific - a2dp_sink_local_param.media_pkt_seq_num.expected_seq_num);
+            if (gap > 0) {
+                btc_a2dp_audio_stats_on_lost(conn_hdl, (uint16_t)gap);
+            }
         }
     }
     a2dp_sink_local_param.media_pkt_seq_num.expected_seq_num  = p_msg->layer_specific + 1;
     a2dp_sink_local_param.media_pkt_seq_num.seq_num_recount = false;
+    btc_a2dp_audio_stats_on_handled(conn_hdl);
 
     APPL_TRACE_DEBUG("Number of sbc frames %d, frame_len %d\n", num_sbc_frames, sbc_frame_len);
 
     memcpy(&timestamp, (UINT8 *)(p_msg + 1), sizeof(UINT32));
-    UINT16 conn_hdl = btc_a2d_conn_handle_get();
     btc_a2d_audio_data_cb_to_app(conn_hdl, (uint8_t *)p_msg, sbc_start_frame, sbc_frame_len, num_sbc_frames, timestamp);
     /* dont free p_msg here */
 }

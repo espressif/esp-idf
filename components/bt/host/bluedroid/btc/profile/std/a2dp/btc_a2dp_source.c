@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -64,6 +64,8 @@ enum {
     BTC_MEDIA_SBC_ENC_UPDATE,
     BTC_MEDIA_FLUSH_AA_TX,
     BTC_MEDIA_AUDIO_FEEDING_INIT,
+    BTC_MEDIA_AUDIO_STATS_RESET,
+    BTC_MEDIA_AUDIO_STATS_STOP,
 };
 
 enum {
@@ -230,6 +232,22 @@ bool btc_a2dp_source_is_task_shutting_down(void)
     return btc_a2dp_source_state == BTC_A2DP_SOURCE_STATE_SHUTTING_DOWN;
 }
 
+static void btc_a2dp_source_handle_audio_stats_reset(void *param)
+{
+    if (param == NULL) {
+        return;
+    }
+    btc_a2dp_audio_stats_reset(*(esp_a2d_conn_hdl_t *)param);
+}
+
+static void btc_a2dp_source_handle_audio_stats_stop(void *param)
+{
+    if (param == NULL) {
+        return;
+    }
+    btc_a2dp_audio_stats_stop(*(esp_a2d_conn_hdl_t *)param);
+}
+
 static bool btc_a2dp_source_ctrl(uint32_t sig, void *param)
 {
     switch (sig) {
@@ -257,6 +275,12 @@ static bool btc_a2dp_source_ctrl(uint32_t sig, void *param)
     case BTC_MEDIA_FLUSH_AA_TX:
         btc_a2dp_source_aa_tx_flush();
         break;
+    case BTC_MEDIA_AUDIO_STATS_RESET:
+        btc_a2dp_source_handle_audio_stats_reset(param);
+        break;
+    case BTC_MEDIA_AUDIO_STATS_STOP:
+        btc_a2dp_source_handle_audio_stats_stop(param);
+        break;
     default:
         APPL_TRACE_WARNING("media task unhandled evt: 0x%x\n", sig);
     }
@@ -266,6 +290,26 @@ static bool btc_a2dp_source_ctrl(uint32_t sig, void *param)
     }
 
     return true;
+}
+
+static void btc_a2dp_source_audio_stats_post(uint32_t sig, esp_a2d_conn_hdl_t conn_hdl)
+{
+    esp_a2d_conn_hdl_t *conn = (esp_a2d_conn_hdl_t *)osi_malloc(sizeof(esp_a2d_conn_hdl_t));
+    if (conn == NULL) {
+        return;
+    }
+    *conn = conn_hdl;
+    btc_a2dp_source_ctrl(sig, conn);
+}
+
+void btc_a2dp_source_audio_stats_reset(esp_a2d_conn_hdl_t conn_hdl)
+{
+    btc_a2dp_source_audio_stats_post(BTC_MEDIA_AUDIO_STATS_RESET, conn_hdl);
+}
+
+void btc_a2dp_source_audio_stats_stop(esp_a2d_conn_hdl_t conn_hdl)
+{
+    btc_a2dp_source_audio_stats_post(BTC_MEDIA_AUDIO_STATS_STOP, conn_hdl);
 }
 
 bool btc_a2dp_source_startup(void)
@@ -1409,7 +1453,9 @@ static void btc_media_aa_prep_sbc_2_send(UINT8 nb_frame)
             }
 
             /* Enqueue the encoded SBC frame in AA Tx Queue */
-            fixed_queue_enqueue(a2dp_source_local_param.btc_aa_src_cb.TxAaQ, p_buf, FIXED_QUEUE_MAX_TIMEOUT);
+            if (fixed_queue_enqueue(a2dp_source_local_param.btc_aa_src_cb.TxAaQ, p_buf, FIXED_QUEUE_MAX_TIMEOUT)) {
+                btc_a2dp_audio_stats_on_handled(btc_a2d_conn_handle_get());
+            }
         } else {
             osi_free(p_buf);
         }
@@ -1437,11 +1483,18 @@ static void btc_a2dp_source_prep_2_send(UINT8 nb_frame)
                            fixed_queue_length(a2dp_source_local_param.btc_aa_src_cb.TxAaQ), MAX_OUTPUT_A2DP_SRC_FRAME_QUEUE_SZ - nb_frame);
     }
 
+    uint32_t dropped = 0;
     while (fixed_queue_length(a2dp_source_local_param.btc_aa_src_cb.TxAaQ) > (MAX_OUTPUT_A2DP_SRC_FRAME_QUEUE_SZ - nb_frame)) {
         void *p_drop = fixed_queue_dequeue(a2dp_source_local_param.btc_aa_src_cb.TxAaQ, 0);
         if (p_drop != NULL) {
+            dropped++;
             osi_free(p_drop);
+        } else {
+            break;
         }
+    }
+    if (dropped > 0) {
+        btc_a2dp_audio_stats_on_lost(btc_a2d_conn_handle_get(), dropped);
     }
 
     // Transcode frame
