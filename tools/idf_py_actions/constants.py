@@ -49,5 +49,6 @@ SUPPORTED_TARGETS = [
     'esp32p4',
     'esp32c5',
     'esp32c61',
+    'esp32s31',
 ]
-PREVIEW_TARGETS = ['linux', 'esp32h21', 'esp32h4', 'esp32s31']
+PREVIEW_TARGETS = ['linux', 'esp32h21', 'esp32h4']
