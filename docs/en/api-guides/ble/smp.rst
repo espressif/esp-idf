@@ -161,3 +161,20 @@ Implementation of SMP
 ----------------------------
 
 The Bluetooth LE SMP calls encryption APIs in Bluetooth LE GAP, registers the Bluetooth LE GAP callbacks, and obtains the current encryption status through the return values of events.
+
+
+Privacy Mode
+-----------------
+
+Bluetooth LE defines two privacy modes:
+
+- **Network Privacy Mode:** The local device accepts only a resolvable private address (RPA) generated with the peer's distributed Identity Resolving Key (IRK). If the peer has distributed an IRK, advertising packets, scan requests, and connection requests that use the peer's identity address are rejected.
+- **Device Privacy Mode:** The local device is concerned only with its own privacy. Both the peer's identity address and an RPA generated with the peer's IRK are accepted.
+
+.. note::
+
+   The Bluetooth Core Specification requires **Network Privacy Mode** as the default. For better compatibility, the Espressif controller sets paired devices to **Device Privacy Mode** by default. To increase the privacy level, call one of the following APIs to configure the peer as **Network Privacy Mode**:
+
+   - :cpp:func:`ble_gap_set_priv_mode` for the NimBLE host
+   - :cpp:func:`esp_ble_gap_set_privacy_mode` for the Bluedroid host
+
