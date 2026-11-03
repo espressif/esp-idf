@@ -6,6 +6,7 @@ idf_build_get_property(idf_ver_def IDF_VER)
 if(${target} STREQUAL "linux")
     set(linux_srcs "esp_system.c"
                    "esp_err.c"
+                   "esp_check.c"
                    "esp_sys_event.c"
                    "port/soc/linux/reset_reason.c"
                    "port/soc/linux/system_internal.c"
@@ -51,7 +52,7 @@ if(${target} STREQUAL "linux")
     return()
 endif()
 
-set(srcs "esp_err.c")
+set(srcs "esp_err.c" "esp_check.c")
 
 if(CONFIG_IDF_ENV_FPGA OR CONFIG_ESP_BRINGUP_BYPASS_CPU_CLK_SETTING)
     list(APPEND srcs "fpga_overrides_clk.c")

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -12,14 +12,36 @@
 extern "C" {
 #endif
 
+/** @cond */
+#if CONFIG_COMPILER_OPTIMIZATION_CHECKS_ADDRESS_ONLY
+// Report a failed silent check by its address, which addr2line resolves to the check's file and line.
+// `rc` is the error that failed the check, or ESP_OK when a condition was false.
+void _esp_check_failed(const char *tag, esp_err_t rc);
+// A version of _esp_check_failed() that can be called from an ISR or while the cache is disabled
+void _esp_check_failed_isr(esp_err_t rc);
+// A failed check is identified by the return address of its call to the reporter, so each check
+// needs a call of its own. Two optimisations would take that away: the call becoming a tail call,
+// which reports the caller instead, and the failure paths of checks that return the same error
+// being merged into one shared call, which reports one of those checks for all of them. The empty
+// asm after the call prevents both: code following the call keeps it out of tail position, and an
+// operand unique to each check makes every failure path different, so none can be merged.
+#define _ESP_CHECK_FAILED(log_tag, rc) do { _esp_check_failed(log_tag, rc); __asm__ __volatile__("" :: "i"(__COUNTER__)); } while (0)
+#define _ESP_CHECK_FAILED_ISR(rc) do { _esp_check_failed_isr(rc); __asm__ __volatile__("" :: "i"(__COUNTER__)); } while (0)
+#else
+#define _ESP_CHECK_FAILED(log_tag, rc) do { } while (0)
+#define _ESP_CHECK_FAILED_ISR(rc) do { } while (0)
+#endif
+/** @endcond */
+
 /**
  * Macro which can be used to check the error code. If the code is not ESP_OK, it prints the message and returns.
  */
-#if defined(CONFIG_COMPILER_OPTIMIZATION_CHECKS_SILENT)
+#if defined(CONFIG_COMPILER_OPTIMIZATION_CHECKS_SILENT) || defined(CONFIG_COMPILER_OPTIMIZATION_CHECKS_ADDRESS_ONLY)
 #define ESP_RETURN_ON_ERROR(x, log_tag, format, ...) do {                                       \
         (void)log_tag;                                                                          \
         esp_err_t err_rc_ = (x);                                                                \
         if (unlikely(err_rc_ != ESP_OK)) {                                                      \
+            _ESP_CHECK_FAILED(log_tag, err_rc_);                                                \
             return err_rc_;                                                                     \
         }                                                                                       \
     } while(0)
@@ -31,6 +53,7 @@ extern "C" {
         (void)log_tag;                                                                          \
         esp_err_t err_rc_ = (x);                                                                \
         if (unlikely(err_rc_ != ESP_OK)) {                                                      \
+            _ESP_CHECK_FAILED_ISR(err_rc_);                                                     \
             return err_rc_;                                                                     \
         }                                                                                       \
     } while(0)
@@ -43,6 +66,7 @@ extern "C" {
         (void)log_tag;                                                                          \
         esp_err_t err_rc_ = (x);                                                                \
         if (unlikely(err_rc_ != ESP_OK)) {                                                      \
+            _ESP_CHECK_FAILED(log_tag, err_rc_);                                                \
             return;                                                                             \
         }                                                                                       \
     } while(0)
@@ -54,6 +78,7 @@ extern "C" {
         (void)log_tag;                                                                          \
         esp_err_t err_rc_ = (x);                                                                \
         if (unlikely(err_rc_ != ESP_OK)) {                                                      \
+            _ESP_CHECK_FAILED_ISR(err_rc_);                                                     \
             return;                                                                             \
         }                                                                                       \
     } while(0)
@@ -66,6 +91,7 @@ extern "C" {
         (void)log_tag;                                                                          \
         esp_err_t err_rc_ = (x);                                                                \
         if (unlikely(err_rc_ != ESP_OK)) {                                                      \
+            _ESP_CHECK_FAILED(log_tag, err_rc_);                                                \
             ret = err_rc_;                                                                      \
             goto goto_tag;                                                                      \
         }                                                                                       \
@@ -78,6 +104,7 @@ extern "C" {
         (void)log_tag;                                                                          \
         esp_err_t err_rc_ = (x);                                                                \
         if (unlikely(err_rc_ != ESP_OK)) {                                                      \
+            _ESP_CHECK_FAILED_ISR(err_rc_);                                                     \
             ret = err_rc_;                                                                      \
             goto goto_tag;                                                                      \
         }                                                                                       \
@@ -90,6 +117,7 @@ extern "C" {
 #define ESP_RETURN_ON_FALSE(a, err_code, log_tag, format, ...) do {                             \
         (void)log_tag;                                                                          \
         if (unlikely(!(a))) {                                                                   \
+            _ESP_CHECK_FAILED(log_tag, ESP_OK);                                                 \
             return err_code;                                                                    \
         }                                                                                       \
     } while(0)
@@ -101,6 +129,7 @@ extern "C" {
 #define ESP_RETURN_VOID_ON_FALSE(a, log_tag, format, ...) do {                                  \
         (void)log_tag;                                                                          \
         if (unlikely(!(a))) {                                                                   \
+            _ESP_CHECK_FAILED(log_tag, ESP_OK);                                                 \
             return;                                                                             \
         }                                                                                       \
     } while(0)
@@ -111,6 +140,7 @@ extern "C" {
 #define ESP_RETURN_VOID_ON_FALSE_ISR(a, log_tag, format, ...) do {                                  \
         (void)log_tag;                                                                          \
         if (unlikely(!(a))) {                                                                   \
+            _ESP_CHECK_FAILED_ISR(ESP_OK);                                                      \
             return;                                                                             \
         }                                                                                       \
     } while(0)
@@ -121,6 +151,7 @@ extern "C" {
 #define ESP_RETURN_ON_FALSE_ISR(a, err_code, log_tag, format, ...) do {                         \
         (void)log_tag;                                                                          \
         if (unlikely(!(a))) {                                                                   \
+            _ESP_CHECK_FAILED_ISR(ESP_OK);                                                      \
             return err_code;                                                                    \
         }                                                                                       \
     } while(0)
@@ -132,6 +163,7 @@ extern "C" {
 #define ESP_GOTO_ON_FALSE(a, err_code, goto_tag, log_tag, format, ...) do {                     \
         (void)log_tag;                                                                          \
         if (unlikely(!(a))) {                                                                   \
+            _ESP_CHECK_FAILED(log_tag, ESP_OK);                                                 \
             ret = err_code;                                                                     \
             goto goto_tag;                                                                      \
         }                                                                                       \
@@ -143,12 +175,13 @@ extern "C" {
 #define ESP_GOTO_ON_FALSE_ISR(a, err_code, goto_tag, log_tag, format, ...) do {                 \
         (void)log_tag;                                                                          \
         if (unlikely(!(a))) {                                                                   \
+            _ESP_CHECK_FAILED_ISR(ESP_OK);                                                      \
             ret = err_code;                                                                     \
             goto goto_tag;                                                                      \
         }                                                                                       \
     } while (0)
 
-#else // !CONFIG_COMPILER_OPTIMIZATION_CHECKS_SILENT
+#else // CONFIG_COMPILER_OPTIMIZATION_CHECKS_ENABLE
 
 /**
  * In the future, we want to switch to C++20. We also want to become compatible with clang.
@@ -433,7 +466,7 @@ extern "C" {
 
 #endif // !(defined(__cplusplus) && (__cplusplus >  201703L))
 
-#endif // !CONFIG_COMPILER_OPTIMIZATION_CHECKS_SILENT
+#endif // CONFIG_COMPILER_OPTIMIZATION_CHECKS_ENABLE
 
 /**
  * @brief Evaluate an esp_err_t expression, run cleanup on error, and return.
