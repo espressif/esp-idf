@@ -9,7 +9,7 @@ This directory contains 2 example ESP-IDF projects that demonstrate the Wi-Fi Ro
 
 * `roaming_11kvr` demonstrates the use of API's that implement IEEE 802.11kvr mechanisms.
 * `roaming_app` implements Espressif's roaming app that optimally combines legacy roaming and 802.11kv based
-   roaming for effective roaming.
+   roaming for effective roaming, and shows its fast connect.
 
 # More
 

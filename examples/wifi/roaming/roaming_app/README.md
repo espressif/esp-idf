@@ -19,9 +19,19 @@ In the `Example Configuration` menu:
     * Set `WiFi SSID`.
     * Set `WiFi Password`.
 
+* Optional: `Restart this long after each boot's IP address (s)` restarts the board again and again, so the time from boot to IP address can be measured with fast connect's remembered AP.
+
 * To better understand how to configure the app in Components  --> Wi-Fi --> Roaming App settings,
   please go read the README at components/esp_wifi/wifi_apps/roaming_app/src.
 Optional: If you need, change the other options according to your requirements.
+
+### Fast connect
+
+`sdkconfig.defaults` turns on the roaming app's fast connect (`CONFIG_ESP_WIFI_ROAMING_FAST_CONNECT`). Fast connect remembers the AP each connection ends on, and the next connection, after a reboot or a lost link, tries that AP alone instead of scanning every channel first. If that connection fails, the next attempt scans every channel and connects to the strongest AP, which is then remembered. The low RSSI and periodic scan triggers still move the station off a remembered AP that has grown weak.
+
+Fast connect's record lives in the saved station configuration, so with fast connect the example sets the station configuration only when the SSID or password changes. An application that sets it at every boot replaces the record, and scans every channel at every boot. Without fast connect, the example sets the station configuration at every boot, as before, which also replaces a record left by an earlier firmware that had fast connect on.
+
+The example logs the time from boot to the first IP address, which is what fast connect shortens. Compare it with and without a remembered AP: the saving depends on the network and on how many channels a scan covers.
 
 ### Build and Flash
 
@@ -77,6 +87,32 @@ I (65007) wifi:connected with roaming_setup, aid = 1, channel 9, BW20, bssid = 7
 I (65007) wifi:security: WPA2-PSK, phy: bgn, rssi: -32
 I (65027) wifi:pm start, type: 1
 ```
+
+With fast connect, the first boot on a new network scans every channel, connects to the strongest AP and remembers it:
+
+```
+I (xxx) wifi roaming app: saving a new network
+I (xxx) wifi roaming app: connected on channel 11, <ms> ms after boot
+I (xxx) ROAM: fast connect: remembered xx:xx:xx:xx:xx:xx on channel 11
+I (xxx) wifi roaming app: boot to IP: <ms> ms
+```
+
+Every boot after it connects to the remembered AP directly:
+
+```
+I (xxx) wifi roaming app: keeping the saved station configuration (AP remembered: yes)
+I (xxx) wifi roaming app: connected on channel 11, <ms> ms after boot
+I (xxx) ROAM: fast connect: connected to the remembered AP xx:xx:xx:xx:xx:xx on channel 11
+I (xxx) wifi roaming app: boot to IP: <ms> ms
+```
+
+If the remembered AP does not take the connection, the next attempt scans every channel:
+
+```
+W (xxx) ROAM: fast connect: the remembered AP xx:xx:xx:xx:xx:xx on channel 6 failed the connection (reason 201): every channel, strongest first, from the next attempt
+```
+
+`<ms>` stands for what your board logs.
 
 ## Troubleshooting
 

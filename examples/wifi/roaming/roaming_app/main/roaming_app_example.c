@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -19,6 +19,7 @@
 #include "esp_wifi.h"
 #include "esp_event.h"
 #include "esp_log.h"
+#include "esp_timer.h"
 #include "nvs_flash.h"
 
 #include "lwip/err.h"
@@ -42,12 +43,24 @@ static EventGroupHandle_t s_wifi_event_group;
 #define WIFI_FAIL_BIT      BIT1
 #define MAXIMUM_RETRY 5
 const char *TAG = "wifi roaming app";
+static bool s_first_ip_seen;
+
+#if CONFIG_ESP_EXAMPLE_RESTART_INTERVAL > 0
+static void example_restart(void *arg)
+{
+    ESP_LOGI(TAG, "restarting to measure boot to IP again");
+    esp_restart();
+}
+#endif
 
 static void event_handler(void* arg, esp_event_base_t event_base,
                           int32_t event_id, void* event_data)
 {
     if (event_base == WIFI_EVENT && event_id == WIFI_EVENT_STA_START) {
         esp_wifi_connect();
+    } else if (event_base == WIFI_EVENT && event_id == WIFI_EVENT_STA_CONNECTED) {
+        wifi_event_sta_connected_t *conn = event_data;
+        ESP_LOGI(TAG, "connected on channel %d, %lld ms after boot", conn->channel, esp_timer_get_time() / 1000);
     } else if (event_base == WIFI_EVENT && event_id == WIFI_EVENT_STA_DISCONNECTED) {
         wifi_event_sta_disconnected_t *disconn = event_data;
         if (disconn->reason == WIFI_REASON_ROAMING) {
@@ -59,8 +72,58 @@ static void event_handler(void* arg, esp_event_base_t event_base,
     } else if (event_base == IP_EVENT && event_id == IP_EVENT_STA_GOT_IP) {
         ip_event_got_ip_t* event = (ip_event_got_ip_t*) event_data;
         ESP_LOGI(TAG, "got ip:" IPSTR, IP2STR(&event->ip_info.ip));
+        if (!s_first_ip_seen) {
+            s_first_ip_seen = true;
+            /* What fast connect shortens: compare this line with and without a remembered AP. */
+            ESP_LOGI(TAG, "boot to IP: %lld ms", esp_timer_get_time() / 1000);
+#if CONFIG_ESP_EXAMPLE_RESTART_INTERVAL > 0
+            static esp_timer_handle_t s_restart_timer;
+            const esp_timer_create_args_t restart_args = {
+                .callback = example_restart,
+                .name = "example_restart",
+            };
+            ESP_ERROR_CHECK(esp_timer_create(&restart_args, &s_restart_timer));
+            ESP_ERROR_CHECK(esp_timer_start_once(s_restart_timer, CONFIG_ESP_EXAMPLE_RESTART_INTERVAL * 1000000LL));
+#endif
+        }
         xEventGroupSetBits(s_wifi_event_group, WIFI_CONNECTED_BIT);
     }
+}
+
+/* With fast connect (CONFIG_ESP_WIFI_ROAMING_FAST_CONNECT), set the station configuration only when the SSID or
+ * password changes: the roaming app keeps its record of the AP in the saved station configuration, so setting the
+ * configuration at every boot would replace the record, and every boot would scan every channel again.
+ * Without fast connect, set it at every boot, as before. That also replaces a record left in the saved
+ * configuration by an earlier firmware with fast connect, which nothing would clear after a failed connection. */
+static void example_set_station_config(void)
+{
+    wifi_config_t wifi_config = {
+        .sta = {
+            .ssid = EXAMPLE_ESP_WIFI_SSID,
+            .password = EXAMPLE_ESP_WIFI_PASS,
+            .btm_enabled = 1,
+            .rm_enabled = 1,
+            .mbo_enabled = 1,
+            .ft_enabled = 1,
+#if CONFIG_ESP_WIFI_ROAMING_FAST_CONNECT
+            /* A new network starts with every channel, strongest AP first. */
+            .scan_method = WIFI_ALL_CHANNEL_SCAN,
+            .sort_method = WIFI_CONNECT_AP_BY_SIGNAL,
+#endif
+        }
+    };
+
+#if CONFIG_ESP_WIFI_ROAMING_FAST_CONNECT
+    wifi_config_t saved = {0};
+    ESP_ERROR_CHECK(esp_wifi_get_config(WIFI_IF_STA, &saved));
+    if (strncmp((const char *) saved.sta.ssid, EXAMPLE_ESP_WIFI_SSID, sizeof(saved.sta.ssid)) == 0 &&
+            strncmp((const char *) saved.sta.password, EXAMPLE_ESP_WIFI_PASS, sizeof(saved.sta.password)) == 0) {
+        ESP_LOGI(TAG, "keeping the saved station configuration (AP remembered: %s)", saved.sta.bssid_set ? "yes" : "no");
+        return;
+    }
+    ESP_LOGI(TAG, "saving a new network");
+#endif
+    ESP_ERROR_CHECK(esp_wifi_set_config(WIFI_IF_STA, &wifi_config));
 }
 
 void wifi_init_sta(void)
@@ -88,18 +151,8 @@ void wifi_init_sta(void)
                                                         NULL,
                                                         &instance_got_ip));
 
-    wifi_config_t wifi_config = {
-        .sta = {
-            .ssid = EXAMPLE_ESP_WIFI_SSID,
-            .password = EXAMPLE_ESP_WIFI_PASS,
-            .btm_enabled = 1,
-            .rm_enabled = 1,
-            .mbo_enabled = 1,
-            .ft_enabled = 1,
-        }
-    };
     ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_STA));
-    ESP_ERROR_CHECK(esp_wifi_set_config(WIFI_IF_STA, &wifi_config));
+    example_set_station_config();
     ESP_ERROR_CHECK(esp_wifi_start());
 
     ESP_LOGI(TAG, "wifi_init_sta finished.");

@@ -6,3 +6,5 @@ CONFIG_ESP_WIFI_ENABLE_ROAMING_APP=y
 CONFIG_ESP_WIFI_11R_SUPPORT=y
 CONFIG_ESP_WIFI_WNM_SUPPORT=y
 CONFIG_ESP_WIFI_RRM_SUPPORT=y
+# Remember the AP and connect to it directly at the next boot (the roaming app's README, "Fast connect")
+CONFIG_ESP_WIFI_ROAMING_FAST_CONNECT=y
