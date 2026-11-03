@@ -232,6 +232,11 @@ static esp_err_t wifi_deinit_internal(void)
 #endif
 
     err = esp_wifi_deinit_internal();
+    // Native init can fail after registering the outer power/sleep resources
+    // and already release the driver. Finish the outer rollback in that case.
+    if (err == ESP_ERR_WIFI_NOT_INIT && !s_wifi_inited) {
+        err = ESP_OK;
+    }
     if (err != ESP_OK) {
         ESP_LOGE(TAG, "Failed to deinit Wi-Fi driver (0x%x)", err);
         return err;
