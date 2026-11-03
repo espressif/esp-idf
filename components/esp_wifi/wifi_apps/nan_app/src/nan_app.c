@@ -1453,16 +1453,22 @@ static void nan_app_ndp_confirm_cb(uint8_t status, struct ndp_cb_peer_info *peer
     if (ndl->security_ctx.type == WIFI_NAN_SECURITY_ENCRYPTED) {
         uint8_t key_rsc[8] = {0};
         uint8_t csid = nan_sec_pairwise_csid_from_bitmap(ndl->security_ctx.csid_bitmap);
-        int pairing_akmp = 0;
+        /* Rank the SA by the AKMP that actually sourced this NDP's ND-PMK,
+         * recorded where the PMK was chosen (populate_initiator_ndl /
+         * apply_pending / fill_from_paired_cache). Avoids re-looking up the
+         * paired-peer cache here, which may have expired on one side while
+         * still valid on the other — that mismatch would rank a passphrase
+         * SA as PASN-paired and let it overwrite a real PASN SA. */
+        int pairing_akmp = ndl->key_source_akmp;
         bool install_keys = false;
 
 #if CONFIG_ESP_WIFI_NAN_PAIRING
-        /* When ND-PMK came from PASN pairing, rank the SA with that AKMP
-         * (ESP maps PASN→SK for NDP M1-M4; strength helper maps back). */
-        const struct nan_paired_peer *paired = nan_app_find_paired_peer(peer_nmi);
-        if (paired && paired->valid) {
-            pairing_akmp = paired->pairing_akmp;
-            if (!csid) {
+        /* CSID fallback only: if the security_ctx bitmap lacked a pairwise
+         * CSID (atypical), recover it from a still-valid paired entry. The
+         * AKMP above is NOT taken from here. */
+        if (!csid) {
+            const struct nan_paired_peer *paired = nan_app_find_paired_peer(peer_nmi);
+            if (paired && paired->valid) {
                 csid = paired->ndp_csid;
             }
         }
@@ -1493,33 +1499,41 @@ static void nan_app_ndp_confirm_cb(uint8_t status, struct ndp_cb_peer_info *peer
                 nan_ndp_confirm_teardown(peer_nmi, ndp_id);
                 goto done;
             }
-            /* When NMI==NDI, also bind the pairwise key as NM-TK for unicast
-             * NAN management frames (Wi-Fi Aware v4.0 §7.1.3). */
-            if (MACADDR_EQUAL(peer_nmi, peer_ndi)) {
-                ret = esp_wifi_set_nan_key_internal(NAN_WIFI_WPA_ALG_CCMP,
-                                                    peer_nmi,
-                                                    0,
-                                                    1,
-                                                    key_rsc,
-                                                    sizeof(key_rsc),
-                                                    ndl->nd_tk,
-                                                    NAN_NCS_SK_128_TK_LEN,
-                                                    NAN_KEY_NM_TK);
-                if (ret != 0) {
-                    ESP_LOGE(TAG, "NDP confirm: failed to install NM-TK (ndp_id=%d, ret=%d)", ndp_id, ret);
-                    os_free(evt);
-                    nan_ndp_confirm_teardown(peer_nmi, ndp_id);
-                    goto done;
-                }
+            /* Bind the pairwise key as NM-TK for unicast NAN management frames
+             * (Wi-Fi Aware v4.0 §7.1.3). Install unconditionally against
+             * peer_nmi: the tree allows peer_ndi to be unassigned (falls back
+             * to peer NMI in nan_ndp_ptk_addrs), and nan_app_clear_one_peer_tks
+             * deletes NM-TK by peer_nmi, so a conditional install would leave
+             * secured unicast NAN mgmt frames to a no-NDPE peer unkeyed. */
+            ret = esp_wifi_set_nan_key_internal(NAN_WIFI_WPA_ALG_CCMP,
+                                                peer_nmi,
+                                                0,
+                                                1,
+                                                key_rsc,
+                                                sizeof(key_rsc),
+                                                ndl->nd_tk,
+                                                NAN_NCS_SK_128_TK_LEN,
+                                                NAN_KEY_NM_TK);
+            if (ret != 0) {
+                ESP_LOGE(TAG, "NDP confirm: failed to install NM-TK (ndp_id=%d, ret=%d)", ndp_id, ret);
+                os_free(evt);
+                nan_ndp_confirm_teardown(peer_nmi, ndp_id);
+                goto done;
             }
             /* Commit SA only after firmware install succeeds so a failed
              * set_key cannot leave the §7.4 cache ahead of the driver. */
-            nan_sec_ndp_commit_keys(peer_ndi, own_ndi, csid, pairing_akmp,
-                                    ndl->nd_tk, ndl->tk_len);
+            nan_sec_ndp_commit_keys(peer_ndi, csid, pairing_akmp);
         } else {
-            ESP_LOGI(TAG, "NDP confirm: keeping existing stronger pairwise SA for "
-                     MACSTR " (ndp_id=%d csid=%u); skipping ND-TK/NM-TK install",
-                     MAC2STR(peer_ndi), ndp_id, csid);
+            /* A weaker/equal second secured NDP cannot share the single SA
+             * cache entry without corrupting the live secured datapath
+             * (overwriting its SA or coming up with no pairwise key). Tear it
+             * down instead of confirming a dead datapath. */
+            ESP_LOGE(TAG, "NDP confirm: rejecting weaker/duplicate secured NDP for "
+                     MACSTR " (ndp_id=%d csid=%u); a stronger secured SA is active",
+                     MAC2STR(peer_nmi), ndp_id, csid);
+            os_free(evt);
+            nan_ndp_confirm_teardown(peer_nmi, ndp_id);
+            goto done;
         }
 
         /* Group keys (ND-GTK) exchanged during NDP setup (§7.1.3.2): our GTK
