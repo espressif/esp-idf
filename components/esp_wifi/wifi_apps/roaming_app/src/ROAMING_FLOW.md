@@ -18,7 +18,7 @@ This document describes the runtime control flow of the advanced Wi-Fi roaming a
 
 The roaming app starts only if both of the following are true:
 
-- At least one roaming trigger is enabled.
+- At least one roaming trigger is enabled: low RSSI, periodic scan or fast connect.
 - At least one roaming method is enabled.
 
 If either condition is not satisfied, `roam_init_app()` returns without starting roaming support.
@@ -214,11 +214,36 @@ flowchart TD
 | Legacy path | `ESP_WIFI_ROAMING_LEGACY_ROAMING` |
 | Post-roam IP behavior | `ESP_WIFI_ROAMING_IP_RENEW_SKIP` |
 
-## 5. Configuration Summary by Functional Area
+## 5. Fast Connect
+
+Fast connect keeps a record of the AP each connection ends on as the station configuration's connect hint, so the next connection tries that AP alone, and falls back to every channel when a connection through it fails.
+
+```mermaid
+flowchart TD
+    A["Connection attempt"] --> B{"Hint is fast connect's record?"}
+    B -- "Yes" --> C["Driver tries the remembered AP alone"]
+    B -- "No" --> D["Driver scans every channel, strongest first"]
+    C --> E{"Connected?"}
+    D --> E
+    E -- "No, record in use<br/>(not own leave, not roam)" --> F["Clear the record on the Wi-Fi task,<br/>before the disconnection event is posted"]
+    F --> A
+    E -- "Yes" --> G["Remember this AP as the record<br/>(no write if it is the one remembered)"]
+    G --> H["Low RSSI and periodic scan triggers<br/>run as for any connection"]
+```
+
+### Configuration used in this stage
+
+| Area | Configuration |
+| --- | --- |
+| The record | `ESP_WIFI_ROAMING_FAST_CONNECT`, `roam_config.fast_connect`; owns `wifi_config_t.sta.scan_method`, `sort_method`, `bssid_set`, `bssid`, `channel` |
+| Moving off a weak remembered AP | the low RSSI and periodic scan triggers (Section 2) |
+
+## 6. Configuration Summary by Functional Area
 
 | Functional area | Configuration |
 | --- | --- |
 | Low RSSI roaming | `ESP_WIFI_ROAMING_LOW_RSSI_ROAMING`, `ESP_WIFI_ROAMING_LOW_RSSI_THRESHOLD`, `ESP_WIFI_ROAMING_LOW_RSSI_OFFSET` |
+| Fast connect | `ESP_WIFI_ROAMING_FAST_CONNECT`, `roam_config.fast_connect` |
 | Periodic monitor roaming | `ESP_WIFI_ROAMING_PERIODIC_SCAN_MONITOR`, `ESP_WIFI_ROAMING_PERIODIC_SCAN_THRESHOLD`, `ESP_WIFI_ROAMING_SCAN_MONITOR_INTERVAL`, `ESP_WIFI_ROAMING_SCAN_ROAM_RSSI_DIFF` |
 | Network-assisted roaming | `ESP_WIFI_ROAMING_NETWORK_ASSISTED_ROAM`, `ESP_WIFI_NETWORK_ASSISTED_ROAMING_RETRY_COUNT` |
 | 802.11k assisted roaming | `ESP_WIFI_ROAMING_11K_ASSISTED_ROAM`, `ESP_WIFI_ROAMING_11K_RETRY_COUNT`, `ESP_WIFI_ROAMING_RRM_CHANNEL_CACHE_EXPIRY_WINDOW` |
@@ -230,7 +255,7 @@ flowchart TD
 | Runtime scan filters | `roam_set_config_params()`, `scan_filter_ssid`, `scan_filter_bssid` |
 | Candidate security policy | `wifi_config_t.sta.threshold.authmode`, `wifi_config_t.sta.owe_enabled`, `wifi_config_t.sta.pmf_cfg.required`, `wifi_config_t.sta.sae_pwe_h2e`, `wifi_config_t.sta.sae_pk_mode` |
 
-## 6. Behavioral Notes
+## 7. Behavioral Notes
 
 - `decide_and_roam()` is shared by low-RSSI and periodic (after discovery finds a better AP). Method priority is 11v → 11k → legacy.
 - Low RSSI calls `decide_and_roam` directly (no upfront discovery). Periodic always runs discovery first and only calls `decide_and_roam` when a better AP is found.
@@ -247,3 +272,5 @@ flowchart TD
 - A BTM query is asynchronous. After the query is sent, the app waits for AP or network action. It does not immediately force legacy roaming in the same step.
 - The reconnect paths start a connection attempt. Final success or failure is reported later through the normal Wi-Fi connection and disconnection events.
 - If the station is already disconnected, the app can still reconnect to a selected AP even when legacy roaming is disabled.
+- Fast connect clears its record in the supplicant's disconnection callback, on the Wi-Fi task, before the driver posts `WIFI_EVENT_STA_DISCONNECTED`. So the next attempt scans every channel whoever starts it: the app's own reconnect, or an application's handler for that event, `ESP_EVENT_ANY_ID` included. Turning `roam_config.fast_connect` off at run time clears the record too.
+- Fast connect never scans while connected. Moving off a remembered AP that has grown weak is left to the low RSSI and periodic scan triggers.
