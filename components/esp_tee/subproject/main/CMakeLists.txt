@@ -14,6 +14,10 @@ set(srcs "core/esp_tee_init.c"
          "core/esp_secure_dispatcher.c"
          "core/esp_secure_service_table.c")
 
+if(CONFIG_SECURE_TEE_EXT_FLASH_MEMPROT_SPI1)
+    list(APPEND srcs "core/esp_secure_services_spi1.c")
+endif()
+
 # Arch specific implementation for TEE
 if(CONFIG_SOC_INT_PLIC_SUPPORTED)
     list(APPEND srcs "arch/${arch}/esp_tee_vectors_plic.S"

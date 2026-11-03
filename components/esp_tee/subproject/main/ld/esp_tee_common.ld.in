@@ -106,6 +106,7 @@ SECTIONS
 #endif
     *libmain.a:esp_secure_dispatcher.c*(.literal .text .literal.* .text.*)
     *libmain.a:esp_secure_services_iram.c*(.literal .text .literal.* .text.*)
+    *libmain.a:esp_secure_services_spi1.c*(.literal .text .literal.* .text.*)
     /* Interrupt configuration */
     *libmain.a:esp_tee_intr.c*(.literal .text .literal.* .text.*)
 #if CONFIG_SOC_APM_CTRL_FILTER_SUPPORTED
@@ -183,6 +184,7 @@ SECTIONS
     *libbootloader_support.a:bootloader_flash.*(.rodata .srodata .rodata.* .srodata.*)
     /* Secure services */
     *libmain.a:esp_secure_services_iram.c.*(.rodata .srodata .rodata.* .srodata.*)
+    *libmain.a:esp_secure_services_spi1.c.*(.rodata .srodata .rodata.* .srodata.*)
     *libmain.a:esp_secure_dispatcher.c.*(.rodata .srodata .rodata.* .srodata.*)
     /* Panic handler */
     *libmain.a:panic_helper_riscv.*(.rodata .srodata .rodata.* .srodata.*)
