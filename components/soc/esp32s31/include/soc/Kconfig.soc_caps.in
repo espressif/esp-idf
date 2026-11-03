@@ -387,6 +387,14 @@ config SOC_EMAC_DEDICATED_GPIO_CTRL_SUPPORTED
     bool
     default y
 
+config SOC_EMAC_SUPPORT_SLEEP_RETENTION
+    bool
+    default y
+
+config SOC_PM_SUPPORT_EMAC_WAKEUP
+    bool
+    default y
+
 config SOC_ANA_CMPR_SUPPORT_ETM
     bool
     default y
@@ -1612,6 +1620,10 @@ config SOC_PM_CACHE_RETENTION_BY_PAU
     default y
 
 config SOC_EXT_MEM_CACHE_TAG_IN_CPU_DOMAIN
+    bool
+    default y
+
+config SOC_PM_CNNT_RETENTION_BY_REGDMA
     bool
     default y
 

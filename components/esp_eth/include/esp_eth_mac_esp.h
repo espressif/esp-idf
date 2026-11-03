@@ -135,6 +135,20 @@ typedef union {
 #endif // SOC_EMAC_USE_MULTI_IO_MUX
 
 /**
+ * @brief EMAC behavior during system Light-sleep
+ *
+ * These modes select how EMAC is retained or powered when the chip enters Light-sleep
+ * (including explicit esp_light_sleep_start()). They do not enable automatic Light-sleep.
+ * While the MAC is started, the driver holds a PM lock that blocks automatic Light-sleep
+ * in every mode.
+ */
+typedef enum {
+    EMAC_SLEEP_MODE_NO_SLEEP = 0,    /*!< Do not allocate EMAC retention chains. On targets with a connectivity power domain, EMAC driver keeps that domain powered so it survives Light-sleep. */
+    EMAC_SLEEP_MODE_MAC_WAKE_ON_LAN, /*!< Keep the connectivity domain powered and wake on a magic packet (EMAC in power-down mode in Light-sleep). The receive clock must stay available. */
+    EMAC_SLEEP_MODE_ALLOW_PD,        /*!< Stop EMAC during Light-sleep and retain its registers. Allow its power domain to power down if no other user needs it. */
+} emac_sleep_mode_t;
+
+/**
 * @brief EMAC specific configuration
 *
 */
@@ -151,6 +165,7 @@ typedef struct {
     eth_mac_clock_config_t clock_config_out_in;     /*!< EMAC input clock configuration for internally generated output clock (when output clock is looped back externally) */
 #endif //SOC_EMAC_RMII_CLK_OUT_INTERNAL_LOOPBACK
     int32_t mdc_freq_hz;                            /*!< EMAC MDC frequency range limit, if set to 0 or a negative value, the driver will set the CSR clock range up to 2.5 MHz */
+    emac_sleep_mode_t sleep_mode;                   /*!< Light-sleep retention/power policy */
 } eth_esp32_emac_config_t;
 
 /**
@@ -208,6 +223,8 @@ typedef bool (*ts_target_exceed_cb_from_isr_t)(esp_eth_mediator_t *eth, void *us
  * @brief Default ESP32's EMAC specific configuration
  *
  */
+#define ETH_EMAC_DEFAULT_SLEEP_MODE EMAC_SLEEP_MODE_NO_SLEEP
+
 #if CONFIG_IDF_TARGET_ESP32
 #define ETH_ESP32_EMAC_DEFAULT_CONFIG()                                       \
     {                                                                         \
@@ -228,6 +245,7 @@ typedef bool (*ts_target_exceed_cb_from_isr_t)(esp_eth_mediator_t *eth, void *us
         .dma_burst_len = ETH_DMA_BURST_LEN_32,                                \
         .intr_priority = 0,                                                   \
         .mdc_freq_hz = 0,                                                     \
+        .sleep_mode = ETH_EMAC_DEFAULT_SLEEP_MODE,                            \
     }
 #elif CONFIG_IDF_TARGET_ESP32P4
 #define ETH_ESP32_EMAC_DEFAULT_CONFIG()                                       \
@@ -269,6 +287,7 @@ typedef bool (*ts_target_exceed_cb_from_isr_t)(esp_eth_mediator_t *eth, void *us
             }                                                                 \
         },                                                                    \
         .mdc_freq_hz = 0,                                                     \
+        .sleep_mode = ETH_EMAC_DEFAULT_SLEEP_MODE,                            \
     }
 #elif CONFIG_IDF_TARGET_ESP32S31
 #define ETH_ESP32_EMAC_DEFAULT_CONFIG()                                   \
@@ -316,6 +335,7 @@ typedef bool (*ts_target_exceed_cb_from_isr_t)(esp_eth_mediator_t *eth, void *us
         }                                                                 \
     },                                                                    \
     .mdc_freq_hz = 0,                                                     \
+    .sleep_mode = ETH_EMAC_DEFAULT_SLEEP_MODE,                            \
 }
 #endif
 

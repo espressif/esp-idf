@@ -7,6 +7,7 @@
 #pragma once
 
 #include <stdint.h>
+#include "sdkconfig.h"
 #include "soc/soc_caps.h"
 #if SOC_PAU_SUPPORTED
 #include "soc/regdma.h"
@@ -15,6 +16,8 @@
 
 #define EMAC_REGDMA_LINK_EMAC_START_BEGIN   (10)
 #define EMAC_REGDMA_LINK_EMAC_START_CNT     (3)
+#define EMAC_REGDMA_LINK_EMAC_WOL_START_BEGIN   (12)
+#define EMAC_REGDMA_LINK_EMAC_WOL_START_CNT     (3)
 
 #ifdef __cplusplus
 extern "C" {
@@ -28,8 +31,10 @@ typedef struct {
 } emac_reg_retention_info_t;
 
 extern const emac_reg_retention_info_t emac_reg_retention_info;
-#endif
-
+#if SOC_PM_SUPPORT_EMAC_WAKEUP
+extern const emac_reg_retention_info_t emac_reg_retention_info_wol;
+#endif // SOC_PM_SUPPORT_EMAC_WAKEUP
+#endif // SOC_PAU_SUPPORTED
 #ifdef __cplusplus
 }
 #endif

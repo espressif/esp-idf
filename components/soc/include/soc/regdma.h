@@ -74,6 +74,7 @@ extern "C" {
 #define REGDMA_PPA_LINK(_pri)               ((0x2B << 8) | _pri)
 #define REGDMA_DMA2D_LINK(_pri)             ((0x2C << 8) | _pri)
 #define REGDMA_ASRC_LINK(_pri)              ((0x2D << 8) | _pri)
+#define REGDMA_CNNT_LINK(_pri)              ((0x2E << 8) | _pri)
 
 #define REGDMA_POWER_LINK(_pri)             ((0xFD << 8) | _pri)
 #define REGDMA_CLOCK_ICG_LINK(_pri)         ((0xFE << 8) | _pri)

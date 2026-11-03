@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -8,6 +8,7 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include "sdkconfig.h"
+#include "soc/soc_caps.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -28,6 +29,18 @@ extern "C" {
  * @return True to allow power off
  */
 bool peripheral_domain_pd_allowed(void);
+
+#if SOC_PM_SUPPORT_CNNT_PD
+/**
+ * @brief Whether to allow the CNNT power domain to be powered off.
+ *
+ * CNNT (USB / SDMMC / Ethernet) can stay powered while TOP is down. For example,
+ * EMAC retention is required only when CNNT itself is powered off.
+ *
+ * @return True to allow power off
+ */
+bool cnnt_domain_pd_allowed(void);
+#endif
 
 #ifdef __cplusplus
 }

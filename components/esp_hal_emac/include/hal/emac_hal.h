@@ -296,6 +296,7 @@ void emac_hal_init(emac_hal_context_t *hal);
 #define emac_hal_dedicated_pad_pullup_enable(hal, pad, enable) emac_ll_dedicated_pad_pullup_enable((hal)->ext_regs, pad, enable)
 #define emac_hal_dedicated_pad_pulldown_enable(hal, pad, enable) emac_ll_dedicated_pad_pulldown_enable((hal)->ext_regs, pad, enable)
 #define emac_hal_dedicated_pad_input_enable(hal, pad, enable) emac_ll_dedicated_pad_input_enable((hal)->ext_regs, pad, enable)
+#define emac_hal_dedicated_pad_sleep_input_enable(hal, pad, enable) emac_ll_dedicated_pad_sleep_input_enable((hal)->ext_regs, pad, enable)
 #define emac_hal_dedicated_pad_sleep_pullup_enable(hal, pad, enable) emac_ll_dedicated_pad_sleep_pullup_enable((hal)->ext_regs, pad, enable)
 #define emac_hal_dedicated_pad_sleep_pulldown_enable(hal, pad, enable) emac_ll_dedicated_pad_sleep_pulldown_enable((hal)->ext_regs, pad, enable)
 #define emac_hal_dedicated_pad_sleep_enable(hal, pad, enable) emac_ll_dedicated_pad_sleep_enable((hal)->ext_regs, pad, enable)
@@ -399,6 +400,10 @@ void emac_hal_set_rx_tx_desc_addr(emac_hal_context_t *hal, eth_dma_rx_descriptor
 #define emac_hal_get_hw_feat(hal) emac_ll_get_hw_feat((hal)->dma_regs)
 
 #define emac_hal_get_gmii_status(hal) emac_ll_get_gmii_status((hal)->mac_regs)
+
+#if SOC_PM_SUPPORT_EMAC_WAKEUP
+#define emac_hal_read_pmt_status(hal) emac_ll_read_pmt_status((hal)->mac_regs)
+#endif
 
 #if SOC_EMAC_IEEE1588V2_SUPPORTED
 #define emac_hal_get_ts_status(hal) emac_ll_get_ts_status((hal)->ptp_regs);

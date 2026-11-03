@@ -14,7 +14,7 @@
 #define EMAC_PTP_INIT_TIMEOUT_US (10)
 #endif // SOC_EMAC_IEEE1588V2_SUPPORTED
 
-static uint8_t emac_crs_div_table[] = {
+static uint8_t emac_csr_div_table[] = {
     42,
     62,
     16,
@@ -69,11 +69,11 @@ esp_err_t emac_hal_ref_clock_div(emac_hal_context_t *hal, int div)
 
 void emac_hal_find_set_closest_csr_clock_range(emac_hal_context_t *hal, int mdc_freq_hz, int freq_hz)
 {
-    int min_diff = abs(freq_hz / emac_crs_div_table[0] - mdc_freq_hz);
+    int min_diff = abs(freq_hz / emac_csr_div_table[0] - mdc_freq_hz);
     uint32_t best_div = 0;
 
-    for (int i = 1; i < sizeof(emac_crs_div_table) / sizeof(emac_crs_div_table[0]); i++) {
-        int cur_diff = abs(freq_hz / emac_crs_div_table[i] - mdc_freq_hz);
+    for (int i = 1; i < sizeof(emac_csr_div_table) / sizeof(emac_csr_div_table[0]); i++) {
+        int cur_diff = abs(freq_hz / emac_csr_div_table[i] - mdc_freq_hz);
         if (cur_diff < min_diff) {
             min_diff = cur_diff;
             best_div = i;

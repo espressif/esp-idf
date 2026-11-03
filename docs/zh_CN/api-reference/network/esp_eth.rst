@@ -191,6 +191,8 @@
 
             * 强制复位 PHY 设备（对应图中的选项 **a**）。**此种方法并不适用于所有 PHY 设备** （即便处于复位状态，某些 PHY 设备仍会向 GPIO0 输出信号）。
 
+            当 PHY 的 ``REF_CLK`` 连接到 ``GPIO0`` 时，请勿在 ESP32 上启用 :cpp:member:`eth_phy_config_t::hold_reset_gpio`。焊盘保持功能在 CPU 复位（包括 Guru Meditation 重启）后仍然有效，因此 PHY 会保持非复位状态，并在下次启动期间继续向 ``GPIO0`` 提供时钟。
+
         .. warning::
 
             如希望 **以太网与 Wi-Fi 或蓝牙一起工作**，不要选择 ESP32 作为 ``REF_CLK`` 的源，因为这会导致 ``REF_CLK`` 不稳定。可以选择禁用 Wi-Fi，或使用 PHY 或外部振荡器作为 ``REF_CLK`` 的源。
@@ -399,6 +401,11 @@ PHY 配置
         * :cpp:member:`eth_phy_config_t::hw_reset_assert_time_us`：PHY 复位引脚被置为有效状态的时间（以微秒为单位）。将该值配置为 ``0``，即可使用芯片默认的复位时长。
 
         * :cpp:member:`eth_phy_config_t::post_hw_reset_delay_ms`：PHY 硬件复位完成后的等待时间（以毫秒为单位）。将该值配置为 ``0``，即可使用芯片默认的等待时长，配置为 ``-1``，表示执行 PHY 硬件复位后不等待。
+
+    * :cpp:member:`eth_phy_config_t::hold_reset_gpio`：设置为 ``true``，可在 GPIO 于 Light-sleep 模式下断电时，使 PHY 复位管脚保持非复位状态。默认值为 ``false``。如果无法保持复位 GPIO 的状态，则 PHY 创建失败。
+
+      .. warning::
+          保持功能在 panic 或其他 CPU 复位后仍然有效。PHY 复位管脚在下一次启动期间会保持非复位状态，因此，任何依赖 PHY 在启动期间保持复位状态的信号（例如 strapping 管脚上的时钟）都可能会被意外驱动。
 
 ESP-IDF 在宏 :c:macro:`ETH_MAC_DEFAULT_CONFIG` 和 :c:macro:`ETH_PHY_DEFAULT_CONFIG` 中为 MAC 和 PHY 提供了默认配置。
 
@@ -786,6 +793,36 @@ ESP-IDF 在宏 :c:macro:`ETH_DEFAULT_CONFIG` 中为安装驱动程序提供了�
 
 进阶操作
 ---------------
+
+.. _internal-emac-light-sleep-policy:
+
+.. only:: SOC_EMAC_SUPPORT_SLEEP_RETENTION
+
+    内部 EMAC Light-sleep 策略
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+    调用 :cpp:func:`esp_eth_mac_new_esp32` 前，通过 :cpp:member:`eth_esp32_emac_config_t::sleep_mode` 选择内部 MAC 的 Light-sleep 行为。这些选项描述芯片进入 Light-sleep 后的行为，但不会启用自动 Light-sleep。
+
+    .. list::
+
+        * :cpp:enumerator:`EMAC_SLEEP_MODE_NO_SLEEP` 不备份 EMAC 寄存器，也不分配保留内存。对于具有独立连接电源域的目标芯片，只要 MAC 对象存在，驱动程序就会使 ``ESP_PD_DOMAIN_CNNT`` 保持供电。因此，EMAC 能够在 Light-sleep 期间保持其状态，但会增加睡眠电流。
+        * :cpp:enumerator:`EMAC_SLEEP_MODE_ALLOW_PD` 会在进入 Light-sleep 时停止 EMAC 并备份其寄存器，在唤醒时恢复寄存器。唤醒后，EMAC 必须在寄存器恢复前，在 **所有时钟均运行** 的情况下完成软件复位。因此，此模式需要使用 RMII 和外部参考时钟 (:cpp:enumerator:`EMAC_CLK_EXT_IN`)，且该时钟须在保留恢复序列期间保持可用。如果使用其他模式而非 RMII 时钟输入模式，:cpp:func:`esp_eth_mac_new_esp32` 将拒绝此配置。还需启用 :menuitem:`CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP`。
+        :SOC_PM_SUPPORT_EMAC_WAKEUP: * :cpp:enumerator:`EMAC_SLEEP_MODE_MAC_WAKE_ON_LAN` 会在 MAC 对象存在期间，使 ``ESP_PD_DOMAIN_CNNT`` 保持供电和活动状态，并将 EMAC 启用为 Light-sleep 唤醒源。进入 Light-sleep 时，保留序列会停止发送路径、启用魔法包检测并使 EMAC 进入断电模式，以便 MAC 解码魔法包并唤醒芯片。唤醒时，EMAC 会退出断电模式。接收时钟必须在 Light-sleep 期间保持运行。由于 Light-sleep 会关闭 PLL，{IDF_TARGET_NAME} 生成的高速时钟也会停止。因此，请使用 RMII 和外部参考时钟 (:cpp:enumerator:`EMAC_CLK_EXT_IN`)，或使用由 PHY 自身参考时钟提供接收时钟的 MII/RGMII。此模式下，:cpp:func:`esp_eth_mac_new_esp32` 会拒绝 RMII 时钟输出配置。还需启用 :menuitem:`CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP`。
+        :not SOC_PM_SUPPORT_EMAC_WAKEUP: * {IDF_TARGET_NAME} 不支持 :cpp:enumerator:`EMAC_SLEEP_MODE_MAC_WAKE_ON_LAN`。选择此模式会导致错误，且 :cpp:func:`esp_eth_mac_new_esp32` 返回 ``NULL``。
+
+    :c:macro:`ETH_ESP32_EMAC_DEFAULT_CONFIG` 默认选择 ``NO_SLEEP``。应用程序可以显式选择其他受支持的模式::
+
+        eth_esp32_emac_config_t emac_config = ETH_ESP32_EMAC_DEFAULT_CONFIG();
+        emac_config.sleep_mode = EMAC_SLEEP_MODE_ALLOW_PD;
+
+    启用 :menuitem:`CONFIG_PM_ENABLE` 后，MAC 启动时，每种睡眠模式都会持有同一个 ``ESP_PM_APB_FREQ_MAX`` 锁。该锁使 CSR/DMA 总线时钟保持在受支持的动态调频 (DFS) 节点，并在接口运行期间阻止自动 Light-sleep。MAC 停止时会释放该锁（反初始化时也会释放，作为后备措施）。此锁不会阻止显式调用 :cpp:func:`esp_light_sleep_start`；请使用 :cpp:member:`eth_esp32_emac_config_t::sleep_mode` 选择在该睡眠期间保留 EMAC 状态的方式。
+
+    这些策略适用于 Light-sleep，但不会在 Deep-sleep 期间保留以太网驱动程序实例。外部 PHY 的电源策略必须单独处理。
+
+    如果 Light-sleep 期间 GPIO/IOMUX 电源域也会断电，请启用 :cpp:member:`eth_phy_config_t::hold_reset_gpio`，以免 PHY 复位管脚出现毛刺。保持功能在 panic 复位后仍然有效；请参阅 PHY 配置中的警告。
+
+    .. note::
+        即使 EMAC 配置为 :cpp:enumerator:`EMAC_SLEEP_MODE_NO_SLEEP`，且 CNNT 电源域在 Light-sleep 期间保持供电，如果 GPIO/IOMUX 电源域会断电，仍需保持 PHY 复位管脚的状态。
 
 .. _custom-phy-driver:
 

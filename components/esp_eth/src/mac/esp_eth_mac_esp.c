@@ -9,16 +9,20 @@
 #include <sys/cdefs.h>
 #include <stdarg.h>
 #include <inttypes.h>
+#include "esp_err.h"
 #include "esp_private/periph_ctrl.h"
 #include "esp_private/sleep_retention.h"
+#include "esp_private/esp_sleep_internal.h"
 #include "esp_attr.h"
 #include "esp_log.h"
 #include "esp_check.h"
 #include "esp_pm.h"
+#include "esp_sleep.h"
 #include "esp_mac.h"
 #include "esp_cpu.h"
 #include "esp_heap_caps.h"
 #include "esp_intr_alloc.h"
+#include "soc/interrupts.h"
 #include "soc/clk_tree_defs.h"
 #ifdef CONFIG_IDF_TARGET_ESP32
 #include "esp_clock_output.h"
@@ -107,8 +111,10 @@ typedef struct {
     soc_module_clk_t pll_clk_used[EMAC_USED_PLL_CLK_MAX_COUNT];  // Used PLLs
     SemaphoreHandle_t multi_reg_mutex; // lock for multiple register access
     int32_t mdc_freq_hz;
+    emac_sleep_mode_t sleep_mode;
 #ifdef CONFIG_PM_ENABLE
     esp_pm_lock_handle_t pm_lock;
+    bool pm_lock_acquired;
 #endif
     eth_mac_dma_burst_len_t dma_burst_len;
 
@@ -119,66 +125,157 @@ typedef struct {
 #ifdef SOC_EMAC_IEEE1588V2_SUPPORTED
     ts_target_exceed_cb_from_isr_t ts_target_exceed_cb_from_isr;
 #endif
+#ifdef SOC_PM_SUPPORT_CNNT_PD
+    bool cnnt_pd_lock_acquired;
+#ifdef SOC_PM_SUPPORT_EMAC_WAKEUP
+    bool cnnt_active_mode_acquired;
+#endif // SOC_PM_SUPPORT_EMAC_WAKEUP
+#endif // SOC_PM_SUPPORT_CNNT_PD
 } emac_esp32_t;
 
-static esp_err_t emac_esp_alloc_driver_obj(const eth_mac_config_t *config, emac_esp32_t **emac_out_hdl);
+static esp_err_t emac_esp_alloc_driver_obj(const eth_mac_config_t *config, const eth_esp32_emac_config_t *esp32_config,
+                                        emac_esp32_t **emac_out_hdl);
 static void emac_esp_free_driver_obj(emac_esp32_t *emac);
 static esp_err_t emac_esp32_start(esp_eth_mac_t *mac);
 static esp_err_t emac_esp32_stop(esp_eth_mac_t *mac);
 
 #if EMAC_USE_RETENTION_LINK
-static esp_err_t emac_create_sleep_retention_link_cb(void *arg)
+static const emac_reg_retention_info_t *emac_get_retention_info(const emac_esp32_t *emac)
 {
-    esp_err_t err = sleep_retention_entries_create(emac_reg_retention_info.entry_array,
-                                                   emac_reg_retention_info.array_size,
-                                                   REGDMA_LINK_PRI_EMAC, emac_reg_retention_info.module_id);
-    return err;
+#if SOC_PM_SUPPORT_EMAC_WAKEUP
+    if (emac->sleep_mode == EMAC_SLEEP_MODE_MAC_WAKE_ON_LAN) {
+        return &emac_reg_retention_info_wol;
+    }
+#endif // SOC_PM_SUPPORT_EMAC_WAKEUP
+    return &emac_reg_retention_info;
 }
 
-// TODO rename to emac_esp
+static esp_err_t emac_create_sleep_retention_link_cb(void *arg)
+{
+    emac_esp32_t *emac = (emac_esp32_t *)arg;
+    const emac_reg_retention_info_t *info = emac_get_retention_info(emac);
+    return sleep_retention_entries_create(info->entry_array, info->array_size,
+                                          REGDMA_LINK_PRI_EMAC, info->module_id);
+}
+
+static esp_err_t emac_init_retention_module(emac_esp32_t *emac)
+{
+    if (emac->sleep_mode == EMAC_SLEEP_MODE_NO_SLEEP) {
+        return ESP_OK;
+    }
+    sleep_retention_module_t module = emac_get_retention_info(emac)->module_id;
+    sleep_retention_module_init_param_t init_param = {
+        .cbs = {
+            .create = {
+                .handle = emac_create_sleep_retention_link_cb,
+                .arg = (void *)emac
+            },
+        },
+        .attribute = SLEEP_RETENTION_MODULE_ATTR_ATTACH,
+        .depends = RETENTION_MODULE_BITMAP_INIT(CLOCK_SYSTEM)
+    };
+    ESP_RETURN_ON_ERROR(sleep_retention_module_init(module, &init_param), TAG, "init EMAC retention failed");
+    return ESP_OK;
+}
+
 static esp_err_t emac_create_retention_module(emac_esp32_t *emac)
 {
-    esp_err_t ret = ESP_OK;
-    sleep_retention_module_t module = emac_reg_retention_info.module_id;
-    if (sleep_retention_is_module_inited(module) && !sleep_retention_is_module_created(module)) {
-        if ((ret = sleep_retention_module_allocate(module)) != ESP_OK) {
-            ESP_LOGW(TAG, "create retention link failed on EMAC, power domain won't be turned off during sleep");
-        } else {
-            if ((ret = sleep_retention_module_attach(module)) != ESP_OK) {
-                ESP_LOGW(TAG, "attach retention link failed on EMAC, power domain won't be turned off during sleep");
-            }
-        }
+    sleep_retention_module_t module = emac_get_retention_info(emac)->module_id;
+    if (!sleep_retention_is_module_inited(module)) {
+        return ESP_OK;
     }
-    return ret;
+
+    ESP_RETURN_ON_ERROR(sleep_retention_module_allocate(module), TAG, "allocate EMAC retention failed");
+    esp_err_t ret = sleep_retention_module_attach(module);
+    if (ret != ESP_OK) {
+        sleep_retention_module_free(module);
+        ESP_LOGE(TAG, "attach EMAC retention failed");
+        return ret;
+    }
+    ESP_LOGI(TAG, "EMAC retention module attached");
+    return ESP_OK;
+}
+
+static void emac_esp_get_emac_start_link_range(const emac_esp32_t *emac, int *begin, int *cnt)
+{
+#if SOC_PM_SUPPORT_EMAC_WAKEUP
+    if (emac->sleep_mode == EMAC_SLEEP_MODE_MAC_WAKE_ON_LAN) {
+        *begin = EMAC_REGDMA_LINK_EMAC_WOL_START_BEGIN;
+        *cnt = EMAC_REGDMA_LINK_EMAC_WOL_START_CNT;
+        return;
+    }
+#endif // SOC_PM_SUPPORT_EMAC_WAKEUP
+    *begin = EMAC_REGDMA_LINK_EMAC_START_BEGIN;
+    *cnt = EMAC_REGDMA_LINK_EMAC_START_CNT;
 }
 
 static void emac_esp_enable_emac_start_on_wakeup(emac_esp32_t *emac)
 {
-    void *emac_start_link;
-    for (int i = 0; i < EMAC_REGDMA_LINK_EMAC_START_CNT; i++) {
-        emac_start_link = sleep_retention_find_link_by_id(emac_reg_retention_info.entry_array[EMAC_REGDMA_LINK_EMAC_START_BEGIN + i].config.id);
-        regdma_link_set_skip_flag(emac_start_link, 1, 0);
+    const emac_reg_retention_info_t *info = emac_get_retention_info(emac);
+    sleep_retention_module_t module = info->module_id;
+    if (!sleep_retention_is_module_attached(module)) {
+        return;
+    }
+
+    int begin;
+    int cnt;
+    emac_esp_get_emac_start_link_range(emac, &begin, &cnt);
+    for (int i = 0; i < cnt; i++) {
+        void *emac_start_link = sleep_retention_find_link_by_id(info->entry_array[begin + i].config.id);
+        regdma_link_set_skip_flag(emac_start_link, true, false);
     }
 }
 
 static void emac_esp_disable_emac_start_on_wakeup(emac_esp32_t *emac)
 {
-    void *emac_start_link;
-    for (int i = 0; i < EMAC_REGDMA_LINK_EMAC_START_CNT; i++) {
-        emac_start_link = sleep_retention_find_link_by_id(emac_reg_retention_info.entry_array[EMAC_REGDMA_LINK_EMAC_START_BEGIN + i].config.id);
-        regdma_link_set_skip_flag(emac_start_link, 1, 1);
+    const emac_reg_retention_info_t *info = emac_get_retention_info(emac);
+    sleep_retention_module_t module = info->module_id;
+    if (!sleep_retention_is_module_attached(module)) {
+        return;
+    }
+
+    int begin;
+    int cnt;
+    emac_esp_get_emac_start_link_range(emac, &begin, &cnt);
+    for (int i = 0; i < cnt; i++) {
+        void *emac_start_link = sleep_retention_find_link_by_id(info->entry_array[begin + i].config.id);
+        regdma_link_set_skip_flag(emac_start_link, true, true);
     }
 }
 
 static void emac_free_retention_module(emac_esp32_t *emac)
 {
-    sleep_retention_module_t module = emac_reg_retention_info.module_id;
-    if (sleep_retention_is_module_created(module)) {
+    sleep_retention_module_t module = emac_get_retention_info(emac)->module_id;
+    if (sleep_retention_is_module_attached(module)) {
         sleep_retention_module_detach(module);
+    }
+    if (sleep_retention_is_module_created(module)) {
         sleep_retention_module_free(module);
     }
 }
 #endif // EMAC_USE_RETENTION_LINK
+
+#ifdef CONFIG_PM_ENABLE
+static esp_err_t emac_acquire_pm_lock(emac_esp32_t *emac)
+{
+    if (!emac->pm_lock_acquired) {
+        esp_err_t ret = esp_pm_lock_acquire(emac->pm_lock);
+        if (ret != ESP_OK) {
+            return ret;
+        }
+        emac->pm_lock_acquired = true;
+    }
+    return ESP_OK;
+}
+
+static void emac_release_pm_lock(emac_esp32_t *emac)
+{
+    if (emac->pm_lock_acquired) {
+        esp_pm_lock_release(emac->pm_lock);
+        emac->pm_lock_acquired = false;
+    }
+}
+#endif
 
 static esp_err_t emac_esp32_lock_multi_reg(emac_esp32_t *emac)
 {
@@ -708,12 +805,6 @@ static esp_err_t emac_esp32_init(esp_eth_mac_t *mac)
     ESP_GOTO_ON_ERROR(esp_read_mac(addr, ESP_MAC_ETH), err, TAG, "fetch ethernet mac address failed");
     /* set MAC address to emac register */
     emac_hal_set_address(&emac->hal, addr);
-#ifdef CONFIG_PM_ENABLE
-    esp_pm_lock_acquire(emac->pm_lock);
-#endif
-#if EMAC_USE_RETENTION_LINK
-    emac_create_retention_module(emac);
-#endif // EMAC_USE_RETENTION_LINK
     return ESP_OK;
 
 err:
@@ -725,13 +816,10 @@ static esp_err_t emac_esp32_deinit(esp_eth_mac_t *mac)
 {
     emac_esp32_t *emac = __containerof(mac, emac_esp32_t, parent);
     esp_eth_mediator_t *eth = emac->eth;
-#ifdef CONFIG_PM_ENABLE
-    esp_pm_lock_release(emac->pm_lock);
-#endif
-#if EMAC_USE_RETENTION_LINK
-    emac_free_retention_module(emac);
-#endif // EMAC_USE_RETENTION_LINK
     emac_hal_stop(&emac->hal);
+#ifdef CONFIG_PM_ENABLE
+    emac_release_pm_lock(emac);
+#endif
     eth->on_state_changed(eth, ETH_STATE_DEINIT, NULL);
     return ESP_OK;
 }
@@ -739,6 +827,9 @@ static esp_err_t emac_esp32_deinit(esp_eth_mac_t *mac)
 static esp_err_t emac_esp32_start(esp_eth_mac_t *mac)
 {
     emac_esp32_t *emac = __containerof(mac, emac_esp32_t, parent);
+#ifdef CONFIG_PM_ENABLE
+    ESP_RETURN_ON_ERROR(emac_acquire_pm_lock(emac), TAG, "acquire pm lock failed");
+#endif
     /* reset descriptor chain */
     emac_esp_dma_reset(emac->emac_dma_hndl);
 #if EMAC_USE_RETENTION_LINK
@@ -763,6 +854,11 @@ static esp_err_t emac_esp32_stop(esp_eth_mac_t *mac)
         to += 25;
         esp_rom_delay_us(25);
     } while (to < MAC_STOP_TIMEOUT_US);
+#ifdef CONFIG_PM_ENABLE
+    if (ret == ESP_OK) {
+        emac_release_pm_lock(emac);
+    }
+#endif
     return ret;
 }
 
@@ -822,6 +918,112 @@ IRAM_ATTR void emac_isr_default_handler(void *args)
     }
 }
 
+static esp_err_t emac_esp_sleep_init(emac_esp32_t *emac, const eth_esp32_emac_config_t *esp32_config)
+{
+    esp_err_t ret = ESP_OK;
+    emac_sleep_mode_t sleep_mode = esp32_config->sleep_mode;
+
+    ESP_RETURN_ON_FALSE(sleep_mode >= EMAC_SLEEP_MODE_NO_SLEEP &&
+                        sleep_mode <= EMAC_SLEEP_MODE_ALLOW_PD,
+                        ESP_ERR_INVALID_ARG, TAG, "invalid EMAC sleep mode");
+#if !EMAC_USE_RETENTION_LINK
+    ESP_RETURN_ON_FALSE(sleep_mode == EMAC_SLEEP_MODE_NO_SLEEP, ESP_ERR_INVALID_ARG, TAG,
+                        "EMAC sleep requires target retention support and CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP");
+#endif
+
+    emac->sleep_mode = sleep_mode;
+
+    /* alloc PM lock */
+#ifdef CONFIG_PM_ENABLE
+    ESP_GOTO_ON_ERROR(esp_pm_lock_create(ESP_PM_APB_FREQ_MAX, 0, "emac_esp32", &emac->pm_lock), err, TAG, "create pm lock failed");
+#endif
+
+    if (emac->sleep_mode == EMAC_SLEEP_MODE_NO_SLEEP) {
+#if SOC_PM_SUPPORT_CNNT_PD
+        /* Keep CNNT powered during light sleep */
+        ESP_GOTO_ON_ERROR(esp_sleep_pd_config(ESP_PD_DOMAIN_CNNT, ESP_PD_OPTION_ON), err, TAG, "keep CNNT powered failed");
+        emac->cnnt_pd_lock_acquired = true;
+#endif
+        return ESP_OK;
+    }
+
+#if EMAC_USE_RETENTION_LINK
+    if (emac->sleep_mode == EMAC_SLEEP_MODE_MAC_WAKE_ON_LAN) {
+#if SOC_PM_SUPPORT_EMAC_WAKEUP && SOC_PM_SUPPORT_CNNT_PD
+        // Light-sleep powers down PLL clocks. An RMII clock generated from them stops, so
+        // the MAC cannot sample a magic packet. The PHY or external clock must supply
+        // the receive clock (RMII external input, or MII/RGMII RX clock).
+        if (esp32_config->interface == EMAC_DATA_INTERFACE_RMII) {
+            ESP_RETURN_ON_FALSE(esp32_config->clock_config.rmii.clock_mode == EMAC_CLK_EXT_IN,
+                                ESP_ERR_INVALID_ARG, TAG,
+                                "EMAC_SLEEP_MODE_MAC_WAKE_ON_LAN requires RMII with an external reference clock");
+        }
+        ESP_LOGD(TAG, "enabling EMAC Wake-on-LAN wakeup");
+        ESP_GOTO_ON_ERROR(esp_sleep_enable_emac_wakeup(), err, TAG, "enable EMAC wakeup failed");
+        /* The MAC must decode magic packets during sleep, so keep CNNT at a functional voltage */
+        ESP_GOTO_ON_ERROR(esp_sleep_sub_mode_config(ESP_SLEEP_CNNT_ACTIVE_MODE, true), err, TAG, "keep CNNT active failed");
+        emac->cnnt_active_mode_acquired = true;
+        ESP_GOTO_ON_ERROR(esp_sleep_pd_config(ESP_PD_DOMAIN_CNNT, ESP_PD_OPTION_ON), err, TAG, "keep CNNT powered failed");
+        emac->cnnt_pd_lock_acquired = true;
+#else
+        ESP_GOTO_ON_ERROR(ESP_FAIL, err, TAG, "EMAC Wake-on-LAN wakeup is not supported on this target");
+#endif // SOC_PM_SUPPORT_EMAC_WAKEUP && SOC_PM_SUPPORT_CNNT_PD
+    }
+    if (emac->sleep_mode == EMAC_SLEEP_MODE_ALLOW_PD) {
+        // On wakeup, EMAC must complete a software reset with all(!) clocks running before its
+        // retained registers are restored. This can be achieved only with an external RMII
+        // reference clock since the internal PLL not available during wakeup.
+        ESP_RETURN_ON_FALSE(esp32_config->interface == EMAC_DATA_INTERFACE_RMII &&
+                            esp32_config->clock_config.rmii.clock_mode == EMAC_CLK_EXT_IN,
+                            ESP_ERR_INVALID_ARG, TAG,
+                            "EMAC_SLEEP_MODE_ALLOW_PD requires RMII with an external reference clock");
+    }
+    ESP_GOTO_ON_ERROR(emac_init_retention_module(emac), err, TAG, "init EMAC retention failed");
+    ESP_GOTO_ON_ERROR(emac_create_retention_module(emac), err, TAG, "configure EMAC sleep failed");
+#else
+    ESP_GOTO_ON_ERROR(ESP_FAIL, err, TAG, "EMAC sleep requires target retention support");
+#endif // EMAC_USE_RETENTION_LINK
+
+err:
+    return ret;
+}
+
+static esp_err_t emac_esp_sleep_deinit(emac_esp32_t *emac)
+{
+    esp_err_t ret_code = ESP_OK;
+
+#ifdef CONFIG_PM_ENABLE
+        emac_release_pm_lock(emac);
+        if (emac->pm_lock) {
+            esp_pm_lock_delete(emac->pm_lock);
+        }
+#endif // CONFIG_PM_ENABLE
+
+#if EMAC_USE_RETENTION_LINK
+        if (sleep_retention_is_module_inited(emac_get_retention_info(emac)->module_id)) {
+            emac_free_retention_module(emac);
+            sleep_retention_module_deinit(emac_get_retention_info(emac)->module_id);
+        }
+#if SOC_PM_SUPPORT_CNNT_PD
+#if SOC_PM_SUPPORT_EMAC_WAKEUP
+        if (emac->sleep_mode == EMAC_SLEEP_MODE_MAC_WAKE_ON_LAN) {
+            esp_sleep_disable_emac_wakeup();
+            if (emac->cnnt_active_mode_acquired) {
+                esp_sleep_sub_mode_config(ESP_SLEEP_CNNT_ACTIVE_MODE, false);
+                emac->cnnt_active_mode_acquired = false;
+            }
+        }
+#endif // SOC_PM_SUPPORT_CNNT_PD
+    if (emac->cnnt_pd_lock_acquired) {
+        esp_sleep_pd_config(ESP_PD_DOMAIN_CNNT, ESP_PD_OPTION_OFF);
+        emac->cnnt_pd_lock_acquired = false;
+    }
+#endif // SOC_PM_SUPPORT_EMAC_WAKEUP
+#endif // EMAC_USE_RETENTION_LINK
+
+    return ret_code;
+}
+
 static void emac_esp_free_driver_obj(emac_esp32_t *emac)
 {
     if (emac) {
@@ -848,17 +1050,7 @@ static void emac_esp_free_driver_obj(emac_esp32_t *emac)
             vSemaphoreDelete(emac->multi_reg_mutex);
         }
 
-#ifdef CONFIG_PM_ENABLE
-        if (emac->pm_lock) {
-            esp_pm_lock_delete(emac->pm_lock);
-        }
-#endif // CONFIG_PM_ENABLE
-#if EMAC_USE_RETENTION_LINK
-    sleep_retention_module_t module = emac_reg_retention_info.module_id;
-    if (sleep_retention_is_module_inited(module)) {
-        sleep_retention_module_deinit(module);
-    }
-#endif // EMAC_USE_RETENTION_LINK
+        emac_esp_sleep_deinit(emac);
 
         emac_esp_del_dma(emac->emac_dma_hndl);
 
@@ -866,7 +1058,8 @@ static void emac_esp_free_driver_obj(emac_esp32_t *emac)
     }
 }
 
-static esp_err_t emac_esp_alloc_driver_obj(const eth_mac_config_t *config, emac_esp32_t **emac_out_hdl)
+static esp_err_t emac_esp_alloc_driver_obj(const eth_mac_config_t *config, const eth_esp32_emac_config_t *esp32_config,
+                                        emac_esp32_t **emac_out_hdl)
 {
     esp_err_t ret = ESP_OK;
     emac_esp32_t *emac = NULL;
@@ -877,28 +1070,11 @@ static esp_err_t emac_esp_alloc_driver_obj(const eth_mac_config_t *config, emac_
     }
     ESP_GOTO_ON_FALSE(emac, ESP_ERR_NO_MEM, err, TAG, "no mem for esp emac object");
 
-    /* alloc PM lock */
-#ifdef CONFIG_PM_ENABLE
-    ESP_GOTO_ON_ERROR(esp_pm_lock_create(ESP_PM_APB_FREQ_MAX, 0, "emac_esp32", &emac->pm_lock), err, TAG, "create pm lock failed");
-#endif
-
-#if EMAC_USE_RETENTION_LINK
-    sleep_retention_module_t module = emac_reg_retention_info.module_id;
-    sleep_retention_module_init_param_t init_param = {
-        .cbs = {
-            .create = {
-                .handle = emac_create_sleep_retention_link_cb,
-                .arg = (void *)emac
-            },
-        },
-        .attribute = SLEEP_RETENTION_MODULE_ATTR_ATTACH,
-        .depends = RETENTION_MODULE_BITMAP_INIT(CLOCK_SYSTEM)
-    };
-    if (sleep_retention_module_init(module, &init_param) != ESP_OK) {
-        // even though the sleep retention module init failed, EMAC driver should still work, so just warning here
-        ESP_LOGW(TAG, "init sleep retention failed on EMAC, power domain may be turned off during sleep");
+    for (int i = 0; i < EMAC_USED_PLL_CLK_MAX_COUNT; i++) {
+        emac->pll_clk_used[i] = EMAC_UNDEFINED_PLL_CLK;
     }
-#endif // EMAC_USE_RETENTION_LINK
+
+    ESP_GOTO_ON_ERROR(emac_esp_sleep_init(emac, esp32_config), err, TAG, "initialize EMAC sleep initialization failed");
 
     ESP_GOTO_ON_ERROR(emac_esp_new_dma(NULL, &emac->emac_dma_hndl), err, TAG, "create EMAC DMA object failed");
 
@@ -1195,13 +1371,14 @@ esp_eth_mac_t *esp_eth_mac_new_esp32(const eth_esp32_emac_config_t *esp32_config
     esp_err_t ret_code = ESP_OK;
     esp_eth_mac_t *ret = NULL;
     emac_esp32_t *emac = NULL;
-    ESP_RETURN_ON_FALSE(config, NULL, TAG, "can't set mac config to null");
+    ESP_RETURN_ON_FALSE(config && esp32_config, NULL, TAG, "can't set mac config to null");
+
     if (esp32_config->intr_priority > 0) {
         ESP_RETURN_ON_FALSE(1 << (esp32_config->intr_priority) & EMAC_ALLOW_INTR_PRIORITY_MASK, NULL,
                             TAG, "invalid interrupt priority: %d", esp32_config->intr_priority);
     }
 
-    ret_code = emac_esp_alloc_driver_obj(config, &emac);
+    ret_code = emac_esp_alloc_driver_obj(config, esp32_config, &emac);
     ESP_GOTO_ON_FALSE(ret_code == ESP_OK, NULL, err, TAG, "alloc driver object failed");
 
     // enable bus clock for the EMAC module, and reset the registers into default state

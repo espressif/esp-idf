@@ -378,6 +378,14 @@ static inline bool emac_ll_get_magic_packet_received(emac_mac_dev_t *mac_regs)
     return mac_regs->pmt_csr.mgkprcvd;
 }
 
+/**
+ * @brief Read PMT Control and Status (clears MGKPRCVD / RWKPRCVD and drops pmt_intr_o)
+ */
+__attribute__((always_inline)) static inline uint32_t emac_ll_read_pmt_status(emac_mac_dev_t *mac_regs)
+{
+    return mac_regs->pmt_csr.val;
+}
+
 /* emacmiidata */
 static inline void emac_ll_set_phy_data(emac_mac_dev_t *mac_regs, uint32_t data)
 {
@@ -861,6 +869,7 @@ static inline void emac_ll_set_pps0_out_freq(emac_ptp_dev_t *ptp_regs, uint8_t f
 
 static inline soc_module_clk_t emac_ll_get_csr_clk_src(void)
 {
+    // Source of the ESP32-S31 EMAC CSR clock is SYS clock.
     return SOC_MOD_CLK_SYS;
 }
 
@@ -1189,6 +1198,20 @@ static inline void emac_ll_dedicated_pad_input_enable(void *ext_regs, eth_pad_t 
     case ETH_PAD_PHY_RXD2: CNNT_PAD_CTRL.gmac_phy_rxd2.gmac_phy_rxd2_fun_ie = enable; break;
     case ETH_PAD_PHY_RXD1: CNNT_PAD_CTRL.gmac_phy_rxd1.gmac_phy_rxd1_fun_ie = enable; break;
     case ETH_PAD_PHY_RXD0: CNNT_PAD_CTRL.gmac_phy_rxd0.gmac_phy_rxd0_fun_ie = enable; break;
+    default: break;
+    }
+}
+
+static inline void emac_ll_dedicated_pad_sleep_input_enable(void *ext_regs, eth_pad_t pad, bool enable)
+{
+    switch (pad) {
+    case ETH_PAD_RMII_CLK: CNNT_PAD_CTRL.gmac_rmii_clk.gmac_rmii_clk_mcu_ie = enable; break;
+    case ETH_PAD_RX_CLK:   CNNT_PAD_CTRL.gmac_rx_clk.gmac_rx_clk_mcu_ie = enable; break;
+    case ETH_PAD_PHY_RXDV: CNNT_PAD_CTRL.gmac_phy_rxdv.gmac_phy_rxdv_mcu_ie = enable; break;
+    case ETH_PAD_PHY_RXD3: CNNT_PAD_CTRL.gmac_phy_rxd3.gmac_phy_rxd3_mcu_ie = enable; break;
+    case ETH_PAD_PHY_RXD2: CNNT_PAD_CTRL.gmac_phy_rxd2.gmac_phy_rxd2_mcu_ie = enable; break;
+    case ETH_PAD_PHY_RXD1: CNNT_PAD_CTRL.gmac_phy_rxd1.gmac_phy_rxd1_mcu_ie = enable; break;
+    case ETH_PAD_PHY_RXD0: CNNT_PAD_CTRL.gmac_phy_rxd0.gmac_phy_rxd0_mcu_ie = enable; break;
     default: break;
     }
 }

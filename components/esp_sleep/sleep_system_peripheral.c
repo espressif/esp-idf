@@ -77,6 +77,16 @@ static __attribute__((unused)) esp_err_t sleep_sys_periph_iomux_retention_init(v
     return ESP_OK;
 }
 
+#if CONFIG_ETH_USE_ESP32_EMAC && SOC_PM_CNNT_RETENTION_BY_REGDMA
+static __attribute__((unused)) esp_err_t sleep_sys_periph_cnnt_retention_init(void *arg)
+{
+    esp_err_t err = sleep_retention_entries_create(cnnt_regs_retention, ARRAY_SIZE(cnnt_regs_retention), REGDMA_LINK_PRI_SYS_PERIPH_LOW, SLEEP_RETENTION_MODULE_SYS_PERIPH);
+    ESP_RETURN_ON_ERROR(err, TAG, "failed to allocate memory for digital peripherals (%s) retention", "CNNT");
+    ESP_LOGD(TAG, "CNNT sleep retention initialization");
+    return ESP_OK;
+}
+#endif
+
 static __attribute__((unused)) esp_err_t sleep_sys_periph_flash_spimem_retention_init(void *arg)
 {
     esp_err_t err = sleep_retention_entries_create(flash_spimem_regs_retention, ARRAY_SIZE(flash_spimem_regs_retention), REGDMA_LINK_PRI_SYS_PERIPH_LOW, SLEEP_RETENTION_MODULE_SYS_PERIPH);
@@ -156,6 +166,10 @@ static __attribute__((unused)) esp_err_t sleep_sys_periph_retention_init(void *a
 #endif
     err = sleep_sys_periph_iomux_retention_init(arg);
     if(err) goto error;
+#if CONFIG_ETH_USE_ESP32_EMAC && SOC_PM_CNNT_RETENTION_BY_REGDMA
+    err = sleep_sys_periph_cnnt_retention_init(arg);
+    if(err) goto error;
+#endif
     err = sleep_sys_periph_flash_spimem_retention_init(arg);
     if(err) goto error;
 #if CONFIG_SPIRAM && SOC_PSRAM_MEMSPI_IS_INDEPENDENT

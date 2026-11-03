@@ -139,6 +139,9 @@ typedef enum {
     ESP_SLEEP_WAKEUP_VBAT_UNDER_VOLT,   //!< Wakeup caused by VDD_BAT under voltage.
     ESP_SLEEP_WAKEUP_USB,               //!< Wakeup caused by USB HS (light sleep only)
     ESP_SLEEP_WAKEUP_VDDBAT_UP_VOLT,    //!< Wakeup caused by VDDBAT rising above the voltage threshold
+#if SOC_PM_SUPPORT_EMAC_WAKEUP
+    ESP_SLEEP_WAKEUP_EMAC,              //!< Wakeup caused by EMAC PMT (magic packet / remote wakeup, light sleep only)
+#endif
 } esp_sleep_source_t;
 
 /**
@@ -594,6 +597,22 @@ esp_err_t esp_sleep_enable_usb_wakeup(void);
  *      - ESP_ERR_NOT_SUPPORTED if wakeup from USB is not supported
  */
 esp_err_t esp_sleep_disable_usb_wakeup(void);
+
+/**
+ * @brief Enable wakeup by EMAC PMT (magic packet / remote wake-up frame)
+ * @return
+ *      - ESP_OK on success
+ *      - ESP_ERR_NOT_SUPPORTED if wakeup from EMAC is not supported
+ */
+esp_err_t esp_sleep_enable_emac_wakeup(void);
+
+/**
+ * @brief Disable wakeup by EMAC PMT
+ * @return
+ *      - ESP_OK on success
+ *      - ESP_ERR_NOT_SUPPORTED if wakeup from EMAC is not supported
+ */
+esp_err_t esp_sleep_disable_emac_wakeup(void);
 
 /**
  * @brief Enable wakeup by WiFi MAC
