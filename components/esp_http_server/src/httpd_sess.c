@@ -193,12 +193,15 @@ esp_err_t httpd_sess_new(struct httpd_data *hd, int newfd)
 
     if (httpd_sess_get(hd, newfd)) {
         ESP_LOGE(TAG, LOG_FMT("session already exists with fd = %d"), newfd);
+        // Do not close here. Another session thinks it has this file descriptor
         return ESP_FAIL;
     }
 
     struct sock_db *session = httpd_sess_get_free(hd);
     if (!session) {
         ESP_LOGD(TAG, LOG_FMT("unable to launch session for fd = %d"), newfd);
+        // Close this fd now as no session will own it
+        close(newfd);
         return ESP_FAIL;
     }
 
