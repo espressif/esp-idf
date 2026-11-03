@@ -857,7 +857,7 @@ static void SPI_MASTER_ISR_ATTR spi_new_trans(spi_device_t *dev, spi_trans_priv_
         spi_hal_push_tx_buffer(hal, &hal_trans);
     }
     //these registers should be configured after the DMA is set
-    spi_hal_enable_data_line(hal->hw, (!hal_dev->half_duplex && hal_trans.rcv_buffer) || hal_trans.send_buffer, !!hal_trans.rcv_buffer);
+    spi_hal_enable_data_line(hal->hw, !!hal_trans.send_buffer, !!hal_trans.rcv_buffer);
 
     //Call pre-transmission callback, if any
     if (dev->cfg.pre_cb) {
@@ -880,10 +880,11 @@ static void SPI_MASTER_ISR_ATTR spi_new_trans(spi_device_t *dev, spi_trans_priv_
 // Fetch the data from FIFO and call the ``post_cb``.
 static void SPI_MASTER_ISR_ATTR spi_post_trans(spi_host_t *host)
 {
-    spi_transaction_t *cur_trans = host->cur_trans_buf.trans;
+    spi_trans_priv_t *priv_trans = &host->cur_trans_buf;
+    spi_transaction_t *cur_trans = priv_trans->trans;
 
     if (!host->bus_attr->dma_enabled) {
-        spi_hal_fetch_result(&host->hal);
+        spi_hal_get_result(&host->hal, (uint8_t *)priv_trans->buffer_to_rcv, cur_trans->rxlength);
     }
     //Call post-transaction callback, if any
     spi_device_t* dev = host->device[host->cur_cs];
@@ -895,21 +896,6 @@ static void SPI_MASTER_ISR_ATTR spi_post_trans(spi_host_t *host)
 }
 
 #ifdef SPI_LL_PERIPH_HAS_SCT
-static void SPI_MASTER_ISR_ATTR spi_sct_set_hal_trans_config(spi_multi_transaction_t *trans_header, spi_hal_trans_config_t *hal_trans)
-{
-    spi_transaction_t *trans = &trans_header->base;
-
-    //Set up OIO/QIO/DIO if needed
-    hal_trans->line_mode.data_lines = (trans->flags & SPI_TRANS_MODE_DIO) ? 2 : (trans->flags & SPI_TRANS_MODE_QIO) ? 4 : 1;
-#if SOC_SPI_SUPPORT_OCT
-    if (trans->flags & SPI_TRANS_MODE_OCT) {
-        hal_trans->line_mode.data_lines = 8;
-    }
-#endif
-    hal_trans->line_mode.addr_lines = (trans->flags & SPI_TRANS_MULTILINE_ADDR) ? hal_trans->line_mode.data_lines : 1;
-    hal_trans->line_mode.cmd_lines = (trans->flags & SPI_TRANS_MULTILINE_CMD) ? hal_trans->line_mode.data_lines : 1;
-}
-
 static void SPI_MASTER_ISR_ATTR s_sct_load_dma_link(spi_device_t *dev, spi_dma_desc_t *rx_seg_head, spi_dma_desc_t *tx_seg_head)
 {
     spi_hal_context_t *hal = &dev->host->hal;
@@ -1808,7 +1794,16 @@ static void SPI_MASTER_ATTR s_sct_format_conf_buffer(spi_device_handle_t handle,
     }
 
     // set line mode to hal_config
-    spi_sct_set_hal_trans_config(seg_trans_desc, &hal->trans_config);
+    spi_transaction_t *trans = &seg_trans_desc->base;
+    seg_config.line_mode.data_lines = (trans->flags & SPI_TRANS_MODE_DIO) ? 2 : (trans->flags & SPI_TRANS_MODE_QIO) ? 4 : 1;
+#if SOC_SPI_SUPPORT_OCT
+    if (trans->flags & SPI_TRANS_MODE_OCT) {
+        seg_config.line_mode.data_lines = 8;
+    }
+#endif
+    seg_config.line_mode.addr_lines = (trans->flags & SPI_TRANS_MULTILINE_ADDR) ? seg_config.line_mode.data_lines : 1;
+    seg_config.line_mode.cmd_lines = (trans->flags & SPI_TRANS_MULTILINE_CMD) ? seg_config.line_mode.data_lines : 1;
+
     spi_hal_sct_format_conf_buffer(hal, &seg_config, hal_dev, buffer);
 }
 
