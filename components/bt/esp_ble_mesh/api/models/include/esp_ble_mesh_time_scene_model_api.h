@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2017-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2017-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -77,7 +77,7 @@ typedef struct {
     uint16_t time_authority : 1;    /*!< 0 = No Time Authority, 1 = Time Authority */
     uint16_t tai_utc_delta : 15;    /*!< Current difference between TAI and UTC in seconds */
     uint8_t  time_zone_offset;      /*!< The local time zone offset in 15-minute increments */
-} esp_ble_mesh_time_set_t;
+} __attribute__((packed)) esp_ble_mesh_time_set_t;
 
 /** Parameters of Time Zone Set */
 typedef struct {
@@ -90,7 +90,7 @@ typedef struct {
     uint16_t tai_utc_delta_new : 15;   /*!< Upcoming difference between TAI and UTC in seconds */
     uint16_t padding : 1;              /*!< Always 0b0. Other values are Prohibited. */
     uint8_t tai_delta_change[5];       /*!< TAI Seconds time of the upcoming TAI-UTC Delta change */
-} esp_ble_mesh_tai_utc_delta_set_t;
+} __attribute__((packed)) esp_ble_mesh_tai_utc_delta_set_t;
 
 /** Parameter of Time Role Set */
 typedef struct {
@@ -134,7 +134,7 @@ typedef struct {
     uint64_t action : 4;        /*!< Action to be performed at the scheduled time */
     uint64_t trans_time : 8;    /*!< Transition time for this action */
     uint16_t scene_number;      /*!< Transition time for this action */
-} esp_ble_mesh_scheduler_act_set_t;
+} __attribute__((packed)) esp_ble_mesh_scheduler_act_set_t;
 
 /**
  * @brief Time Scene Client Model get message union
@@ -169,7 +169,7 @@ typedef struct {
     uint16_t time_authority : 1;       /*!< 0 = No Time Authority, 1 = Time Authority */
     uint16_t tai_utc_delta : 15;       /*!< Current difference between TAI and UTC in seconds */
     uint8_t  time_zone_offset;         /*!< The local time zone offset in 15-minute increments */
-} esp_ble_mesh_time_status_cb_t;
+} __attribute__((packed)) esp_ble_mesh_time_status_cb_t;
 
 /** Parameters of Time Zone Status */
 typedef struct {
@@ -185,7 +185,7 @@ typedef struct {
     uint16_t tai_utc_delta_new : 15;   /*!< Upcoming difference between TAI and UTC in seconds */
     uint16_t padding_2 : 1;            /*!< Always 0b0. Other values are Prohibited. */
     uint8_t tai_delta_change[5];       /*!< TAI Seconds time of the upcoming TAI-UTC Delta change */
-} esp_ble_mesh_tai_utc_delta_status_cb_t;
+} __attribute__((packed)) esp_ble_mesh_tai_utc_delta_status_cb_t;
 
 /** Parameter of Time Role Status */
 typedef struct {
@@ -226,7 +226,7 @@ typedef struct {
     uint64_t action : 4;        /*!< Action to be performed at the scheduled time */
     uint64_t trans_time : 8;    /*!< Transition time for this action */
     uint16_t scene_number;      /*!< Transition time for this action */
-} esp_ble_mesh_scheduler_act_status_cb_t;
+} __attribute__((packed)) esp_ble_mesh_scheduler_act_status_cb_t;
 
 /**
  * @brief Time Scene Client Model received message union
@@ -655,7 +655,7 @@ typedef struct {
     uint16_t time_authority : 1;    /*!< 0 = No Time Authority, 1 = Time Authority */
     uint16_t tai_utc_delta_curr : 15;   /*!< Current difference between TAI and UTC in seconds */
     uint8_t  time_zone_offset_curr;     /*!< The local time zone offset in 15-minute increments */
-} esp_ble_mesh_state_change_time_set_t;
+} __attribute__((packed)) esp_ble_mesh_state_change_time_set_t;
 
 /** Parameters of Time Status state change event */
 typedef struct {
@@ -665,7 +665,7 @@ typedef struct {
     uint16_t time_authority : 1;    /*!< 0 = No Time Authority, 1 = Time Authority */
     uint16_t tai_utc_delta_curr : 15;   /*!< Current difference between TAI and UTC in seconds */
     uint8_t  time_zone_offset_curr;     /*!< The local time zone offset in 15-minute increments */
-} esp_ble_mesh_state_change_time_status_t;
+} __attribute__((packed)) esp_ble_mesh_state_change_time_status_t;
 
 /** Parameters of Time Zone Set state change event */
 typedef struct {
@@ -677,7 +677,7 @@ typedef struct {
 typedef struct {
     uint16_t tai_utc_delta_new : 15;    /*!< Upcoming difference between TAI and UTC in seconds */
     uint8_t tai_delta_change[5];        /*!< TAI Seconds time of the upcoming TAI-UTC Delta change */
-} esp_ble_mesh_state_change_tai_utc_delta_set_t;
+} __attribute__((packed)) esp_ble_mesh_state_change_tai_utc_delta_set_t;
 
 /** Parameter of Time Role Set state change event */
 typedef struct {
@@ -712,7 +712,7 @@ typedef struct {
     uint64_t action : 4;        /*!< Action to be performed at the scheduled time */
     uint64_t trans_time : 8;    /*!< Transition time for this action */
     uint16_t scene_number;      /*!< Scene number to be used for some actions */
-} esp_ble_mesh_state_change_scheduler_act_set_t;
+} __attribute__((packed)) esp_ble_mesh_state_change_scheduler_act_set_t;
 
 /**
  * @brief Time Scene Server Model state change value union
@@ -752,7 +752,7 @@ typedef struct {
     uint16_t time_authority : 1;    /*!< 0 = No Time Authority, 1 = Time Authority */
     uint16_t tai_utc_delta : 15;    /*!< Current difference between TAI and UTC in seconds */
     uint8_t  time_zone_offset;      /*!< The local time zone offset in 15-minute increments */
-} esp_ble_mesh_server_recv_time_set_t;
+} __attribute__((packed)) esp_ble_mesh_server_recv_time_set_t;
 
 /** Context of the received Time Zone Set message */
 typedef struct {
@@ -765,7 +765,7 @@ typedef struct {
     uint16_t tai_utc_delta_new : 15;    /*!< Upcoming difference between TAI and UTC in seconds */
     uint16_t padding : 1;               /*!< Always 0b0. Other values are Prohibited. */
     uint8_t tai_delta_change[5];        /*!< TAI Seconds time of the upcoming TAI-UTC Delta change */
-} esp_ble_mesh_server_recv_tai_utc_delta_set_t;
+} __attribute__((packed)) esp_ble_mesh_server_recv_tai_utc_delta_set_t;
 
 /** Context of the received Time Role Set message */
 typedef struct {
@@ -804,7 +804,7 @@ typedef struct {
     uint64_t action : 4;        /*!< Action to be performed at the scheduled time */
     uint64_t trans_time : 8;    /*!< Transition time for this action */
     uint16_t scene_number;      /*!< Scene number to be used for some actions */
-} esp_ble_mesh_server_recv_scheduler_act_set_t;
+} __attribute__((packed)) esp_ble_mesh_server_recv_scheduler_act_set_t;
 
 /**
  * @brief Time Scene Server Model received set message union
@@ -828,7 +828,7 @@ typedef struct {
     uint16_t time_authority : 1;    /*!< 0 = No Time Authority, 1 = Time Authority */
     uint16_t tai_utc_delta : 15;    /*!< Current difference between TAI and UTC in seconds */
     uint8_t  time_zone_offset;      /*!< The local time zone offset in 15-minute increments */
-} esp_ble_mesh_server_recv_time_status_t;
+} __attribute__((packed)) esp_ble_mesh_server_recv_time_status_t;
 
 /**
  * @brief Time Scene Server Model received status message union
