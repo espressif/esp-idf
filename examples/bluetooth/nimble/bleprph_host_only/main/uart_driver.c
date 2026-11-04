@@ -144,10 +144,6 @@ static void IRAM_ATTR hci_uart_rx_task(void *arg)
                     break;
                 }
 
-                if (data[1] == BLE_HCI_EVCODE_HW_ERROR) {
-                    assert(0);
-                }
-
                 /* Allocate LE Advertising Report Event from lo pool only */
                 if ((data[1] == BLE_HCI_EVCODE_LE_META) &&
                         (data[3] == BLE_HCI_LE_SUBEV_ADV_RPT || data[3] == BLE_HCI_LE_SUBEV_EXT_ADV_RPT)) {
@@ -234,7 +230,10 @@ void hci_uart_send(uint8_t *buf, uint16_t len)
 void
 ble_transport_ll_init(void)
 {
-
+    /* Open after ble_transport_hs_init(), so an early controller event
+     * cannot reach the RX task before the host pools exist.
+     */
+    hci_uart_open();
 }
 
 void
@@ -296,6 +295,7 @@ void hci_uart_open(void)
     ESP_ERROR_CHECK(uart_driver_install(UART_NO, UART_BUF_SZ * 2, UART_BUF_SZ * 2, 0, NULL, intr_alloc_flags));
     ESP_ERROR_CHECK(uart_param_config(UART_NO, &uart_config));
     ESP_ERROR_CHECK(uart_set_pin(UART_NO, UART_TX_PIN, UART_RX_PIN, -1, -1));
+    ESP_ERROR_CHECK(uart_flush_input(UART_NO));
 
     xTaskCreate(hci_uart_rx_task, "hci_uart_rx_task", 2048, NULL, 12, &s_rx_task_hdl);
 }
