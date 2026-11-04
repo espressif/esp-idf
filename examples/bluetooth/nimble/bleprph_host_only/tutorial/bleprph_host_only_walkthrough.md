@@ -56,7 +56,6 @@ app_main(void)
     }
     ESP_ERROR_CHECK(ret);
 
-    hci_uart_open();
     ret = nimble_port_init();
     if (ret != ESP_OK) {
         ESP_LOGE(tag, "Failed to init nimble %d ", ret);
@@ -66,7 +65,7 @@ app_main(void)
     ....
 }
 ```
-In the main function `hci_uart_open()` configures the uart with necessary parameters like baud_rate, parity, etc. The file [uart_driver.c](../main/uart_driver.c) has all the uart transport code along with the necessary apis mandated by nimble-host. `ble_transport_to_ll_acl_impl` is the api used to send the data to the controller. and `ble_transport_to_ll_cmd_impl` is used to send the command to the controller. These two apis are implemented as they are necessary. Along with these two apis, any data that is received in the rx direction is redirected to the host using `ble_transport_to_hs_evt` and `ble_transport_to_hs_acl` apis.
+`nimble_port_init()` initializes the host, then calls `ble_transport_ll_init()`. That function calls `hci_uart_open()`, which configures the UART (baud rate, parity, and the other parameters) only after the host pools exist. The file [uart_driver.c](../main/uart_driver.c) has all the uart transport code along with the necessary apis mandated by nimble-host. `ble_transport_to_ll_acl_impl` is the api used to send the data to the controller. and `ble_transport_to_ll_cmd_impl` is used to send the command to the controller. These two apis are implemented as they are necessary. Along with these two apis, any data that is received in the rx direction is redirected to the host using `ble_transport_to_hs_evt` and `ble_transport_to_hs_acl` apis.
 
 ## Conclusion
 1. This example covered how to write the custom transport layer and use it with nimble-host.
