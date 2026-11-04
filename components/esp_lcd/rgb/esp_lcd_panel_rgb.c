@@ -1411,7 +1411,7 @@ static IRAM_ATTR void lcd_rgb_panel_try_restart_transmission(esp_rgb_panel_t *pa
         panel->flags.need_restart = false;
         do_restart = true;
     }
-    if (panel->bb_eof_count < panel->expect_eof_count) {
+    if (panel->bb_eof_count != panel->expect_eof_count) {
         do_restart = true;
     }
 #endif // CONFIG_LCD_RGB_RESTART_IN_VSYNC
