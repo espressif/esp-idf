@@ -152,30 +152,27 @@ ESP-IDF 使用预测性时间补偿机制来实现自动 Light-sleep。系统会
 
 时钟频率不受 APB 频率影响的外设时钟源通常有 ``REF_TICK``, ``XTAL``, ``RC_FAST`` (i.e., ``RTC_8M``)。因此，为了保证外设在 DFS 期间的所有行为一致，建议在上述时钟中选择其一作为外设的时钟源。如果想要了解更多详情可以浏览每个外设 ”API 参考 > 外设 API“ 页面的 “电源管理” 章节。
 
-目前以下外设驱动程序可感知动态调频，并在调频期间使用 ``ESP_PM_APB_FREQ_MAX`` 锁：
+以下列出了部分支持电源管理锁的常见驱动程序。
+锁类型取决于芯片、所选时钟源和驱动配置。
+具体行为请参阅各外设 API 参考中的“电源管理”章节。
 
 .. list::
 
-  - SPI master
-  - I2C
-  :SOC_I2S_HW_VERSION_1 or not SOC_I2S_SUPPORTS_APLL: - I2S
-  :not SOC_I2S_HW_VERSION_1 and SOC_I2S_SUPPORTS_APLL: - I2S（如果 APLL 锁在使用中，I2S 则会启用 ``ESP_PM_NO_LIGHT_SLEEP`` 锁）
-  - SDMMC
-
-启用以下驱动程序时，将占用 ``ESP_PM_APB_FREQ_MAX`` 锁：
-
-.. list::
-
-    - **SPI slave**：从调用 :cpp:func:`spi_slave_initialize` 至 :cpp:func:`spi_slave_free` 期间。
-    - **GPTimer**：从调用 :cpp:func:`gptimer_enable` 至 :cpp:func:`gptimer_disable` 期间。
-    - **Ethernet**：从调用 :cpp:func:`esp_eth_driver_install` 至 :cpp:func:`esp_eth_driver_uninstall` 期间。
-    :SOC_WIFI_SUPPORTED: - **WiFi**：从调用 :cpp:func:`esp_wifi_start` 至 :cpp:func:`esp_wifi_stop` 期间。如果启用了调制解调器睡眠模式，广播关闭时将释放此管理锁。
-    :SOC_TWAI_SUPPORTED: - **TWAI**：从调用 :cpp:func:`twai_driver_install` 至 :cpp:func:`twai_driver_uninstall` 期间 (只有在 TWAI 时钟源选择为 :cpp:enumerator:`TWAI_CLK_SRC_APB` 的时候生效)。
-    :SOC_BT_SUPPORTED and esp32: - **Bluetooth**：从调用 :cpp:func:`esp_bt_controller_enable` 至 :cpp:func:`esp_bt_controller_disable` 期间。如果启用了蓝牙调制解调器，广播关闭时将释放此管理锁。但依然占用 ``ESP_PM_NO_LIGHT_SLEEP`` 锁，除非将 :menuitem:`CONFIG_BTDM_CTRL_LOW_POWER_CLOCK` 选项设置为 “外部 32 kHz 晶振”。
-    :SOC_BT_SUPPORTED and not esp32: - **Bluetooth**：从调用 :cpp:func:`esp_bt_controller_enable` 至 :cpp:func:`esp_bt_controller_disable` 期间。如果启用了蓝牙调制解调器，广播关闭时将释放此管理锁。但依然占用 ``ESP_PM_NO_LIGHT_SLEEP`` 锁。
+    :SOC_GPSPI_SUPPORTED: - **SPI master**：每次事务期间。
+    :SOC_I2C_SUPPORTED: - **I2C**：每次事务期间。
+    :SOC_SDMMC_HOST_SUPPORTED: - **SDMMC**：每次事务期间。
+    :SOC_I2S_SUPPORTED: - **I2S**：从调用 :cpp:func:`i2s_channel_enable` 至 :cpp:func:`i2s_channel_disable` 期间。
+    :SOC_GPSPI_SUPPORTED: - **SPI slave**：从初始化至反初始化期间。
+    :SOC_SPI_SUPPORT_SLAVE_HD_VER2: - **SPI slave HD**：从初始化至反初始化期间。
+    :SOC_GPTIMER_SUPPORTED: - **GPTimer**：从调用 :cpp:func:`gptimer_enable` 至 :cpp:func:`gptimer_disable` 期间。
+    :SOC_EMAC_SUPPORTED: - **Ethernet**：从调用 :cpp:func:`esp_eth_driver_install` 至 :cpp:func:`esp_eth_driver_uninstall` 期间。
+    :SOC_WIFI_SUPPORTED: - **WiFi**：调制解调器工作期间。启用 WiFi Modem-sleep 后，无线电关闭期间会动态释放锁。
+    :SOC_TWAI_SUPPORTED: - **TWAI**：使用旧版驱动时，从调用 :cpp:func:`twai_driver_install` 至 :cpp:func:`twai_driver_uninstall` 期间持锁；使用新版驱动时，从调用 :cpp:func:`twai_node_enable` 至 :cpp:func:`twai_node_disable` 期间持锁。
+    :SOC_BT_SUPPORTED and esp32: - **Bluetooth**：控制器启用期间。启用 Bluetooth Modem-sleep 后，无线电关闭期间会释放 ``ESP_PM_APB_FREQ_MAX`` 锁，但仍会持有 ``ESP_PM_NO_LIGHT_SLEEP`` 锁，除非将 :menuitem:`CONFIG_BTDM_CTRL_LOW_POWER_CLOCK` 设置为“外部 32 kHz 晶振”。
+    :SOC_BT_SUPPORTED and not esp32: - **Bluetooth**：控制器启用期间。启用 Bluetooth Modem-sleep 后，无线电关闭期间会释放 ``ESP_PM_APB_FREQ_MAX`` 锁，但仍会持有 ``ESP_PM_NO_LIGHT_SLEEP`` 锁。
     :SOC_PCNT_SUPPORTED: - **PCNT**：从调用 :cpp:func:`pcnt_unit_enable` 至 :cpp:func:`pcnt_unit_disable` 期间。
     :SOC_SDM_SUPPORTED: - **Sigma-delta**：从调用 :cpp:func:`sdm_channel_enable` 至 :cpp:func:`sdm_channel_disable` 期间。
-    :SOC_MCPWM_SUPPORTED: - **MCPWM**: 从调用 :cpp:func:`mcpwm_timer_enable` 至 :cpp:func:`mcpwm_timer_disable` 期间，以及调用 :cpp:func:`mcpwm_capture_timer_enable` 至 :cpp:func:`mcpwm_capture_timer_disable` 期间。
+    :SOC_MCPWM_SUPPORTED: - **MCPWM**：从调用 :cpp:func:`mcpwm_timer_enable` 至 :cpp:func:`mcpwm_timer_disable` 期间，以及调用 :cpp:func:`mcpwm_capture_timer_enable` 至 :cpp:func:`mcpwm_capture_timer_disable` 期间。
 
 .. only:: SOC_PM_SUPPORT_TOP_PD
 

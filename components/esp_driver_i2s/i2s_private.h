@@ -231,7 +231,7 @@ struct i2s_channel_obj_t {
     SemaphoreHandle_t       mutex;          /*!< Mutex semaphore for the channel operations */
     SemaphoreHandle_t       binary;         /*!< Binary semaphore for writing / reading / enabling / disabling */
 #if CONFIG_PM_ENABLE
-    esp_pm_lock_handle_t    pm_lock;        /*!< Power management lock, to avoid apb clock frequency changes while i2s is working */
+    esp_pm_lock_handle_t    pm_lock;        /*!< Power management lock held while the channel is enabled */
 #endif
     QueueHandle_t           msg_queue;      /*!< Message queue handler, used for transporting data between interrupt and read/write task */
     uint64_t                reserve_gpio_mask; /*!< The gpio mask that has been reserved by I2S */
@@ -453,6 +453,25 @@ void i2s_output_gpio_revoke(i2s_chan_handle_t handle, uint64_t gpio_mask);
  *      - ESP_ERR_NOT_FOUND     No available I2S port found
  */
 esp_err_t i2s_channel_change_port(i2s_chan_handle_t handle, int id);
+#endif
+
+#if CONFIG_PM_ENABLE
+/**
+ * @brief Check whether the clock source requires the APB frequency to remain fixed
+ *
+ * @param clk_src I2S clock source
+ * @return True if an APB frequency lock is required while the clock source is in use
+ */
+bool i2s_clk_src_requires_apb_lock(i2s_clock_src_t clk_src);
+
+/**
+ * @brief Select the power-management lock held while an I2S channel is enabled.
+ *
+ * A DMA buffer in PSRAM requires the maximum CPU frequency. A clock source
+ * which requires a fixed APB frequency uses an APB frequency lock.
+ * Other clock sources only need to be kept active by blocking light sleep.
+ */
+esp_pm_lock_type_t i2s_select_pm_lock_type(bool dma_buf_in_psram, i2s_clock_src_t clk_src);
 #endif
 
 #ifdef __cplusplus
