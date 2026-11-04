@@ -1,11 +1,12 @@
 idf_build_get_property(target IDF_TARGET)
 
 set(srcs)
-set(includes "include")
+set(includes)
 
 if(EXISTS "${CMAKE_CURRENT_LIST_DIR}/${target}/include")
     list(APPEND includes "${target}/include")
 endif()
+list(APPEND includes "include")
 
 # TODO(IDF-15986): potentially remove __ULP_BUILDV2 handling from esp_hal_gpspi
 if(__ULP_BUILDV2)
