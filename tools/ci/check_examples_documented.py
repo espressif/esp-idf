@@ -146,7 +146,6 @@ KNOWN_MISSING = {
     'peripherals/usb/device/tusb_midi',
     'peripherals/usb/device/tusb_msc',
     'peripherals/usb/device/tusb_ncm',
-    'peripherals/usb/device/tusb_serial_device',
     'peripherals/usb/host/cdc',
     'peripherals/usb/host/cherryusb_host',
     'peripherals/usb/host/hid',

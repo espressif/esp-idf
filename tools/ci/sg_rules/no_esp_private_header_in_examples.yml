@@ -13,7 +13,6 @@ ignores:
   - "examples/peripherals/usb/device/tusb_ncm/main/tusb_ncm_main.c"
   - "examples/wifi/itwt/main/wifi_stats_cmd.c"
   - "examples/wifi/wifi_aware/nan_console/main/nan_main.c"
-  - "examples/peripherals/usb/device/tusb_cdc_acm_wakeup/main/tusb_cdc_acm_wakeup_main.c"
 rule:
   kind: preproc_include
   has:
