@@ -728,6 +728,9 @@ static void bta_opp_client_act_put_rsp(tBTA_OPP_CCB *p_ccb, tBTA_OPP_CLIENT_DATA
         bta_opp_report_complete(p_ccb, BTA_OPP_OK);
         free_client_transfer_state(p_ccb);
         p_ccb->state = BTA_OPP_CLIENT_CONNECTED_ST;
+    } else if (info.response_code == (OBEX_RESPONSE_CODE_FORBIDDEN | OBEX_FINAL_BIT_MASK)) {
+        bta_opp_report_complete(p_ccb, BTA_OPP_FORBIDDEN);
+        bta_opp_close_connection(p_ccb, BTA_OPP_FORBIDDEN, TRUE);
     } else {
         bta_opp_report_complete(p_ccb, BTA_OPP_OBEX_FAIL);
         bta_opp_close_connection(p_ccb, BTA_OPP_OBEX_FAIL, TRUE);
