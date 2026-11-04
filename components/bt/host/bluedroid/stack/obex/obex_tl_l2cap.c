@@ -173,6 +173,14 @@ static tOBEX_TL_L2CAP_SCB *find_scb_by_psm(UINT16 psm)
     return p_scb;
 }
 
+/* Outgoing virtual PSM only. A listening PSM stays registered. */
+static void deregister_outgoing_vpsm(tOBEX_TL_L2CAP_CCB *p_ccb)
+{
+    if (p_ccb->initiator && find_scb_by_psm(p_ccb->vpsm) == NULL) {
+        L2CA_Deregister(p_ccb->vpsm);
+    }
+}
+
 static void free_scb(tOBEX_TL_L2CAP_SCB *p_scb)
 {
     memset(p_scb, 0, sizeof(tOBEX_TL_L2CAP_SCB));
@@ -251,6 +259,7 @@ static void l2cap_sec_check_complete_orig(BD_ADDR bd_addr, tBT_TRANSPORT transpo
         L2CA_ConfigReq(p_ccb->lcid, &cfg);
     } else {
         L2CA_DisconnectReq(p_ccb->lcid);
+        deregister_outgoing_vpsm(p_ccb);
         tOBEX_TL_MSG msg = {0};
         msg.any.hdl = p_ccb->allocated;
         free_ccb(p_ccb);
@@ -321,6 +330,7 @@ void obex_tl_l2cap_connect_cfm(UINT16 lcid, UINT16 result)
                                   &l2cap_sec_check_complete_orig, p_ccb);
     } else {
         OBEX_TL_L2CAP_TRACE_WARNING("l2cap_connect_cfm result != L2CAP_CONN_OK: result: 0x%x\n", result);
+        deregister_outgoing_vpsm(p_ccb);
         tOBEX_TL_MSG msg = {0};
         msg.any.hdl = p_ccb->allocated;
         free_ccb(p_ccb);
@@ -435,6 +445,7 @@ void obex_tl_l2cap_config_cfm(UINT16 lcid, tL2CAP_CFG_INFO *p_cfg)
     if (p_cfg->result != L2CAP_CFG_OK) {
         OBEX_TL_L2CAP_TRACE_WARNING("l2cap_config_cfm result != L2CAP_CFG_OK: result: 0x%x\n", p_cfg->result);
         L2CA_DisconnectReq(p_ccb->lcid);
+        deregister_outgoing_vpsm(p_ccb);
         tOBEX_TL_MSG msg = {0};
         msg.any.hdl = p_ccb->allocated;
         free_ccb(p_ccb);
@@ -506,9 +517,7 @@ void obex_tl_l2cap_disconnect_ind(UINT16 lcid, BOOLEAN is_conf_needed)
         return;
     }
 
-    if (p_ccb->initiator && find_scb_by_psm(p_ccb->vpsm) == NULL) {
-        L2CA_Deregister(p_ccb->vpsm);
-    }
+    deregister_outgoing_vpsm(p_ccb);
 
     tOBEX_TL_MSG msg = {0};
     msg.any.hdl = p_ccb->allocated;
@@ -612,9 +621,7 @@ UINT16 obex_tl_l2cap_connect(tOBEX_TL_SVR_INFO *server)
     p_ccb->lcid = L2CA_ErtmConnectReq(p_ccb->vpsm, server->l2cap.addr, &obex_tl_l2cap_etm_opts);
     if (p_ccb->lcid == 0) {
         /* outgoing-only PSM was registered above; unload it on connect failure */
-        if (find_scb_by_psm(p_ccb->vpsm) == NULL) {
-            L2CA_Deregister(p_ccb->vpsm);
-        }
+        deregister_outgoing_vpsm(p_ccb);
         free_ccb(p_ccb);
         return 0;
     }
@@ -634,9 +641,7 @@ void obex_tl_l2cap_disconnect(UINT16 hdl)
     tOBEX_TL_L2CAP_CCB *p_ccb = find_ccb_by_hdl(hdl);
     if (p_ccb != NULL) {
         L2CA_DisconnectReq(p_ccb->lcid);
-        if (p_ccb->initiator && find_scb_by_psm(p_ccb->vpsm) == NULL) {
-            L2CA_Deregister(p_ccb->vpsm);
-        }
+        deregister_outgoing_vpsm(p_ccb);
         free_ccb(p_ccb);
     }
 }
