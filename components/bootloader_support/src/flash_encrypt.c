@@ -343,7 +343,7 @@ bool esp_flash_encryption_cfg_verify_release_mode(void)
     secure = flash_enc_is_download_mspi_dis_secure();
     result &= secure;
     if (!secure) {
-        ESP_LOGW(TAG, "Not disabled UART bootloader download mspi (set DIS_DOWNLOAD_MSPI->1)");
+        ESP_LOGW(TAG, "Not disabled UART bootloader download mspi (set SPI_DOWNLOAD_MSPI_DIS->1)");
     } else if (!esp_efuse_read_field_bit(ESP_EFUSE_SPI_DOWNLOAD_MSPI_DIS)) {
         ESP_LOGW(TAG, "SPI_DOWNLOAD_MSPI_DIS is write-protected at 0 and can no longer be set - MSPI access in download mode stays enabled");
     }
