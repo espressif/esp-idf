@@ -20,7 +20,7 @@ extern "C" {
 
 #define HP_CALI_DRVB_DEFAULT    8
 #define LP_CALI_DBIAS_DEFAULT   0
-#define DCDC_DREG_DEFAULT       12
+#define DCDC_DREG_DEFAULT       18
 
 // FOR  XTAL FORCE PU IN SLEEP
 #define PMU_PD_CUR_SLEEP_ON    0
