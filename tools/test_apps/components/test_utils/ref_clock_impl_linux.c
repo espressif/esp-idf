@@ -6,6 +6,7 @@
 
 #include <assert.h>
 #include <time.h>
+#include "test_utils.h"
 
 void ref_clock_init(void)
 {

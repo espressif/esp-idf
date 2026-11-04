@@ -10,7 +10,6 @@
 #include <stdatomic.h>
 #include "sys/param.h"
 #include "freertos/FreeRTOS.h"
-#include "freertos/task.h"
 #include "esp_err.h"
 #include "esp_timer_impl.h"
 #include "esp_timer.h"
@@ -26,6 +25,8 @@ extern uint64_t timestamp_id[2];
 /* GCD queue and timer source used as "hardware timer" on macOS */
 static dispatch_queue_t  s_queue        = NULL;
 static dispatch_source_t s_timer_source = NULL;
+
+static intr_handler_t s_alarm_handler = NULL;
 
 /* Flag to track if timer is armed */
 static volatile bool s_timer_armed = false;
@@ -60,10 +61,7 @@ int64_t esp_timer_get_time(void)
 static void timer_alarm_dispatch_handler(void *ctx)
 {
     (void) ctx;
-    TaskHandle_t timer_task = esp_timer_impl_get_timer_task_handle();
-    if (timer_task != NULL) {
-        xTaskNotifyGive(timer_task);
-    }
+    s_alarm_handler(NULL);
 }
 
 static void setup_alarm(uint64_t alarm_us)
@@ -136,7 +134,7 @@ esp_err_t esp_timer_impl_early_init(void)
 
 esp_err_t esp_timer_impl_init(intr_handler_t alarm_handler)
 {
-    (void) alarm_handler;
+    s_alarm_handler = alarm_handler;
 
     timestamp_id[0] = UINT64_MAX;
     timestamp_id[1] = UINT64_MAX;

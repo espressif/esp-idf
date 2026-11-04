@@ -34,6 +34,14 @@ def test_esp_timer_linux(dut: Dut) -> None:
     dut.run_all_single_board_cases(timeout=180)
 
 
+@pytest.mark.host_test
+@pytest.mark.macos
+@pytest.mark.parametrize('config', ['default'], indirect=True)
+@idf_parametrize('target', ['linux'], indirect=['target'])
+def test_esp_timer_macos(dut: Dut) -> None:
+    dut.run_all_single_board_cases(timeout=180)
+
+
 @pytest.mark.generic
 @pytest.mark.psram
 @pytest.mark.parametrize(
