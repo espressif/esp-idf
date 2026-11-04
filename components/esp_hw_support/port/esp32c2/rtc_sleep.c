@@ -156,12 +156,16 @@ void rtc_sleep_init(rtc_sleep_config_t cfg)
         rtc_sleep_pu(pu_cfg);
     }
 
-    assert(!cfg.pd_cur_slp || cfg.bias_sleep_slp);
+    if (cfg.pd_cur_slp && !cfg.bias_sleep_slp) {
+        abort();
+    }
     REGI2C_WRITE_MASK(I2C_DIG_REG, I2C_DIG_REG_EXT_RTC_DREG_SLEEP, cfg.rtc_dbias_slp);
     REGI2C_WRITE_MASK(I2C_DIG_REG, I2C_DIG_REG_EXT_DIG_DREG_SLEEP, cfg.dig_dbias_slp);
 
     REG_SET_FIELD(RTC_CNTL_BIAS_CONF_REG, RTC_CNTL_DBG_ATTEN_MONITOR, RTC_CNTL_DBG_ATTEN_MONITOR_DEFAULT);
     REG_SET_FIELD(RTC_CNTL_BIAS_CONF_REG, RTC_CNTL_BIAS_SLEEP_MONITOR, RTC_CNTL_BIASSLP_MONITOR_DEFAULT);
+    _Static_assert(!RTC_CNTL_PD_CUR_MONITOR_DEFAULT || RTC_CNTL_BIASSLP_MONITOR_DEFAULT,
+                   "pd_cur=1 with bias_sleep=0 is illegal");
     REG_SET_FIELD(RTC_CNTL_BIAS_CONF_REG, RTC_CNTL_PD_CUR_MONITOR, RTC_CNTL_PD_CUR_MONITOR_DEFAULT);
     REG_SET_FIELD(RTC_CNTL_BIAS_CONF_REG, RTC_CNTL_DBG_ATTEN_DEEP_SLP, cfg.dbg_atten_slp);
     REG_SET_FIELD(RTC_CNTL_BIAS_CONF_REG, RTC_CNTL_BIAS_SLEEP_DEEP_SLP, cfg.bias_sleep_slp);

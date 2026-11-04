@@ -5,6 +5,7 @@
  */
 
 #include <stdint.h>
+#include <stdlib.h>
 #include "soc/soc.h"
 #include "soc/rtc.h"
 #include "soc/rtc_cntl_reg.h"
@@ -214,8 +215,12 @@ void rtc_sleep_init(rtc_sleep_config_t cfg)
         CLEAR_PERI_REG_MASK(RTC_CNTL_DIG_PWC_REG, RTC_CNTL_WIFI_PD_EN);
     }
 
-    assert(!cfg.pd_cur_monitor || cfg.bias_sleep_monitor);
-    assert(!cfg.pd_cur_slp || cfg.bias_sleep_slp);
+    if (cfg.pd_cur_monitor && !cfg.bias_sleep_monitor) {
+        abort();
+    }
+    if (cfg.pd_cur_slp && !cfg.bias_sleep_slp) {
+        abort();
+    }
 
     REG_SET_FIELD(RTC_CNTL_REG, RTC_CNTL_DBIAS_SLP, cfg.rtc_dbias_slp);
     REG_SET_FIELD(RTC_CNTL_REG, RTC_CNTL_DIG_DBIAS_SLP, cfg.dig_dbias_slp);
