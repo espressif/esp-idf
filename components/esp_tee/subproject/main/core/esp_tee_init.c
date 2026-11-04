@@ -74,8 +74,6 @@ static void tee_print_app_info(void)
 #ifdef CONFIG_BOOTLOADER_APP_SECURE_VERSION
     ESP_LOGI(TAG, "Secure version:   %d", app_desc->secure_version);
 #endif
-    ESP_LOGI(TAG, "Compile time:     %s %s", app_desc->date, app_desc->time);
-
     char buf[17];
     esp_app_get_elf_sha256(buf, sizeof(buf));
     ESP_LOGI(TAG, "ELF file SHA256:  %s...", buf);

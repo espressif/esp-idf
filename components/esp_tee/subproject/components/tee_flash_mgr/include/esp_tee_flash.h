@@ -78,6 +78,13 @@ esp_err_t esp_tee_flash_set_running_ree_partition(uint32_t paddr);
 esp_partition_info_t *esp_tee_flash_get_running_ree_partition(void);
 
 /**
+ * @brief Fetch the running TEE app partition (the one the bootloader booted)
+ *
+ * @return esp_partition_info_t*  Partition table entry for the running TEE app partition
+ */
+esp_partition_info_t *esp_tee_flash_get_running_tee_partition(void);
+
+/**
  * @brief Check if the given virtual address falls within the TEE flash protected region
  *
  * @param vaddr Virtual address to check

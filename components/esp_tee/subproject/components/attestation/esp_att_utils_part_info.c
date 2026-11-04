@@ -23,7 +23,6 @@
 
 #if ESP_TEE_BUILD
 #include "esp_flash_partitions.h"
-#include "bootloader_utility_tee.h"
 #include "esp_tee_flash.h"
 #else
 #include "esp_partition.h"
@@ -132,18 +131,16 @@ static esp_err_t get_active_app_part_pos(esp_partition_pos_t *pos)
 
 static esp_err_t get_active_tee_part_pos(esp_partition_pos_t *pos)
 {
-    uint8_t tee_active_part = bootloader_utility_tee_get_boot_partition(NULL);
-    if (tee_active_part > PART_SUBTYPE_TEE_1) {
+    if (pos == NULL) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    esp_partition_info_t *running_tee = esp_tee_flash_get_running_tee_partition();
+    if (running_tee->magic != ESP_PARTITION_MAGIC) {
         return ESP_ERR_NOT_FOUND;
     }
 
-    esp_partition_info_t part_info = {};
-    esp_err_t err = esp_tee_flash_find_partition(PART_TYPE_APP, tee_active_part, NULL, &part_info);
-    if (err != ESP_OK) {
-        return err;
-    }
-
-    memcpy(pos, &part_info.pos, sizeof(esp_partition_pos_t));
+    memcpy(pos, &running_tee->pos, sizeof(esp_partition_pos_t));
     return ESP_OK;
 }
 

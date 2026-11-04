@@ -32,6 +32,9 @@ typedef struct {
 
 static tee_flash_protect_info_t tee_prot_ctx;
 
+// Running TEE app partition
+static esp_partition_info_t tee_running;
+
 // Running REE (user) app partition
 static esp_partition_info_t ree_running;
 
@@ -143,6 +146,11 @@ esp_partition_info_t *esp_tee_flash_get_running_ree_partition(void)
     return &ree_running;
 }
 
+esp_partition_info_t *esp_tee_flash_get_running_tee_partition(void)
+{
+    return &tee_running;
+}
+
 esp_err_t esp_tee_flash_setup_prot_ctx(uint8_t tee_boot_part)
 {
     static bool is_first_call = true;
@@ -187,6 +195,7 @@ esp_err_t esp_tee_flash_setup_prot_ctx(uint8_t tee_boot_part)
         if (type == PART_TYPE_APP && subtype == tee_boot_part) {
             tee_prot_ctx.active_part_start_paddr = start_addr;
             tee_prot_ctx.active_part_end_paddr = end_addr;
+            memcpy(&tee_running, &partition_entry->partition, sizeof(esp_partition_info_t));
         }
     }
 

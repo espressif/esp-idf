@@ -108,6 +108,12 @@ test_gdbstub_on_host:
     - cd components/esp_gdbstub/test_gdbstub_host
     - make test
 
+test_esp_tee_code_hash_on_host:
+  extends: .host_test_template
+  script:
+    - cd components/esp_tee/scripts/esp_tee_code_hash/
+    - pytest_for_ut ./test_esp_tee_code_hash.py
+
 # Test for create virtualenv. It must be invoked from Python, not from virtualenv.
 # Use docker image system python without any extra dependencies
 test_cli_installer:

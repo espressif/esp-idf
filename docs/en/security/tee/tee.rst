@@ -153,6 +153,33 @@ Usage
 
    - Alternatively, select the *Custom partition table CSV* option and define your own layout as per the guidelines provided in the :ref:`tee-external-memory` section.
 
+.. _tee-versioning:
+
+Firmware Versioning
+-------------------
+
+The TEE firmware carries its own version, independent of the ESP-IDF version, in the ``version`` field of its application descriptor (:cpp:type:`esp_app_desc_t`). It is printed in the TEE boot log and reported through the :doc:`attestation <tee-attestation>` token.
+
+The version is defined in :component_file:`esp_tee/version.cmake` and :component_file:`esp_tee/include/esp_tee_version.h` and has the form ``<major>.<minor>.<patch>~v<IDF major>.<IDF minor>.<IDF patch>`` (e.g., ``1.2.0~v6.2.0``), following `Semantic Versioning <https://semver.org/>`_: the TEE version identifies the TEE source, while the suffix identifies the ESP-IDF release it was built with.
+
+.. list-table::
+   :header-rows: 1
+   :widths: 30 70
+
+   * - TEE version
+     - ESP-IDF release lines
+   * - ``1.0.x``
+     - v5.5
+   * - ``1.1.x``
+     - v6.0, v6.1
+   * - ``1.2.x``
+     - v6.2
+
+Reproducible Builds and Code Hash
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+The TEE binary is built reproducibly, irrespective of the REE application configuration: the same ESP-IDF release, target and TEE configuration always produce a byte-identical ``esp_tee.bin``. Options that change the compiled TEE code (e.g., the compiler optimization and assertion levels, log verbosity, Secure Boot) are part of the TEE configuration and therefore change the image and its code hash. The image still embeds packaging metadata (flash mode/frequency/size, chip revision bounds, version strings, the ESP-IDF version and the ELF digest), so its plain SHA-256 changes with them even when the compiled code does not. The **code hash** leaves those parts (the image header, the app descriptor, the checksum and the appended digest) out, covering the image segments alone, and so identifies the compiled code alone. It can be computed from a built image with :component_file:`esp_tee/scripts/esp_tee_code_hash/esp_tee_code_hash.py`.
+
 Application Examples
 --------------------
 
@@ -162,3 +189,4 @@ API Reference
 -------------
 
 .. include-build-file:: inc/esp_tee.inc
+.. include-build-file:: inc/esp_tee_version.inc
