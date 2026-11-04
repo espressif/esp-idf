@@ -7,6 +7,8 @@ Wi-Fi Expansion
 
   {IDF_TARGET_NAME} does not support Wi-Fi functionality natively, but it is possible to use the same Wi-Fi API and features using Wi-Fi expansion.
 
+  On ESP32-P4 and ESP32-H2, Wi-Fi is provided by the hosted remote backend. Current ``esp_hosted`` releases implement ``esp_eap_client_remote_set_ttls_phase2_method()`` and do not implement ``esp_eap_client_remote_set_phase2_method()``. ``esp_eap_client_set_phase2_method()`` returns ``ESP_ERR_NOT_SUPPORTED`` on that path. The legacy setter still forwards ``ESP_EAP_TTLS_PHASE2_GTC`` through the existing RPC. Selecting EAP-GTC that way requires a backend that understands this new value; released backends predate it, so the result depends on the backend.
+
 .. only:: SOC_WIFI_SUPPORTED
 
   {IDF_TARGET_NAME} does support Wi-Fi functionality natively, please refer to :doc:`wifi-driver/index` documentation. Even though Wi-Fi is supported on {IDF_TARGET_NAME}, it is possible to expand it and use another instance of Wi-Fi expansion interfaces using `esp_wifi_remote <https://components.espressif.com/components/espressif/esp_wifi_remote>`_ component.
