@@ -5,9 +5,31 @@
 
 (See the README.md file in the upper level 'examples' directory for more information about examples.)
 
-A USB device can provide multiple functions that are active simultaneously. Such multi-function devices are also known as composite devices. This example shows how to set up ESP chip to work as a USB Serial Device as well as MSC device (Storage media as SPI-Flash).
+A USB device can provide multiple functions that are active simultaneously. Such multi-function devices are also known as composite devices. This example configures an ESP chip as both a CDC ACM serial device and an MSC device backed by SPI flash.
 
-As a USB stack, a TinyUSB component is used.
+The example uses esp_tinyusb and enables asynchronous MSC storage I/O by default.
+
+### Asynchronous MSC I/O
+
+`CONFIG_TINYUSB_MSC_ASYNC_IO=y` moves MSC storage reads and writes from the TinyUSB task to a dedicated worker task. This separation is especially useful for a composite device: CDC ACM traffic remains responsive while the host accesses slower SPI flash storage. Asynchronous I/O also reports failed storage writes to the USB host; without it, write failures are only logged by the device.
+
+The worker uses the existing `CONFIG_TINYUSB_MSC_BUFSIZE` storage buffer rather than allocating a second data buffer. With the default 4096-byte worker stack, it uses approximately 4.5 KB of additional heap, plus approximately 100 bytes for each additional LUN.
+
+This example uses the default worker configuration:
+
+- Stack size: 4096 bytes
+- Priority: 5
+- Core affinity: no affinity
+
+To customize the worker, install the MSC driver before creating the SPI flash storage:
+
+```c
+tinyusb_msc_driver_config_t driver_cfg = { 0 };
+driver_cfg.async_io_task = TINYUSB_TASK_CUSTOM(2048, 5, tskNO_AFFINITY);
+ESP_ERROR_CHECK(tinyusb_msc_install_driver(&driver_cfg));
+```
+
+The required stack size depends on the storage medium and its driver. Measure the worker task's peak stack usage during representative reads, writes, and write failures before reducing the default stack.
 
 ## How to use example
 
@@ -42,40 +64,12 @@ See the Getting Started Guide for full steps to configure and use ESP-IDF to bui
 After the flashing you should see the output at idf monitor:
 
 ```
-I (344) main_task: Calling app_main()
-I (344) example_main: USB Composite initialization
-W (354) TinyUSB: The device's configuration descriptor is not provided by user, using default.
-W (364) TinyUSB: The device's string descriptor is not provided by user, using default.
-W (374) TinyUSB: The device's device descriptor is not provided by user, using default.
-I (384) tusb_desc:
-┌─────────────────────────────────┐
-│  USB Device Descriptor Summary  │
-├───────────────────┬─────────────┤
-│bDeviceClass       │ 239         │
-├───────────────────┼─────────────┤
-│bDeviceSubClass    │ 2           │
-├───────────────────┼─────────────┤
-│bDeviceProtocol    │ 1           │
-├───────────────────┼─────────────┤
-│bMaxPacketSize0    │ 64          │
-├───────────────────┼─────────────┤
-│idVendor           │ 0x303a      │
-├───────────────────┼─────────────┤
-│idProduct          │ 0x4001      │
-├───────────────────┼─────────────┤
-│bcdDevice          │ 0x100       │
-├───────────────────┼─────────────┤
-│iManufacturer      │ 0x1         │
-├───────────────────┼─────────────┤
-│iProduct           │ 0x2         │
-├───────────────────┼─────────────┤
-│iSerialNumber      │ 0x3         │
-├───────────────────┼─────────────┤
-│bNumConfigurations │ 0x1         │
-└───────────────────┴─────────────┘
-I (544) TinyUSB: TinyUSB Driver installed
-I (554) example_main: Initializing storage...
-I (554) example_main: Initializing wear levelling
-I (584) example_main: USB Composite initialization DONE
-I (584) main_task: Returned from app_main()
+I (...) main_task: Calling app_main()
+I (...) example_main: Initializing storage...
+I (...) example_main: Initializing wear levelling
+I (...) tinyusb_msc_storage: Async IO task started (prio 5, core 0)
+I (...) example_main: USB Composite initialization
+...
+I (...) TinyUSB: TinyUSB Driver installed on port 1
+I (...) example_main: USB Composite initialization DONE
 ```

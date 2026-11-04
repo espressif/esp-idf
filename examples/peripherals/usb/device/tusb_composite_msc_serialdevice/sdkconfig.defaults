@@ -2,6 +2,7 @@
 # Espressif IoT Development Framework (ESP-IDF) Project Minimal Configuration
 #
 CONFIG_TINYUSB_MSC_ENABLED=y
+CONFIG_TINYUSB_MSC_ASYNC_IO=y
 
 CONFIG_PARTITION_TABLE_CUSTOM=y
 CONFIG_PARTITION_TABLE_CUSTOM_FILENAME="partitions.csv"
