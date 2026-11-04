@@ -475,8 +475,6 @@ _DebugExceptionVector:
     .align      4
 _xt_debugexception:
 #if (CONFIG_ESP32_ECO3_CACHE_LOCK_FIX && CONFIG_BTDM_CTRL_HLI)
-    s32i    a0, sp, XT_STK_EXIT
-
 #define XT_DEBUGCAUSE_DI        (5)
     getcoreid   a0
 #if (CONFIG_BTDM_CTRL_PINNED_TO_CORE == PRO_CPU_NUM)
