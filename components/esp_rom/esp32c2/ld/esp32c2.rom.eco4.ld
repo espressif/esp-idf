@@ -79,7 +79,7 @@ tsf_hal_set_tbtt_start_time = 0x40001f38;
 /* Functions */
 ieee80211_ampdu_reorder = 0x40001fb0;
 ieee80211_encap_esfbuf = 0x40001fb8;
-ieee80211_output_process = 0x40001fc4;
+/*ieee80211_output_process = 0x40001fc4;*/
 /* sta_input = 0x40001fcc; */
 /*ieee80211_classify = 0x40001fe0;*/
 //ieee80211_crypto_decap = 0x40001ff8;
