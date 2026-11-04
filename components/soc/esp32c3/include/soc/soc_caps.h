@@ -130,6 +130,7 @@
 #define SOC_CPU_INTR_NUM                32
 #define SOC_CPU_HAS_FLEXIBLE_INTC       1
 #define SOC_CPU_HAS_CSR_PC              1
+#define SOC_CPU_CCOUNT_STOPS_IN_WFI     1       // cycle counter does not advance while the CPU is in WFI
 
 #define SOC_CPU_BREAKPOINTS_NUM             8
 #define SOC_CPU_WATCHPOINTS_NUM             8

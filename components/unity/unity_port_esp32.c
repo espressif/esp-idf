@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2016-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2016-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -7,12 +7,11 @@
 #include <stdbool.h>
 #include "unity.h"
 #include "sdkconfig.h"
-#include "esp_cpu.h"
 #include "esp_rom_serial_output.h"
 #include "esp_system_console.h"
-#include "esp_private/esp_clk.h"
+#include "esp_timer.h"
 
-static uint32_t s_test_start, s_test_stop;
+static int64_t s_test_start, s_test_stop;
 
 void unity_putc(int c)
 {
@@ -91,17 +90,19 @@ void unity_gets(char *dst, size_t len)
     esp_unity_readline(dst, len);
 }
 
+/* Not the CPU cycle count: it wraps within seconds at full clock, and on targets
+ * with SOC_CPU_CCOUNT_STOPS_IN_WFI it does not advance while a test blocks. */
 void unity_exec_time_start(void)
 {
-    s_test_start = esp_cpu_get_cycle_count();
+    s_test_start = esp_timer_get_time();
 }
 
 void unity_exec_time_stop(void)
 {
-    s_test_stop = esp_cpu_get_cycle_count();
+    s_test_stop = esp_timer_get_time();
 }
 
 uint32_t unity_exec_time_get_ms(void)
 {
-    return (s_test_stop - s_test_start) / (esp_clk_cpu_freq() / 1000);
+    return (uint32_t)((s_test_stop - s_test_start) / 1000);
 }

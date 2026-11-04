@@ -140,20 +140,27 @@ menu "ESP Trace Configuration"
     choice ESP_TRACE_TIMESTAMP_SOURCE
         depends on ESP_TRACE_ENABLE
         prompt "Trace timestamp source"
-        default ESP_TRACE_TS_SOURCE_CCOUNT if ESP_SYSTEM_SINGLE_CORE_MODE && !PM_ENABLE && !IDF_TARGET_ESP32C3
-        default ESP_TRACE_TS_SOURCE_GPTIMER if !ESP_SYSTEM_SINGLE_CORE_MODE && !PM_ENABLE && !IDF_TARGET_ESP32C3
-        default ESP_TRACE_TS_SOURCE_SYSTIMER if SOC_SYSTIMER_SUPPORTED && (PM_ENABLE || IDF_TARGET_ESP32C3)
-        default ESP_TRACE_TS_SOURCE_ESP_TIMER if PM_ENABLE || IDF_TARGET_ESP32C3
+        default ESP_TRACE_TS_SOURCE_CCOUNT if ESP_SYSTEM_SINGLE_CORE_MODE && !PM_ENABLE && !SOC_CPU_CCOUNT_STOPS_IN_WFI
+        default ESP_TRACE_TS_SOURCE_GPTIMER if !ESP_SYSTEM_SINGLE_CORE_MODE && !PM_ENABLE
+        default ESP_TRACE_TS_SOURCE_SYSTIMER if SOC_SYSTIMER_SUPPORTED
+        default ESP_TRACE_TS_SOURCE_ESP_TIMER
         help
             Select the timestamp source for tracing.
 
+            A trace timestamp has to be a wall clock: the interval between two
+            events must be the time that passed between them, including time the
+            system spent asleep.
+
         config ESP_TRACE_TS_SOURCE_CCOUNT
             bool "CPU cycle counter (CCOUNT)"
-            depends on ESP_SYSTEM_SINGLE_CORE_MODE && !PM_ENABLE && !IDF_TARGET_ESP32C3
+            depends on ESP_SYSTEM_SINGLE_CORE_MODE && !PM_ENABLE && !SOC_CPU_CCOUNT_STOPS_IN_WFI
+            help
+                Cheapest source. Not available on targets where the cycle
+                counter stops while the CPU is idle in WFI.
 
         config ESP_TRACE_TS_SOURCE_GPTIMER
             bool "General Purpose Timer (Timer Group)"
-            depends on !PM_ENABLE && !IDF_TARGET_ESP32C3
+            depends on !PM_ENABLE
 
         config ESP_TRACE_TS_SOURCE_SYSTIMER
             bool "Systimer raw ticks"
