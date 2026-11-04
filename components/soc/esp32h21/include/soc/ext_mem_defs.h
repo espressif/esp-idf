@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0 OR MIT
  */
@@ -38,6 +38,9 @@ extern "C" {
 #define SOC_ADDRESS_IN_IRAM0_CACHE(vaddr)            SOC_ADDRESS_IN_BUS(SOC_IRAM0_CACHE, vaddr)
 #define SOC_ADDRESS_IN_DRAM0(vaddr)                  SOC_ADDRESS_IN_BUS(SOC_DRAM0, vaddr)
 #define SOC_ADDRESS_IN_DRAM0_CACHE(vaddr)            SOC_ADDRESS_IN_BUS(SOC_DRAM0_CACHE, vaddr)
+
+/* ROM I/D MMU table size in bytes. */
+#define CACHE_DROM_MMU_MAX_END               0x400
 
 #define SOC_MMU_ACCESS_FLASH            0
 #define SOC_MMU_VALID                   BIT(9)

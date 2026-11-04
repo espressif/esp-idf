@@ -101,7 +101,7 @@ const spi_flash_guard_funcs_t *IRAM_ATTR spi_flash_guard_get(void)
 #include "esp_heap_caps.h"
 #if ESP_ROM_HAS_SPI_FLASH_MMAP
 #if ESP_ROM_NEEDS_SET_CACHE_MMU_SIZE
-#include "soc/mmu.h"
+#include "soc/ext_mem_defs.h"
 #define ROM_MMAP_PAGE_NUM   (CACHE_DROM_MMU_MAX_END / sizeof(uint32_t))
 #else
 #define ROM_MMAP_PAGE_NUM   128

@@ -19,9 +19,6 @@
 #include "hal/mmu_hal.h"
 #include "hal/cache_hal.h"
 #include "soc/soc_caps.h"
-#if ESP_ROM_NEEDS_SET_CACHE_MMU_SIZE
-#include "soc/mmu.h"
-#endif
 
 #include "esp_private/esp_mmu_map_private.h"
 #include "esp_private/esp_cache_private.h"
