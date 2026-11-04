@@ -11,3 +11,4 @@ Migration from 6.1 to 6.2
     security
     system
     tools
+    :SOC_WIFI_SUPPORTED: wifi

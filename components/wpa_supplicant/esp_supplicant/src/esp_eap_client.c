@@ -4,6 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <assert.h>
 #include <string.h>
 #include <inttypes.h>
 #include "esp_err.h"
@@ -1249,7 +1250,8 @@ esp_err_t esp_eap_client_set_phase2_method(esp_eap_phase2_types type)
         g_eap_phase2_type = "auth=CHAP";
         break;
     case ESP_EAP_PHASE2_GTC:
-        g_eap_phase2_type = "auth=GTC";
+        /* PEAP matches the "auth=" prefix. TTLS matches "autheap=" for a tunneled EAP method. */
+        g_eap_phase2_type = "auth=GTC autheap=GTC";
         break;
     default:
         return ESP_ERR_INVALID_ARG;
@@ -1257,6 +1259,14 @@ esp_err_t esp_eap_client_set_phase2_method(esp_eap_phase2_types type)
     eloop_register_timeout(0, 0, config_changed_handler, NULL, NULL);
     return ESP_OK;
 }
+
+/* The legacy TTLS enum is a separate type; the cast below is valid only while the values match. */
+static_assert((int)ESP_EAP_PHASE2_EAP == (int)ESP_EAP_TTLS_PHASE2_EAP, "phase 2 enum mismatch");
+static_assert((int)ESP_EAP_PHASE2_MSCHAPV2 == (int)ESP_EAP_TTLS_PHASE2_MSCHAPV2, "phase 2 enum mismatch");
+static_assert((int)ESP_EAP_PHASE2_MSCHAP == (int)ESP_EAP_TTLS_PHASE2_MSCHAP, "phase 2 enum mismatch");
+static_assert((int)ESP_EAP_PHASE2_PAP == (int)ESP_EAP_TTLS_PHASE2_PAP, "phase 2 enum mismatch");
+static_assert((int)ESP_EAP_PHASE2_CHAP == (int)ESP_EAP_TTLS_PHASE2_CHAP, "phase 2 enum mismatch");
+static_assert((int)ESP_EAP_PHASE2_GTC == (int)ESP_EAP_TTLS_PHASE2_GTC, "phase 2 enum mismatch");
 
 esp_err_t esp_eap_client_set_ttls_phase2_method(esp_eap_ttls_phase2_types type)
 {

@@ -496,8 +496,9 @@ struct wpabuf * eap_sm_build_nak(struct eap_sm *sm, EapType type, u8 id)
 	}
 
 	for (m = methods; m; m = m->next) {
-		//do not propose insecure unencapsulated MSCHAPv2 as Phase 1 Method
-		if(m->vendor == EAP_VENDOR_IETF && m->method == EAP_TYPE_MSCHAPV2)
+		//do not propose insecure unencapsulated MSCHAPv2 or cleartext GTC as a Phase 1 method
+		if(m->vendor == EAP_VENDOR_IETF &&
+		   (m->method == EAP_TYPE_MSCHAPV2 || m->method == EAP_TYPE_GTC))
 			continue;
 
 		//do not propose EAP_TYPE_TLS if no client cert/key are configured
