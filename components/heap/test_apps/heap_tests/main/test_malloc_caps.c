@@ -214,7 +214,7 @@ TEST_CASE("heap registered after startup should not affect minimum free size", "
 {
     printf("heap registered after startup should not affect minimum free size\n");
 
-    const uint32_t MALLOC_CAP_INVENTED = (1 << 29); /* unused capability, must differ from (1 << 30) used in test_runtime_heap_reg.c */
+    const uint32_t MALLOC_CAP_INVENTED = (1 << 29); /* unused capability, must differ from (1 << 28) used in test_runtime_heap_reg.c */
     const size_t BUF_SZ = 3500;
     uint32_t caps[SOC_MEMORY_TYPE_NO_PRIOS] = { MALLOC_CAP_INVENTED };
 

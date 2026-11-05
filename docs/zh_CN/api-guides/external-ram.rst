@@ -118,10 +118,10 @@ ESP-IDF 启动过程中，片外 RAM 被映射到数据虚拟地址空间，该�
 
 预留池通过堆能力优先级机制管理：
 
-- **中优先级** — ``MALLOC_CAP_DMA | MALLOC_CAP_INTERNAL``：显式使用这些标志的 ``heap_caps_malloc()`` 请求会优先从此池分配。
-- **低优先级** — ``MALLOC_CAP_DEFAULT``：仅当其他具有更高优先级 ``MALLOC_CAP_DEFAULT`` 的内部堆耗尽后，``malloc()`` 才会回退使用此池。
+- **中优先级** — ``MALLOC_CAP_DMA``：显式 DMA 的 ``heap_caps_malloc()`` 请求会优先从此池分配。
+- **低优先级** — ``MALLOC_CAP_DEFAULT | MALLOC_CAP_INTERNAL``：仅当其他堆中对应 caps 的优先级更高且已耗尽时，``malloc()`` 及显式请求 ``MALLOC_CAP_INTERNAL`` 的分配才可能使用此池。
 
-因此，在正常情况下 ``malloc()`` 不会从该池分配；仅当其他内部内存耗尽后，``malloc()`` 才会将其作为最后的回退来源以避免分配完全失败。
+由于 ``malloc()`` 在优先尝试内部存储器时（参见 :menuitem:`CONFIG_SPIRAM_MALLOC_ALWAYSINTERNAL`）会跳过仅以低优先级提供 ``MALLOC_CAP_DEFAULT`` 的堆，因此在正常情况下 ``malloc()`` 不会从该池分配；仅当包括片外 RAM 在内的其他内存均耗尽后，才会将其作为最后的回退来源。
 
 .. _external_ram_config_bss:
 

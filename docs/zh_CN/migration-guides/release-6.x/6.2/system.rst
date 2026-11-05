@@ -53,3 +53,16 @@ OTA 更新
 """"""""""""
 
 与此前的默认配置（禁用回滚）相比，默认启用自动确认的应用程序回滚功能会略微增加代码大小。在 ESP32 上测试 :example:`system/ota/native_ota_example` 示例，引导加载程序大约增加 80 字节，应用程序大约增加 350 字节。具体数值因目标芯片和应用配置而异。
+
+
+SPIRAM DMA 预留池
+-----------------
+
+启用 ``CONFIG_SPIRAM_MALLOC_RESERVE_INTERNAL`` 时，预留池的能力优先级调整为：
+
+- **调整前**：中优先级 ``MALLOC_CAP_DMA | MALLOC_CAP_INTERNAL``；低优先级 ``MALLOC_CAP_DEFAULT``。
+- **调整后**：中优先级 ``MALLOC_CAP_DMA``；低优先级 ``MALLOC_CAP_DEFAULT | MALLOC_CAP_INTERNAL``。
+
+因此 ``heap_caps_malloc(MALLOC_CAP_INTERNAL)`` 不再优先从预留池分配；显式 ``MALLOC_CAP_DMA`` 请求仍会优先使用预留池。
+
+当 ``CONFIG_SPIRAM_MALLOC_ALWAYSINTERNAL`` 为非 0 值时，``malloc()`` 优先尝试内部内存的那一轮现在会跳过仅以低优先级提供 ``MALLOC_CAP_DEFAULT`` 的堆（预留池，以及部分芯片上的 RTC RAM 和 SPM）。这些堆仅在 PSRAM 耗尽后才会被使用。
