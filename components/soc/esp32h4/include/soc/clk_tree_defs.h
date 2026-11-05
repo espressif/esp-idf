@@ -49,6 +49,7 @@ extern "C" {
 /* With the default value of FOSC_DFREQ = 100, RC_FAST clock frequency is 20 MHz +/- 7% */
 #define SOC_CLK_RC_FAST_FREQ_APPROX         20000000                            /*!< Approximate RC_FAST_CLK frequency in Hz */
 #define SOC_CLK_RC_SLOW_FREQ_APPROX         600000                              /*!< Approximate RC_SLOW_CLK frequency in Hz */
+#define SOC_CLK_RC_SLOW_SUPPORT_CALIBRATION (1)     /*!< RC_SLOW_CLK frequency can be measured with CLK_CAL_RC_SLOW */
 #define SOC_CLK_XTAL32K_FREQ_APPROX         32768                               /*!< Approximate XTAL32K_CLK frequency in Hz */
 #define SOC_CLK_OSC_SLOW_FREQ_APPROX        32768                               /*!< Approximate OSC_SLOW_CLK (external slow clock) frequency in Hz */
 
@@ -155,6 +156,7 @@ typedef enum {
     SOC_MOD_CLK_XTAL,                          /*!< XTAL_CLK comes from the external 32MHz crystal */
     SOC_MOD_CLK_XTAL_X2,                       /*!< XTAL_X2_CLK is the output of the XTAL_X2 generator circuit (64MHz); CPU clock source, not the gated F64M */
     SOC_MOD_CLK_BBPLL,                         /*!< BBPLL_CLK is the output of the PLL generator circuit (96MHz); CPU clock source, not the gated F96M */
+    SOC_MOD_CLK_RC_SLOW,                       /*!< RC_SLOW_CLK comes from the internal RC slow oscillator */
     SOC_MOD_CLK_INVALID,                       /*!< Indication of the end of the available module clock sources */
 } soc_module_clk_t;
 

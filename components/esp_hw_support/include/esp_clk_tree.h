@@ -32,6 +32,7 @@ typedef enum {
  * @param[in] precision Degree of precision, one of esp_clk_tree_src_freq_precision_t values
  *                      This arg only applies to the clock sources that their frequencies can vary:
  *                      SOC_MOD_CLK_RTC_FAST, SOC_MOD_CLK_RTC_SLOW, SOC_MOD_CLK_RC_FAST, SOC_MOD_CLK_RC_FAST_D256,
+ *                      SOC_MOD_CLK_RC_SLOW,
  *                      SOC_MOD_CLK_XTAL32K
  *                      For other clock sources, this field is ignored.
  * @param[out] freq_value Frequency of the clock source, in Hz

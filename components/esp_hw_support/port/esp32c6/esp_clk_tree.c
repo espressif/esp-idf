@@ -53,6 +53,9 @@ uint32_t *freq_value)
     case SOC_MOD_CLK_RC_FAST:
         clk_src_freq = esp_clk_tree_rc_fast_get_freq_hz(precision);
         break;
+    case SOC_MOD_CLK_RC_SLOW:
+        clk_src_freq = esp_clk_tree_rc_slow_get_freq_hz(precision);
+        break;
     case SOC_MOD_CLK_XTAL32K:
         clk_src_freq = esp_clk_tree_xtal32k_get_freq_hz(precision);
         break;
