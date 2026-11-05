@@ -292,7 +292,9 @@ static void pmu_sleep_digital_init(pmu_context_t *ctx, const pmu_sleep_digital_c
     pmu_ll_hp_set_icg_apb(ctx->hal->dev, HP(SLEEP), dig->icg_apb.clock[0], dig->icg_apb.clock[1]);
     pmu_ll_hp_set_dig_pad_slp_sel   (ctx->hal->dev, HP(SLEEP), dig->syscntl.dig_pad_slp_sel);
     pmu_ll_hp_set_hold_all_hp_pad   (ctx->hal->dev, HP(SLEEP), dig->syscntl.hp_pad_hold_all);
+    pmu_ll_hp_set_hold_all_hp_pad   (ctx->hal->dev, HP(MODEM), dig->syscntl.hp_pad_hold_all);
     pmu_ll_hp_set_hold_all_lp_pad   (ctx->hal->dev, HP(SLEEP), dig->syscntl.lp_pad_hold_all);
+    pmu_ll_hp_set_hold_all_lp_pad   (ctx->hal->dev, HP(MODEM), dig->syscntl.lp_pad_hold_all);
     pmu_ll_hp_set_pause_watchdog    (ctx->hal->dev, HP(SLEEP), dig->syscntl.dig_pause_wdt);
     pmu_ll_hp_set_c_channel_enable  (ctx->hal->dev, HP(SLEEP), dig->syscntl.c_channel);
 }
