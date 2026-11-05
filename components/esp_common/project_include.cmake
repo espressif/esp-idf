@@ -4,11 +4,7 @@
 idf_build_get_property(target IDF_TARGET)
 
 if(NOT (${target} STREQUAL "linux" OR CMAKE_C_COMPILER_ID MATCHES "Clang"))
-    execute_process(
-        COMMAND ${CMAKE_C_COMPILER} -dumpmachine
-        OUTPUT_VARIABLE toolchain_name
-        OUTPUT_STRIP_TRAILING_WHITESPACE
-        ERROR_QUIET)
+    __compiler_query(toolchain_name ${CMAKE_C_COMPILER} -dumpmachine)
     check_expected_tool_version(${toolchain_name} ${CMAKE_C_COMPILER})
 endif()
 
