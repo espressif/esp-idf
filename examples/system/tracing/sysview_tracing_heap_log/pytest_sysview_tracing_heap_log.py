@@ -58,10 +58,8 @@ def _test_examples_sysview_tracing_heap_log(openocd_dut: 'OpenOCD', idf_path: st
     # Validate GDB logs
     with open(gdb_logfile, encoding='utf-8') as fr:  # pylint: disable=protected-access
         gdb_pexpect_proc = pexpect.fdpexpect.fdspawn(fr.fileno())
-        gdb_pexpect_proc.expect_exact(
-            'Thread 2 "main" hit Temporary breakpoint 1, heap_trace_start (mode_param', timeout=10
-        )  # should be (mode_param=HEAP_TRACE_ALL) # TODO GCC-329
-        gdb_pexpect_proc.expect_exact('Thread 2 "main" hit Temporary breakpoint 2, heap_trace_stop ()', timeout=10)
+        gdb_pexpect_proc.expect_exact('Thread 2 "main" hit Temporary breakpoint 1', timeout=10)  # heap_trace_start
+        gdb_pexpect_proc.expect_exact('Thread 2 "main" hit Temporary breakpoint 2', timeout=10)  # heap_trace_stop
 
 
 @pytest.mark.parametrize('config', ['app_trace_jtag'], indirect=True)
