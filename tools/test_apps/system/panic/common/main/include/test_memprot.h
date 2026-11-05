@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -53,6 +53,10 @@ void test_rtc_fast_reg2_execute_violation(void);
 
 void test_rtc_fast_reg3_execute_violation(void);
 
+void test_rtc_fast_text_write_violation(void);
+
+void test_rtc_fast_reserved_execute_violation(void);
+
 void test_rtc_slow_reg1_execute_violation(void);
 
 void test_rtc_slow_reg2_execute_violation(void);
@@ -77,14 +81,33 @@ void test_drom_reg_execute_violation(void);
 void test_non_cache_irom_reg_write_violation(void);
 void test_non_cache_drom_reg_write_violation(void);
 void test_non_cache_drom_reg_execute_violation(void);
+void test_non_cache_irom_reg_execute_violation(void);
 
 void test_non_cache_spiram_xip_irom_alignment_reg_execute_violation(void);
 void test_non_cache_spiram_xip_drom_alignment_reg_execute_violation(void);
+
+void test_non_cache_spiram_xip_heap_execute_violation(void);
+
+void test_non_cache_irom_mask_reg_write_violation(void);
+
+void test_non_cache_spiram_heap_execute_violation(void);
 #endif
+
+void test_spiram_heap_execute_violation(void);
+
+void test_spiram_heap_end_execute_violation(void);
 
 void test_invalid_memory_region_write_violation(void);
 
 void test_invalid_memory_region_execute_violation(void);
+
+void test_iram_reg3_write_violation_core1(void);
+
+void test_dram_reg2_execute_violation_core1(void);
+
+void test_rtc_fast_text_write_violation_core1(void);
+
+void test_drom_reg_write_violation_core1(void);
 
 #ifdef __cplusplus
 }
