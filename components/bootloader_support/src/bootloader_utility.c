@@ -1049,6 +1049,17 @@ static void set_cache_and_start_app(
     Cache_Read_Disable(0);
     Cache_Flush(0);
 #else
+#if SOC_CACHE_INTERNAL_MEM_VIA_L1CACHE
+    // L1 is virtually tagged and keeps the external mappings. cache_hal_disable() drops L2
+    // only, so drop L1 instruction and data lines of the flash and PSRAM windows before it
+    // is disabled and the app mapping is installed. Do not include internal L2MEM in between.
+    cache_ll_invalidate_addr(CACHE_LL_LEVEL_INT_MEM, CACHE_TYPE_ALL, CACHE_LL_ID_ALL,
+                             SOC_DRAM_FLASH_ADDRESS_LOW,
+                             SOC_DRAM_FLASH_ADDRESS_HIGH - SOC_DRAM_FLASH_ADDRESS_LOW);
+    cache_ll_invalidate_addr(CACHE_LL_LEVEL_INT_MEM, CACHE_TYPE_ALL, CACHE_LL_ID_ALL,
+                             SOC_DRAM_PSRAM_ADDRESS_LOW,
+                             SOC_DRAM_PSRAM_ADDRESS_HIGH - SOC_DRAM_PSRAM_ADDRESS_LOW);
+#endif
     cache_hal_disable(CACHE_LL_LEVEL_EXT_MEM, CACHE_TYPE_ALL);
 #endif
 
