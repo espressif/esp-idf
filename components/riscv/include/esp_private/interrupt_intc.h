@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -87,6 +87,8 @@ FORCE_INLINE_ATTR uint32_t rv_utils_set_intlevel_regval(uint32_t intlevel)
     uint32_t old_mstatus = RV_CLEAR_CSR(mstatus, MSTATUS_MIE);
     uint32_t old_thresh = REG_READ(INTERRUPT_CURRENT_CORE_INT_THRESH_REG);
     rv_utils_restore_intlevel_regval(intlevel);
+    /* Read back the threshold before restoring global interrupts. */
+    (void)REG_READ(INTERRUPT_CURRENT_CORE_INT_THRESH_REG);
     RV_SET_CSR(mstatus, old_mstatus & MSTATUS_MIE);
 
     return old_thresh;
