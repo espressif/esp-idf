@@ -924,6 +924,98 @@ TEST_CASE("handler instance can unregister itself", "[event][linux]")
 typedef struct {
     esp_event_handler_instance_t context;
     esp_event_loop_handle_t loop;
+    bool use_instance;
+    int count;
+} unregister_full_queue_test_data_t;
+
+static esp_err_t test_unregister_full_queue_handler_unregister(unregister_full_queue_test_data_t *test_data,
+                                                               esp_event_base_t event_base,
+                                                               int32_t event_id);
+
+static void test_handler_unregister_itself_full_queue(void* event_handler_arg,
+                                                      esp_event_base_t event_base,
+                                                      int32_t event_id,
+                                                      void* event_data)
+{
+    unregister_full_queue_test_data_t *test_data = (unregister_full_queue_test_data_t*) event_handler_arg;
+
+    (test_data->count)++;
+
+    if (test_data->count == 1) {
+        // Fill the queue so that the deferred cleanup event can not be posted
+        TEST_ESP_OK(esp_event_post_to(test_data->loop, s_test_base2, TEST_EVENT_BASE2_EV1, NULL, 0, ZERO_DELAY));
+        TEST_ASSERT_EQUAL(ESP_ERR_TIMEOUT, test_unregister_full_queue_handler_unregister(test_data, event_base, event_id));
+    } else {
+        TEST_ESP_OK(test_unregister_full_queue_handler_unregister(test_data, event_base, event_id));
+    }
+}
+
+static esp_err_t test_unregister_full_queue_handler_unregister(unregister_full_queue_test_data_t *test_data,
+                                                               esp_event_base_t event_base,
+                                                               int32_t event_id)
+{
+    if (test_data->use_instance) {
+        return esp_event_handler_instance_unregister_with(test_data->loop, event_base, event_id, test_data->context);
+    }
+    return esp_event_handler_unregister_with(test_data->loop, event_base, event_id, test_handler_unregister_itself_full_queue);
+}
+
+static void test_unregister_itself_full_queue(bool use_instance)
+{
+    EV_LoopFix loop_fix(1);
+
+    unregister_full_queue_test_data_t test_data = {
+        .context = NULL,
+        .loop = loop_fix.loop,
+        .use_instance = use_instance,
+        .count = 0,
+    };
+
+    if (use_instance) {
+        TEST_ESP_OK(esp_event_handler_instance_register_with(loop_fix.loop,
+                                                             s_test_base1,
+                                                             TEST_EVENT_BASE1_EV1,
+                                                             test_handler_unregister_itself_full_queue,
+                                                             &test_data,
+                                                             &(test_data.context)));
+    } else {
+        TEST_ESP_OK(esp_event_handler_register_with(loop_fix.loop,
+                                                    s_test_base1,
+                                                    TEST_EVENT_BASE1_EV1,
+                                                    test_handler_unregister_itself_full_queue,
+                                                    &test_data));
+    }
+
+    // First unregister fails since the queue is full, the filler event is drained by the second run
+    TEST_ESP_OK(esp_event_post_to(loop_fix.loop, s_test_base1, TEST_EVENT_BASE1_EV1, NULL, 0, portMAX_DELAY));
+    TEST_ESP_OK(esp_event_loop_run(loop_fix.loop, ZERO_DELAY));
+    TEST_ESP_OK(esp_event_loop_run(loop_fix.loop, ZERO_DELAY));
+    TEST_ASSERT_EQUAL(1, test_data.count);
+
+    // The handler must still be registered and the unregister can be retried
+    TEST_ESP_OK(esp_event_post_to(loop_fix.loop, s_test_base1, TEST_EVENT_BASE1_EV1, NULL, 0, portMAX_DELAY));
+    TEST_ESP_OK(esp_event_loop_run(loop_fix.loop, ZERO_DELAY));
+    TEST_ESP_OK(esp_event_loop_run(loop_fix.loop, ZERO_DELAY));
+    TEST_ASSERT_EQUAL(2, test_data.count);
+
+    TEST_ESP_OK(esp_event_post_to(loop_fix.loop, s_test_base1, TEST_EVENT_BASE1_EV1, NULL, 0, portMAX_DELAY));
+    TEST_ESP_OK(esp_event_loop_run(loop_fix.loop, ZERO_DELAY));
+    TEST_ASSERT_EQUAL(2, test_data.count);
+}
+
+TEST_CASE("failed self unregister on full queue keeps handler registered", "[event][linux]")
+{
+    test_unregister_itself_full_queue(false);
+}
+
+TEST_CASE("failed self unregister on full queue keeps handler instance registered", "[event][linux]")
+{
+    test_unregister_itself_full_queue(true);
+}
+
+typedef struct {
+    esp_event_handler_instance_t context;
+    esp_event_loop_handle_t loop;
     esp_event_base_t unreg_base;
     int32_t unreg_id;
     bool use_instance;
