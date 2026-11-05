@@ -175,11 +175,12 @@
 /docs/**/api-guides/build-system*                  @esp-idf-codeowners/build-config
 /docs/**/api-guides/tools/                         @esp-idf-codeowners/tools
 /docs/**/api-guides/kconfig/                       @esp-idf-codeowners/tools
-/docs/en/api-guides/core_dump.rst                  @esp-idf-codeowners/debugging
+/docs/**/api-guides/core_dump.rst                  @esp-idf-codeowners/debugging
 /docs/**/api-guides/wifi*                          @esp-idf-codeowners/wifi
 /docs/**/api-guides/esp-wifi-mesh.rst              @esp-idf-codeowners/wifi
 /docs/**/api-guides/file-system-considerations.rst @esp-idf-codeowners/storage
-/docs/en/api-guides/jtag-debugging/                @esp-idf-codeowners/debugging
+/docs/**/api-guides/jtag-debugging/                @esp-idf-codeowners/debugging
+/docs/**/api-guides/tools/esp-clangd.rst           @esp-idf-codeowners/toolchain
 /docs/**/api-guides/tracing/                       @esp-idf-codeowners/debugging
 /docs/**/api-reference/bluetooth/                  @esp-idf-codeowners/bluetooth
 /docs/**/api-reference/network/                    @esp-idf-codeowners/network @esp-idf-codeowners/wifi
@@ -222,6 +223,7 @@
 /tools/ble/                   @esp-idf-codeowners/bluetooth
 /tools/bt/                    @esp-idf-codeowners/bluetooth
 /tools/ci/                    @esp-idf-codeowners/ci
+/tools/clangd-config.yaml     @esp-idf-codeowners/toolchain
 /tools/cmake/                 @esp-idf-codeowners/build-config
 /tools/cmake/toolchain-*.cmake      @esp-idf-codeowners/toolchain
 /tools/cmakev2/               @esp-idf-codeowners/build-config
