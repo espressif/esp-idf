@@ -225,16 +225,15 @@ void pmu_init(void)
     if (blk_version >= 2 && blk_version != 100) {
         if ((rst_reason == RESET_REASON_CHIP_POWER_ON) || (rst_reason == RESET_REASON_SYS_BROWN_OUT)   \
             || (rst_reason == RESET_REASON_SYS_RWDT) || (rst_reason == RESET_REASON_SYS_SUPER_WDT)   \
-            || (rst_reason == RESET_REASON_CORE_PWR_GLITCH)) {
-            /* Only initial pvt dig dbias when power on or reset rtc module */
+            || (rst_reason == RESET_REASON_CORE_PWR_GLITCH) || (rst_reason == RESET_REASON_CORE_DEEP_SLEEP)) {
+            /* INIT + hand over DBIAS_SEL together on power-on style reset and deep-sleep wake */
             pvt_dig_dbias_init();
         }
-        pvt_auto_dbias_init();
-        pvt_func_enable(true);
+        pvt_auto_dbias_enable(true, true);
         esp_rom_delay_us(1000);
     }
     else {
-        ESP_HW_LOGW(TAG, "blk_version is less than 2, pvt function not supported in efuse.");
+        ESP_HW_LOGW(TAG, "blk_version is less than 2 or equal to 100, pvt function not supported in efuse.");
     }
 #endif
 #if !CONFIG_ESP32P4_SELECTS_REV_LESS_V3

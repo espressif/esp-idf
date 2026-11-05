@@ -224,7 +224,7 @@ const regdma_entries_config_t pau_regs_retention[] = {
 };
 _Static_assert(ARRAY_SIZE(pau_regs_retention) == HP_SYSTEM_RETENTION_LINK_LEN, "Inconsistent PAU retention link length definitions");
 
-/* PVT Registers Context, only backup configs initialized in pvt_auto_dbias_init, others will be done in pvt_func_enable during wakeup process */
+/* PVT Registers Context: backup auto-dbias channel/cmd/timer config; clocks/monitor/timer re-enabled via pvt_auto_dbias_enable(true, false) on wakeup */
 #define PVT_RETENTION_REGS_CNT   11
 #define PVT_RETENTION_REGS_BASE  PVT_DBIAS_CHANNEL_SEL0_REG
 /* PVT_DBIAS_CHANNEL_SEL0_REG, PVT_DBIAS_CHANNEL0_SEL_REG, PVT_DBIAS_CHANNEL1_SEL_REG, PVT_DBIAS_CHANNEL2_SEL_REG,
