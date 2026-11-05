@@ -441,6 +441,8 @@ bool ieee802_11_rsnx_capab_len(const u8 *rsnxe, size_t rsnxe_len,
 }
 
 
+/* rsnxe must point to a complete IE (Element ID | Length | Data) of at
+ * least 2 + rsnxe[1] bytes. */
 bool ieee802_11_rsnx_capab(const u8 *rsnxe, unsigned int capab)
 {
        if (!rsnxe)
