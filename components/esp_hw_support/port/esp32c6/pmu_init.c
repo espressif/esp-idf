@@ -243,15 +243,12 @@ void pmu_init(void)
     soc_reset_reason_t rst_reason = esp_rom_get_reset_reason(0);
     if (blk_version >= 3) {
         if ((rst_reason == RESET_REASON_CHIP_POWER_ON) || (rst_reason == RESET_REASON_SYS_BROWN_OUT)   \
-            || (rst_reason == RESET_REASON_SYS_RTC_WDT) || (rst_reason == RESET_REASON_SYS_SUPER_WDT)) {
-            /* Only initial pvt dig dbias when power on or reset rtc module */
+            || (rst_reason == RESET_REASON_SYS_RTC_WDT) || (rst_reason == RESET_REASON_SYS_SUPER_WDT)   \
+            || (rst_reason == RESET_REASON_CORE_DEEP_SLEEP)) {
+            /* INIT + hand over DBIAS_SEL together on power-on style reset and deep-sleep wake */
             pvt_dig_dbias_init();
         }
-        pvt_auto_dbias_init();
-        charge_pump_init();
-
-        pvt_func_enable(true);
-        charge_pump_enable(true);
+        pvt_auto_dbias_enable(true, true);
         esp_rom_delay_us(1000);
     }
     else {

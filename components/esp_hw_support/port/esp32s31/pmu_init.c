@@ -117,8 +117,10 @@ void pmu_hp_system_init(pmu_context_t *ctx, pmu_hp_mode_t mode, pmu_hp_system_pa
     if (mode == PMU_MODE_HP_ACTIVE) {
         pmu_ll_hp_set_regulator_lp_dbias_voltage(ctx->hal->dev, mode, anlg->regulator0.lp_dbias_vol);
         pmu_ll_hp_set_regulator_hp_dbias_voltage(ctx->hal->dev, mode, anlg->regulator0.hp_dbias_vol);
+#if !CONFIG_ESP_ENABLE_PVT
         pmu_ll_hp_set_regulator_dbias_select    (ctx->hal->dev, mode, anlg->regulator0.dbias_sel);
         pmu_ll_hp_set_regulator_dbias_init      (ctx->hal->dev, mode, anlg->regulator0.dig_dbias_init);
+#endif
     }
     pmu_ll_hp_set_regulator_sleep_memory_xpd    (ctx->hal->dev, mode, anlg->regulator0.slp_mem_xpd);
     pmu_ll_hp_set_regulator_sleep_memory_dbias  (ctx->hal->dev, mode, anlg->regulator0.slp_mem_dbias);
@@ -257,11 +259,11 @@ void pmu_init(void)
     if (blk_version >= 1) {
         if ((rst_reason == RESET_REASON_CHIP_POWER_ON) || (rst_reason == RESET_REASON_SYS_BROWN_OUT)   \
             || (rst_reason == RESET_REASON_SYS_RWDT) || (rst_reason == RESET_REASON_SYS_SUPER_WDT)   \
-            || (rst_reason == RESET_REASON_CORE_PWR_GLITCH)) {
-            /* Only initial pvt dig dbias when power on or reset rtc module */
+            || (rst_reason == RESET_REASON_CORE_PWR_GLITCH) || (rst_reason == RESET_REASON_CORE_DEEP_SLEEP)) {
+            /* INIT + hand over DBIAS_SEL together on power-on style reset and deep-sleep wake */
             pvt_dig_dbias_init();
         }
-        pvt_auto_dbias_enable(true);
+        pvt_auto_dbias_enable(true, true);
         esp_rom_delay_us(1000);
     }
     else {
