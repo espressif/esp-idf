@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0 OR MIT
  */
@@ -45,6 +45,24 @@ typedef enum {
     RESET_REASON_SYS_CLK_GLITCH  = 0x13, // Glitch on clock resets the digital core and rtc module
     RESET_REASON_CORE_EFUSE_CRC  = 0x14, // eFuse CRC error resets the digital core
 } soc_reset_reason_t;
+
+/** Bitmasks of hardware reset codes belonging to each reset level. */
+#define SOC_RESET_LEVEL_CPU_MASK     ((1U << RESET_REASON_CPU0_MWDT0) | \
+                                      (1U << RESET_REASON_CPU0_SW) | \
+                                      (1U << RESET_REASON_CPU0_RTC_WDT) | \
+                                      (1U << RESET_REASON_CPU0_MWDT1))
+#define SOC_RESET_LEVEL_CORE_MASK    ((1U << RESET_REASON_CORE_SW) | \
+                                      (1U << RESET_REASON_CORE_DEEP_SLEEP) | \
+                                      (1U << RESET_REASON_CORE_MWDT0) | \
+                                      (1U << RESET_REASON_CORE_MWDT1) | \
+                                      (1U << RESET_REASON_CORE_RTC_WDT) | \
+                                      (1U << RESET_REASON_CORE_EFUSE_CRC))
+#define SOC_RESET_LEVEL_SYSTEM_MASK  ((1U << RESET_REASON_SYS_BROWN_OUT) | \
+                                      (1U << RESET_REASON_SYS_RTC_WDT) | \
+                                      (1U << RESET_REASON_SYS_SUPER_WDT) | \
+                                      (1U << RESET_REASON_SYS_CLK_GLITCH))
+
+#include "soc/reset_level.h"
 
 #ifdef __cplusplus
 }
