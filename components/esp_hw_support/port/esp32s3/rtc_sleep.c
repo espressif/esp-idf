@@ -5,6 +5,7 @@
  */
 
 #include <stdint.h>
+#include <stdlib.h>
 #include "esp_attr.h"
 #include "soc/soc.h"
 #include "soc/rtc.h"
@@ -215,8 +216,12 @@ void rtc_sleep_init(rtc_sleep_config_t cfg)
         CLEAR_PERI_REG_MASK(RTC_CNTL_PWC_REG, RTC_CNTL_PD_EN);
     }
 
-    assert(!cfg.pd_cur_monitor || cfg.bias_sleep_monitor);
-    assert(!cfg.pd_cur_slp || cfg.bias_sleep_slp);
+    if (cfg.pd_cur_monitor && !cfg.bias_sleep_monitor) {
+        abort();
+    }
+    if (cfg.pd_cur_slp && !cfg.bias_sleep_slp) {
+        abort();
+    }
     REGI2C_WRITE_MASK(I2C_DIG_REG, I2C_DIG_REG_EXT_RTC_DREG_SLEEP, cfg.rtc_dbias_slp);
     REGI2C_WRITE_MASK(I2C_DIG_REG, I2C_DIG_REG_EXT_DIG_DREG_SLEEP, cfg.dig_dbias_slp);
 
