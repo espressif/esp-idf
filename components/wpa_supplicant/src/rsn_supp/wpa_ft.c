@@ -659,9 +659,12 @@ static int wpa_ft_process_gtk_subelem(struct wpa_sm *sm, const u8 *gtk_elem,
 static int wpa_ft_process_igtk_subelem(struct wpa_sm *sm, const u8 *igtk_elem,
 				       size_t igtk_elem_len)
 {
-	u8 igtk[WPA_IGTK_LEN];
+	u8 igtk[WPA_IGTK_MAX_LEN];
+	size_t igtk_len;
 
-	if (sm->mgmt_group_cipher != WPA_CIPHER_AES_128_CMAC)
+	if (sm->mgmt_group_cipher != WPA_CIPHER_AES_128_CMAC &&
+	    sm->mgmt_group_cipher != WPA_CIPHER_BIP_GMAC_128 &&
+	    sm->mgmt_group_cipher != WPA_CIPHER_BIP_GMAC_256)
 		return 0;
 
 	if (igtk_elem == NULL) {
@@ -672,35 +675,41 @@ static int wpa_ft_process_igtk_subelem(struct wpa_sm *sm, const u8 *igtk_elem,
 	wpa_hexdump_key(MSG_DEBUG, "FT: Received IGTK in Reassoc Resp",
 			igtk_elem, igtk_elem_len);
 
-	if (igtk_elem_len != 2 + 6 + 1 + WPA_IGTK_LEN + 8) {
+	igtk_len = wpa_cipher_key_len(sm->mgmt_group_cipher);
+	if (igtk_len == 0 || igtk_len > WPA_IGTK_MAX_LEN) {
+		wpa_printf(MSG_DEBUG, "FT: Unsupported IGTK length %lu",
+			   (unsigned long) igtk_len);
+		return -1;
+	}
+	if (igtk_elem_len != 2 + 6 + 1 + igtk_len + 8) {
 		wpa_printf(MSG_DEBUG, "FT: Invalid IGTK sub-elem "
 			   "length %lu", (unsigned long) igtk_elem_len);
 		return -1;
 	}
-	if (igtk_elem[8] != WPA_IGTK_LEN) {
+	if (igtk_elem[8] != igtk_len) {
 		wpa_printf(MSG_DEBUG, "FT: Invalid IGTK sub-elem Key Length "
 			   "%d", igtk_elem[8]);
 		return -1;
 	}
 
-	if (aes_unwrap(sm->ptk.kek, sm->ptk.kek_len, WPA_IGTK_LEN / 8,
+	if (aes_unwrap(sm->ptk.kek, sm->ptk.kek_len, igtk_len / 8,
 		       igtk_elem + 9, igtk)) {
 		wpa_printf(MSG_WARNING, "FT: AES unwrap failed - could not "
 			   "decrypt IGTK");
 		return -1;
 	}
 
-	/* KeyID[2] | IPN[6] | Key Length[1] | Key[16+8] */
+	/* KeyID[2] | IPN[6] | Key Length[1] | Key[igtk_len+8] */
 
-	wpa_hexdump_key(MSG_DEBUG, "FT: IGTK from Reassoc Resp", igtk,
-			WPA_IGTK_LEN);
+	wpa_hexdump_key(MSG_DEBUG, "FT: IGTK from Reassoc Resp ", igtk,
+			igtk_len);
 #ifdef ESP_SUPPLICANT
 	wifi_wpa_igtk_t igtk_drv;
 
 	os_memset(&igtk_drv, 0, sizeof(igtk_drv));
 	os_memcpy(igtk_drv.keyid, igtk_elem, 2);
 	os_memcpy(igtk_drv.pn, igtk_elem + 2, 6);
-	os_memcpy(igtk_drv.igtk, igtk, WPA_IGTK_LEN);
+	os_memcpy(igtk_drv.igtk, igtk, igtk_len);
 	if (esp_wifi_set_igtk_internal(WIFI_IF_STA, &igtk_drv) < 0) {
 		forced_memzero(&igtk_drv, sizeof(igtk_drv));
 		forced_memzero(igtk, sizeof(igtk));
@@ -710,13 +719,16 @@ static int wpa_ft_process_igtk_subelem(struct wpa_sm *sm, const u8 *igtk_elem,
 	}
 	forced_memzero(&igtk_drv, sizeof(igtk_drv));
 #else
-	keyidx = WPA_GET_LE16(igtk_elem);
-	if (wpa_sm_set_key(&(sm->install_gtk), WIFI_WPA_ALG_IGTK, sm->bssid, keyidx, 0,
-			   (u8 *)(igtk_elem + 2), 6, igtk, WPA_IGTK_LEN, sm->key_entry_valid) < 0) {
-		forced_memzero(igtk, sizeof(igtk));
-		wpa_printf(MSG_WARNING, "WPA: Failed to set IGTK to the "
-			   "driver.");
-		return -1;
+	{
+		u16 keyidx = WPA_GET_LE16(igtk_elem);
+
+		if (wpa_sm_set_key(&(sm->install_gtk), WIFI_WPA_ALG_IGTK, sm->bssid, keyidx, 0,
+				   (u8 *)(igtk_elem + 2), 6, igtk, igtk_len, sm->key_entry_valid) < 0) {
+			forced_memzero(igtk, sizeof(igtk));
+			wpa_printf(MSG_WARNING, "WPA: Failed to set IGTK to the "
+				   "driver.");
+			return -1;
+		}
 	}
 #endif
 	forced_memzero(igtk, sizeof(igtk));

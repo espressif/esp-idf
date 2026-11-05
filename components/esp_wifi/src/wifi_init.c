@@ -416,6 +416,11 @@ esp_err_t esp_wifi_init(const wifi_init_config_t *config)
     ret = esp_pm_register_inform_out_light_sleep_overhead_callback(esp_wifi_internal_update_light_sleep_wake_ahead_time);
     if (ret != ESP_OK) {
         ESP_LOGE(TAG, "Failed to register inform light sleep overhead callback (0x%x)", ret);
+        esp_pm_unregister_skip_light_sleep_callback(esp_wifi_internal_is_tsf_active);
+#if CONFIG_MAC_BB_PD
+        esp_unregister_mac_bb_pd_callback(pm_mac_sleep);
+        esp_unregister_mac_bb_pu_callback(pm_mac_wakeup);
+#endif
         return ret;
     }
     esp_sleep_enable_wifi_wakeup();
