@@ -11,6 +11,7 @@ Bluedroid
     - :component_file:`/bt/host/bluedroid/api/include/api/esp_hf_defs.h`
 
         - 类型 ``esp_hf_wbs_config_t`` 已替换为 ``esp_hf_codec_mode_t``，新的公开类型表示协商得到的编解码（CVSD， mSBC 或 LC3-SWB），而不再是“是否开启宽带语音”的开关。``esp_hf_wbs_config_t`` 保留为 ``esp_hf_codec_mode_t`` 的废弃别名。
+
         - 枚举名已重命名，数值 0 / 1 / 2 保持不变。旧的 ``ESP_HF_WBS_*`` 名称仍作为宏别名指向新枚举：
 
             .. list-table::
@@ -85,6 +86,45 @@ Bluedroid
     - :component_file:`/bt/host/bluedroid/api/include/api/esp_avrc_api.h`
 
         - 应用侧 AVRCP Controller 命令只能使用事务标签 ``0`` 到 ``ESP_USER_AVRC_TRANS_LABEL_MAX`` （13）。``14`` 和 ``15`` 保留给协议栈（A2DP Sink 切换活动设备时的 Play/Pause）。向发送类 API 传入 14 或 15 会返回 ``ESP_ERR_INVALID_ARG``。``ESP_AVRC_TRANS_LABEL_MAX`` 仍为 15（协议最大值）。
+
+    - :component_file:`/bt/host/bluedroid/api/include/api/esp_spp_api.h`
+
+        - ``ESP_SPP_MODE_CB`` 下的 ``esp_spp_write()`` 会把整包数据拷进发送缓冲并立即返回。``ESP_OK`` 表示数据已入队，不是已经发出。``len`` 永远无法放入发送缓冲时返回 ``ESP_ERR_INVALID_SIZE``，这一包不会入队。对于 ``ESP_ERR_INVALID_SIZE``，等待 ``ESP_SPP_CONG_EVT`` 没有用，因为这块缓冲永远装不下。``len`` 能够放入但当前剩余空间不足时返回 ``ESP_ERR_NO_MEM``，这一包不会入队。只有在收到 ``cong`` 为 false 的 ``ESP_SPP_CONG_EVT`` 之后，才能重试这一包。``ESP_OK`` 之后不要再提交同一包数据：协议栈内部之后的失败会保留已入队的数据，不需要应用重发。
+
+        - ``ESP_SPP_CONG_EVT`` 现在只表示发送缓冲解除拥塞。``cong`` 固定为 false。进入拥塞由 ``esp_spp_write()`` 返回 ``ESP_ERR_NO_MEM`` 表示。如果代码在等 ``cong == true``，或者把每一次 ``ESP_SPP_CONG_EVT`` 都当成停止发送的信号，需要改掉。
+
+        - ``ESP_SPP_WRITE_EVT`` 表示一块不超过对端 MTU 的数据已经提交给 RFCOMM。``status`` 为 ``ESP_SPP_SUCCESS``。提交失败不会通过它上报。``write.cong`` 仍可用来决定是否发下一包。不要在这个事件里重发同一包数据。
+
+        - ``esp_spp_cb_param_t.write.cong`` 现在表示发送缓冲拥塞，不再表示 RFCOMM 拥塞。收到 ``cong`` 为 false 的 ``ESP_SPP_WRITE_EVT`` 后再发下一包仍然可用，但不推荐。请优先使用 ``esp_spp_write()`` 的返回值和 ``ESP_SPP_CONG_EVT``。
+
+        - ``esp_spp_cfg_t::tx_buffer_size`` 必须在 ``ESP_SPP_MIN_TX_BUFFER_SIZE`` （100）到 ``ESP_SPP_MAX_TX_BUFFER_SIZE`` （``ESP_SPP_MAX_MTU * 10``）之间。两种模式传入 ``0`` 时，``esp_spp_enhanced_init()`` 都会改用 ``ESP_SPP_DEFAULT_TX_BUFFER_SIZE`` 并打印警告。其他超出该范围的值返回 ``ESP_ERR_INVALID_ARG``。``BT_SPP_DEFAULT_CONFIG()`` 用于 VFS 模式，``BT_SPP_CB_MODE_DEFAULT_CONFIG()`` 用于回调模式，两者都使用 ``ESP_SPP_DEFAULT_TX_BUFFER_SIZE``，当前等于最大值。
+
+        - 每个已建立的 SPP 连接都会在 Bluedroid 内部分配一块 ``tx_buffer_size`` 字节的发送缓冲。``ESP_SPP_DEFAULT_TX_BUFFER_SIZE`` 当前是 9900 字节。最多 8 路连接时，回调模式应用的可用内部 RAM 比修改前少，因为修改前没有这块缓冲。
+
+        - ``ESP_SPP_MODE_VFS`` 的 ``write()`` 仍会阻塞到数据入队。VFS 应用不处理 ``ESP_SPP_CONG_EVT`` 和 ``ESP_SPP_WRITE_EVT``。``tx_buffer_size`` 为 ``0`` 时使用默认值，其他值必须在上述范围内。
+
+        - :example:`bluetooth/bluedroid/classic_bt/bt_spp_initiator` 在 ``ESP_SPP_OPEN_EVT`` 中创建任务，循环调用 ``esp_spp_write()``。返回 ``ESP_ERR_NO_MEM`` 时任务阻塞，直到 ``cong == false`` 的 ``ESP_SPP_CONG_EVT``。``ESP_SPP_CLOSE_EVT`` 停止该任务，任务随后自行删除。
+
+          .. code-block:: c
+
+              // 修改前：下一次写入由 ESP_SPP_WRITE_EVT 触发，
+              // ESP_SPP_CONG_EVT 同时表示进入拥塞和解除拥塞。
+              case ESP_SPP_WRITE_EVT:
+                  esp_spp_write(param->write.handle, len, data);
+                  break;
+              case ESP_SPP_CONG_EVT:
+                  if (!param->cong.cong) {
+                      esp_spp_write(param->cong.handle, len, data);
+                  }
+                  break;
+
+              // 修改后：在应用任务里写入。ESP_OK 表示已入队。
+              // ESP_ERR_NO_MEM 则等到解除拥塞后再重试这一包。
+              esp_err_t err = esp_spp_write(handle, len, data);
+              if (err == ESP_ERR_NO_MEM) {
+                  // 阻塞到 cong == false 的 ESP_SPP_CONG_EVT
+              }
+              // ESP_SPP_WRITE_EVT 只表示一块数据已经提交给 RFCOMM。
 
     建议替换：
 
