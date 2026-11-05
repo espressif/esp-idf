@@ -455,3 +455,8 @@ WEAK esp_err_t esp_wifi_remote_remain_on_channel(wifi_roc_req_t *req)
 {
     LOG_UNSUPPORTED_AND_RETURN(ESP_ERR_NOT_SUPPORTED);
 }
+
+WEAK esp_err_t esp_wifi_remote_configure_station_tbtt_event(_Bool enabled)
+{
+    LOG_UNSUPPORTED_AND_RETURN(ESP_ERR_NOT_SUPPORTED);
+}

@@ -451,3 +451,8 @@ esp_err_t esp_wifi_remain_on_channel(wifi_roc_req_t *req)
 {
     return esp_wifi_remote_remain_on_channel(req);
 }
+
+esp_err_t esp_wifi_configure_station_tbtt_event(_Bool enabled)
+{
+    return esp_wifi_remote_configure_station_tbtt_event(enabled);
+}

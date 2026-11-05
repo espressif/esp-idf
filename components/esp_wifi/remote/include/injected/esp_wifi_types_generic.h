@@ -1340,6 +1340,7 @@ typedef enum {
     WIFI_EVENT_NAN_PAIRING_INDICATION,   /**< Received NAN Pairing indication (reserved) */
     WIFI_EVENT_NAN_PAIRING_CONFIRM,      /**< NAN pairing completed after NIK follow-up exchange */
     WIFI_EVENT_NAN_CLUSTER_JOIN,         /**< Posted when the device joins, starts, or merges into a NAN cluster */
+    WIFI_EVENT_STA_TBTT,                 /**< Station TBTT */
     WIFI_EVENT_MAX,                      /**< Invalid Wi-Fi event ID */
 } wifi_event_t;
 
