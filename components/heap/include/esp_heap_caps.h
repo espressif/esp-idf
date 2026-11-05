@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2019-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2019-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -52,6 +52,16 @@ extern "C" {
 #define MALLOC_CAP_SIMD             (1U<<20) ///< Memory must be capable of being used for SIMD instructions (i.e. allow for SIMD-specific-bit data accesses)
 #define MALLOC_CAP_SPIRAM_NO_ENC    (1U<<21) ///< Memory must be in the PSRAM region exempt from flash encryption (plaintext in PSRAM; see CONFIG_SPIRAM_ENC_EXEMPT)
 
+/** @cond */
+/*
+ * Internal use only, do not use in application code. Bit 30 is reserved, do not use it for custom caps.
+ *
+ * Allocation marker, not a memory capability: heaps that match the requested caps only at
+ * low priority (e.g. the internal DMA reserve pool for MALLOC_CAP_DEFAULT | MALLOC_CAP_INTERNAL)
+ * are skipped. Used by the default malloc() path.
+ */
+#define MALLOC_CAP_SKIP_LOW_PRIO    (1U<<30)
+/** @endcond */
 #define MALLOC_CAP_INVALID          (1U<<31) ///< Memory can't be used / list end marker
 
 /**
