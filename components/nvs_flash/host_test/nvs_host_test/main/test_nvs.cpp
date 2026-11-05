@@ -3340,8 +3340,7 @@ TEST_CASE("blob update keeps one version across every emulated power cut", "[nvs
             TEST_ESP_OK(storage.init(0, 3));
 
             char value[sizeof(new_value)] = {};
-            size_t value_size = sizeof(value);
-            TEST_ESP_OK(storage.readItem(1, nvs::ItemType::BLOB, "blob", value, value_size));
+            TEST_ESP_OK(storage.readItem(1, nvs::ItemType::BLOB, "blob", value, sizeof(value)));
 
             const bool old_survived = memcmp(value, old_value, sizeof(old_value)) == 0;
             const bool new_survived = memcmp(value, new_value, sizeof(new_value)) == 0;
@@ -3388,8 +3387,7 @@ TEST_CASE("repeated blob updates keep one version across every emulated power cu
             TEST_ESP_OK(storage.init(0, 3));
 
             char value[sizeof(value3)] = {};
-            size_t value_size = sizeof(value);
-            TEST_ESP_OK(storage.readItem(1, nvs::ItemType::BLOB, "blob", value, value_size));
+            TEST_ESP_OK(storage.readItem(1, nvs::ItemType::BLOB, "blob", value, sizeof(value)));
 
             const bool previous_survived = memcmp(value, value2, sizeof(value2)) == 0;
             const bool new_survived = memcmp(value, value3, sizeof(value3)) == 0;
