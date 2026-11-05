@@ -17,6 +17,7 @@
 #include "unity.h"
 #include "esp_heap_caps.h"
 #include "esp_system.h"
+#include "esp_memory_utils.h"
 
 #include "sdkconfig.h"
 
@@ -102,6 +103,46 @@ TEST_CASE("Check if default cap allocates in external memory in priority", "[hea
     heap_caps_free(ptr);
 #endif
 }
+
+#if CONFIG_SPIRAM_USE_MALLOC && (CONFIG_SPIRAM_MALLOC_RESERVE_INTERNAL >= 4096)
+/*
+ * Regression test for https://github.com/espressif/esp-idf/issues/18938
+ * Small malloc() calls must spill into PSRAM before they touch the reserved internal DMA pool,
+ * so that explicit DMA allocations still succeed after internal RAM has been filled by malloc().
+ */
+TEST_CASE("malloc() uses PSRAM before the reserved DMA pool", "[heap][psram]")
+{
+    const size_t block = 512;
+    const int max_blocks = 4096; // 2 MiB at most
+    void **blocks = heap_caps_calloc(max_blocks, sizeof(void *), MALLOC_CAP_SPIRAM);
+    TEST_ASSERT_NOT_NULL(blocks);
+
+    // Fill memory with small malloc() calls until the first one lands in PSRAM
+    int n = 0;
+    bool reached_psram = false;
+    for (; n < max_blocks; n++) {
+        blocks[n] = malloc(block);
+        TEST_ASSERT_NOT_NULL(blocks[n]);
+        if (esp_ptr_external_ram(blocks[n])) {
+            reached_psram = true;
+            n++;
+            break;
+        }
+    }
+    TEST_ASSERT_TRUE(reached_psram);
+
+    // The reserved pool must still be intact for explicit DMA allocations
+    void *dma = heap_caps_malloc(4096, MALLOC_CAP_DMA | MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT);
+    printf("%d small allocations before PSRAM, DMA alloc %p\n", n, dma);
+    TEST_ASSERT_NOT_NULL(dma);
+    heap_caps_free(dma);
+
+    for (int i = 0; i < n; i++) {
+        free(blocks[i]);
+    }
+    heap_caps_free(blocks);
+}
+#endif
 #endif
 
 /* As you see, we are desperately trying to outsmart the compiler, so that it

@@ -8,4 +8,5 @@
 
     :SOC_BT_CLASSIC_SUPPORTED: bluetooth-classic
     peripherals
+    :SOC_SPIRAM_SUPPORTED: system
     tools

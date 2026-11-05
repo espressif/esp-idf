@@ -39,8 +39,8 @@ esp_err_t esp_psram_extram_add_to_heap_allocator(void);
  *
  * Carves out @p size bytes from the regular internal heaps and registers the
  * region as separate heap pool with new priority-based caps: medium priority for
- * MALLOC_CAP_DMA | MALLOC_CAP_INTERNAL, and low priority for MALLOC_CAP_DEFAULT.
- * malloc() uses the pool only after other internal heaps are exhausted.
+ * MALLOC_CAP_DMA, and low priority for MALLOC_CAP_DEFAULT | MALLOC_CAP_INTERNAL.
+ * malloc() uses the pool only after all other heaps, including PSRAM, are exhausted.
  *
  * @param size Size of reserved pool in bytes
  *
