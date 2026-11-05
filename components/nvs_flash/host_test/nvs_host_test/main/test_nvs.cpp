@@ -3308,6 +3308,99 @@ TEST_CASE("duplicate items are removed", "[nvs][dupes]")
     }
 }
 
+TEST_CASE("blob update keeps one version across every emulated power cut", "[nvs]")
+{
+    NVSPartitionTestHelper h(TEST_DEFAULT_PARTITION_NAME);
+    const bool purgeAfterErase = TEST_DEFAULT_PURGE_AFTER_ERASE;
+    const char old_value[] = "version1";
+    const char new_value[] = "version2";
+
+    bool completed = false;
+    size_t fail_after = 1;
+
+    while (!completed) {
+        TEST_ESP_OK(NVSPartitionTestHelper::erase_partition(TEST_DEFAULT_PARTITION_NAME));
+        NVSPartitionTestHelper::fail_after(SIZE_MAX, ESP_PARTITION_FAIL_AFTER_MODE_BOTH);
+
+        {
+            nvs::Storage storage(&h);
+            TEST_ESP_OK(storage.init(0, 3));
+            TEST_ESP_OK(storage.writeItem(1, nvs::ItemType::BLOB, "blob",
+                                          old_value, sizeof(old_value), purgeAfterErase));
+
+            NVSPartitionTestHelper::fail_after(fail_after, ESP_PARTITION_FAIL_AFTER_MODE_BOTH);
+            completed = storage.writeItem(1, nvs::ItemType::BLOB, "blob",
+                                          new_value, sizeof(new_value), purgeAfterErase) == ESP_OK;
+        }
+
+        NVSPartitionTestHelper::fail_after(SIZE_MAX, ESP_PARTITION_FAIL_AFTER_MODE_BOTH);
+
+        {
+            nvs::Storage storage(&h);
+            TEST_ESP_OK(storage.init(0, 3));
+
+            char value[sizeof(new_value)] = {};
+            size_t value_size = sizeof(value);
+            TEST_ESP_OK(storage.readItem(1, nvs::ItemType::BLOB, "blob", value, value_size));
+
+            const bool old_survived = memcmp(value, old_value, sizeof(old_value)) == 0;
+            const bool new_survived = memcmp(value, new_value, sizeof(new_value)) == 0;
+            CHECK((old_survived || new_survived));
+        }
+
+        ++fail_after;
+        CHECK(fail_after < 128);
+    }
+}
+
+TEST_CASE("repeated blob updates keep one version across every emulated power cut", "[nvs]")
+{
+    NVSPartitionTestHelper h(TEST_DEFAULT_PARTITION_NAME);
+    const bool purgeAfterErase = TEST_DEFAULT_PURGE_AFTER_ERASE;
+    const char value1[] = "version1";
+    const char value2[] = "version2";
+    const char value3[] = "version3";
+
+    bool completed = false;
+    size_t fail_after = 1;
+
+    while (!completed) {
+        TEST_ESP_OK(NVSPartitionTestHelper::erase_partition(TEST_DEFAULT_PARTITION_NAME));
+        NVSPartitionTestHelper::fail_after(SIZE_MAX, ESP_PARTITION_FAIL_AFTER_MODE_BOTH);
+
+        {
+            nvs::Storage storage(&h);
+            TEST_ESP_OK(storage.init(0, 3));
+            TEST_ESP_OK(storage.writeItem(1, nvs::ItemType::BLOB, "blob",
+                                          value1, sizeof(value1), purgeAfterErase));
+            TEST_ESP_OK(storage.writeItem(1, nvs::ItemType::BLOB, "blob",
+                                          value2, sizeof(value2), purgeAfterErase));
+
+            NVSPartitionTestHelper::fail_after(fail_after, ESP_PARTITION_FAIL_AFTER_MODE_BOTH);
+            completed = storage.writeItem(1, nvs::ItemType::BLOB, "blob",
+                                          value3, sizeof(value3), purgeAfterErase) == ESP_OK;
+        }
+
+        NVSPartitionTestHelper::fail_after(SIZE_MAX, ESP_PARTITION_FAIL_AFTER_MODE_BOTH);
+
+        {
+            nvs::Storage storage(&h);
+            TEST_ESP_OK(storage.init(0, 3));
+
+            char value[sizeof(value3)] = {};
+            size_t value_size = sizeof(value);
+            TEST_ESP_OK(storage.readItem(1, nvs::ItemType::BLOB, "blob", value, value_size));
+
+            const bool previous_survived = memcmp(value, value2, sizeof(value2)) == 0;
+            const bool new_survived = memcmp(value, value3, sizeof(value3)) == 0;
+            CHECK((previous_survived || new_survived));
+        }
+
+        ++fail_after;
+        CHECK(fail_after < 128);
+    }
+}
+
 TEST_CASE("recovery after failure to write data", "[nvs]")
 {   // TC verifies that NVS API works as expected when the power is lost during writing data.
     // The test verifies following:
