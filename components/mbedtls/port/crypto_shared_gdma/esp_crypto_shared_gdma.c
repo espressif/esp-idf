@@ -115,6 +115,7 @@ err:
 
 esp_err_t esp_crypto_shared_gdma_start_axi_ahb(const crypto_dma_desc_t *input, const crypto_dma_desc_t *output, crypto_dma_user_t peripheral)
 {
+    int tx_ch_id = 0;
     int rx_ch_id = 0;
 
     if (s_tx_channel == NULL) {
@@ -143,15 +144,19 @@ esp_err_t esp_crypto_shared_gdma_start_axi_ahb(const crypto_dma_desc_t *input, c
         return ESP_ERR_INVALID_ARG;
     }
 
-    /* tx channel is reset by gdma_connect(), also reset rx to ensure a known state */
+    // Reset both rx and tx channels
+    gdma_get_channel_id(s_tx_channel, &tx_ch_id);
     gdma_get_channel_id(s_rx_channel, &rx_ch_id);
 
     // IDF-14335: Use gdma_reset() instead
 #if SOC_AXI_GDMA_SUPPORTED
+    axi_dma_ll_tx_reset_channel(&AXI_DMA, tx_ch_id);
     axi_dma_ll_rx_reset_channel(&AXI_DMA, rx_ch_id);
 #elif SOC_AHB_GDMA_VERSION == 1
+    gdma_ll_tx_reset_channel(&GDMA, tx_ch_id);
     gdma_ll_rx_reset_channel(&GDMA, rx_ch_id);
 #elif SOC_AHB_GDMA_VERSION == 2
+    ahb_dma_ll_tx_reset_channel(&AHB_DMA, tx_ch_id);
     ahb_dma_ll_rx_reset_channel(&AHB_DMA, rx_ch_id);
 #endif /* SOC_AXI_GDMA_SUPPORTED */
 
