@@ -1,17 +1,25 @@
 /*
- * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
 #include <stdio.h>
 #include <math.h>
+#include <string.h>
 #include "unity.h"
 #include "hal/hal_utils.h"
 
 #ifndef BIT
 #define BIT(n)          (1UL << (n))
 #endif
+
+static float float_from_bits(uint32_t bits)
+{
+    float value;
+    memcpy(&value, &bits, sizeof(value));
+    return value;
+}
 
 TEST_CASE("test_float_to_fixed_point", "[fmt_convert]")
 {
@@ -91,4 +99,31 @@ TEST_CASE("test_float_to_fixed_point", "[fmt_convert]")
     TEST_ASSERT_EQUAL_INT(0, hal_utils_float_to_fixed_point_32b(f0, &fp_cfg, &out));
     TEST_ASSERT_EQUAL_UINT32(0x64E6, out);   // integ: 0x64 = 100, frac: 0xE6 / 0x100 = 0.8984375
     printf("Integer bits case passed!\n");
+}
+
+TEST_CASE("test_float_to_fixed_point_edge_cases", "[fmt_convert]")
+{
+    hal_utils_fixed_point_t fp_cfg = {
+        .int_bit = 4,
+        .frac_bit = 8,
+        .saturation = true,
+    };
+    const uint32_t zero_result_inputs[] = {
+        0xb776776a, // -1.4690546e-5f, less than one Q4.8 LSB
+        0x80000000, // -0.0f
+        0x00000001, // Smallest positive subnormal
+    };
+
+    for (size_t i = 0; i < sizeof(zero_result_inputs) / sizeof(zero_result_inputs[0]); i++) {
+        uint32_t out = UINT32_MAX;
+        TEST_ASSERT_EQUAL_INT(0, hal_utils_float_to_fixed_point_32b(float_from_bits(zero_result_inputs[i]), &fp_cfg, &out));
+        TEST_ASSERT_EQUAL_UINT32(0, out);
+    }
+
+    uint32_t out = UINT32_MAX;
+    TEST_ASSERT_EQUAL_INT(-2, hal_utils_float_to_fixed_point_32b(float_from_bits(0x7fffffff), &fp_cfg, &out));
+
+    fp_cfg.saturation = false;
+    TEST_ASSERT_EQUAL_INT(-1, hal_utils_float_to_fixed_point_32b(1e20f, &fp_cfg, &out));
+    TEST_ASSERT_EQUAL_UINT32(UINT32_MAX >> 1, out);
 }
