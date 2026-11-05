@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -12,6 +12,7 @@
 #include "nvs.h"
 #include "nvs_flash.h"
 #include "freertos/FreeRTOS.h"
+#include "freertos/semphr.h"
 #include "freertos/task.h"
 #include "esp_log.h"
 #include "esp_bt.h"
@@ -30,9 +31,6 @@
 #define SPP_SHOW_DATA 0
 #define SPP_SHOW_SPEED 1
 #define SPP_SHOW_MODE SPP_SHOW_SPEED    /*Choose show mode: show data or speed*/
-
-static const esp_spp_mode_t esp_spp_mode = ESP_SPP_MODE_CB;
-static const bool esp_spp_enable_l2cap_ertm = true;
 
 static struct timeval time_new, time_old;
 static long data_num = 0;
@@ -55,7 +53,11 @@ static const uint8_t inq_num_rsps = 0;
 #define SPP_DATA_LEN ESP_SPP_MAX_MTU
 #endif
 static uint8_t spp_data[SPP_DATA_LEN];
-static uint8_t *s_p_data = NULL; /* data pointer of spp_data */
+static uint32_t s_spp_handle = 0;
+static SemaphoreHandle_t s_spp_tx_uncong_sem = NULL;
+static TaskHandle_t s_spp_tx_task = NULL;
+static volatile bool s_spp_tx_running = false;
+static portMUX_TYPE s_spp_tx_mux = portMUX_INITIALIZER_UNLOCKED;
 
 static char *bda2str(uint8_t * bda, char *str, size_t size)
 {
@@ -113,6 +115,46 @@ static bool get_name_from_eir(uint8_t *eir, char *bdname, uint8_t *bdname_len)
     return false;
 }
 
+/* Created on open. ESP_ERR_NO_MEM waits for ESP_SPP_CONG_EVT with cong == false. */
+static void spp_tx_task(void *arg)
+{
+    (void)arg;
+
+    for (;;) {
+        while (s_spp_tx_running) {
+            esp_err_t err = esp_spp_write(s_spp_handle, SPP_DATA_LEN, spp_data);
+            if (!s_spp_tx_running) {
+                break;
+            }
+            if (err == ESP_OK) {
+                continue;
+            }
+            if (err == ESP_ERR_NO_MEM) {
+                xSemaphoreTake(s_spp_tx_uncong_sem, portMAX_DELAY);
+                continue;
+            }
+            ESP_LOGE(SPP_TAG, "esp_spp_write failed: %s", esp_err_to_name(err));
+            taskENTER_CRITICAL(&s_spp_tx_mux);
+            s_spp_tx_running = false;
+            taskEXIT_CRITICAL(&s_spp_tx_mux);
+            break;
+        }
+
+        taskENTER_CRITICAL(&s_spp_tx_mux);
+        if (s_spp_tx_running) {
+            taskEXIT_CRITICAL(&s_spp_tx_mux);
+            continue;
+        }
+        if (s_spp_tx_task == xTaskGetCurrentTaskHandle()) {
+            s_spp_tx_task = NULL;
+        }
+        taskEXIT_CRITICAL(&s_spp_tx_mux);
+        break;
+    }
+
+    vTaskDelete(NULL);
+}
+
 static void esp_spp_cb(esp_spp_cb_event_t event, esp_spp_cb_param_t *param)
 {
     uint8_t i = 0;
@@ -146,10 +188,19 @@ static void esp_spp_cb(esp_spp_cb_event_t event, esp_spp_cb_param_t *param)
         if (param->open.status == ESP_SPP_SUCCESS) {
             ESP_LOGI(SPP_TAG, "ESP_SPP_OPEN_EVT handle:%"PRIu32" rem_bda:[%s]", param->open.handle,
                      bda2str(param->open.rem_bda, bda_str, sizeof(bda_str)));
-            /* Start to write the first data packet */
-            esp_spp_write(param->open.handle, SPP_DATA_LEN, spp_data);
-            s_p_data = spp_data;
+            s_spp_handle = param->open.handle;
             gettimeofday(&time_old, NULL);
+            bool create_task = false;
+            taskENTER_CRITICAL(&s_spp_tx_mux);
+            s_spp_tx_running = true;
+            create_task = (s_spp_tx_task == NULL);
+            taskEXIT_CRITICAL(&s_spp_tx_mux);
+            if (create_task && xTaskCreate(spp_tx_task, "spp_tx", 3072, NULL, 5, &s_spp_tx_task) != pdPASS) {
+                taskENTER_CRITICAL(&s_spp_tx_mux);
+                s_spp_tx_running = false;
+                taskEXIT_CRITICAL(&s_spp_tx_mux);
+                ESP_LOGE(SPP_TAG, "create spp_tx task failed");
+            }
         } else {
             ESP_LOGE(SPP_TAG, "ESP_SPP_OPEN_EVT status:%d", param->open.status);
         }
@@ -157,6 +208,12 @@ static void esp_spp_cb(esp_spp_cb_event_t event, esp_spp_cb_param_t *param)
     case ESP_SPP_CLOSE_EVT:
         ESP_LOGI(SPP_TAG, "ESP_SPP_CLOSE_EVT status:%d handle:%"PRIu32" close_by_remote:%d", param->close.status,
                  param->close.handle, param->close.async);
+        taskENTER_CRITICAL(&s_spp_tx_mux);
+        s_spp_tx_running = false;
+        taskEXIT_CRITICAL(&s_spp_tx_mux);
+        if (s_spp_tx_uncong_sem) {
+            xSemaphoreGive(s_spp_tx_uncong_sem);
+        }
         break;
     case ESP_SPP_START_EVT:
         ESP_LOGI(SPP_TAG, "ESP_SPP_START_EVT");
@@ -172,66 +229,33 @@ static void esp_spp_cb(esp_spp_cb_event_t event, esp_spp_cb_param_t *param)
         ESP_LOGI(SPP_TAG, "ESP_SPP_DATA_IND_EVT");
         break;
     case ESP_SPP_WRITE_EVT:
-        if (param->write.status == ESP_SPP_SUCCESS) {
-            if (s_p_data + param->write.len == spp_data + SPP_DATA_LEN) {
-                /* Means the previous data packet be sent completely, send a new data packet */
-                s_p_data = spp_data;
-            } else {
-                /*
-                 * Means the previous data packet only be sent partially due to the lower layer congestion, resend the
-                 * remainning data.
-                 */
-                s_p_data += param->write.len;
-            }
 #if (SPP_SHOW_MODE == SPP_SHOW_DATA)
-            /*
-             * We only show the data in which the data length is less than 128 here. If you want to print the data and
-             * the data rate is high, it is strongly recommended to process them in other lower priority application task
-             * rather than in this callback directly. Since the printing takes too much time, it may stuck the Bluetooth
-             * stack and also have a effect on the throughput!
-             */
-            ESP_LOGI(SPP_TAG, "ESP_SPP_WRITE_EVT len:%d handle:%"PRIu32" cong:%d", param->write.len, param->write.handle,
-                     param->write.cong);
-            if (param->write.len < 128) {
-                ESP_LOG_BUFFER_HEX("", spp_data, param->write.len);
-                /* Delay a little to avoid the task watch dog */
-                vTaskDelay(pdMS_TO_TICKS(10));
-            }
-#else
-            gettimeofday(&time_new, NULL);
-            data_num += param->write.len;
-            if (time_new.tv_sec - time_old.tv_sec >= 3) {
-                print_speed();
-            }
-#endif
-        } else {
-            /* Means the previous data packet is not sent at all, need to send the whole data packet again. */
-            ESP_LOGE(SPP_TAG, "ESP_SPP_WRITE_EVT status:%d", param->write.status);
-        }
-
-        if (!param->write.cong) {
-            /* The lower layer is not congested, you can send the next data packet now. */
-            esp_spp_write(param->write.handle, spp_data + SPP_DATA_LEN - s_p_data, s_p_data);
-        } else {
-            /*
-             * The lower layer is congested now, don't send the next data packet until receiving the
-             * ESP_SPP_CONG_EVT with param->cong.cong == 0.
-             */
-            ;
-        }
-
         /*
-         * If you don't want to manage this complicated process, we also provide the SPP VFS mode that hides the
-         * implementation details. However, it is less efficient and will block the caller until all data has been sent.
+         * We only show the data in which the data length is less than 128 here. If you want to print the data and
+         * the data rate is high, it is strongly recommended to process them in other lower priority application task
+         * rather than in this callback directly. Since the printing takes too much time, it may stuck the Bluetooth
+         * stack and also have a effect on the throughput!
          */
+        ESP_LOGI(SPP_TAG, "ESP_SPP_WRITE_EVT len:%d handle:%"PRIu32, param->write.len, param->write.handle);
+        if (param->write.len < 128) {
+            ESP_LOG_BUFFER_HEX("", spp_data, param->write.len);
+            /* Delay a little to avoid the task watch dog */
+            vTaskDelay(pdMS_TO_TICKS(10));
+        }
+#else
+        gettimeofday(&time_new, NULL);
+        data_num += param->write.len;
+        if (time_new.tv_sec - time_old.tv_sec >= 3) {
+            print_speed();
+        }
+#endif
         break;
     case ESP_SPP_CONG_EVT:
 #if (SPP_SHOW_MODE == SPP_SHOW_DATA)
         ESP_LOGI(SPP_TAG, "ESP_SPP_CONG_EVT cong:%d", param->cong.cong);
 #endif
-        if (param->cong.cong == 0) {
-            /* Send the privous (partial) data packet or the next data packet. */
-            esp_spp_write(param->write.handle, spp_data + SPP_DATA_LEN - s_p_data, s_p_data);
+        if (param->cong.cong == 0 && s_spp_tx_uncong_sem) {
+            xSemaphoreGive(s_spp_tx_uncong_sem);
         }
         break;
     case ESP_SPP_SRV_OPEN_EVT:
@@ -386,16 +410,18 @@ void app_main(void)
     }
 #endif
 
+    s_spp_tx_uncong_sem = xSemaphoreCreateBinary();
+    if (s_spp_tx_uncong_sem == NULL) {
+        ESP_LOGE(SPP_TAG, "%s create tx semaphore failed", __func__);
+        return;
+    }
+
     if ((ret = esp_spp_register_callback(esp_spp_cb)) != ESP_OK) {
         ESP_LOGE(SPP_TAG, "%s spp register failed: %s", __func__, esp_err_to_name(ret));
         return;
     }
 
-    esp_spp_cfg_t bt_spp_cfg = {
-        .mode = esp_spp_mode,
-        .enable_l2cap_ertm = esp_spp_enable_l2cap_ertm,
-        .tx_buffer_size = 0, /* Only used for ESP_SPP_MODE_VFS mode */
-    };
+    esp_spp_cfg_t bt_spp_cfg = BT_SPP_CB_MODE_DEFAULT_CONFIG();
     if ((ret = esp_spp_enhanced_init(&bt_spp_cfg)) != ESP_OK) {
         ESP_LOGE(SPP_TAG, "%s spp init failed: %s", __func__, esp_err_to_name(ret));
         return;

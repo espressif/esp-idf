@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -30,8 +30,6 @@
 #define SPP_SHOW_MODE SPP_SHOW_SPEED    /*Choose show mode: show data or speed*/
 
 static const char local_device_name[] = CONFIG_EXAMPLE_LOCAL_DEVICE_NAME;
-static const esp_spp_mode_t esp_spp_mode = ESP_SPP_MODE_CB;
-static const bool esp_spp_enable_l2cap_ertm = true;
 
 static struct timeval time_new, time_old;
 static long data_num = 0;
@@ -247,11 +245,7 @@ void app_main(void)
         return;
     }
 
-    esp_spp_cfg_t bt_spp_cfg = {
-        .mode = esp_spp_mode,
-        .enable_l2cap_ertm = esp_spp_enable_l2cap_ertm,
-        .tx_buffer_size = 0, /* Only used for ESP_SPP_MODE_VFS mode */
-    };
+    esp_spp_cfg_t bt_spp_cfg = BT_SPP_CB_MODE_DEFAULT_CONFIG();
     if ((ret = esp_spp_enhanced_init(&bt_spp_cfg)) != ESP_OK) {
         ESP_LOGE(SPP_TAG, "%s spp init failed: %s", __func__, esp_err_to_name(ret));
         return;
