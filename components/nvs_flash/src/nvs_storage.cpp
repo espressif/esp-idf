@@ -755,7 +755,7 @@ esp_err_t Storage::cmpMultiPageBlob(uint8_t nsIndex, const char* key, const void
         // calculate crc32 of the incoming data window related to the BLOB_DATA chunk and compare it with the crc32 from the BLOB_DATA metadata entry
         // Different crc32 indicates data mismatch.
         // If crc32 matches, we have to compare the data in the chunk with the buffer data to exclude crc32 collision.
-        if (Item::calculateCrc32(reinterpret_cast<const uint8_t * >(data), item.varLength.dataSize) != item.varLength.dataCrc32) {
+        if (Item::calculateCrc32(static_cast<const uint8_t*>(data) + offset, item.varLength.dataSize) != item.varLength.dataCrc32) {
             return ESP_ERR_NVS_CONTENT_DIFFERS;
         }
 
