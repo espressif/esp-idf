@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -110,3 +110,17 @@ TEST_CASE("test alignment for dma", "[hw-align]")
 	TEST_ASSERT_TRUE_MESSAGE(test_alignment(MALLOC_CAP_DMA_DESC_AXI, axi_desc_alignment), "MALLOC_CAP_DMA_DESC_AXI");
 	TEST_ASSERT_TRUE_MESSAGE(test_alignment(MALLOC_CAP_DMA|MALLOC_CAP_SPIRAM, ext_cache_size), "MALLOC_CAP_DMA|MALLOC_CAP_SPIRAM");
 }
+
+#if SOC_SIMD_INSTRUCTION_SUPPORTED
+TEST_CASE("test alignment for simd", "[hw-align]")
+{
+	TEST_ASSERT_TRUE_MESSAGE(test_alignment(MALLOC_CAP_INTERNAL|MALLOC_CAP_SIMD, SOC_SIMD_PREFERRED_DATA_ALIGNMENT), "MALLOC_CAP_INTERNAL|MALLOC_CAP_SIMD");
+	TEST_ASSERT_TRUE_MESSAGE(test_alignment(MALLOC_CAP_SPIRAM|MALLOC_CAP_SIMD, SOC_SIMD_PREFERRED_DATA_ALIGNMENT), "MALLOC_CAP_SPIRAM|MALLOC_CAP_SIMD");
+
+	//Memories that cannot do the SIMD data accesses must not be SIMD-capable
+	TEST_ASSERT_EQUAL(0, heap_caps_get_total_size(MALLOC_CAP_RTCRAM|MALLOC_CAP_SIMD));
+#if SOC_MEM_SPM_SUPPORTED
+	TEST_ASSERT_EQUAL(0, heap_caps_get_total_size(MALLOC_CAP_SPM|MALLOC_CAP_SIMD));
+#endif
+}
+#endif
