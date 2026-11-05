@@ -949,6 +949,9 @@ void esp_phy_load_cal_and_init(void)
 
 #ifdef CONFIG_ESP_PHY_CALIBRATION_AND_DATA_STORAGE
     esp_phy_calibration_mode_t calibration_mode = CONFIG_ESP_PHY_CALIBRATION_MODE;
+    if (calibration_mode == PHY_RF_CAL_NONE) {
+        ESP_LOGW(TAG, "RF calibration is disabled by configuration; skipping calibration on normal boot may cause RF performance issues");
+    }
     uint8_t sta_mac[6];
     if (esp_rom_get_reset_reason(0) == RESET_REASON_CORE_DEEP_SLEEP) {
         calibration_mode = PHY_RF_CAL_NONE;
