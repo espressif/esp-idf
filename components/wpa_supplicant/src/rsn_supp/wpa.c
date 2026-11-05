@@ -793,7 +793,9 @@ static int wpa_supplicant_install_ptk(struct wpa_sm *sm, enum key_flag key_flag)
                "NONE - do not use pairwise keys");
         return 0;
     }
-    if (wpa_sm_set_key(&(sm->install_ptk), alg, sm->bssid, 0, 1, (sm->install_ptk).seq, WPA_KEY_RSC_LEN,
+    if (wpa_sm_set_key(&(sm->install_ptk), alg, sm->bssid,
+                       sm->keyidx_active,
+                       1, (sm->install_ptk).seq, WPA_KEY_RSC_LEN,
                        sm->ptk.tk, keylen, KEY_FLAG_PAIRWISE | key_flag) < 0) {
         wpa_printf(MSG_DEBUG, "WPA: Failed to set PTK to the "
                "driver (alg=%d keylen=%d bssid=" MACSTR ")",
@@ -851,7 +853,12 @@ void   wpa_supplicant_key_neg_complete(struct wpa_sm *sm,
 
     wpa_neg_complete();
     sm->eapol1_count = 0;
-    sm->use_ext_key_id = 0;
+    /* Keep sm->use_ext_key_id set while Extended Key ID is in use so
+     * that a following PTK rekey is required to carry a KeyID KDE and
+     * uses the RX-first install flow. It is reset in wpa_set_bss()
+     * for every new association. */
+    if (!sm->ext_key_id)
+        sm->use_ext_key_id = 0;
 
     if (secure) {
         wpa_sm_mlme_setprotection(
@@ -1273,6 +1280,46 @@ static void wpa_sm_set_seq(struct wpa_sm *sm, struct wpa_eapol_key *key, u8 ispt
     memcpy(seq, key_rsc, WPA_KEY_RSC_LEN);
 }
 
+static int wpa_handle_ext_key_id(struct wpa_sm *sm,
+                 struct wpa_eapol_ie_parse *ie)
+{
+    if (sm->ext_key_id) {
+        u16 key_id;
+
+        if (!ie->key_id) {
+            wpa_printf(MSG_DEBUG,
+                   "RSN: No Key ID in Extended Key ID handshake");
+            sm->keyidx_active = 0;
+            return sm->use_ext_key_id ? -1 : 0;
+        }
+
+        key_id = ie->key_id[0] & 0x03;
+        if (key_id > 1) {
+            wpa_printf(MSG_DEBUG,
+                   "RSN: Invalid Extended Key ID: %d", key_id);
+            return -1;
+        }
+        wpa_printf(MSG_DEBUG, "RSN: Using Extended Key ID %d", key_id);
+        sm->keyidx_active = key_id;
+        /* Use the RX-first install + TX activation flow for this
+         * handshake so that the old PTK remains usable for TX until
+         * the new one is activated after message 4/4. */
+        sm->use_ext_key_id = 1;
+    } else {
+        if (ie->key_id && (ie->key_id[0] & 0x03)) {
+            wpa_printf(MSG_DEBUG,
+                   "RSN: Non-zero Extended Key ID %d in PTK0 handshake",
+                   ie->key_id[0] & 0x03);
+            return -1;
+        }
+        sm->keyidx_active = 0;
+        /* Do not touch sm->use_ext_key_id here: it is also used by the
+         * legacy WPA first key exchange flow. */
+    }
+
+    return 0;
+}
+
 static void wpa_supplicant_process_3_of_4(struct wpa_sm *sm,
                       struct wpa_eapol_key *key,
                       u16 ver, const u8 *key_data,
@@ -1290,6 +1337,10 @@ static void wpa_supplicant_process_3_of_4(struct wpa_sm *sm,
         goto failed;
     if (wpa_supplicant_validate_ie(sm, sm->bssid, &ie) < 0)
         goto failed;
+
+    if (wpa_handle_ext_key_id(sm, &ie) < 0) {
+        goto failed;
+    }
 
     if (ie.gtk && !(key_info & WPA_KEY_INFO_ENCR_KEY_DATA)) {
         wpa_printf(MSG_DEBUG, "WPA: GTK IE in unencrypted key data");
@@ -1391,12 +1442,16 @@ static int wpa_supplicant_activate_ptk(struct wpa_sm *sm)
             "WPA: Activate PTK bssid=" MACSTR ")",
             MAC2STR(sm->bssid));
 
-    if (wpa_sm_set_key(&(sm->install_ptk), alg, sm->bssid, 0, 1, (sm->install_ptk).seq,
+    if (wpa_sm_set_key(&(sm->install_ptk), alg, sm->bssid,
+                       sm->keyidx_active,
+                       1, (sm->install_ptk).seq,
                        WPA_KEY_RSC_LEN, sm->ptk.tk, keylen,
                        (KEY_FLAG_MODIFY | KEY_FLAG_PAIRWISE | KEY_FLAG_RX | KEY_FLAG_TX)) < 0) {
             wpa_printf(MSG_WARNING,
                     "WPA: Failed to activate PTK for TX (idx=%d bssid="
-                    MACSTR ")", 0, MAC2STR(sm->bssid));
+                    MACSTR ")",
+                    sm->keyidx_active,
+                    MAC2STR(sm->bssid));
             return -1;
     }
     return 0;
@@ -2363,6 +2418,15 @@ int wpa_set_bss(char *macddr, char * bssid, u8 pairwise_cipher, u8 group_cipher,
     memcpy(sm->bssid, bssid, ETH_ALEN);
     sm->ap_notify_completed_rsne = esp_wifi_sta_is_ap_notify_completed_rsne_internal();
     sm->use_ext_key_id = (sm->proto == WPA_PROTO_WPA);
+    sm->keyidx_active = 0;
+    /* Enable Extended Key ID for RSN with CCMP/GCMP (not FT), matching the
+     * capability bit we advertise. wpa_handle_ext_key_id() takes the key
+     * index from the KeyID KDE in message 3. With no KeyID, key index
+     * stays 0 and the pairwise key is installed for TX and RX together. */
+    sm->ext_key_id = (sm->proto == WPA_PROTO_RSN &&
+            (sm->pairwise_cipher & (WPA_CIPHER_CCMP | WPA_CIPHER_GCMP |
+                        WPA_CIPHER_GCMP_256)) &&
+            !wpa_key_mgmt_ft(sm->key_mgmt));
     sm->sae_pwe = esp_wifi_get_config_sae_pwe_h2e_internal(WIFI_IF_STA);
 
     struct rsn_pmksa_cache_entry *pmksa = NULL;
