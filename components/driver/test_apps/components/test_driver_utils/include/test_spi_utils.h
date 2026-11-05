@@ -55,8 +55,8 @@
 // dummy cs pins for add device test, which are available pins but different from PIN_NUM_CS
 #if CONFIG_IDF_TARGET_ESP32
 #define DUMMY_CS_PINS() {25, 26, 27}
-#elif CONFIG_IDF_TARGET_ESP32H2
-#define DUMMY_CS_PINS() {9, 10, 11, 12, 22, 25}
+#elif CONFIG_IDF_TARGET_ESP32H2 || CONFIG_IDF_TARGET_ESP32H21
+#define DUMMY_CS_PINS() {9, 10, 11, 12, 13, 14}
 #elif CONFIG_IDF_TARGET_ESP32P4 || CONFIG_IDF_TARGET_ESP32H4
 #define DUMMY_CS_PINS() {0, 1, 2, 3, 4, 5}
 #else
