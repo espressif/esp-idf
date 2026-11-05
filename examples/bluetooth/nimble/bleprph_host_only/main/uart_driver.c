@@ -4,6 +4,7 @@
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
 
+#include <inttypes.h>
 #include <stdio.h>
 #include <string.h>
 #include <stdbool.h>
@@ -46,6 +47,7 @@ enum {
 
 TaskHandle_t s_rx_task_hdl;
 static volatile bool s_shutdown_flag = false;
+static uint32_t s_dropped;
 
 static void IRAM_ATTR hci_uart_rx_task(void *arg)
 {
@@ -86,13 +88,22 @@ static void IRAM_ATTR hci_uart_rx_task(void *arg)
 
         switch (rx_st) {
         case UART_RX_TYPE: {
-            assert(buf[0] >= DATA_TYPE_ACL && buf[0] <= DATA_TYPE_EVENT);
             if (buf[0] == DATA_TYPE_ACL) {
                 len_to_read = 4;
             } else if (buf[0] == DATA_TYPE_EVENT) {
                 len_to_read = 2;
             } else {
-                assert(0);
+                /* Not an H4 type this host accepts. Drop it and wait for
+                 * the next type byte. uart_flush_input() only clears bytes
+                 * already queued when the UART opens. */
+                if (++s_dropped <= 8 || (s_dropped % 256) == 0) {
+                    ESP_LOGW(TAG, "dropped non-H4 byte 0x%02x (%" PRIu32 " total)",
+                             buf[0], s_dropped);
+                }
+                len_to_read = 1;
+                len_total_read = 0;
+                len_state_read = 0;
+                break;
             }
             rx_st = UART_RX_LEN;
         }
