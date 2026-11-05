@@ -410,11 +410,18 @@ static esp_err_t _esp_srp_gen_salt_verifier(esp_srp_handle_t *hd, const char *us
     }
 
     esp_mpi_get_rand(hd->s, 8 * salt_len, -1, 0);
-    hd->bytes_s = esp_mpi_to_bin(hd->s, &str_salt_len);
+    str_salt_len = esp_mpi_sizeof(hd->s);
+    hd->bytes_s = calloc(1, salt_len);
     if (!hd->bytes_s) {
         ESP_LOGE(TAG, "Failed to generate salt of len %d", salt_len);
         goto error;
     }
+    if (str_salt_len > salt_len ||
+            mbedtls_mpi_write_binary(hd->s, (unsigned char *)hd->bytes_s, salt_len) != 0) {
+        ESP_LOGE(TAG, "Failed to serialize salt of len %d", salt_len);
+        goto error;
+    }
+    str_salt_len = salt_len;
 
     hd->len_s = salt_len;
     ESP_LOGD(TAG, "Salt ->");
