@@ -500,6 +500,7 @@ static bool s_ble_active = false;
 static DRAM_ATTR esp_pm_lock_handle_t s_pm_lock = NULL;
 #endif // CONFIG_PM_ENABLE
 #define MAIN_XTAL_FREQ_HZ                 (32000000)
+
 static DRAM_ATTR modem_clock_lpclk_src_t s_bt_lpclk_src = MODEM_CLOCK_LPCLK_SRC_INVALID;
 static DRAM_ATTR uint32_t s_bt_lpclk_freq = 100000;
 
@@ -730,6 +731,27 @@ void esp_bt_set_lpclk_freq(uint32_t clk_freq)
     s_bt_lpclk_freq = clk_freq;
 }
 
+static IRAM_ATTR uint32_t esp_bt_get_int_rc_freq(void)
+{
+    uint32_t rtc_freq = 0;
+
+    if (rtc_clk_slow_src_get() != SOC_RTC_SLOW_CLK_SRC_DEFAULT) {
+        esp_clk_tree_src_get_freq_hz(SOC_MOD_CLK_RC_SLOW, ESP_CLK_TREE_SRC_FREQ_PRECISION_EXACT, &rtc_freq);
+        if (!rtc_freq) {
+            esp_clk_tree_src_get_freq_hz(SOC_MOD_CLK_RC_SLOW, ESP_CLK_TREE_SRC_FREQ_PRECISION_APPROX, &rtc_freq);
+            ESP_LOGW(NIMBLE_PORT_LOG_TAG, "Failed to get exact RC_SLOW frequency, using approximate frequency\n");
+        }
+#if CONFIG_IDF_TARGET_ESP32H21
+        /* BT LP clock is RC_SLOW divided by 4. */
+        rtc_freq >>= 2;
+#endif
+        rtc_freq /= 5;
+    } else {
+        rtc_freq = esp_clk_tree_lp_slow_get_freq_hz(ESP_CLK_TREE_SRC_FREQ_PRECISION_CACHED) / 5;
+    }
+    return rtc_freq;
+}
+
 IRAM_ATTR void controller_sleep_cb(uint32_t enable_tick, void *arg)
 {
     if (!s_ble_active) {
@@ -761,7 +783,7 @@ IRAM_ATTR void controller_wakeup_cb(void *arg)
     params = (bt_wakeup_params_t *)arg;
     esp_phy_enable(PHY_MODEM_BT);
     if (s_bt_lpclk_src == MODEM_CLOCK_LPCLK_SRC_RC_SLOW) {
-        params->rtc_freq = esp_clk_tree_lp_slow_get_freq_hz(ESP_CLK_TREE_SRC_FREQ_PRECISION_CACHED) / 5;
+        params->rtc_freq = esp_bt_get_int_rc_freq();
     }
 #if CONFIG_FREERTOS_USE_TICKLESS_IDLE
     params->bt_wakeup = esp_bt_check_wakeup_by_bt();
@@ -1040,7 +1062,7 @@ static void ble_rtc_clk_init(esp_bt_controller_config_t *cfg)
     } else if (s_bt_lpclk_src == MODEM_CLOCK_LPCLK_SRC_XTAL32K) {
         cfg->rtc_freq = 32768;
     } else if (s_bt_lpclk_src == MODEM_CLOCK_LPCLK_SRC_RC_SLOW) {
-        cfg->rtc_freq = esp_clk_tree_lp_slow_get_freq_hz(ESP_CLK_TREE_SRC_FREQ_PRECISION_CACHED) / 5;
+        cfg->rtc_freq = esp_bt_get_int_rc_freq();
         cfg->ble_ll_sca = 3000;
     } else if (s_bt_lpclk_src == MODEM_CLOCK_LPCLK_SRC_RC32K) {
         cfg->rtc_freq = 32000;
