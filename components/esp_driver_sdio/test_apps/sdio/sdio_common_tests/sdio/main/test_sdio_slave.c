@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -8,14 +8,18 @@
  * This file uses ESP32 SDMMC peripheral to test SDIO Slave peripheral SD modes
  */
 
+#include <inttypes.h>
 #include "unity.h"
 #include "esp_log.h"
+#include "esp_attr.h"
+#include "esp_rom_sys.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 
 #include "driver/sdio_slave.h"
 #include "soc/soc_caps.h"
 #include "soc/sdio_slave_pins.h"
+#include "soc/sdio_slc_struct.h"
 
 #include "test_dualboard_utils.h"
 #include "../../sdio_common_test.h"
@@ -330,6 +334,117 @@ TEST_CASE("SDIO_Slave: test to host", "[sdio]")
 TEST_CASE("SDIO_Slave: test to host (Performance)", "[sdio_speed]")
 {
     test_to_host();
+}
+
+/*---------------------------------------------------------------
+                Standalone Tests (no host required)
+---------------------------------------------------------------*/
+#if CONFIG_IDF_TARGET_ESP32
+#define TEST_RECV_LINK_PARKED()     (SLC.slc0_tx_link.park)
+#define TEST_SEND_LINK_BUF()        (SLC.slc0_rxlink_dscr_bf1)
+#elif CONFIG_IDF_TARGET_ESP32C6
+#define TEST_RECV_LINK_PARKED()     (SLC.slc0tx_link.slc0_txlink_park)
+#define TEST_SEND_LINK_BUF()        (SLC.slc0_rxlink_dscr_bf1.val)
+#else
+#define TEST_RECV_LINK_PARKED()     (SLC.slc_slc0tx_link.slc0_txlink_park)
+#define TEST_SEND_LINK_BUF()        (SLC.slc_slc0_rxlink_dscr_bf1.val)
+#endif
+// Only the low bits of the buffer address are compared, high bits of the register carry status flags
+#define TEST_SEND_LINK_BUF_MASK     0xFFFFF
+
+#define TEST_RECV_START_ROUNDS      20
+#define TEST_RECV_START_BUF_NUMS    8
+#define TEST_SEND_START_ROUNDS      10
+#define TEST_SEND_START_PKT_NUMS    4
+#define TEST_SEND_START_PKT_LEN     64
+
+/*---------------------------------------------------------------
+                SDIO_Slave: test recv start
+---------------------------------------------------------------*/
+TEST_CASE("SDIO_Slave: test recv start with loaded buffers", "[sdio_standalone]")
+{
+    static DMA_ATTR uint8_t recv_buffer[TEST_RECV_START_BUF_NUMS][TEST_RX_BUFFER_SIZE];
+    int lost = 0;
+
+    for (int round = 0; round < TEST_RECV_START_ROUNDS; round++) {
+        s_slave_init(SDIO_SLAVE_SEND_STREAM);
+        // Loading more than one buffer before start leaves a recv link restart pending
+        for (int i = 0; i < TEST_RECV_START_BUF_NUMS; i++) {
+            sdio_slave_buf_handle_t handle = sdio_slave_recv_register_buf(recv_buffer[i]);
+            TEST_ASSERT(handle);
+            TEST_ESP_OK(sdio_slave_recv_load_buf(handle));
+        }
+        TEST_ESP_OK(sdio_slave_start());
+
+        // A started link leaves park as soon as it fetches the first descriptor
+        esp_rom_delay_us(1000);
+        if (TEST_RECV_LINK_PARKED()) {
+            ESP_LOGE(TAG, "round %d: recv link is not started", round);
+            lost++;
+        }
+
+        sdio_slave_stop();
+        sdio_slave_deinit();
+    }
+    TEST_ASSERT_EQUAL_INT(0, lost);
+}
+
+/*---------------------------------------------------------------
+                SDIO_Slave: test send start
+---------------------------------------------------------------*/
+static DMA_ATTR uint32_t s_send_start_buffer[TEST_SEND_START_PKT_NUMS][TEST_SEND_START_PKT_LEN / 4];
+
+static void test_send_start_queue(void)
+{
+    for (int i = 0; i < TEST_SEND_START_PKT_NUMS; i++) {
+        TEST_ESP_OK(sdio_slave_send_queue((uint8_t *)s_send_start_buffer[i], TEST_SEND_START_PKT_LEN, (void *)i, portMAX_DELAY));
+    }
+}
+
+static int test_send_start(sdio_slave_sending_mode_t mode, bool queue_before_start)
+{
+    int lost = 0;
+
+    for (int round = 0; round < TEST_SEND_START_ROUNDS; round++) {
+        s_slave_init(mode);
+        if (queue_before_start) {
+            test_send_start_queue();
+        }
+        TEST_ESP_OK(sdio_slave_start());
+        if (!queue_before_start) {
+            test_send_start_queue();
+        }
+
+        // Without a host reading, a started link stays on one of the queued buffers
+        esp_rom_delay_us(1000);
+        uint32_t link_buf = TEST_SEND_LINK_BUF() & TEST_SEND_LINK_BUF_MASK;
+        bool started = false;
+        for (int i = 0; i < TEST_SEND_START_PKT_NUMS; i++) {
+            if (link_buf == ((uint32_t)s_send_start_buffer[i] & TEST_SEND_LINK_BUF_MASK)) {
+                started = true;
+            }
+        }
+        if (!started) {
+            ESP_LOGE(TAG, "mode %d, queue %s start, round %d: send link is not started (buf %05"PRIX32")",
+                     mode, queue_before_start ? "before" : "after", round, link_buf);
+            lost++;
+        }
+
+        sdio_slave_stop();
+        TEST_ESP_OK(sdio_slave_reset());
+        sdio_slave_deinit();
+    }
+    return lost;
+}
+
+TEST_CASE("SDIO_Slave: test send start with queued packets", "[sdio_standalone]")
+{
+    int lost = 0;
+    lost += test_send_start(SDIO_SLAVE_SEND_PACKET, false);
+    lost += test_send_start(SDIO_SLAVE_SEND_PACKET, true);
+    lost += test_send_start(SDIO_SLAVE_SEND_STREAM, false);
+    lost += test_send_start(SDIO_SLAVE_SEND_STREAM, true);
+    TEST_ASSERT_EQUAL_INT(0, lost);
 }
 
 #if CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP
