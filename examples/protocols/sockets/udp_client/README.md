@@ -75,37 +75,41 @@ Start server first, to receive data sent from the client (application).
 
 ## Running the example for Linux target
 
-This example could be executed on host system, using lwIP port for linux and FreeRTOS simulator on linux. The socket API used in this example directly calls lwIP implementation. Follow the steps below to configure, build and run the example on linux operating system.
+This example can run on the host using the lwIP port for Linux and the FreeRTOS simulator. Socket APIs call into the real lwIP stack (not the host OS TCP/IP stack). `examples/protocols/sockets/tcp_client` on Linux uses native host sockets instead. See also [Running lwIP on Linux](../../../../docs/en/api-guides/lwip.rst) in the lwIP API guide.
 
-1. First configure the target (please note that using linux target is currently available only in `preview` stage)
+To configure, build, and run the example on Linux, follow the steps below.
+
+1. Configure the target (the Linux target is currently available only in `preview` stage):
 ```
 idf.py --preview set-target linux
 ```
-2. Configure the project
+2. Configure the project:
 ```
 idf.py menuconfig
 ```
-Choose connection capabilities in `Example Connection Configuration` menu:
+Choose connection capabilities in `Example Connection Configuration`:
 
-* By default, the `example_connect()` function returns as a no-op, expecting that the connection is already available. This option is preferred when we don't have to interact with outside networking layers and use only lwIP internal interface, such as loopback netif (`lo`).
-* If you want to connect lwIP network interface to the host system networking, set `EXAMPLE_CONNECT_LWIP_TAPIF`.
-    * Configure the interface address information (IP address, GW address and netmask).
-    * Create a host network interface named `tap0` of *TAP* type. You can use the `./make_tap_netif` script located in the `tapif_io` component directory.
-    * Optionally set input or output packet loss rate to simulate losing data of physical interfaces.
-    * Note about the host side networking:
-    * This example uses static IP address configured in `tapif_io` component configuration.
-    * Use the IP ranges that do not overlap with any other IP range of the host system.
-    * Make sure that the same IP range is configured in `tap0` interface created by tge `./make_tap_netif` script.
-    * You can leave the defaults in the script and `tapif_io` settings unless any other host network interface uses `192.168.5.x` range.
-    * Read more about host-side networking in the [`tapif_io` component documentation](../../../common_components/protocol_examples_tapif_io/README.md).
+* `EXAMPLE_CONNECT_LWIP_TAPIF` is enabled by default. `example_connect()` then attaches lwIP to a host TAP interface named `tap0`.
+    * Create that interface with the `./make_tap_netif` script in the `protocol_examples_tapif_io` component directory.
+    * `EXAMPLE_CONNECT_WAIT_FOR_IP` is also enabled by default, so the example runs a DHCP client and waits for an address. Provide a DHCP server on `tap0`, or disable this option and set a static IP address, gateway, and netmask.
+    * Use an IP range that does not overlap with other host interfaces. The static-IP defaults in `tapif_io` use `192.168.5.x`; keep the same range on `tap0` (the script defaults are fine unless another interface already uses that range).
+    * Optionally set input or output packet loss to simulate a lossy link.
+    * See the [`tapif_io` component documentation](../../../common_components/protocol_examples_tapif_io/README.md) for host routing, NAT, and DHCP server examples.
+* `sdkconfig.defaults.linux` disables `EXAMPLE_CONNECT_LWIP_TAPIF`. `example_connect()` is then a no-op, and traffic stays on lwIP-internal interfaces such as loopback (`lo`).
+* Enable `EXAMPLE_CONNECT_LWIP_TAPIF` to attach lwIP to a host TAP interface named `tap0`.
+    * Create that interface with the `./make_tap_netif` script in the `protocol_examples_tapif_io` component directory.
+    * `EXAMPLE_CONNECT_WAIT_FOR_IP` is enabled by default in that case, so the example runs a DHCP client and waits for an address. Provide a DHCP server on `tap0`, or disable this option and set a static IP address, gateway, and netmask.
+    * Use an IP range that does not overlap with other host interfaces. The static-IP defaults in `tapif_io` use `192.168.5.x`; keep the same range on `tap0` (the script defaults are fine unless another interface already uses that range).
+    * Optionally set input or output packet loss to simulate a lossy link.
+    * See the [`tapif_io` component documentation](../../../common_components/protocol_examples_tapif_io/README.md) for host routing, NAT, and DHCP server examples.
 
-3. Generate partition table for the application:
+3. Generate the partition table for the application:
 ```
-idf.by partition-table
+idf.py partition-table
 ```
 
-4. Build and run the example the usual way (Note that the flash step is left out)
+4. Build and run the example as usual (flash is not used on Linux):
 ```
-idf.by build
+idf.py build
 idf.py monitor
 ```

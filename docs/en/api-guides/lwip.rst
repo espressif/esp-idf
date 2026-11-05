@@ -5,6 +5,24 @@ lwIP
 
 ESP-IDF uses the open source `lwIP lightweight TCP/IP stack`_. The ESP-IDF version of lwIP (`esp-lwip`_) has some modifications and additions compared to the upstream project.
 
+.. _lwip-on-linux:
+
+Running lwIP on Linux
+---------------------
+
+ESP-IDF can build and run the real ``esp-lwip`` stack on a Linux host with the FreeRTOS POSIX/Linux simulator (the ``linux`` preview target). Application socket calls go through lwIP, not through the host OS TCP/IP stack. Use this when you want to develop or debug networking code on the host against the same stack that runs on chip targets.
+
+That is different from examples that also build for Linux but use native host sockets. For example, :example:`protocols/sockets/tcp_client` stubs ESP-NETIF and calls the Linux BSD socket API. Those apps exercise application logic against the host stack; they do not run lwIP.
+
+To run real lwIP on Linux:
+
+1. Set the target: ``idf.py --preview set-target linux``.
+2. Build and run an example that links lwIP for Linux, such as :example:`protocols/sockets/udp_client`.
+
+In :example:`protocols/sockets/udp_client`, ``sdkconfig.defaults.linux`` disables ``EXAMPLE_CONNECT_LWIP_TAPIF``, so ``example_connect()`` does not attach lwIP to the host network and traffic stays on lwIP-internal interfaces such as loopback. Enable that option to attach lwIP to a host TAP interface. With the option enabled, ``EXAMPLE_CONNECT_WAIT_FOR_IP`` defaults to enabled and the example waits for DHCP. Host TAP setup is described in the example README and in :idf_file:`examples/common_components/protocol_examples_tapif_io/README.md`.
+
+For general information on the Linux target, see :doc:`host-apps`.
+
 Supported APIs
 --------------
 
@@ -75,7 +93,7 @@ A number of ESP-IDF examples show how to use the BSD Sockets APIs:
 
 - :example:`protocols/sockets/tcp_server` demonstrates how to create a TCP server that accepts client connection requests and receives data.
 
-- :example:`protocols/sockets/tcp_client` demonstrates how to create a TCP client that connects to a server using a predefined IP address and port.
+- :example:`protocols/sockets/tcp_client` demonstrates how to create a TCP client that connects to a server using a predefined IP address and port. On the ``linux`` target, this example uses native host sockets, not lwIP (see :ref:`lwip-on-linux`).
 
 - :example:`protocols/sockets/tcp_transport_client` demonstrates how to create a TCP client with the ``tcp_transport`` component, including optional SOCKS proxy support.
 
@@ -85,7 +103,7 @@ A number of ESP-IDF examples show how to use the BSD Sockets APIs:
 
 - :example:`protocols/sockets/udp_server` demonstrates how to create a UDP server that receives client connection requests and data.
 
-- :example:`protocols/sockets/udp_client` demonstrates how to create a UDP client that connects to a server using a predefined IP address and port.
+- :example:`protocols/sockets/udp_client` demonstrates how to create a UDP client that connects to a server using a predefined IP address and port. On the ``linux`` target, this example runs the real lwIP stack (optionally bridged to the host via TAP); see :ref:`lwip-on-linux`.
 
 - :example:`protocols/sockets/udp_multicast` demonstrates how to use the IPV4 and IPV6 UDP multicast features via the BSD-style sockets interface.
 
