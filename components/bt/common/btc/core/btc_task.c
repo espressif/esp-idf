@@ -655,6 +655,11 @@ void btc_deinit(void)
     osi_thread_free(btc_thread);
     btc_thread = NULL;
 
+#if (BTC_SPP_INCLUDED == TRUE)
+    /* Session events are freed below. Drop the cached pointer before that. */
+    btc_spp_clear_tx_drain_evt();
+#endif
+
     /* Tear down the osi_event subsystem last: btc_gap_ble_deinit() above may
      * still call osi_event_delete(), which needs the global event lock. This
      * mirrors moving osi_thread_event_init() into btc_init(); osi_deinit()

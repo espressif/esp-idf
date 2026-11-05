@@ -33,25 +33,36 @@ esp_err_t esp_spp_register_callback(esp_spp_cb_t callback)
 
 esp_err_t esp_spp_enhanced_init(const esp_spp_cfg_t *cfg)
 {
-    btc_msg_t msg = {0};
-    btc_spp_args_t arg = {0};
     ESP_BLUEDROID_STATUS_CHECK(ESP_BLUEDROID_STATUS_ENABLED);
 
-    if (!cfg || (cfg->mode == ESP_SPP_MODE_VFS && (cfg->tx_buffer_size < ESP_SPP_MIN_TX_BUFFER_SIZE ||
-            cfg->tx_buffer_size > ESP_SPP_MAX_TX_BUFFER_SIZE))) {
+    if (!cfg) {
+        LOG_WARN("Invalid SPP configuration");
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    uint16_t tx_buffer_size = cfg->tx_buffer_size;
+    if (tx_buffer_size == 0) {
+        tx_buffer_size = ESP_SPP_DEFAULT_TX_BUFFER_SIZE;
+        LOG_WARN("tx_buffer_size is 0, use default %u", tx_buffer_size);
+    }
+
+    if (tx_buffer_size < ESP_SPP_MIN_TX_BUFFER_SIZE || tx_buffer_size > ESP_SPP_MAX_TX_BUFFER_SIZE) {
         LOG_WARN("Invalid tx buffer size");
         return ESP_ERR_INVALID_ARG;
     }
 
+    btc_msg_t msg = {0};
     msg.sig = BTC_SIG_API_CALL;
     msg.pid = BTC_PID_SPP;
     msg.act = BTC_SPP_ACT_INIT;
 
+    btc_spp_args_t arg = {0};
     arg.init.mode = cfg->mode;
     arg.init.enable_l2cap_ertm = cfg->enable_l2cap_ertm;
-    arg.init.tx_buffer_size = cfg->tx_buffer_size;
+    arg.init.tx_buffer_size = tx_buffer_size;
 
-    return (btc_transfer_context(&msg, &arg, sizeof(btc_spp_args_t), NULL, NULL) == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
+    bt_status_t status = btc_transfer_context(&msg, &arg, sizeof(btc_spp_args_t), NULL, NULL);
+    return status == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL;
 }
 
 esp_err_t esp_spp_deinit(void)
