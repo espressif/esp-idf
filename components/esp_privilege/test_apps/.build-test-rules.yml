@@ -10,4 +10,3 @@ components/esp_privilege/test_apps/privilege:
     - riscv
     - esp_system
     - esp_hw_support
-    - esp_timer

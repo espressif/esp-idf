@@ -14,17 +14,17 @@
     .section .iram1, "ax"
 
 /**
- * @brief Call a function in U-mode and return its value and its fault status
+ * @brief Call a function in U-mode and return its value
  *
  * The caller's context is saved at the top of its stack, which becomes the M-mode stack of
- * the task until the U-mode code returns through esp_privilege_exit_trampoline.
+ * the task until the run ends.
  *
  * @param a0 U-mode entry point
  * @param a1 First argument passed to the entry point
  * @param a2 Second argument passed to the entry point
  * @param a3 Initial user sp, 16-byte aligned
- * @param a4 satp value while running in U-mode (0 for no translation)
- * @param a5 Reserved for a run context, 0
+ * @param a4 satp value of the page tables that the U-mode code runs with
+ * @param a5 Run context
  * @return The low word in a0 is the user result. The high word in a1 is zero
  */
     .global esp_privilege_call_user_code
@@ -51,9 +51,9 @@ esp_privilege_call_user_code:
 
     /* Nothing must trap until mret. From now on, sp is the top of the M-mode stack */
     csrci   mstatus, MSTATUS_MIE
-    riscv_sv32_write_satp a4
-    sfence.vma
-    fence.i
+    /* The caller flushed translations and instruction fetch on every core after the page tables and
+     * the code last changed */
+    rv_user_activate_satp a4, t0
     csrw    mepc, a0
     li      t0, MSTATUS_MPP
     csrc    mstatus, t0
@@ -62,9 +62,9 @@ esp_privilege_call_user_code:
 
     mv      a0, a1
     mv      a1, a2
-    la      ra, esp_privilege_exit_trampoline
-    li      gp, 0
-    li      tp, 0
+    lw      gp, RV_URUN_GP(a5)
+    lw      tp, RV_URUN_TP(a5)
+    lw      ra, RV_URUN_RETURN(a5)
 #if CONFIG_ESP_SYSTEM_HW_STACK_GUARD
     /* U-mode code runs on its own stack, outside the task's stack bounds */
     ESP_HW_STACK_GUARD_MONITOR_STOP_CUR_CORE t0 t1
@@ -109,7 +109,6 @@ esp_privilege_call_user_code:
     .global esp_privilege_return_to_caller
     .type esp_privilege_return_to_caller, @function
 esp_privilege_return_to_caller:
-    riscv_sv32_write_satp zero
     lw      ra, RV_UCTX_RA(sp)
     lw      gp, RV_UCTX_GP(sp)
     lw      tp, RV_UCTX_TP(sp)
@@ -125,25 +124,8 @@ esp_privilege_return_to_caller:
     lw      s9, RV_UCTX_S9(sp)
     lw      s10, RV_UCTX_S10(sp)
     lw      s11, RV_UCTX_S11(sp)
-    /* RV32 returns a uint64_t in a0 and a1. a0 holds the value of the U-mode code, a1 the fault status */
+    /* RV32 returns a uint64_t in a0 and a1. a0 holds the value of the U-mode code, a1 is zero */
     lw      a1, RV_UCTX_FAULT(sp)
     addi    sp, sp, RV_UCTX_SIZE
     ret
     .size esp_privilege_return_to_caller, .-esp_privilege_return_to_caller
-
-/**
- * @brief Return address of the U-mode entry point, executed in U-mode
- *
- * a0 holds the value returned by the U-mode code.
- */
-    .global esp_privilege_exit_trampoline
-    .type esp_privilege_exit_trampoline, @function
-    /* Keeps the trampoline within a single page, which is mapped in every U-mode address space */
-    .balign 16
-esp_privilege_exit_trampoline:
-    li      a7, ESP_PRIVILEGE_ECALL_EXIT
-    ecall
-    /* Never returns */
-1:
-    j       1b
-    .size esp_privilege_exit_trampoline, .-esp_privilege_exit_trampoline

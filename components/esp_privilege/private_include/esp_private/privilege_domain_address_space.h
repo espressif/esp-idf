@@ -52,6 +52,22 @@ esp_err_t privilege_domain_address_space_map(privilege_domain_address_space_t *a
                                              uintptr_t backing, uint32_t flags);
 
 /**
+ * @brief Check that a range of user addresses is mapped with at least the given permissions
+ *
+ * Reads the page tables, so it also finds memory mapped by several calls of
+ * privilege_domain_address_space_map().
+ *
+ * @param as Address space
+ * @param address First user address of the range
+ * @param size Size of the range in bytes, at least 1
+ * @param flags Combination of ESP_PRIVILEGE_UMODE_DOMAIN_READ, ESP_PRIVILEGE_UMODE_DOMAIN_WRITE and ESP_PRIVILEGE_UMODE_DOMAIN_EXECUTE, or 0 for
+ *        mapped with any permissions
+ * @return true if every page of the range is mapped for U-mode with the permissions
+ */
+bool privilege_domain_address_space_check(const privilege_domain_address_space_t *as, uint32_t address, size_t size,
+                                          uint32_t flags);
+
+/**
  * @brief Flush address translations and instruction fetch on all cores
  *
  * Call after the page tables or the executable memory of an address space changed, before U-mode

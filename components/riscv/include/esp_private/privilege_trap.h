@@ -52,6 +52,12 @@ STRUCT_END(RvUserCallCtx)
 #define RV_UCTX_SIZE      ALIGNUP(16, sizeof(RvUserCallCtx))
 #endif /* defined(_ASMLANGUAGE) || defined(__ASSEMBLER__) */
 
+/* Offsets of the fields of privilege_domain_run_context_t that the assembly code reads. The
+ * structure itself is defined by esp_privilege, which checks the offsets. */
+#define RV_URUN_GP 0
+#define RV_URUN_TP 4
+#define RV_URUN_RETURN 8
+
 #if !(defined(_ASMLANGUAGE) || defined(__ASSEMBLER__))
 /**
  * @brief Call context of a task that runs U-mode code, from a trap frame taken from U-mode
@@ -148,11 +154,26 @@ void rv_user_trap_set_handlers(rv_user_ecall_handler_t ecall);
 .endm
 
 /**
+ * @brief Activate the address space of the U-mode code. The translations of a satp value stay valid,
+ *        because every change of its page tables is followed by a flush on every core, so only a
+ *        different satp value needs a flush.
+ *
+ * @param reg Register holding the satp value
+ * @param tmp Register clobbered
+ */
+.macro rv_user_activate_satp reg, tmp
+    csrr    \tmp, satp
+    beq     \reg, \tmp, .Lrv_user_satp_unchanged\@
+    riscv_sv32_write_satp \reg
+    sfence.vma
+.Lrv_user_satp_unchanged\@:
+.endm
+
+/**
  * @brief Prepare the return to U-mode. user_sp is stored in mscratch and the task's address space
  *        (satp) is activated. After the registers have been restored, rv_user_trap_exit_to_user must be used.
  *
- * @param reg Register holding the user sp, clobbered. t1 is clobbered as well when the hardware
- *            stack guard is enabled.
+ * @param reg Register holding the user sp, clobbered. t1 is clobbered as well.
  * @param frame_size Size of the frame pointed to by sp, which ends at the top of the task's M-mode stack
  */
 .macro rv_user_trap_set_user_sp reg, frame_size
@@ -161,8 +182,7 @@ void rv_user_trap_set_handlers(rv_user_ecall_handler_t ecall);
     ESP_HW_STACK_GUARD_MONITOR_STOP_CUR_CORE \reg t1
 #endif /* CONFIG_ESP_SYSTEM_HW_STACK_GUARD */
     lw      \reg, (\frame_size + RV_UCTX_SATP)(sp)
-    riscv_sv32_write_satp \reg
-    sfence.vma
+    rv_user_activate_satp \reg, t1
 .endm
 
 /**

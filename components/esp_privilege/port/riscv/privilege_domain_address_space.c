@@ -52,6 +52,15 @@ esp_err_t privilege_domain_address_space_create(privilege_domain_address_space_t
     return ESP_OK;
 }
 
+static uint32_t pte_permissions(uint32_t flags)
+{
+    uint32_t permissions = 0;
+    permissions |= (flags & ESP_PRIVILEGE_UMODE_DOMAIN_READ) ? RISCV_SV32_PTE_R : 0;
+    permissions |= (flags & ESP_PRIVILEGE_UMODE_DOMAIN_WRITE) ? RISCV_SV32_PTE_W : 0;
+    permissions |= (flags & ESP_PRIVILEGE_UMODE_DOMAIN_EXECUTE) ? RISCV_SV32_PTE_X : 0;
+    return permissions;
+}
+
 esp_err_t privilege_domain_address_space_map(privilege_domain_address_space_t *as, uint32_t va, size_t size, uintptr_t backing,
                                              uint32_t flags)
 {
@@ -73,11 +82,7 @@ esp_err_t privilege_domain_address_space_map(privilege_domain_address_space_t *a
             return ESP_ERR_NO_MEM;
         }
     }
-    uint32_t permissions = 0;
-    permissions |= (flags & ESP_PRIVILEGE_UMODE_DOMAIN_READ) ? RISCV_SV32_PTE_R : 0;
-    permissions |= (flags & ESP_PRIVILEGE_UMODE_DOMAIN_WRITE) ? RISCV_SV32_PTE_W : 0;
-    permissions |= (flags & ESP_PRIVILEGE_UMODE_DOMAIN_EXECUTE) ? RISCV_SV32_PTE_X : 0;
-    const esp_err_t err = riscv_sv32_as_map(as, va, backing, size, permissions, tables, count);
+    const esp_err_t err = riscv_sv32_as_map(as, va, backing, size, pte_permissions(flags), tables, count);
     /* On failure, for example an overlap with a mapped page, the address space did not take the tables */
     if (err != ESP_OK) {
         for (size_t i = 0; i < count; i++) {
@@ -86,6 +91,33 @@ esp_err_t privilege_domain_address_space_map(privilege_domain_address_space_t *a
         return err;
     }
     return ESP_OK;
+}
+
+/* The walk reads only page tables that this file built */
+static bool trusted_paddr(uint32_t paddr)
+{
+    (void)paddr;
+    return true;
+}
+
+bool privilege_domain_address_space_check(const privilege_domain_address_space_t *as, uint32_t address, size_t size,
+                                          uint32_t flags)
+{
+    if (size == 0 || size - 1 > UINT32_MAX - address) {
+        return false;
+    }
+    const uint32_t satp = riscv_sv32_as_satp(as);
+    const uint32_t permissions = pte_permissions(flags) | RISCV_SV32_PTE_U;
+    const uint32_t first = RISCV_SV32_PAGE_ALIGN_DOWN(address);
+    const uint32_t pages = ((address + (size - 1) - first) >> RISCV_SV32_PAGE_SHIFT) + 1;
+    /* The range is usable only if every one of its pages is mapped with the permissions */
+    for (uint32_t i = 0; i < pages; i++) {
+        uint32_t paddr;
+        if (!riscv_sv32_translate_checked(satp, first + i * RISCV_SV32_PAGE_SIZE, permissions, trusted_paddr, &paddr)) {
+            return false;
+        }
+    }
+    return true;
 }
 
 static void flush_on_core(void *arg)

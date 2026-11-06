@@ -18,6 +18,9 @@ typedef struct {
 
 /* Functions running in U-mode, they must not call any other function */
 
+/* Return address of the U-mode code that the fixture runs */
+void privilege_exit_trampoline(void);
+
 /* Stores arg0 * 3 in shared->out, and returns arg0 + 1 */
 int privilege_arith(uint32_t arg0, uint32_t arg1);
 

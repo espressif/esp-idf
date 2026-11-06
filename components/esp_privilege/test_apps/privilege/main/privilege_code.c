@@ -5,7 +5,19 @@
  */
 
 #include "esp_attr.h"
+#include "esp_privilege_abi.h"
 #include "privilege_code.h"
+
+/* Return address of the U-mode code that the fixture runs. Ends the run with the exit request. */
+#define EXIT_STR(x) #x
+#define EXIT_XSTR(x) EXIT_STR(x)
+
+IRAM_ATTR __attribute__((naked)) void privilege_exit_trampoline(void)
+{
+    __asm__ volatile("li a7, " EXIT_XSTR(ESP_PRIVILEGE_ECALL_EXIT) "\n"
+                     "ecall\n"
+                     "1: j 1b");
+}
 
 IRAM_ATTR int privilege_arith(uint32_t arg0, uint32_t arg1)
 {
