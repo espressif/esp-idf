@@ -79,7 +79,8 @@ static const bool no_use_polling = true;
 
 /// Functions to send out different kinds of commands
 static esp_err_t start_command_read_blocks(slot_info_t *slot, sdspi_hw_cmd_t *cmd,
-                                           uint8_t *data, uint32_t rx_length, bool need_stop_command);
+                                           uint8_t *data, uint32_t rx_length, bool need_stop_command,
+                                           size_t response_extra);
 
 static esp_err_t start_command_write_blocks(slot_info_t *slot, sdspi_hw_cmd_t *cmd,
                                             const uint8_t *data, uint32_t tx_length, bool multi_block, bool stop_trans);
@@ -260,7 +261,8 @@ static void release_bus(slot_info_t *slot)
 /// Clock out 80 cycles (10 bytes) before GO_IDLE command
 static void go_idle_clockout(slot_info_t *slot)
 {
-    uint8_t data[10];
+    // 12 bytes for 10 sent: without DMA, the TX FIFO is filled a 32-bit word at a time
+    uint8_t data[12];
     memset(data, 0xff, sizeof(data));
     // TX only: the received bytes are not used, and a 10-byte RX would not
     // meet the RX DMA length alignment.
@@ -308,9 +310,10 @@ static esp_err_t deinit_slot(slot_info_t *slot)
     if (slot->spi_handle) {
         spi_bus_remove_device(slot->spi_handle);
         slot->spi_handle = NULL;
-        free(slot->block_buf);
-        slot->block_buf = NULL;
     }
+    // Allocated at init, so free it even if a reconfiguration left no device
+    free(slot->block_buf);
+    slot->block_buf = NULL;
 
     uint64_t pin_bit_mask = 0;
     if (slot->gpio_cs != GPIO_UNUSED) {
@@ -608,7 +611,9 @@ esp_err_t sdspi_host_start_command(sdspi_dev_handle_t handle, sdspi_hw_cmd_t *cm
         if (flags & SDSPI_CMD_FLAG_WRITE) {
             ret = start_command_write_blocks(slot, cmd, data, data_size, multi_block, stop_transmission);
         } else {
-            ret = start_command_read_blocks(slot, cmd, data, data_size, stop_transmission);
+            // R5 (SDIO CMD53) has a second response byte after R1, not part of the data stream
+            const size_t response_extra = (flags & SDSPI_CMD_FLAG_RSP_R5) ? 1 : 0;
+            ret = start_command_read_blocks(slot, cmd, data, data_size, stop_transmission, response_extra);
         }
     } else {
         ret = start_command_default(slot, flags, cmd);
@@ -783,6 +788,7 @@ static esp_err_t shift_cmd_response(sdspi_hw_cmd_t* cmd, int sent_bytes)
  * once per multi-block read.
  */
 typedef struct {
+    size_t skip;            ///< Response bytes after R1 still to be discarded
     uint8_t *data;          ///< Destination of the next data byte
     uint32_t remaining;     ///< Data bytes not yet completed, including the current block
     uint8_t *block_start;   ///< Destination of the current block
@@ -797,6 +803,10 @@ typedef struct {
 /// Consume received bytes of a block read.  Bytes after the final CRC are ignored.
 static esp_err_t read_stream_feed(read_stream_t *rs, const uint8_t *p, size_t n)
 {
+    size_t skip = MIN(n, rs->skip);
+    rs->skip -= skip;
+    p += skip;
+    n -= skip;
     while (n > 0 && rs->remaining > 0) {
         if (!rs->in_block) {
             uint8_t b = *p++;
@@ -841,7 +851,8 @@ static esp_err_t read_stream_feed(read_stream_t *rs, const uint8_t *p, size_t n)
 }
 
 static esp_err_t start_command_read_blocks(slot_info_t *slot, sdspi_hw_cmd_t *cmd,
-                                           uint8_t *data, uint32_t rx_length, bool need_stop_command)
+                                           uint8_t *data, uint32_t rx_length, bool need_stop_command,
+                                           size_t response_extra)
 {
     const size_t cmd_bytes = SDSPI_CMD_R1_SIZE + SDSPI_RESPONSE_MAX_DELAY;
     uint8_t *rx;
@@ -865,6 +876,7 @@ static esp_err_t start_command_read_blocks(slot_info_t *slot, sdspi_hw_cmd_t *cm
     }
 
     read_stream_t rs = {
+        .skip = response_extra,
         .data = data,
         .remaining = rx_length,
         .crc_enabled = slot->data_crc_enabled,
