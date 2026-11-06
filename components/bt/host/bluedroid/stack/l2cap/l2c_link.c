@@ -497,6 +497,9 @@ BOOLEAN l2c_link_hci_disc_comp (UINT16 handle, UINT8 reason)
                     }
                 }
 #endif
+                /* Cleanup BTM ACL state. release_lcb is skipped on this reuse
+                 * path, so clear the old record before create_conn. */
+                btm_acl_removed (p_lcb->remote_bd_addr, BT_TRANSPORT_BR_EDR);
             }
             /* Pending connect during disconnect. A close may have set idle_timeout to 0; restore the
              * default so SDP closing does not drop the new ACL. Retry-only channels and LE keep theirs. */
