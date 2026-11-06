@@ -107,13 +107,8 @@ esp_err_t esp_ble_audio_gattc_disc_start(uint16_t conn_handle);
 /**
  * @brief   Audio GAP application event structure
  *
- * @note    Addresses carried by these events are in the **active host's own byte
- *          order**: on-air/LSB-first under NimBLE, MSB-first under Bluedroid
- *          (the order every `esp_ble_gap_*` API takes). Feeding one straight back
- *          to a host API is therefore always correct; comparing one against an
- *          address the audio layer holds, such as a Broadcast Receive State,
- *          needs a reversal under Bluedroid. See `struct bt_le_addr` in
- *          common/app/gap.h for the full convention.
+ * @note    Event address bytes are LSB-first on both hosts. Bluedroid GAP APIs
+ *          use MSB-first; address types remain host-specific.
  */
 typedef struct bt_le_gap_app_event                  esp_ble_audio_gap_app_event_t;
 

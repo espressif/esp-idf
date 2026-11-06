@@ -83,8 +83,8 @@ int ext_adv_start(const uint8_t *ext_data, uint8_t ext_len,
 struct tx_stream {
     esp_ble_audio_cap_stream_t *stream;
     uint16_t seq_num;
+    example_audio_tx_count_t tx_count;
     uint8_t *data;
-    example_audio_tx_scheduler_t scheduler;
     bool is_broadcast;
 };
 

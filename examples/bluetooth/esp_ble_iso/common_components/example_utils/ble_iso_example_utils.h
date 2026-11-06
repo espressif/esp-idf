@@ -11,6 +11,7 @@
 
 #include <stddef.h>
 #include <stdint.h>
+#include <stdbool.h>
 
 #include "sdkconfig.h"
 
@@ -49,15 +50,19 @@
 #define EXAMPLE_BYTES_LIST_LE48             BT_BYTES_LIST_LE48
 #define EXAMPLE_BYTES_LIST_LE64             BT_BYTES_LIST_LE64
 
-/* bt_le_addr.val carries the host stack's native byte order: NimBLE is
- * LSB-first (BT spec wire order), Bluedroid is MSB-first (BD_ADDR). Use
- * this with "%02x:%02x:%02x:%02x:%02x:%02x" to print MSB-first regardless
- * of host. Examples can otherwise pass val[] straight to their host APIs
- * without conversion. */
+/* ISO/Audio events are LSB-first; Bluedroid APIs use MSB-first. */
+static inline void example_addr_le_to_host(uint8_t dst[6], const uint8_t src[6])
+{
+    for (size_t i = 0; i < 6; i++) {
 #if CONFIG_BT_BLUEDROID_ENABLED
-#define EXAMPLE_BT_ADDR_PRINT_ARGS(_v) \
-    (_v)[0], (_v)[1], (_v)[2], (_v)[3], (_v)[4], (_v)[5]
+        dst[i] = src[5 - i];
+#else
+        dst[i] = src[i];
+#endif
+    }
+}
 
+#if CONFIG_BT_BLUEDROID_ENABLED
 /* Fire-and-wait helper for Bluedroid GAP APIs that pair an async call with
  * a matching ESP_GAP_BLE_*_COMPLETE_EVT. The example's GAP event handler
  * is expected to xSemaphoreGive(_sem) on that COMPLETE_EVT. `TAG` and the
@@ -99,10 +104,10 @@
             return ESP_FAIL;                                            \
         }                                                               \
     } while (0)
-#else
+#endif
+
 #define EXAMPLE_BT_ADDR_PRINT_ARGS(_v) \
     (_v)[5], (_v)[4], (_v)[3], (_v)[2], (_v)[1], (_v)[0]
-#endif
 
 /**
  * @brief TX scheduler for periodic ISO data transmission.
@@ -115,8 +120,10 @@ typedef void (*example_iso_tx_send_cb_t)(void *ctx);
 
 typedef struct {
     struct k_work_delayable timer;
-    size_t drift;
-    uint32_t count;
+    int32_t drift;                  /* Frames to add (> 0) or skip (< 0) at the next tick */
+    uint32_t period_us;
+    int32_t lead_cnt;               /* SDUs in the lead window; < 0 while skipping one */
+    int32_t lead_max;               /* Best lead in the window */
     /* Called periodically in ISO task context to transmit data */
     example_iso_tx_send_cb_t cb;
     void *arg;
@@ -127,7 +134,8 @@ typedef struct {
     uint32_t valid_count;
     uint32_t error_count;
     uint32_t lost_count;
-    uint32_t null_sdu_count;
+    uint32_t empty_sdu_count;
+    const uint8_t *last_sdu;
     uint16_t last_sdu_len;
 } example_iso_rx_metrics_t;
 
@@ -142,10 +150,59 @@ int example_iso_tx_scheduler_start(example_iso_tx_scheduler_t *scheduler,
 
 int example_iso_tx_scheduler_stop(example_iso_tx_scheduler_t *scheduler);
 
+/* TX counts of one channel, as the scheduler may serve several. */
+typedef struct {
+    uint32_t sdus;
+    uint32_t late;      /* Late SDUs since the last TX log */
+} example_iso_tx_count_t;
+
 void example_iso_tx_scheduler_on_sent(example_iso_tx_scheduler_t *scheduler,
                                       const esp_ble_iso_tx_cb_info_t *info,
+                                      example_iso_tx_count_t *count,
                                       const char *tag,
                                       const char *obj_name);
+
+#if CONFIG_EXAMPLE_ISO_TX_TIMESTAMP
+/* Send one SDU with the given seq, and with the timestamp if ts_valid. */
+typedef int (*example_iso_tx_sync_send_cb_t)(esp_ble_iso_chan_t *chan, uint16_t seq_num,
+                                             uint32_t timestamp, bool ts_valid);
+
+/* One channel of a timestamped group; each has its own seq numbers. */
+typedef struct {
+    esp_ble_iso_chan_t *chan;       /* NULL while stopped */
+    uint16_t seq_num;               /* Next SDU */
+} example_iso_tx_sync_chan_t;
+
+/**
+ * @brief Timestamped TX state of one group (a BIG or CIG).
+ *
+ * Each call sends one frame: one SDU on each started channel, all with the
+ * same timestamp, so the SDUs of one frame (e.g. left and right audio) go in
+ * one event. Until LE Read ISO TX Sync shows an SDU at the start of an event,
+ * only the first channel started sends, without timestamps.
+ */
+typedef struct {
+    example_iso_tx_sync_send_cb_t send;
+    example_iso_tx_sync_chan_t chans[CONFIG_BT_ISO_MAX_CHAN];
+    example_iso_tx_sync_chan_t *lead;   /* Before sync, the channel sending */
+    uint32_t iso_interval_us;           /* Whole multiple of sdu_interval_us */
+    uint32_t sdu_interval_us;
+    uint32_t timestamp;                 /* Next frame; before sync, the last tx_time_stamp read */
+    uint16_t anchor_seq;                /* Before sync, the first SDU seen at that tx_time_stamp */
+    bool synced;
+    bool framed;                        /* Not supported yet: TX stops */
+} example_iso_tx_sync_t;
+
+/* Add a channel of the group; it sends from the next frame on, once synced. */
+int example_iso_tx_sync_start(example_iso_tx_sync_t *tx,
+                              esp_ble_iso_chan_t *chan,
+                              uint32_t sdu_interval_us);
+
+void example_iso_tx_sync_stop(example_iso_tx_sync_t *tx, esp_ble_iso_chan_t *chan);
+
+/* Call once per SDU interval. */
+void example_iso_tx_sync_send_next(example_iso_tx_sync_t *tx);
+#endif /* CONFIG_EXAMPLE_ISO_TX_TIMESTAMP */
 
 void example_iso_rx_metrics_reset(example_iso_rx_metrics_t *metrics);
 

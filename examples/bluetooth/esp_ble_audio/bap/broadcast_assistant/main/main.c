@@ -48,14 +48,16 @@ enum scan_mode {
 static enum scan_mode scan_mode;
 
 static uint16_t conn_handle = CONN_HANDLE_INIT;
+static bool sec_done;
 static bool mtu_exchanged;
 static bool disc_completed;
 static uint8_t recv_state_count;
 static uint8_t recv_state_read_idx;
 static bool recv_states_synced;
 
-/* Selected Broadcast Source. `src_addr` is in host byte order for
- * pa_sync_create(); addr_host_to_le() converts it for BASS Add Source. */
+static void bass_discover(void);
+
+/* Source address is LSB-first. */
 static uint8_t src_addr_type;
 static uint8_t src_addr[6];
 static uint8_t src_sid;
@@ -217,25 +219,8 @@ static bool base_subgroup_cb(const esp_ble_audio_bap_base_subgroup_t *subgroup,
     return true;
 }
 
-/* GAP events hand out addresses in the active host's own byte order (Bluedroid
- * MSB-first, NimBLE on-air/LSB-first), while the BASS Add Source PDU always
- * carries them on-air. Host APIs such as pa_sync_create() want the event bytes
- * unchanged; only the BASS parameter needs this conversion. */
-static void addr_host_to_le(uint8_t dst[6], const uint8_t src[6])
-{
-#if CONFIG_BT_BLUEDROID_ENABLED
-    for (size_t i = 0; i < 6; i++) {
-        dst[i] = src[5 - i];
-    }
-#else
-    memcpy(dst, src, 6);
-#endif
-}
-
-/* The address type needs the same treatment. BASS 3.1.1.4 defines only two
- * values for Advertiser_Address_Type, each covering its identity form as well:
- * 0x00 public (device or identity), 0x01 random (device or static identity). */
-static uint8_t addr_type_host_to_le(uint8_t type)
+/* BASS address types collapse identity variants to public or random. */
+static uint8_t addr_type_host_to_bass(uint8_t type)
 {
 #if CONFIG_BT_BLUEDROID_ENABLED
     return (type == BLE_ADDR_TYPE_PUBLIC ||
@@ -251,8 +236,8 @@ static int add_source(void)
     esp_ble_audio_bap_broadcast_assistant_add_src_param_t param = {0};
     esp_err_t err;
 
-    param.addr.type = addr_type_host_to_le(src_addr_type);
-    addr_host_to_le(param.addr.a.val, src_addr);
+    param.addr.type = addr_type_host_to_bass(src_addr_type);
+    memcpy(param.addr.a.val, src_addr, sizeof(src_addr));
     param.adv_sid = src_sid;
     param.pa_sync = true;
     param.broadcast_id = src_broadcast_id;
@@ -777,6 +762,7 @@ static void acl_disconnect(esp_ble_audio_gap_app_event_t *event)
              event->acl_disconnect.conn_handle, event->acl_disconnect.reason);
 
     conn_handle = CONN_HANDLE_INIT;
+    sec_done = false;
     mtu_exchanged = false;
     disc_completed = false;
     recv_state_count = 0;
@@ -814,6 +800,16 @@ static void security_change(esp_ble_audio_gap_app_event_t *event)
              event->security_change.conn_handle,
              event->security_change.sec_level,
              event->security_change.bonded);
+
+    /* A cached peer DB completes discovery before a bonded link is re-encrypted,
+     * so profile discovery also waits for encryption. */
+    if (!sec_done) {
+        sec_done = true;
+
+        if (mtu_exchanged && disc_completed) {
+            bass_discover();
+        }
+    }
 
     err = exchange_mtu(event->security_change.conn_handle);
     if (err) {
@@ -944,7 +940,7 @@ static void gatt_mtu_change(esp_ble_audio_gatt_app_event_t *event)
      */
     mtu_exchanged = true;
 
-    if (disc_completed) {
+    if (sec_done && disc_completed) {
         bass_discover();
     }
 }
@@ -965,7 +961,7 @@ static void gattc_disc_cmpl(esp_ble_audio_gatt_app_event_t *event)
      */
     disc_completed = true;
 
-    if (mtu_exchanged) {
+    if (sec_done && mtu_exchanged) {
         bass_discover();
     }
 }

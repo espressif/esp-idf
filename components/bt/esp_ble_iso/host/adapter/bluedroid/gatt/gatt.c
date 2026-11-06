@@ -25,6 +25,7 @@
 #include "stack/btm_ble_api.h"
 
 #include "common/host.h"
+#include "common/addr.h"
 #include "common/app/gap.h"
 #include "common/app/gatt.h"
 
@@ -560,6 +561,33 @@ static void gattc_disc_cmpl_event_handler(tBTA_GATTC_DIS_CMPL *disc_cmpl)
         ISO_POST_FAIL_LOG(err, "[B]GattcDiscCmplPostFail[%d]", err);
         free(qev);
     }
+}
+
+/* A peer DB already cached at open (e.g. loaded from NVS with
+ * CONFIG_BT_GATTC_CACHE_NVS_FLASH) is not discovered again, so BTA never
+ * sends DIS_SRVC_CMPL; report the completion the app waits for here. */
+static void gattc_open_cached_disc_cmpl(tBTA_GATTC_OPEN *open)
+{
+    tBTA_GATTC_DIS_CMPL disc_cmpl = {
+        .conn_id = open->conn_id,
+        .status = BTA_GATT_OK,
+    };
+    tBTA_GATTC_CLCB *p_clcb;
+
+    if (open->status != BTA_GATT_OK) {
+        return;
+    }
+
+    p_clcb = bta_gattc_find_clcb_by_conn_id(open->conn_id);
+    if (p_clcb == NULL || p_clcb->p_srcb == NULL ||
+            p_clcb->p_srcb->state != BTA_GATTC_SERV_IDLE ||
+            p_clcb->p_srcb->p_srvc_cache == NULL) {
+        return;
+    }
+
+    LOG_INF("[B]GattcDbCached[0x%04x]", open->conn_id);
+
+    gattc_disc_cmpl_event_handler(&disc_cmpl);
 }
 
 static void gattc_read_chrc_event_handler(tBTA_GATTC_READ *read)
@@ -1193,6 +1221,8 @@ static void gattc_app_cb(tBTA_GATTC_EVT event, tBTA_GATTC *p_data)
         }
 
         gattc_open_event_handler(&p_data->open);
+
+        gattc_open_cached_disc_cmpl(&p_data->open);
         break;
 
     case BTA_GATTC_CLOSE_EVT:
@@ -1895,6 +1925,7 @@ end:
 static void handle_gatts_connect_event(struct bt_le_gatts_connect_event *event)
 {
     struct gatt_conn *gatt_conn;
+    bt_addr_t peer_le;
 
     /* GATTS_CONNECT is broadcast to every registered GATTS app; central side
      * (MASTER role) also receives it. Central-side gatt_conn creation is
@@ -1939,13 +1970,13 @@ static void handle_gatts_connect_event(struct bt_le_gatts_connect_event *event)
     gatt_conn->peer.type = event->peer.type;
     memcpy(gatt_conn->peer.val, event->peer.val, BT_ADDR_SIZE);
 
-    /* conn->le.dst is the connect-event address verbatim — no RPA->identity resolution.
-     * A peer using an RPA makes bt_le_bond_exists()/CCC cfg miss on reconnect (fresh RPA
-     * each time). Identity / static-random / public addresses are stable. Warn to surface it. */
-    if (event->peer.type == BT_ADDR_LE_RANDOM && BT_ADDR_IS_RPA(&event->peer)) {
+    /* RPA peers cannot retain stable bond/CCC matching on reconnect. */
+    bt_le_addr_copy(peer_le.val, event->peer.val);
+
+    if (event->peer.type == BT_ADDR_LE_RANDOM && BT_ADDR_IS_RPA(&peer_le)) {
         LOG_WRN("[B]GattsConnRpaDst[%02x:%02x:%02x:%02x:%02x:%02x]",
-                event->peer.val[5], event->peer.val[4], event->peer.val[3],
-                event->peer.val[2], event->peer.val[1], event->peer.val[0]);
+                event->peer.val[0], event->peer.val[1], event->peer.val[2],
+                event->peer.val[3], event->peer.val[4], event->peer.val[5]);
     }
 
     post_acl_connect_app_event(gatt_conn);
@@ -3170,6 +3201,7 @@ static int gattc_disc_chrc_desc(struct bt_conn *conn, uint16_t conn_id,
 {
     struct bt_gatt_attr attr = {0};
     btgatt_db_element_t *db = NULL;
+    uint8_t peer_bda[BT_ADDR_SIZE];
     tBTA_GATT_UNFMT write = {0};
     tBTA_GATT_STATUS status;
     uint16_t chrc_handle;
@@ -3224,7 +3256,9 @@ static int gattc_disc_chrc_desc(struct bt_conn *conn, uint16_t conn_id,
     attr.uuid = params->uuid;
     attr.handle = db[0].attribute_handle;
 
-    status = BTA_GATTC_RegisterForNotifications(gattc_if, conn->le.dst.a.val, chrc_handle);
+    bt_le_addr_copy(peer_bda, conn->le.dst.a.val);
+
+    status = BTA_GATTC_RegisterForNotifications(gattc_if, peer_bda, chrc_handle);
     if (status != BTA_GATT_OK) {
         LOG_ERR("[B]EnableNtfFail[%u][%u]", chrc_handle, attr.handle);
 
@@ -3431,6 +3465,7 @@ int bt_le_bluedroid_gattc_write_without_rsp(struct bt_conn *conn, uint16_t handl
 
 int bt_le_bluedroid_gattc_write_ccc(struct bt_conn *conn, struct bt_gatt_subscribe_params *params)
 {
+    uint8_t peer_bda[BT_ADDR_SIZE];
     tBTA_GATT_UNFMT write = {0};
     tBTA_GATT_STATUS status;
     uint16_t chrc_handle;
@@ -3457,7 +3492,9 @@ int bt_le_bluedroid_gattc_write_ccc(struct bt_conn *conn, struct bt_gatt_subscri
      * layer needs success so it removes the node from its subscription
      * list — otherwise the node is stuck forever.
      */
-    status = BTA_GATTC_DeregisterForNotifications(gattc_if, conn->le.dst.a.val, chrc_handle);
+    bt_le_addr_copy(peer_bda, conn->le.dst.a.val);
+
+    status = BTA_GATTC_DeregisterForNotifications(gattc_if, peer_bda, chrc_handle);
     if (status != BTA_GATT_OK) {
         LOG_WRN("[B]DeregNtfFail[%u][%u][%d]", chrc_handle, params->ccc_handle, status);
     }

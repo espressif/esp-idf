@@ -39,20 +39,54 @@ struct bt_le_iso_cb {
     sys_snode_t node;
 };
 
-struct bt_iso_tx_cb_info {
-    uint16_t completed_pkts;
-    uint16_t not_txd_pkts;
+/* Passed to the sent callback; times are in us on the LC clock.
+ *
+ * Each entry of sdu[] is one SDU with the information of its first Data PDU,
+ * never of a later fragment or a dropped packet. sdu_ref_time is the reference
+ * time of the SDU ([Vol 6] Part G, Section 3): tx_time_stamp minus time_offset
+ * for framed PDUs, tx_time_stamp plus j SDU_Intervals for the j-th unframed SDU
+ * of the event (from 0), which HCI_LE_Read_ISO_TX_Sync cannot tell.
+ *
+ * Unframed: an entry is reported when the last Data PDU of the SDU is
+ * recycled. If its Data PDUs are recycled over several times, e.g. a CIS with
+ * FT > 1, it is also reported early at the end of the first one with more set,
+ * and the final report counts the whole SDU. Framed: one
+ * entry per Data PDU holding the start of an SDU; of several SDUs in one PDU
+ * only the last.
+ *
+ * The layout only grows: new fields go at the end and version is incremented.
+ */
+#define BT_ISO_TX_CB_INFO_VERSION   1
+#define BT_ISO_TX_CB_SDU_MAX        4
 
-    uint8_t pkt_cnt;
-    struct {
-        uint16_t seq_num;
-        uint32_t tx_time_stamp;
-        uint32_t time_offset : 24;
-        uint32_t drift : 1;
-        uint32_t sdu_ref_time;
-        uint32_t sdu_hdl_time;
-        uint32_t sdu_rec_time;
-    } pkt[2];
+struct bt_iso_tx_cb_info {
+    uint8_t version;                /* BT_ISO_TX_CB_INFO_VERSION */
+    uint8_t framing;                /* 0x00 unframed: sdu[].unf valid;
+                                     * 0x01 framed segmentable: sdu[].fra valid;
+                                     * 0x02 framed unsegmented: sdu[].fra valid
+                                     */
+    uint8_t sdu_cnt;                /* Valid entries in sdu[] */
+    uint8_t sdu_dropped;            /* SDUs not reported because sdu[] was full */
+
+    struct bt_iso_tx_cb_sdu {
+        uint16_t seq_num;           /* Packet_Sequence_Number of the SDU */
+        uint32_t tx_time_stamp;     /* TX_Time_Stamp: CIG reference point or BIG anchor point */
+        uint32_t sdu_ref_time;      /* Reference time of the SDU, see above */
+        uint32_t sdu_hdl_time;      /* LC time when ISOAL handled the first Data PDU of the SDU */
+        uint32_t sdu_rec_time;      /* LC time of the recycling that reported the entry */
+        union {
+            struct {
+                uint8_t pdu_cnt;        /* Data PDUs (fragments) of the SDU recycled so far */
+                uint8_t txd_cnt;        /* Those of them sent at least once */
+                uint8_t late : 1;       /* A fragment was handled at or after tx_time_stamp */
+                uint8_t more : 1;       /* Early report: more Data PDUs to come */
+                uint32_t sdu_end_time;  /* LC time when ISOAL handled the last part of the SDU */
+            } unf;                      /* Unframed PDUs */
+            struct {
+                uint32_t time_offset : 24;  /* Time_Offset, tx_time_stamp - sdu_ref_time */
+            } fra;                      /* Framed PDUs */
+        };
+    } sdu[BT_ISO_TX_CB_SDU_MAX];
 };
 
 int bt_le_iso_cb_register(struct bt_le_iso_cb *cb);

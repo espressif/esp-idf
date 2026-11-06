@@ -45,6 +45,7 @@ static struct peer_config {
 
     esp_ble_conn_t *conn;
     uint16_t conn_handle;
+    bool sec_done;
     bool disc_completed;
     bool mtu_exchanged;
 } peer = {
@@ -204,6 +205,7 @@ static void unicast_stream_recv_cb(esp_ble_audio_bap_stream_t *stream,
 
     snprintf(name, sizeof(name), "%s #%d",
              stream_dir_str(stream), stream_index(stream));
+    rx_metrics.last_sdu = data;
     rx_metrics.last_sdu_len = len;
     example_audio_rx_metrics_on_recv(info, &rx_metrics, TAG, name);
 }
@@ -601,6 +603,7 @@ static void acl_disconnect(esp_ble_audio_gap_app_event_t *event)
     peer.source_ep = NULL;
     memset(peer.sink_eps, 0, sizeof(peer.sink_eps));
     peer.sink_ep_count = 0;
+    peer.sec_done = false;
     peer.disc_completed = false;
     peer.mtu_exchanged = false;
 
@@ -622,6 +625,16 @@ static void security_change(esp_ble_iso_gap_app_event_t *event)
     ESP_LOGI(TAG, "Security: handle %u level %u bonded %u",
              event->security_change.conn_handle, event->security_change.sec_level,
              event->security_change.bonded);
+
+    /* A cached peer DB completes discovery before a bonded link is re-encrypted,
+     * so profile discovery also waits for encryption. */
+    if (!peer.sec_done) {
+        peer.sec_done = true;
+
+        if (peer.mtu_exchanged && peer.disc_completed) {
+            (void)discover_cas();
+        }
+    }
 
     err = exchange_mtu(event->security_change.conn_handle);
     if (err) {
@@ -677,7 +690,7 @@ static void gatt_mtu_change(esp_ble_audio_gatt_app_event_t *event)
      */
     peer.mtu_exchanged = true;
 
-    if (peer.disc_completed) {
+    if (peer.sec_done && peer.disc_completed) {
         (void)discover_cas();
     }
 }
@@ -697,7 +710,7 @@ static void gattc_disc_cmpl(esp_ble_audio_gatt_app_event_t *event)
      */
     peer.disc_completed = true;
 
-    if (peer.mtu_exchanged) {
+    if (peer.sec_done && peer.mtu_exchanged) {
         (void)discover_cas();
     }
 }

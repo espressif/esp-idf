@@ -76,6 +76,39 @@ Under **Example: CAP Handover**:
 > the stream is encrypted — neither holds here — so this is an over-constraint in the Kconfig
 > rather than a real dependency.
 
+Under **Example: Common Audio Utilities**, enable **Synchronize multi-stream TX with
+timestamps** (`CONFIG_EXAMPLE_AUDIO_TX_TIMESTAMP`, disabled by default) to give the
+SDUs of all transmitting streams of the unicast group or BIG the same timestamps,
+so that the SDUs of one frame (e.g. the left and right audio) go in one event:
+
+- One TX scheduler for the group sends one frame per SDU interval: one SDU on
+  each started stream, all with the same timestamp.
+- At the start only the first stream sends, without timestamps, and reads
+  **LE Read ISO TX Sync** (`esp_ble_audio_bap_stream_get_tx_sync()`) after each
+  send until it finds the SDU at the start of an event; the timestamps go on from
+  that event's anchor. The read is a blocking HCI command of about 2.5 ms, so it
+  comes after the send.
+- A stream started later joins at the next frame, with the same timestamp.
+- The best lead (how long before its reference time an SDU is handled) of every
+  50 SDUs follows the clock difference between the timer and the controller:
+  below 200 us the scheduler adds one frame, above two SDU intervals more it
+  skips one. A stall lowers only some SDUs and changes nothing; a best lead
+  below minus one SDU interval is a stall or a backlog, and no frame is added.
+- A handover unregisters every stream before the other group starts, so the
+  timestamps and sequence numbers start again on the new group's anchors, as at
+  the first start. Keeping the frames continuous across a handover is not done.
+
+In this mode the first 4 bytes of each SDU carry its timestamp (0 without one),
+and unframed data is required. With the option disabled, the same scheduler sends
+one SDU per stream per interval without timestamps. Logs on anomalies:
+
+```
+I CAP_HOV: [SNK #<n>] TX: <N> packets, <k> late
+W CAP_HOV: [SNK #<n>] Send failed, err <e>
+E CAP_HOV: [SNK #<n>] Timestamp TX start failed, err <e>
+W AUDIO_TX_SYNC: Framed data is not supported yet
+```
+
 ### Security & Pairing
 
 Just-Works pairing (LE Secure Connections, no MITM) with bonding, inherited from
@@ -83,16 +116,23 @@ Just-Works pairing (LE Secure Connections, no MITM) with bonding, inherited from
 
 ## Build & Flash
 
+The base `sdkconfig.defaults` defaults to the **Bluedroid** host; idf.py automatically merges the per-target overlay (`sdkconfig.defaults.$IDF_TARGET`). To build with **NimBLE** host instead, layer `sdkconfig.defaults.nimble` on top via `-DSDKCONFIG_DEFAULTS` in a separate build directory with its own `sdkconfig`, because an existing `sdkconfig` takes precedence over the defaults.
+
+### Bluedroid host (default)
+
 ```bash
-idf.py set-target esp32h4
+idf.py --preview set-target esp32h4
 idf.py -p PORT flash monitor
 ```
 
-For the **NimBLE** host, layer the overlay:
+### NimBLE host
 
 ```bash
-idf.py -DSDKCONFIG_DEFAULTS="sdkconfig.defaults;sdkconfig.defaults.esp32h4;sdkconfig.defaults.nimble" -p PORT flash monitor
+idf.py --preview -B build_nimble_esp32h4 -DSDKCONFIG=build_nimble_esp32h4/sdkconfig -DSDKCONFIG_DEFAULTS="sdkconfig.defaults;sdkconfig.defaults.nimble" set-target esp32h4
+idf.py -B build_nimble_esp32h4 -DSDKCONFIG=build_nimble_esp32h4/sdkconfig -DSDKCONFIG_DEFAULTS="sdkconfig.defaults;sdkconfig.defaults.nimble" -p PORT flash monitor
 ```
+
+For `esp32s31`, replace `esp32h4` with `esp32s31` in the commands above.
 
 (Exit serial monitor with `Ctrl-]`.)
 

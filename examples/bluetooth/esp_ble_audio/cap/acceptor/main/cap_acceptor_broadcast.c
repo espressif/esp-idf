@@ -466,6 +466,8 @@ static void broadcast_stream_recv_cb(esp_ble_audio_bap_stream_t *stream,
         return;
     }
 
+    rx_metrics[idx].last_sdu = data;
+
     rx_metrics[idx].last_sdu_len = len;
     snprintf(obj_name, sizeof(obj_name), "SNK #%u", idx);
     example_audio_rx_metrics_on_recv(info, &rx_metrics[idx], TAG, obj_name);
@@ -578,18 +580,14 @@ static void recv_state_updated_cb(esp_ble_conn_t *conn,
     }
 }
 
-/* The audio stack keeps addresses on-air (LSB-first), Bluedroid takes and reports
- * them MSB-first, NimBLE on-air. Convert whenever one meets the other; the
- * reversal is its own inverse, so this serves both directions.
- */
-static void addr_order_copy(uint8_t dst[6], const uint8_t src[6])
+static uint8_t addr_type_bass_to_host(uint8_t type)
 {
 #if CONFIG_BT_BLUEDROID_ENABLED
-    for (size_t i = 0; i < 6; i++) {
-        dst[i] = src[5 - i];
-    }
+    return (type == BT_ADDR_LE_PUBLIC ||
+            type == BT_ADDR_LE_PUBLIC_ID) ? BLE_ADDR_TYPE_PUBLIC : BLE_ADDR_TYPE_RANDOM;
 #else
-    memcpy(dst, src, 6);
+    return (type == BT_ADDR_LE_PUBLIC ||
+            type == BT_ADDR_LE_PUBLIC_ID) ? BLE_ADDR_PUBLIC : BLE_ADDR_RANDOM;
 #endif
 }
 
@@ -614,7 +612,8 @@ static int pa_sync_req_cb(esp_ble_conn_t *conn,
 
     if (past_available) {
         err = pa_sync_with_past(conn->handle,
-                                recv_state->addr.type, recv_state->addr.a.val);
+                                addr_type_bass_to_host(recv_state->addr.type),
+                                recv_state->addr.a.val);
         if (err) {
             return -EIO;
         }
@@ -636,9 +635,10 @@ static int pa_sync_req_cb(esp_ble_conn_t *conn,
     } else {
         uint8_t addr[6];
 
-        addr_order_copy(addr, recv_state->addr.a.val);
+        memcpy(addr, recv_state->addr.a.val, sizeof(addr));
 
-        err = pa_sync_create(recv_state->addr.type, addr, recv_state->adv_sid);
+        err = pa_sync_create(addr_type_bass_to_host(recv_state->addr.type),
+                             addr, recv_state->adv_sid);
         if (err) {
             return err;
         }
@@ -777,10 +777,8 @@ static int bis_sync_req_cb(esp_ble_conn_t *conn,
     return 0;
 }
 
-/* The address type needs the same treatment. BASS 3.1.1.4 defines only two
- * values for Advertiser_Address_Type, each covering its identity form as well:
- * 0x00 public (device or identity), 0x01 random (device or static identity). */
-static uint8_t addr_type_host_to_le(uint8_t type)
+/* BASS address types collapse identity variants to public or random. */
+static uint8_t addr_type_host_to_bass(uint8_t type)
 {
 #if CONFIG_BT_BLUEDROID_ENABLED
     return (type == BLE_ADDR_TYPE_PUBLIC ||
@@ -793,11 +791,11 @@ static uint8_t addr_type_host_to_le(uint8_t type)
 
 void broadcast_pa_synced(esp_ble_audio_gap_app_event_t *event)
 {
-    uint8_t addr_type = addr_type_host_to_le(event->pa_sync.addr.type);
+    uint8_t addr_type = addr_type_host_to_bass(event->pa_sync.addr.type);
     uint8_t addr[6];
     int err;
 
-    addr_order_copy(addr, event->pa_sync.addr.val);
+    memcpy(addr, event->pa_sync.addr.val, sizeof(addr));
 
     if (broadcast_sink.sync_handle == PA_SYNC_HANDLE_INIT ||
             (broadcast_sink.recv_state &&

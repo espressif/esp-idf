@@ -71,23 +71,23 @@ Just-Works pairing (LE Secure Connections, no MITM, no I/O capability) with bond
 
 ## Build & Flash
 
-The base `sdkconfig.defaults` defaults to the **Bluedroid** host; idf.py automatically merges the per-target overlay (`sdkconfig.defaults.$IDF_TARGET`). To build with **NimBLE** host instead, layer `sdkconfig.defaults.nimble` on top via `-DSDKCONFIG_DEFAULTS`.
+The base `sdkconfig.defaults` defaults to the **Bluedroid** host; idf.py automatically merges the per-target overlay (`sdkconfig.defaults.$IDF_TARGET`). To build with **NimBLE** host instead, layer `sdkconfig.defaults.nimble` on top via `-DSDKCONFIG_DEFAULTS` in a separate build directory with its own `sdkconfig`, because an existing `sdkconfig` takes precedence over the defaults.
 
 ### Bluedroid host (default)
 
 ```bash
-idf.py set-target esp32h4
+idf.py --preview set-target esp32h4
 idf.py -p PORT flash monitor
 ```
 
 ### NimBLE host
 
 ```bash
-idf.py set-target esp32h4
-idf.py -DSDKCONFIG_DEFAULTS="sdkconfig.defaults;sdkconfig.defaults.esp32h4;sdkconfig.defaults.nimble" -p PORT flash monitor
+idf.py --preview -B build_nimble_esp32h4 -DSDKCONFIG=build_nimble_esp32h4/sdkconfig -DSDKCONFIG_DEFAULTS="sdkconfig.defaults;sdkconfig.defaults.nimble" set-target esp32h4
+idf.py -B build_nimble_esp32h4 -DSDKCONFIG=build_nimble_esp32h4/sdkconfig -DSDKCONFIG_DEFAULTS="sdkconfig.defaults;sdkconfig.defaults.nimble" -p PORT flash monitor
 ```
 
-For `esp32s31`, replace the chip overlay accordingly.
+For `esp32s31`, replace `esp32h4` with `esp32s31` in the commands above.
 
 (Exit serial monitor with `Ctrl-]`.)
 
@@ -95,7 +95,7 @@ For `esp32s31`, replace the chip overlay accordingly.
 
 1. `app_main` initializes NVS, `bluetooth_init()`, `app_host_init()`, then `esp_ble_audio_common_init(&info)` with both `gap_cb` and `gatt_cb`. `esp_ble_audio_bap_broadcast_assistant_register_cb(&assistant_cbs)` registers the BASS client callbacks before `esp_ble_audio_common_start(NULL)`.
 2. `scan_restart(SCAN_MODE_SINK)` starts a passive extended scan. `sink_data_cb` accepts a connectable advertiser whose 16-bit UUID list contains BASS and whose name matches `TARGET_SINK_NAME`.
-3. On a hit the scanner is stopped first (NimBLE rejects `ble_gap_connect` during discovery) and `conn_create()` runs. `acl_connect` → `pairing_start()` → `security_change` → `exchange_mtu()` → `gatt_mtu_change` → `esp_ble_audio_gattc_disc_start()` → `gattc_disc_cmpl`. MTU-updated and discovery-complete can arrive in either order, so both set a flag and the second one calls `bass_discover()`.
+3. On a hit the scanner is stopped first (NimBLE rejects `ble_gap_connect` during discovery) and `conn_create()` runs. `acl_connect` → `pairing_start()` → `security_change` → `exchange_mtu()` → `gatt_mtu_change` → `esp_ble_audio_gattc_disc_start()` → `gattc_disc_cmpl`. Security, MTU-updated and discovery-complete can arrive in any order (a cached peer database completes discovery before a bonded link is re-encrypted), so each sets a flag and the last one calls `bass_discover()`.
 4. `assistant_discover_cb` reports the receive state count; `read_next_recv_state()` walks every index through `esp_ble_audio_bap_broadcast_assistant_read_recv_state()`. A `NULL` state is an empty slot, not an error.
 5. Once all states are read, `esp_ble_audio_bap_broadcast_assistant_scan_start(conn, false)` sends the BASS *Remote Scan Started* opcode. `start_scan` is `false` on purpose: the example drives its own extended scanner, and letting the library start one too would have the two fight over the controller.
 6. `scan_restart(SCAN_MODE_SOURCE)` re-arms the scanner. `source_data_cb` matches the Broadcast Audio Announcement service data (24-bit Broadcast ID) plus `TARGET_SOURCE_NAME`. The advertiser address, SID, Broadcast ID and the **real** periodic interval are cached from the scan report.
@@ -167,6 +167,7 @@ Three things keep the single scanner from being contended:
 | Variable | Set by | Cleared by |
 | --- | --- | --- |
 | `conn_handle` | `acl_connect` | `acl_disconnect` |
+| `sec_done` | `security_change` (success) | `acl_disconnect` |
 | `mtu_exchanged` | `gatt_mtu_change` (MTU ≥ `ESP_BLE_AUDIO_ATT_MTU_MIN`) | `acl_disconnect` |
 | `disc_completed` | `gattc_disc_cmpl` | `acl_disconnect` |
 | `recv_states_synced` | `read_next_recv_state` once the last index is read | `assistant_discover_cb`; `acl_disconnect` |
@@ -182,7 +183,7 @@ Three things keep the single scanner from being contended:
 
 - **The local PA sync reads the BASE and is then reusable.** The assistant never creates a BIG sync and never renders audio. Reading the BASE is what lets Add Source name exact BIS indexes instead of `BIS_SYNC_NO_PREF`, and holding that sync is also what makes the library offer PAST — `past_available()` requires a sync to this `{address, SID}` plus PAST_SEND built in.
 - **The PA sync outlives Add Source.** Nothing terminates it on success — `acl_disconnect` does, and `pa_sync_lost` reports it going away on its own. Holding it is what allows a retry from the next periodic advertising report.
-- **Byte-order conversion touches the BASS parameter only.** GAP hands out addresses in the host's own order (Bluedroid MSB-first, NimBLE on-air/LSB-first) and `pa_sync_create()` wants those bytes unchanged; `addr_host_to_le()` / `addr_type_host_to_le()` in `main.c` convert only what goes into the Add Source PDU, which is always on-air order. Per BASS § 3.1.1.4 the type collapses to two values — `0x00` public (device *or* identity), `0x01` random (device *or* static identity).
+- **GAP and BASS addresses use the same on-air/LSB-first order.** `pa_sync_create()` takes those bytes unchanged and the Bluedroid wrapper converts them at its host API boundary; `addr_type_host_to_bass()` in `main.c` maps the separate address-type enum for Add Source. Per BASS § 3.1.1.4 the type collapses to two values — `0x00` public (device *or* identity), `0x01` random (device *or* static identity).
 - **`codec_cfg.data` and `.meta` are the caller's buffers.** In this port they are pointers, not arrays inside `esp_ble_audio_codec_cfg_t`, and `_subgroup_codec_to_codec_cfg()` memcpy's into both unconditionally — passing a zeroed struct stores to address 0. It also bounds-checks the decoded lengths against `CONFIG_BT_AUDIO_CODEC_CFG_MAX_DATA_SIZE` / `_MAX_METADATA_SIZE` rather than against the buffers it was given, so a smaller buffer would overflow instead of being rejected. `base_subgroup_cb()` therefore points `.meta` straight at this subgroup's `subgroup_meta[]` slot (which is exactly the Kconfig size, and is where Add Source wants the bytes anyway) and `.data` at a shared scratch buffer, since the codec configuration LTVs are decoded but not carried in Add Source.
 - **The BASE is acted on once per source.** `pa_sync_recv` returns early unless the report's `sync_handle` matches and `base_received` is clear, so the periodic train's repetition does not re-issue Add Source.
 - **A failed Add Source un-latches instead of giving up.** `assistant_add_src_cb` clears `base_received`, so the next periodic advertising report rebuilds the subgroups and writes again.
@@ -200,7 +201,7 @@ Three things keep the single scanner from being contended:
 | `PA_SYNC_RECV` | Ignored unless `sync_handle` matches and `base_received` is clear. |
 | Receive State with `pa_sync_state == INFO_REQ` | `send_past()` transfers the local sync handle over the ACL. Warns instead if the sync has since been lost. |
 | `PA_SYNC_LOST` | Source-side state only. Re-scans for a source if the delegator link is still up; otherwise `acl_disconnect` has already re-armed the sink scan. |
-| `GATT_MTU_CHANGE` / `GATTC_DISC_CMPL` | Either order. Each sets its flag and the second one calls `bass_discover()`. An MTU below `ESP_BLE_AUDIO_ATT_MTU_MIN` warns and stops the chain. |
+| `SECURITY_CHANGE` / `GATT_MTU_CHANGE` / `GATTC_DISC_CMPL` | Any order. Each sets its flag and the last one calls `bass_discover()`. An MTU below `ESP_BLE_AUDIO_ATT_MTU_MIN` warns and stops the chain. |
 
 ## Expected Log
 
@@ -262,7 +263,7 @@ Expected interaction:
 
 ### Troubleshooting
 
-* **`Add Source failed`** — most often the announced `pa_interval` or the advertiser address. This example takes the interval live from the scan report; sending `ESP_BLE_AUDIO_BAP_PA_INTERVAL_UNKNOWN` (`0xFFFF`) instead makes delegators that validate it reject the write. The address written into BASS is always on-air (LSB-first) order, which is a byte reversal of what a Bluedroid GAP event hands out — see `addr_host_to_le()` in `main.c`.
+* **`Add Source failed`** — most often the announced `pa_interval` or the advertiser address. This example takes the interval live from the scan report; sending `ESP_BLE_AUDIO_BAP_PA_INTERVAL_UNKNOWN` (`0xFFFF`) instead makes delegators that validate it reject the write. The address written into BASS and the ISO/Audio GAP event address are both on-air (LSB-first); only calls into Bluedroid's native GAP API reverse the bytes.
 * **Sink stays at `enc 0x03`** — the Broadcast Code does not match the source. It is left-aligned and zero-padded to 16 octets over BASS; note this is the opposite convention to the HCI Create BIG / Create BIG Sync path, which takes the code byte-reversed. Only two sends are attempted per source, so fix the code and reconnect rather than waiting for another retry.
 * **Nothing found in `SCAN_MODE_SINK`** — either the peer is not advertising (check that `bap/broadcast_sink` was built with `EXAMPLE_SCAN_OFFLOAD` enabled) or its name does not contain `TARGET_SINK_NAME`.
 * **Nothing found in `SCAN_MODE_SOURCE`** — the source must be running a periodic advertising train; reports with `per_adv_itvl == 0` are dropped before the name and Broadcast ID are even looked at.
