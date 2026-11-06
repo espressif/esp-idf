@@ -180,6 +180,8 @@ To enable autocompletion for ``idf.py``, use the ``export`` command (:ref:`setti
 
 The autocomplete support for PowerShell is planned in the future.
 
+PowerShell splits an unquoted argument that starts with ``-`` into two arguments at the first ``.`` (see `PowerShell issue #6291 <https://github.com/PowerShell/PowerShell/issues/6291>`__). For example, ``idf.py -DSDKCONFIG=build/sdkconfig.prod build`` passes ``-DSDKCONFIG=build/sdkconfig`` and ``.prod`` to ``idf.py``. To avoid this, put the argument in quotes, ``"-DSDKCONFIG=build/sdkconfig.prod"``, or put a space after ``-D``: ``-D SDKCONFIG=build/sdkconfig.prod``.
+
 Advanced Commands
 =================
 

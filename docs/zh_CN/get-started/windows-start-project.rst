@@ -47,10 +47,10 @@ ESP-IDF 安装完成后，EIM 会在桌面上创建 **快捷方式**，用于启
 
 将 :example:`get-started/hello_world` 项目复制至本地的 ``~/esp`` 目录下：
 
-.. code-block:: batch
+.. code-block:: powershell
 
-    cd %userprofile%\esp
-    xcopy /e /i %IDF_PATH%\examples\get-started\hello_world hello_world
+    cd $env:USERPROFILE\esp
+    xcopy /e /i $env:IDF_PATH\examples\get-started\hello_world hello_world
 
 .. note:: ESP-IDF 的 :idf:`examples` 目录下有一系列示例项目，可以按照上述方法复制并运行其中的任何示例，也可以直接编译示例，无需进行复制。
 
@@ -79,9 +79,9 @@ ESP-IDF 安装完成后，EIM 会在桌面上创建 **快捷方式**，用于启
 Windows
 ~~~~~~~
 
-.. code-block:: batch
+.. code-block:: powershell
 
-    cd %userprofile%\esp\hello_world
+    cd $env:USERPROFILE\esp\hello_world
     idf.py set-target {IDF_TARGET_PATH_NAME}
     idf.py menuconfig
 
