@@ -143,3 +143,5 @@
 #define DR_REG_MB_BASE                          DR_REG_LP_MAILBOX_BASE
 #define DR_REG_AXI_IC_BASE                      (DR_REG_ICM_SYS_BASE + 0x400)
 #define IEEE802154_REG_BASE                     0x20103000
+#define DR_REG_CNNT_BASE                        DR_REG_CNNT_SYS_REG_BASE
+#define DR_REG_CNNT_IO_MUX_BASE                   DR_REG_CNNT_PAD_CTRL_BASE

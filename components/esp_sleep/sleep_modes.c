@@ -1877,6 +1877,10 @@ esp_err_t esp_sleep_disable_wakeup_source(esp_sleep_source_t source)
     } else if (CHECK_SOURCE(source, ESP_SLEEP_WAKEUP_USB, RTC_USB_TRIG_EN)) {
         s_config.wakeup_triggers &= ~RTC_USB_TRIG_EN;
 #endif
+#if SOC_PM_SUPPORT_EMAC_WAKEUP
+    } else if (CHECK_SOURCE(source, ESP_SLEEP_WAKEUP_EMAC, RTC_EMAC_TRIG_EN)) {
+        s_config.wakeup_triggers &= ~RTC_EMAC_TRIG_EN;
+#endif
     } else {
         ESP_EARLY_LOGE(TAG, "Incorrect wakeup source (%d) to disable.", (int) source);
         return ESP_ERR_INVALID_STATE;
@@ -2530,6 +2534,26 @@ esp_err_t esp_sleep_disable_usb_wakeup(void)
 #endif
 }
 
+esp_err_t esp_sleep_enable_emac_wakeup(void)
+{
+#if SOC_PM_SUPPORT_EMAC_WAKEUP
+    s_config.wakeup_triggers |= RTC_EMAC_TRIG_EN;
+    return ESP_OK;
+#else
+    return ESP_ERR_NOT_SUPPORTED;
+#endif
+}
+
+esp_err_t esp_sleep_disable_emac_wakeup(void)
+{
+#if SOC_PM_SUPPORT_EMAC_WAKEUP
+    s_config.wakeup_triggers &= (~RTC_EMAC_TRIG_EN);
+    return ESP_OK;
+#else
+    return ESP_ERR_NOT_SUPPORTED;
+#endif
+}
+
 esp_sleep_wakeup_cause_t esp_sleep_get_wakeup_cause(void)
 {
     if (esp_rom_get_reset_reason(0) != RESET_REASON_CORE_DEEP_SLEEP && !s_light_sleep_wakeup) {
@@ -2729,6 +2753,11 @@ uint32_t esp_sleep_get_wakeup_causes(void)
         wakeup_cause |= BIT(ESP_SLEEP_WAKEUP_USB);
     }
 #endif
+#if SOC_PM_SUPPORT_EMAC_WAKEUP
+    if (wakeup_cause_raw & RTC_EMAC_TRIG_EN) {
+        wakeup_cause |= BIT(ESP_SLEEP_WAKEUP_EMAC);
+    }
+#endif
     if (wakeup_cause == 0) {
         wakeup_cause |= BIT(ESP_SLEEP_WAKEUP_UNDEFINED);
     }
@@ -2797,6 +2826,9 @@ static const char* s_submode2str[] = {
     [ESP_SLEEP_LP_USE_XTAL_MODE]            = "ESP_SLEEP_LP_USE_XTAL_MODE",
     [ESP_SLEEP_LP_USE_RC_FAST_MODE]         = "ESP_SLEEP_LP_USE_RC_FAST_MODE",
     [ESP_SLEEP_VBAT_POWER_DEEPSLEEP_MODE]   = "ESP_SLEEP_VBAT_POWER_DEEPSLEEP_MODE",
+#if SOC_PM_SUPPORT_CNNT_PD
+    [ESP_SLEEP_CNNT_ACTIVE_MODE]            = "ESP_SLEEP_CNNT_ACTIVE_MODE",
+#endif
 #if CONFIG_IDF_TARGET_ESP32
     [ESP_SLEEP_ANALOG_LOW_POWER_MODE]       = "ESP_SLEEP_ANALOG_LOW_POWER_MODE",
 #endif
@@ -3024,7 +3056,8 @@ static SLEEP_FN_ATTR uint32_t get_power_down_flags(void)
 
 #if SOC_PM_SUPPORT_CNNT_PD
     // The TOP domain depends on the CNNT domain, only after the TOP power domain has been powered off is the CNNT power domain allowed to power down.
-    if (s_config.domain[ESP_PD_DOMAIN_CNNT].pd_option != ESP_PD_OPTION_ON && (pd_flags & PMU_SLEEP_PD_TOP)) {
+    if (s_config.domain[ESP_PD_DOMAIN_CNNT].pd_option != ESP_PD_OPTION_ON && (pd_flags & PMU_SLEEP_PD_TOP)
+        && cnnt_domain_pd_allowed()) {
         pd_flags |= PMU_SLEEP_PD_CNNT;
     }
 #endif
@@ -3123,6 +3156,12 @@ static SLEEP_FN_ATTR uint32_t get_sleep_flags(uint32_t sleep_flags, bool deepsle
 #if SOC_VBAT_SUPPORTED
     if (s_sleep_sub_mode_ref_cnt[ESP_SLEEP_VBAT_POWER_DEEPSLEEP_MODE] && deepsleep) {
         sleep_flags |= RTC_SLEEP_POWER_BY_VBAT;
+    }
+#endif
+
+#if SOC_PMU_SUPPORTED && SOC_PM_SUPPORT_CNNT_PD
+    if (s_sleep_sub_mode_ref_cnt[ESP_SLEEP_CNNT_ACTIVE_MODE] && !deepsleep) {
+        sleep_flags |= RTC_SLEEP_CNNT_ACTIVE;
     }
 #endif
 

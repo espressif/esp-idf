@@ -251,6 +251,11 @@ const pmu_sleep_config_t* pmu_sleep_config_default(pmu_sleep_config_t *config, p
         config->analog.hp_sys.analog.pd_cur = PMU_PD_CUR_SLEEP_ON;
     }
 
+    if (!dslp && (sleep_flags & RTC_SLEEP_CNNT_ACTIVE) && !(sleep_flags & PMU_SLEEP_PD_CNNT)) {
+        // CNNT logic keeps operating in sleep, the default HP **sleep** voltage only retains its state
+        config->analog.hp_sys.analog.dbias = HP_CALI_DBIAS_DEFAULT;
+    }
+
     config->power = power_default;
     pmu_sleep_param_config_t param_default = PMU_SLEEP_PARAM_CONFIG_DEFAULT(sleep_flags);
     config->param = *pmu_sleep_param_config_default(&param_default, &power_default, args);

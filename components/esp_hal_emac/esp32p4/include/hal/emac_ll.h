@@ -869,7 +869,7 @@ static inline void emac_ll_set_pps0_out_freq(emac_ptp_dev_t *ptp_regs, uint8_t f
 
 static inline soc_module_clk_t emac_ll_get_csr_clk_src(void)
 {
-    // Source of the ESP32P4 EMAC CRS clock is SYS clock.
+    // Source of the ESP32-P4 EMAC CSR clock is SYS clock.
     return SOC_MOD_CLK_SYS;
 }
 

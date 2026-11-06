@@ -21,6 +21,8 @@
 #include "soc/systimer_reg.h"
 #include "soc/timer_group_reg.h"
 #include "soc/uart_reg.h"
+#include "soc/cnnt_sys_reg.h"
+#include "soc/cnnt_io_mux_reg.h"
 #include "esp32s31/rom/cache.h"
 #include "soc/lp_apm_reg.h"
 #include "soc/hp_apm_reg.h"
@@ -125,6 +127,25 @@ const regdma_entries_config_t iomux_regs_retention[] = {
     [5] = { .config = REGDMA_LINK_CONTINUOUS_INIT(REGDMA_IOMUX_LINK(0x05), GPIO_ENABLE1_REG,           GPIO_ENABLE1_W1TS_REG,      1,                      0, 0), .owner = ENTRY(0) | ENTRY(2) },
 };
 _Static_assert(ARRAY_SIZE(iomux_regs_retention) == IOMUX_RETENTION_LINK_LEN, "Inconsistent IOMUX retention link length definitions");
+
+/* CNNT domain: pad configuration and clock/interface selects.
+ * GMAC_CTRL1/CTRL2 are read-only timestamps. Version registers are not configuration.
+ */
+#define N_REGS_CNNT_PAD()       (((CNNT_IO_MUX_SDIO_CMD_REG - CNNT_IO_MUX_GMAC_RMII_CLK_REG) / 4) + 1)
+#define N_REGS_CNNT_PAD_CTRL()  (((CNNT_IO_MUX_CLOCK_GATE_REG - CNNT_IO_MUX_CTRL_REG) / 4) + 1)
+#define N_REGS_CNNT_SYS()       (((CNNT_SYS_GMAC_CTRL0_REG - CNNT_SYS_SDMMC_MEM_LP_CTRL_REG) / 4) + 1)
+
+const regdma_entries_config_t cnnt_regs_retention[] = {
+    /* GMAC and SDIO pads */
+    [0] = { .config = REGDMA_LINK_CONTINUOUS_INIT(REGDMA_CNNT_LINK(0x00), CNNT_IO_MUX_GMAC_RMII_CLK_REG,    CNNT_IO_MUX_GMAC_RMII_CLK_REG,    N_REGS_CNNT_PAD(),      0, 0), .owner = ENTRY(0) | ENTRY(2) },
+    /* dedicated-pad select and pad clock gate */
+    [1] = { .config = REGDMA_LINK_CONTINUOUS_INIT(REGDMA_CNNT_LINK(0x01), CNNT_IO_MUX_CTRL_REG,             CNNT_IO_MUX_CTRL_REG,             N_REGS_CNNT_PAD_CTRL(), 0, 0), .owner = ENTRY(0) | ENTRY(2) },
+    /* CNNT_SYS clock-force bit */
+    [2] = { .config = REGDMA_LINK_CONTINUOUS_INIT(REGDMA_CNNT_LINK(0x02), CNNT_CLK_EN_REG,                  CNNT_CLK_EN_REG,                  1,                      0, 0), .owner = ENTRY(0) | ENTRY(2) },
+    /* memory LP, USB, SDMMC, EMAC clocks, PHY interface select */
+    [3] = { .config = REGDMA_LINK_CONTINUOUS_INIT(REGDMA_CNNT_LINK(0x03), CNNT_SYS_SDMMC_MEM_LP_CTRL_REG,   CNNT_SYS_SDMMC_MEM_LP_CTRL_REG,   N_REGS_CNNT_SYS(),      0, 0), .owner = ENTRY(0) | ENTRY(2) },
+};
+_Static_assert(ARRAY_SIZE(cnnt_regs_retention) == CNNT_RETENTION_LINK_LEN, "Inconsistent CNNT retention link length definitions");
 
 /* Memory SPI Registers Context */
 #define N_REGS_SPI1_C_MEM_0()     (((SPI1_MEM_C_INT_ENA_REG             - DR_REG_FLASH_SPI1_BASE)       / 4) + 1)

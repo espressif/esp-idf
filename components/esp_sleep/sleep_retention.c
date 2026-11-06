@@ -21,6 +21,10 @@
 #include "sdkconfig.h"
 #include "esp_private/esp_pmu.h"
 
+#ifndef is_cnnt_domain_module
+#define is_cnnt_domain_module(m)    (false)
+#endif
+
 #if SOC_PM_SUPPORT_PMU_RETENTION_CLK_ICG
 #include "esp_private/sleep_clock_icg.h"
 #endif
@@ -450,11 +454,14 @@ void sleep_retention_dump_modules(FILE *out)
         bool inited = sleep_retention_is_module_inited(i);
         bool created = sleep_retention_is_module_created(i);
         bool is_top = is_top_domain_module(i);
+        bool is_cnnt = is_cnnt_domain_module(i);
 
         const char* status = !inited? "-":
                         created? "CREATED":
                                 "INITED";
-        const char* domain = is_top? "TOP": "-";
+        const char* domain = is_top? "TOP":
+                        is_cnnt? "CNNT":
+                                "-";
         fprintf(out, "%2d: %4s %8s\n", i, domain, status);
     }
 }

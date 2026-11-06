@@ -10,9 +10,12 @@
 #include "esp_check.h"
 #include "esp_eth.h"
 #include "esp_private/gpio.h"
+#include "esp_private/esp_gpio_reserve.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "driver/gpio.h"
+#include "driver/rtc_io.h"
+#include "soc/gpio_periph.h"
 #include "soc/io_mux_reg.h"
 #include "esp_rom_sys.h"
 #include "esp_eth_phy_802_3.h"
@@ -128,8 +131,8 @@ static esp_err_t deinit(esp_eth_phy_t *phy)
 
 static esp_err_t del(esp_eth_phy_t *phy)
 {
-    free(phy);
-    return ESP_OK;
+    phy_802_3_t *phy_802_3 = esp_eth_phy_into_phy_802_3(phy);
+    return esp_eth_phy_802_3_del(phy_802_3);
 }
 
 esp_err_t esp_eth_phy_802_3_set_mediator(phy_802_3_t *phy_802_3, esp_eth_mediator_t *eth)
@@ -551,6 +554,7 @@ esp_err_t esp_eth_phy_802_3_deinit(phy_802_3_t *phy_802_3)
 
 esp_err_t esp_eth_phy_802_3_del(phy_802_3_t *phy_802_3)
 {
+    esp_eth_phy_802_3_obj_config_deinit(phy_802_3);
     free(phy_802_3);
     return ESP_OK;
 }
@@ -569,21 +573,40 @@ static void phy_802_3_delay_us(uint32_t delay_us)
     }
 }
 
+static bool phy_802_3_reset_gpio_hold_supported(int gpio_num)
+{
+#if SOC_RTCIO_HOLD_SUPPORTED
+    if (rtc_gpio_is_valid_gpio(gpio_num)) {
+        return true;
+    }
+#endif
+    return GPIO_HOLD_MASK[gpio_num] != 0;
+}
+
 esp_err_t esp_eth_phy_802_3_reset_hw(phy_802_3_t *phy_802_3)
 {
     esp_err_t ret = ESP_OK;
     if (phy_802_3->reset_gpio_num >= 0) {
+        /* Configure the asserted level first. A held pad ignores these writes until the hold is
+           released, so nRST then goes straight to the asserted level instead of passing through
+           the pad's default state. */
         gpio_func_sel(phy_802_3->reset_gpio_num, PIN_FUNC_GPIO);
         gpio_set_level(phy_802_3->reset_gpio_num, 0);
         gpio_output_enable(phy_802_3->reset_gpio_num);
+        if (phy_802_3->hold_reset_gpio) {
+            gpio_hold_dis(phy_802_3->reset_gpio_num);
+        }
         phy_802_3_delay_us(phy_802_3->hw_reset_assert_time_us);
         gpio_set_level(phy_802_3->reset_gpio_num, 1);
+        // hold reset GPIO to retain during sleep or reset
+        if (phy_802_3->hold_reset_gpio) {
+            gpio_hold_en(phy_802_3->reset_gpio_num);
+        }
         if (phy_802_3->post_hw_reset_delay_ms > 0) {
             phy_802_3_delay_us((uint32_t)phy_802_3->post_hw_reset_delay_ms * 1000);
         }
         return ESP_OK;
     }
-
     return ret;
 }
 
@@ -635,6 +658,9 @@ esp_err_t esp_eth_phy_802_3_basic_phy_deinit(phy_802_3_t *phy_802_3)
     esp_err_t ret = ESP_OK;
     /* Power off Ethernet PHY */
     ESP_GOTO_ON_ERROR(esp_eth_phy_802_3_pwrctl(phy_802_3, false), err, TAG, "power control failed");
+    if (phy_802_3->hold_reset_gpio && phy_802_3->reset_gpio_num >= 0) {
+        gpio_hold_dis(phy_802_3->reset_gpio_num);
+    }
     return ESP_OK;
 err:
     return ret;
@@ -784,14 +810,32 @@ err:
 esp_err_t esp_eth_phy_802_3_obj_config_init(phy_802_3_t *phy_802_3, const eth_phy_config_t *config)
 {
     esp_err_t ret = ESP_OK;
+    bool gpio_reserved = false;
 
     ESP_GOTO_ON_FALSE(config, ESP_ERR_INVALID_ARG, err, TAG, "can't set phy config to null");
 
     phy_802_3->link_status = ETH_LINK_DOWN;
     phy_802_3->addr = config->phy_addr;
+
+    if (config->reset_gpio_num >= 0) {
+        ESP_GOTO_ON_FALSE(GPIO_IS_VALID_OUTPUT_GPIO(config->reset_gpio_num), ESP_ERR_INVALID_ARG, err, TAG,
+                          "reset GPIO %d is not an output-capable pin", config->reset_gpio_num);
+    }
+
+    if (config->hold_reset_gpio) {
+        ESP_GOTO_ON_FALSE(config->reset_gpio_num >= 0, ESP_ERR_INVALID_ARG, err, TAG,
+                          "hold_reset_gpio requires a valid reset GPIO");
+        ESP_GOTO_ON_FALSE(phy_802_3_reset_gpio_hold_supported(config->reset_gpio_num), ESP_ERR_NOT_SUPPORTED, err, TAG,
+                          "GPIO %d does not support pad hold", config->reset_gpio_num);
+        ESP_GOTO_ON_FALSE((esp_gpio_reserve(BIT64(config->reset_gpio_num)) & BIT64(config->reset_gpio_num)) == 0, ESP_ERR_INVALID_STATE, err,
+                          TAG, "GPIO %i is already reserved", config->reset_gpio_num);
+        gpio_reserved = true;
+    }
     phy_802_3->reset_timeout_ms = config->reset_timeout_ms;
     phy_802_3->reset_gpio_num = config->reset_gpio_num;
     phy_802_3->autonego_timeout_ms = config->autonego_timeout_ms;
+    phy_802_3->hold_reset_gpio = config->hold_reset_gpio;
+
     if (config->hw_reset_assert_time_us > 0) {
         phy_802_3->hw_reset_assert_time_us = config->hw_reset_assert_time_us;
     } else {
@@ -823,6 +867,21 @@ esp_err_t esp_eth_phy_802_3_obj_config_init(phy_802_3_t *phy_802_3, const eth_ph
     phy_802_3->parent.get_link = get_link;
     phy_802_3->parent.custom_ioctl = NULL;
 
+    return ESP_OK;
 err:
+    /* Only revoke a GPIO this call reserved. A failed reserve means the pin was already taken. */
+    if (gpio_reserved) {
+        esp_gpio_revoke(BIT64(config->reset_gpio_num));
+        phy_802_3->hold_reset_gpio = false;
+    }
     return ret;
+}
+
+esp_err_t esp_eth_phy_802_3_obj_config_deinit(phy_802_3_t *phy_802_3)
+{
+    if (phy_802_3->hold_reset_gpio && phy_802_3->reset_gpio_num >= 0) {
+        esp_gpio_revoke(BIT64(phy_802_3->reset_gpio_num));
+        phy_802_3->hold_reset_gpio = false;
+    }
+    return ESP_OK;
 }

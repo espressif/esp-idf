@@ -1,4 +1,5 @@
 ## IDF Component Manager Manifest File
+# Generic Ethernet tests. eth_test_app brings in ethernet_init for board/PHY Kconfig and init.
 dependencies:
   espressif/eth_test_app:
     version: "0.4.0"

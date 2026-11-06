@@ -783,7 +783,7 @@ static inline void emac_ll_pause_frame_enable(emac_ext_dev_t *ext_regs, bool ena
 
 static inline soc_module_clk_t emac_ll_get_csr_clk_src(void)
 {
-    // Source of the ESP32 EMAC CRS clock is APB clock.
+    // Source of the ESP32 EMAC CSR clock is APB clock.
     return SOC_MOD_CLK_APB;
 }
 

@@ -39,6 +39,7 @@ extern "C" {
 #define RTC_SLEEP_PD_MODEM              PMU_SLEEP_PD_MODEM      //!< Power down modem(include wifi, ble and 15.4)
 
 //These flags are not power domains, but will affect some sleep parameters
+#define RTC_SLEEP_CNNT_ACTIVE           BIT(16) //!< CNNT logic keeps operating in light sleep (e.g. EMAC Wake-on-LAN), keep the HP regulator at a functional voltage
 #define RTC_SLEEP_USE_RTC_WDT           BIT(23)
 #define RTC_SLEEP_FLASH_DPD             BIT(24)
 #define RTC_SLEEP_LP_PERIPH_USE_RC_FAST BIT(25)
@@ -114,6 +115,12 @@ extern "C" {
 
 #define RTC_USB_TRIG_EN             PMU_USB_WAKEUP_EN
 
+#if SOC_PM_SUPPORT_EMAC_WAKEUP
+#define RTC_EMAC_TRIG_EN            PMU_EMAC_PMT_WAKEUP_EN  //!< EMAC PMT wakeup (light sleep only)
+#else
+#define RTC_EMAC_TRIG_EN            0
+#endif
+
 #if SOC_LP_CORE_SUPPORTED
 #define RTC_LP_CORE_TRIG_EN         PMU_LP_CORE_WAKEUP_HP_EN    //!< LP core wakeup
 #define RTC_LP_CORE_TRAP_TRIG_EN    PMU_LP_CORE_TRAP_WAKEUP_EN  //!< LP core trap (exception) wakeup
@@ -161,6 +168,7 @@ extern "C" {
                                RTC_TOUCH_TRIG_EN        | \
                                RTC_XTAL32K_DEAD_TRIG_EN | \
                                RTC_USB_TRIG_EN          | \
+                               RTC_EMAC_TRIG_EN         | \
                                RTC_LP_VAD_TRIG_EN       | \
                                RTC_VBAT_UNDER_VOLT_TRIG_EN | \
                                RTC_VDDBAT_RECOVER_TRIG_EN  | \

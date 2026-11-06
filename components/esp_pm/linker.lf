@@ -32,6 +32,8 @@ entries:
             if SOC_PM_SUPPORT_TOP_PD = y:
                 sleep_clock:clock_domain_pd_allowed (noflash)
                 peripheral_domain_pd:peripheral_domain_pd_allowed (noflash)
+            if SOC_PM_SUPPORT_CNNT_PD = y:
+                peripheral_domain_pd:cnnt_domain_pd_allowed (noflash)
             if SOC_PM_CPU_RETENTION_BY_RTCCNTL = y && (PM_POWER_DOWN_CPU_IN_LIGHT_SLEEP = y || SOC_PM_SUPPORT_TAGMEM_PD = y):
                 sleep_cpu:sleep_enable_cpu_retention (noflash)
             if PM_POWER_DOWN_CPU_IN_LIGHT_SLEEP = y || (ESP32P4_SELECTS_REV_LESS_V3 = y && PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP = y):

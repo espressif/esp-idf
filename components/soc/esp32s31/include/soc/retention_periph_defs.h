@@ -83,10 +83,14 @@ typedef enum periph_retention_module {
 
     SLEEP_RETENTION_MODULE_ASRC         = 55,
 
+    /* Connectivity module (CNNT), which includes EMAC, USB, SDMMC */
+    SLEEP_RETENTION_MODULE_EMAC         = 56,
+
     SLEEP_RETENTION_MODULE_MAX,
 } periph_retention_module_t;
 
 #define is_top_domain_module(m)     ((m >= SLEEP_RETENTION_MODULE_PLL_SOURCE) && ((m <= SLEEP_RETENTION_MODULE_PPA)))
+#define is_cnnt_domain_module(m)    ((m) == SLEEP_RETENTION_MODULE_EMAC)
 
 #ifdef __cplusplus
 }

@@ -49,6 +49,9 @@ typedef enum {
     ESP_SLEEP_LP_USE_XTAL_MODE,           //!< The mode requested by lp peripherals to keep XTAL clock on during sleep. Only valid for lightsleep.
     ESP_SLEEP_LP_USE_RC_FAST_MODE,        //!< The mode requested by lp peripherals to keep FOSC clock on during sleep.
     ESP_SLEEP_VBAT_POWER_DEEPSLEEP_MODE,  //!< The mode to switch power supply to VBAT during deep sleep.
+#if SOC_PM_SUPPORT_CNNT_PD
+    ESP_SLEEP_CNNT_ACTIVE_MODE,           //!< The mode requested by CNNT peripherals that keep operating during light sleep (e.g. EMAC Wake-on-LAN). Keeps the HP regulator at a functional voltage while the CNNT domain stays powered. Only valid for lightsleep.
+#endif
 #if CONFIG_IDF_TARGET_ESP32
     ESP_SLEEP_ANALOG_LOW_POWER_MODE,      //!< If analog-related peripherals(ADC, TSENS, TOUCH) is not used in monitor mode, analog low power mode can be enabled to reduce power consumption (~300uA) in monitor state.
 #endif

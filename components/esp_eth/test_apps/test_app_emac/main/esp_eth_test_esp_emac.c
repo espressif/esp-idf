@@ -15,7 +15,7 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/event_groups.h"
 #include "esp_log.h"
-#include "esp_eth_test_utils.h"
+#include "esp_eth_test_emac_utils.h"
 #include "hal/emac_hal.h" // for MAC_HAL_TDES0_* control bits
 #include "esp_private/esp_clk_tree_common.h"
 

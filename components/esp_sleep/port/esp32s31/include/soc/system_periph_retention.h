@@ -80,6 +80,20 @@ extern const regdma_entries_config_t hp_system_regs_retention[HP_SYSTEM_RETENTIO
 extern const regdma_entries_config_t iomux_regs_retention[IOMUX_RETENTION_LINK_LEN];
 
 /**
+ * @brief Provide access to CNNT domain configuration registers retention
+ * context definition.
+ *
+ * Covers CNNT_SYS clock and interface configuration and CNNT_PAD_CTRL pads.
+ * Restored with the other system peripherals, before peripheral chains that
+ * use those clocks.
+ *
+ * This is an internal function of the sleep retention driver, and is not
+ * useful for external use.
+ */
+#define CNNT_RETENTION_LINK_LEN    4
+extern const regdma_entries_config_t cnnt_regs_retention[CNNT_RETENTION_LINK_LEN];
+
+/**
  * @brief Provide access to FLASH spimem configuration registers retention
  * context definition.
  *

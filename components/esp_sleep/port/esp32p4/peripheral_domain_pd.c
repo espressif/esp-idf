@@ -94,9 +94,6 @@ bool peripheral_domain_pd_allowed(void)
     // ESP32P4 supports SDM sleep retention
     RETENTION_MODULE_BITMAP_SET(&mask, SLEEP_RETENTION_MODULE_SDM0);
 
-    // ESP32P4 supports EMAC sleep retention
-    RETENTION_MODULE_BITMAP_SET(&mask, SLEEP_RETENTION_MODULE_EMAC);
-
     // ESP32P4 supports JPEG sleep retention
     RETENTION_MODULE_BITMAP_SET(&mask, SLEEP_RETENTION_MODULE_JPEG);
 
@@ -117,6 +114,28 @@ bool peripheral_domain_pd_allowed(void)
     const sleep_retention_module_bitmap_t peripheral_domain_retained_modules = sleep_retention_module_bitmap_and(retained_modules, mask);
     bool ic = sleep_retention_module_bitmap_eq(peripheral_domain_inited_modules, peripheral_domain_created_modules);
     bool cr = sleep_retention_module_bitmap_eq(peripheral_domain_created_modules, peripheral_domain_retained_modules);
+    return ic && cr;
+#else
+    return false;
+#endif
+}
+
+bool cnnt_domain_pd_allowed(void)
+{
+#if CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP
+    const sleep_retention_module_bitmap_t inited_modules = sleep_retention_get_inited_modules();
+    const sleep_retention_module_bitmap_t created_modules = sleep_retention_get_created_modules();
+    const sleep_retention_module_bitmap_t retained_modules = sleep_retention_get_retained_modules();
+
+    sleep_retention_module_bitmap_t mask = RETENTION_MODULE_BITMAP_INIT(NULL);
+    // ESP32-P4 EMAC is in the CNNT power domain
+    RETENTION_MODULE_BITMAP_SET(&mask, SLEEP_RETENTION_MODULE_EMAC);
+
+    const sleep_retention_module_bitmap_t cnnt_domain_inited_modules = sleep_retention_module_bitmap_and(inited_modules, mask);
+    const sleep_retention_module_bitmap_t cnnt_domain_created_modules = sleep_retention_module_bitmap_and(created_modules, mask);
+    const sleep_retention_module_bitmap_t cnnt_domain_retained_modules = sleep_retention_module_bitmap_and(retained_modules, mask);
+    bool ic = sleep_retention_module_bitmap_eq(cnnt_domain_inited_modules, cnnt_domain_created_modules);
+    bool cr = sleep_retention_module_bitmap_eq(cnnt_domain_created_modules, cnnt_domain_retained_modules);
     return ic && cr;
 #else
     return false;

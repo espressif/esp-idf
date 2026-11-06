@@ -28,6 +28,7 @@ extern "C" {
 #define PMU_LP_CORE_TRAP_WAKEUP_EN      BIT(16)
 #define PMU_ETM_WAKEUP_EN               BIT(17)
 #define PMU_LP_TIMER1_WAKEUP_EN         BIT(18)
+#define PMU_EMAC_PMT_WAKEUP_EN          BIT(20)
 #define PMU_WIFI_SOC_WAKEUP_EN          BIT(22)
 #define PMU_WIFI_BEACON_WAKEUP_EN       BIT(23)
 #define PMU_MODEM_WAKEUP_PROTECT        BIT(24)
