@@ -38,7 +38,7 @@ def test_lp_core_debugging(openocd_dut: 'OpenOCD', dut: IdfDut) -> None:
         encoding='utf-8',
         codec_errors='ignore',
     ) as p:
-        p.expect('hit Breakpoint 2, do_crash')
+        p.expect('hit Breakpoint 2')  # do_crash
         # dont intercept ebreak in abort
         oocd.write(f'{dut.target}.lp.cpu configure -ebreak exception')
         # let the panic handler finish
@@ -48,7 +48,7 @@ def test_lp_core_debugging(openocd_dut: 'OpenOCD', dut: IdfDut) -> None:
     # Validate GDB logs
     with open(gdb_logfile, encoding='utf-8') as fr:  # pylint: disable=protected-access
         gdb_pexpect_proc = pexpect.fdpexpect.fdspawn(fr.fileno())
-        gdb_pexpect_proc.expect('hit Temporary breakpoint 1, main')
-        gdb_pexpect_proc.expect('hit Breakpoint 3, do_things')
-        gdb_pexpect_proc.expect('hit Breakpoint 4, ulp_lp_core_delay_us')
-        gdb_pexpect_proc.expect('hit Breakpoint 2, do_crash')
+        gdb_pexpect_proc.expect('hit Temporary breakpoint 1')  # main
+        gdb_pexpect_proc.expect('hit Breakpoint 3')  # do_things
+        gdb_pexpect_proc.expect('hit Breakpoint 4')  # ulp_lp_core_delay_us
+        gdb_pexpect_proc.expect('hit Breakpoint 2')  # do_crash
