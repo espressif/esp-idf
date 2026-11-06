@@ -224,7 +224,6 @@ typedef struct {
     int len;                                /**< Transfer length in bytes (can be 0 for zero-length transfers)
                                                  For IN transfers a multiple of the endpoint's MPS.
                                                  For OUT transfers it is the exact number of bytes to send */
-    int pid;                                /**< Logical PID: 0=DATA0, 1=DATA1, 2=SETUP */
 } usb_dwc_hal_buffer_xfer_t;
 
 /**
@@ -823,22 +822,38 @@ static inline void usb_dwc_hal_chan_set_dir(usb_dwc_hal_chan_t *chan_obj, bool i
     chan_obj->flags.is_in = is_in;
 }
 
+// --------------------- PID control -----------------------
+
 /**
- * @brief Set the next Packet ID of the channel (e.g., DATA0/DATA1)
+ * @brief Logical PID values for usb_dwc_hal_chan_set_pid()
+ */
+#define USB_DWC_HAL_PID_DATA0   0
+#define USB_DWC_HAL_PID_DATA1   1
+#define USB_DWC_HAL_PID_SETUP   2
+
+/**
+ * @brief Set the Packet ID of the channel's next transaction
  *
- * This should be called when a channel switches target from one EP to another
- * or when change stages for a control transfer
+ * The DWC core maintains HCTSIZ.Pid for the rest of the transfer after the initial
+ * transaction (DWC_otg databook §5.4.41), so this only needs to be called when a specific
+ * starting PID is required: when a channel switches target from one EP to another, on a
+ * data toggle reset, or when changing stages of a control transfer
  *
  * @note The channel should only be called when the channel is in the
  *       halted state.
+ * @note In Scatter/Gather DMA mode only DATA0/DATA1 are ever programmed (a control
+ *       transfer's SETUP PID is carried by the QTD descriptor); in Buffer DMA mode
+ *       the control stage PIDs are programmed in HCTSIZ directly, including SETUP.
  *
  * @param chan_obj Channel object
- * @param pid PID of the next DATA packet (DATA0 or DATA1)
+ * @param pid Logical PID of the next transaction (USB_DWC_HAL_PID_DATA0/DATA1/SETUP)
  */
 static inline void usb_dwc_hal_chan_set_pid(usb_dwc_hal_chan_t *chan_obj, int pid)
 {
     //Cannot change pid whilst channel is still active or in error
     HAL_ASSERT(!chan_obj->flags.active);
+    // Programmed PID must be within DATA0, DATA1, SETUP PIDs
+    HAL_ASSERT(pid >= USB_DWC_HAL_PID_DATA0 && pid <= USB_DWC_HAL_PID_SETUP);
     //Update channel object and set the register
     usb_dwc_ll_hctsiz_set_pid(chan_obj->regs, pid);
 }
@@ -846,12 +861,17 @@ static inline void usb_dwc_hal_chan_set_pid(usb_dwc_hal_chan_t *chan_obj, int pi
 /**
  * @brief Get the next PID of a channel
  *
- * Returns the next PID (DATA0 or DATA1) of the channel. This function should be
+ * Returns the next PID (DATA0, DATA1 or SETUP) of the channel. This function should be
  * used when the next PID of a pipe needs to be saved (e.g., when switching pipes
  * on a channel)
  *
+ * @note In Scatter/Gather DMA mode only DATA0/DATA1 can be returned (a control transfer's
+ *       SETUP PID is carried by the QTD descriptor, never programmed into HCTSIZ); in
+ *       Buffer DMA mode SETUP can be returned as well, as control stage PIDs are
+ *       programmed in HCTSIZ directly.
+ *
  * @param chan_obj Channel object
- * @return uint32_t Starting PID of the next transfer (DATA0 or DATA1)
+ * @return uint32_t Starting PID of the next transfer (DATA0, DATA1 or SETUP)
  */
 static inline uint32_t usb_dwc_hal_chan_get_pid(usb_dwc_hal_chan_t *chan_obj)
 {
@@ -862,17 +882,12 @@ static inline uint32_t usb_dwc_hal_chan_get_pid(usb_dwc_hal_chan_t *chan_obj)
 // ------------------- Channel Control ---------------------
 
 /**
- * @brief Logical PID values for usb_dwc_hal_buffer_xfer_t.pid
- */
-#define USB_DWC_HAL_PID_DATA0   0
-#define USB_DWC_HAL_PID_DATA1   1
-#define USB_DWC_HAL_PID_SETUP   2
-
-/**
  * @brief Activate a channel for a Buffer DMA transfer
  *
  * Programs HCDMA with the data buffer address and HCTSIZ with transfer size and packet
- * count, then enables the channel.
+ * count, then enables the channel. The HCTSIZ PID field is preserved: the core maintains
+ * the data toggle across transfers. Call usb_dwc_hal_chan_set_pid() before activation when
+ * a specific starting PID is required (e.g., control transfer stages).
  *
  * For IN transfers, xfer->len is programmed as the transfer size unchanged: it must already be a multiple of the
  * endpoint's MPS (DWC2 requirement). The HAL never rounds the length up itself.
