@@ -230,6 +230,7 @@ struct nan_paired_peer {
  */
 struct nan_ndi_sec_sa {
     bool     valid;
+    uint8_t  owner_ndp_id;  /* NDP that committed this SA; 0 when none */
     uint8_t  peer_ndi[MACADDR_LEN];
     uint8_t  csid;
     int      pairing_akmp;   /* 0 if not from pairing */
@@ -576,10 +577,13 @@ bool nan_sec_ndp_should_install_keys(uint8_t csid, int pairing_akmp);
  * Commit NDI pairwise SA into the cache after successful ND-TK (/NM-TK) install.
  * Caller must hold NAN_DATA_LOCK and only call when should_install_keys was true.
  */
-void nan_sec_ndp_commit_keys(const uint8_t *peer_ndi, uint8_t csid, int pairing_akmp);
+void nan_sec_ndp_commit_keys(const uint8_t *peer_ndi, uint8_t ndp_id,
+                             uint8_t csid, int pairing_akmp);
 
-/* Clear SA entries matching peer_ndi (or all if peer_ndi is NULL). Holds no lock. */
-void nan_sec_ndp_clear_sa(const uint8_t *peer_ndi);
+/* Clear the SA cache entry owned by ndp_id, or all entries when ndp_id is 0.
+ * Ownership prevents a rejected/duplicate NDP teardown from wiping a live
+ * NDP's SA (same peer NDI, different publish). Holds no lock. */
+void nan_sec_ndp_clear_sa(uint8_t ndp_id);
 
 /*
  * Match subscriber discovery security to a publisher's params.
