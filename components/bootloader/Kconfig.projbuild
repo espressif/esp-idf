@@ -90,7 +90,7 @@ menu "Bootloader config"
 
                 DON'T DISABLE THIS UNLESS YOU KNOW WHAT YOU ARE DOING.
 
-                comment "Features below require specific hardware (READ DOCS FIRST!)"
+        comment "Features below require specific hardware (READ DOCS FIRST!)"
 
         config BOOTLOADER_FLASH_32BIT_ADDR
             bool
