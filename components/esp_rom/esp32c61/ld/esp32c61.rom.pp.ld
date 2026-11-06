@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -118,10 +118,10 @@ pm_on_beacon_rx = 0x40000ce8;
 pm_on_data_rx = 0x40000cec;
 pm_on_data_tx = 0x40000cf0;
 pm_on_tbtt = 0x40000cf4;
-pm_on_isr_sleep = 0x40000cf8;
+//pm_on_isr_sleep = 0x40000cf8;
 pm_on_isr = 0x40000cfc;
-pm_on_isr_set_twt_target = 0x40000d00;
-pm_on_isr_twt_wake = 0x40000d04;
+//pm_on_isr_set_twt_target = 0x40000d00;
+//pm_on_isr_twt_wake = 0x40000d04;
 pm_on_tsf_timer = 0x40000d08;
 pm_on_twt_force_tx = 0x40000d0c;
 //pm_parse_beacon = 0x40000d10;
