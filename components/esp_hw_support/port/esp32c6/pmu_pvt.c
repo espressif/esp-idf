@@ -39,7 +39,6 @@ static uint8_t get_lp_hp_gap(void)
         uint8_t offset_read = efuse_ll_get_dbias_vol_gap();
         bool offset_flag = offset_read >> 4;
         uint8_t offset_value = offset_read & 0xf;
-        int8_t pvt_offset = 0;
         if (offset_flag) {
             pvt_offset = -1 * offset_value;
         } else {
