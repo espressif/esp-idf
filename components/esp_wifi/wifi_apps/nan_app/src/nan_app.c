@@ -311,10 +311,18 @@ static void nan_app_clear_one_peer_tks(const uint8_t *peer_nmi)
         ndl->igtk_len = 0;
         ndl->bigtk_len = 0;
 
-        /* Clear the SA this NDP owns (by ndp_id, not peer address) so a
-         * rejected/duplicate NDP sharing the same peer NDI cannot wipe a
-         * live NDP's SA. */
-        nan_sec_ndp_clear_sa(ndl->ndp_id);
+        /* Clear the SA if any NDL for this peer owns it. nan_find_ndl()
+         * returns only the first matching slot, so with one open + one
+         * secured NDP to the same peer the first match may not be the SA
+         * owner — iterate all slots so the owning NDP's entry is cleared
+         * regardless of slot order. nan_sec_ndp_clear_sa() is a no-op when
+         * the ndp_id is not the owner, so extra calls are harmless. */
+        for (int j = 0; j < ESP_WIFI_NAN_DATAPATH_MAX_PEERS; j++) {
+            struct ndl_info *n = &s_nan_ctx.ndl[j];
+            if (n->ndp_id != 0 && memcmp(n->peer_nmi, peer_nmi, MACADDR_LEN) == 0) {
+                nan_sec_ndp_clear_sa(n->ndp_id);
+            }
+        }
     }
     /* No else-branch SA clear: with ownership tracking, a peer with no NDL
      * has no committed SA to clear, and clearing by address would risk wiping
