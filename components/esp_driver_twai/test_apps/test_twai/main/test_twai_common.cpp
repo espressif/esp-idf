@@ -526,6 +526,42 @@ static void test_twai_generate_tx_glitch(uint32_t bitrate, uint32_t offset_bits,
     gpio_matrix_output(TEST_TX_GPIO, twai_periph_signals[0].tx_sig, false, false);
 }
 
+typedef struct {
+    twai_frame_t frame;
+    uint8_t payload;
+    atomic_bool arm_recovery_tx;
+    atomic_int recovery_callback_count;
+    atomic_int recovery_submit_result;
+    atomic_int recovery_tx_success;
+} recovery_callback_test_ctx_t;
+
+static IRAM_ATTR bool test_bus_off_recovery_state_cb(twai_node_handle_t handle,
+                                                    const twai_state_change_event_data_t *event,
+                                                    void *user_ctx)
+{
+    recovery_callback_test_ctx_t *ctx = (recovery_callback_test_ctx_t *)user_ctx;
+    if (event->old_sta == TWAI_ERROR_BUS_OFF && event->new_sta == TWAI_ERROR_ACTIVE &&
+            atomic_exchange(&ctx->arm_recovery_tx, false)) {
+        /* Recovery must reserve TX ownership before invoking this callback. */
+        esp_err_t result = twai_node_transmit(handle, &ctx->frame, 0);
+        atomic_store(&ctx->recovery_submit_result, result);
+        atomic_fetch_add(&ctx->recovery_callback_count, 1);
+    }
+    return false;
+}
+
+static IRAM_ATTR bool test_bus_off_recovery_tx_done_cb(twai_node_handle_t handle,
+                                                       const twai_tx_done_event_data_t *event,
+                                                       void *user_ctx)
+{
+    (void)handle;
+    recovery_callback_test_ctx_t *ctx = (recovery_callback_test_ctx_t *)user_ctx;
+    if (event->done_tx_frame == &ctx->frame && event->is_tx_success) {
+        atomic_fetch_add(&ctx->recovery_tx_success, 1);
+    }
+    return false;
+}
+
 TEST_CASE("twai bus off recovery (loopback)", "[twai]")
 {
     twai_node_handle_t node_hdl;
@@ -535,10 +571,23 @@ TEST_CASE("twai bus off recovery (loopback)", "[twai]")
     node_config.io_cfg.quanta_clk_out = GPIO_NUM_NC;
     node_config.io_cfg.bus_off_indicator = GPIO_NUM_NC;
     node_config.bit_timing.bitrate = 50000; //slow bitrate to ensure soft error trigger
-    node_config.tx_queue_depth = 1;
+    node_config.tx_queue_depth = 8;
     node_config.flags.enable_self_test = true;
 
     TEST_ESP_OK(twai_new_node_onchip(&node_config, &node_hdl));
+
+    recovery_callback_test_ctx_t cb_ctx = {};
+    cb_ctx.payload = 0xA5;
+    cb_ctx.frame.header.id = 0x345;
+    cb_ctx.frame.header.dlc = 1;
+    cb_ctx.frame.buffer = &cb_ctx.payload;
+    cb_ctx.frame.buffer_len = 1;
+    atomic_store(&cb_ctx.recovery_submit_result, ESP_FAIL);
+
+    twai_event_callbacks_t cbs = {};
+    cbs.on_state_change = test_bus_off_recovery_state_cb;
+    cbs.on_tx_done = test_bus_off_recovery_tx_done_cb;
+    TEST_ESP_OK(twai_node_register_event_callbacks(node_hdl, &cbs, &cb_ctx));
     TEST_ESP_OK(twai_node_enable(node_hdl));
 
     twai_node_status_t node_status = {};
@@ -566,6 +615,7 @@ TEST_CASE("twai bus off recovery (loopback)", "[twai]")
 #endif
     TEST_ASSERT_EQUAL(TWAI_ERROR_BUS_OFF, node_status.state);
     printf("node offline, start recover ...\n");
+    atomic_store(&cb_ctx.arm_recovery_tx, true);
     TEST_ESP_OK(twai_node_recover(node_hdl));
 
     // wait node recovered
@@ -576,6 +626,19 @@ TEST_CASE("twai bus off recovery (loopback)", "[twai]")
     }
     printf("node recovered! current tec %d rec %d, continue\n", node_status.tx_error_count, node_status.rx_error_count);
     TEST_ASSERT_LESS_THAN(96, node_status.tx_error_count);
+
+    /* A frame submitted by the recovery callback must survive the
+     * ISR's subsequent queue/hardware ownership handoff.
+     */
+    TEST_ASSERT_EQUAL(1, atomic_load(&cb_ctx.recovery_callback_count));
+    TEST_ASSERT_EQUAL(ESP_OK, atomic_load(&cb_ctx.recovery_submit_result));
+    const TickType_t recovery_start = xTaskGetTickCount();
+    while (atomic_load(&cb_ctx.recovery_tx_success) == 0 &&
+           (xTaskGetTickCount() - recovery_start) < pdMS_TO_TICKS(3000)) {
+        vTaskDelay(pdMS_TO_TICKS(10));
+    }
+    TEST_ASSERT_EQUAL(1, atomic_load(&cb_ctx.recovery_tx_success));
+
     TEST_ESP_OK(twai_node_transmit(node_hdl, &tx_frame, 500));
     vTaskDelay(pdMS_TO_TICKS(100));
 
