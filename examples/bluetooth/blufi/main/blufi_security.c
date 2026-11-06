@@ -4,6 +4,12 @@
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
 
+/* PSA FFDH cannot take a short exponent: import sets the group from the
+ * buffer length, and generate draws X across the whole prime. This example
+ * uses the private bignum API shipped with this IDF tree. The macro must
+ * precede every header, because psa/crypto.h includes that header first. */
+#define MBEDTLS_DECLARE_PRIVATE_IDENTIFIERS
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -18,6 +24,7 @@
 #include "esp_task_wdt.h"
 #include "nvs_flash.h"
 #include "esp_random.h"
+#include "esp_heap_caps.h"
 #if CONFIG_BT_CONTROLLER_ENABLED || !CONFIG_BT_NIMBLE_ENABLED
 #include "esp_bt.h"
 #endif
@@ -27,7 +34,13 @@
 
 #include "psa/crypto.h"
 #include "esp_crc.h"
+#include "esp_timer.h"
 #include "soc/soc_caps.h"
+#if !SOC_MPI_SUPPORTED
+#include "mbedtls/bignum.h"
+#include "bootloader_random.h"
+#include "esp_task.h"
+#endif
 
 /*
    The SEC_TYPE_xxx is for self-defined packet data type in the procedure of "BLUFI negotiate key"
@@ -48,9 +61,18 @@
 
 #if !SOC_MPI_SUPPORTED
 #define BLUFI_DH_PREGEN_STACK_SIZE   8192
-#define BLUFI_DH_PREGEN_PRIO        (tskIDLE_PRIORITY + 1)
+/* Above app_main so the task runs, and takes its stack, before
+ * initialise_wifi() continues. */
+#define BLUFI_DH_PREGEN_PRIO        (ESP_TASK_MAIN_PRIO + 1)
 #define BLUFI_DH_PREGEN_WAIT_MS      30000
 #define BLUFI_DH_HEAVY_CRYPTO_WDT_MS 30000
+/* ffdhe3072 is a 128-bit group. RFC 7919's floor for the private exponent is
+ * twice that strength. A full-size exponent is what makes software modexp
+ * take ~12s on ESP32-C2; 256 bits keeps the same prime and public-key size.
+ * Set to 1 to run a two-party agreement check at boot. Each modexp logs
+ * its own time. */
+#define BLUFI_DH_PRIV_LEN            32
+#define BLUFI_DH_SHORT_EXP_SELF_TEST 0
 #endif
 
 struct blufi_security {
@@ -121,17 +143,79 @@ static void blufi_cleanup_negotiation(bool abort_enc, bool abort_dec)
 
 #if !SOC_MPI_SUPPORTED
 /*
- * DH keypair pre-generation: overlap the expensive G^X mod P computation
- * with BLE advertising so only key agreement remains on the critical path
- * when the phone sends its DH parameters.
+ * DH keypair pre-generation: overlap G^X mod P with BLE advertising so only
+ * key agreement remains on the critical path when the phone sends its public
+ * key. The exponent is 256 bits. The modulus stays RFC 7919 ffdhe3072, and
+ * the public value is still 384 bytes, so the phone does not change.
  */
-static psa_key_id_t s_pregen_private_key;
+static const uint8_t s_ffdhe3072_p[] = {
+    0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
+    0xAD, 0xF8, 0x54, 0x58, 0xA2, 0xBB, 0x4A, 0x9A,
+    0xAF, 0xDC, 0x56, 0x20, 0x27, 0x3D, 0x3C, 0xF1,
+    0xD8, 0xB9, 0xC5, 0x83, 0xCE, 0x2D, 0x36, 0x95,
+    0xA9, 0xE1, 0x36, 0x41, 0x14, 0x64, 0x33, 0xFB,
+    0xCC, 0x93, 0x9D, 0xCE, 0x24, 0x9B, 0x3E, 0xF9,
+    0x7D, 0x2F, 0xE3, 0x63, 0x63, 0x0C, 0x75, 0xD8,
+    0xF6, 0x81, 0xB2, 0x02, 0xAE, 0xC4, 0x61, 0x7A,
+    0xD3, 0xDF, 0x1E, 0xD5, 0xD5, 0xFD, 0x65, 0x61,
+    0x24, 0x33, 0xF5, 0x1F, 0x5F, 0x06, 0x6E, 0xD0,
+    0x85, 0x63, 0x65, 0x55, 0x3D, 0xED, 0x1A, 0xF3,
+    0xB5, 0x57, 0x13, 0x5E, 0x7F, 0x57, 0xC9, 0x35,
+    0x98, 0x4F, 0x0C, 0x70, 0xE0, 0xE6, 0x8B, 0x77,
+    0xE2, 0xA6, 0x89, 0xDA, 0xF3, 0xEF, 0xE8, 0x72,
+    0x1D, 0xF1, 0x58, 0xA1, 0x36, 0xAD, 0xE7, 0x35,
+    0x30, 0xAC, 0xCA, 0x4F, 0x48, 0x3A, 0x79, 0x7A,
+    0xBC, 0x0A, 0xB1, 0x82, 0xB3, 0x24, 0xFB, 0x61,
+    0xD1, 0x08, 0xA9, 0x4B, 0xB2, 0xC8, 0xE3, 0xFB,
+    0xB9, 0x6A, 0xDA, 0xB7, 0x60, 0xD7, 0xF4, 0x68,
+    0x1D, 0x4F, 0x42, 0xA3, 0xDE, 0x39, 0x4D, 0xF4,
+    0xAE, 0x56, 0xED, 0xE7, 0x63, 0x72, 0xBB, 0x19,
+    0x0B, 0x07, 0xA7, 0xC8, 0xEE, 0x0A, 0x6D, 0x70,
+    0x9E, 0x02, 0xFC, 0xE1, 0xCD, 0xF7, 0xE2, 0xEC,
+    0xC0, 0x34, 0x04, 0xCD, 0x28, 0x34, 0x2F, 0x61,
+    0x91, 0x72, 0xFE, 0x9C, 0xE9, 0x85, 0x83, 0xFF,
+    0x8E, 0x4F, 0x12, 0x32, 0xEE, 0xF2, 0x81, 0x83,
+    0xC3, 0xFE, 0x3B, 0x1B, 0x4C, 0x6F, 0xAD, 0x73,
+    0x3B, 0xB5, 0xFC, 0xBC, 0x2E, 0xC2, 0x20, 0x05,
+    0xC5, 0x8E, 0xF1, 0x83, 0x7D, 0x16, 0x83, 0xB2,
+    0xC6, 0xF3, 0x4A, 0x26, 0xC1, 0xB2, 0xEF, 0xFA,
+    0x88, 0x6B, 0x42, 0x38, 0x61, 0x1F, 0xCF, 0xDC,
+    0xDE, 0x35, 0x5B, 0x3B, 0x65, 0x19, 0x03, 0x5B,
+    0xBC, 0x34, 0xF4, 0xDE, 0xF9, 0x9C, 0x02, 0x38,
+    0x61, 0xB4, 0x6F, 0xC9, 0xD6, 0xE6, 0xC9, 0x07,
+    0x7A, 0xD9, 0x1D, 0x26, 0x91, 0xF7, 0xF7, 0xEE,
+    0x59, 0x8C, 0xB0, 0xFA, 0xC1, 0x86, 0xD9, 0x1C,
+    0xAE, 0xFE, 0x13, 0x09, 0x85, 0x13, 0x92, 0x70,
+    0xB4, 0x13, 0x0C, 0x93, 0xBC, 0x43, 0x79, 0x44,
+    0xF4, 0xFD, 0x44, 0x52, 0xE2, 0xD7, 0x4D, 0xD3,
+    0x64, 0xF2, 0xE2, 0x1E, 0x71, 0xF5, 0x4B, 0xFF,
+    0x5C, 0xAE, 0x82, 0xAB, 0x9C, 0x9D, 0xF6, 0x9E,
+    0xE8, 0x6D, 0x2B, 0xC5, 0x22, 0x36, 0x3A, 0x0D,
+    0xAB, 0xC5, 0x21, 0x97, 0x9B, 0x0D, 0xEA, 0xDA,
+    0x1D, 0xBF, 0x9A, 0x42, 0xD5, 0xC4, 0x48, 0x4E,
+    0x0A, 0xBC, 0xD0, 0x6B, 0xFA, 0x53, 0xDD, 0xEF,
+    0x3C, 0x1B, 0x20, 0xEE, 0x3F, 0xD5, 0x9D, 0x7C,
+    0x25, 0xE4, 0x1D, 0x2B, 0x66, 0xC6, 0x2E, 0x37,
+    0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF
+};
+_Static_assert(sizeof(s_ffdhe3072_p) == 384, "ffdhe3072 prime must be 384 bytes");
+static const uint8_t s_ffdhe3072_g[] = { 0x02 };
+
+/* R^2 mod P. exp_mod builds this while its ~4 KB window buffer is live.
+ * On ESP32-C2 that pair does not fit the second time. Compute once, reuse. */
+static mbedtls_mpi s_dh_rr;
+static bool s_dh_rr_inited;
+
+static uint8_t s_pregen_private[BLUFI_DH_PRIV_LEN];
+static bool s_pregen_has_private;
 static uint8_t s_pregen_public_key[DH_SELF_PUB_KEY_LEN];
 static size_t s_pregen_public_key_len;
 static SemaphoreHandle_t s_pregen_done;
 static bool s_pregen_ok;
 static TaskHandle_t s_pregen_task_hdl;
 static void (*s_pregen_complete_cb)(void);
+/* True only for the boot draw, before esp_wifi_start(). */
+static bool s_entropy_before_rf;
 
 static void blufi_wdt_set_timeout(uint32_t timeout_ms)
 {
@@ -143,30 +227,173 @@ static void blufi_wdt_set_timeout(uint32_t timeout_ms)
     esp_task_wdt_reconfigure(&cfg);
 }
 
+/* out_len is the fixed-width result (384). The exponent buffer must be the
+ * raw 32-byte value, not zero-padded out to the prime size: the constant-time
+ * modexp walks every limb it is given. */
+static int blufi_dh_modexp(const uint8_t *base, size_t base_len,
+                           const uint8_t *exp, size_t exp_len,
+                           uint8_t *out, size_t out_len, bool check_range)
+{
+    mbedtls_mpi a, e, n, x, pm1;
+    int ret = -1;
+    int64_t t0;
+
+    mbedtls_mpi_init(&a);
+    mbedtls_mpi_init(&e);
+    mbedtls_mpi_init(&n);
+    mbedtls_mpi_init(&x);
+    mbedtls_mpi_init(&pm1);
+
+    MBEDTLS_MPI_CHK(mbedtls_mpi_read_binary(&n, s_ffdhe3072_p, sizeof(s_ffdhe3072_p)));
+    MBEDTLS_MPI_CHK(mbedtls_mpi_read_binary(&a, base, base_len));
+
+    /* RFC 7919 §5.1: 1 < Y < P-1. ffdhe3072 is a safe prime, so 1 and P-1
+     * are the only low-order elements. Check this before loading the secret. */
+    if (check_range) {
+        MBEDTLS_MPI_CHK(mbedtls_mpi_sub_int(&pm1, &n, 1));
+        if (mbedtls_mpi_cmp_int(&a, 1) <= 0 || mbedtls_mpi_cmp_mpi(&a, &pm1) >= 0) {
+            ret = MBEDTLS_ERR_MPI_BAD_INPUT_DATA;
+            goto cleanup;
+        }
+    }
+
+    MBEDTLS_MPI_CHK(mbedtls_mpi_read_binary(&e, exp, exp_len));
+
+    if (!s_dh_rr_inited) {
+        mbedtls_mpi_init(&s_dh_rr);
+        s_dh_rr_inited = true;
+    }
+
+    t0 = esp_timer_get_time();
+    MBEDTLS_MPI_CHK(mbedtls_mpi_exp_mod(&x, &a, &e, &n, &s_dh_rr));
+    BLUFI_INFO("DH modexp exp_bits=%zu %u ms",
+               mbedtls_mpi_bitlen(&e),
+               (unsigned)((esp_timer_get_time() - t0) / 1000));
+    MBEDTLS_MPI_CHK(mbedtls_mpi_write_binary(&x, out, out_len));
+    ret = 0;
+
+cleanup:
+    if (ret != 0) {
+        BLUFI_ERROR("DH modexp failed %d (free %u, largest %u)",
+                    ret,
+                    (unsigned)esp_get_free_heap_size(),
+                    (unsigned)heap_caps_get_largest_free_block(MALLOC_CAP_INTERNAL));
+    }
+    mbedtls_mpi_free(&a);
+    mbedtls_mpi_free(&e);
+    mbedtls_mpi_free(&n);
+    mbedtls_mpi_free(&x);
+    mbedtls_mpi_free(&pm1);
+    return ret;
+}
+
+/* before_rf: Wi-Fi/BT are not up, so the RNG is only pseudo-random unless
+ * the SAR ADC entropy source is enabled. Never enable it once the radio is
+ * on; that source and the RF subsystem share the ADC. */
+static void blufi_dh_random_priv(uint8_t priv[BLUFI_DH_PRIV_LEN], bool before_rf)
+{
+    if (before_rf) {
+        bootloader_random_enable();
+    }
+    esp_fill_random(priv, BLUFI_DH_PRIV_LEN);
+    if (before_rf) {
+        bootloader_random_disable();
+    }
+    priv[0] |= 0x80;
+}
+
+static int blufi_dh_make_public(const uint8_t priv[BLUFI_DH_PRIV_LEN],
+                                uint8_t pub[DH_SELF_PUB_KEY_LEN])
+{
+    return blufi_dh_modexp(s_ffdhe3072_g, sizeof(s_ffdhe3072_g),
+                           priv, BLUFI_DH_PRIV_LEN,
+                           pub, DH_SELF_PUB_KEY_LEN, false);
+}
+
+static int blufi_dh_agree(const uint8_t priv[BLUFI_DH_PRIV_LEN],
+                          const uint8_t *peer, size_t peer_len,
+                          uint8_t share[SHARE_KEY_LEN])
+{
+    if (peer_len != DH_SELF_PUB_KEY_LEN) {
+        return MBEDTLS_ERR_MPI_BAD_INPUT_DATA;
+    }
+    return blufi_dh_modexp(peer, peer_len, priv, BLUFI_DH_PRIV_LEN,
+                           share, SHARE_KEY_LEN, true);
+}
+
+static int blufi_dh_generate(uint8_t priv[BLUFI_DH_PRIV_LEN],
+                             uint8_t pub[DH_SELF_PUB_KEY_LEN],
+                             bool before_rf)
+{
+    blufi_dh_random_priv(priv, before_rf);
+    if (blufi_dh_make_public(priv, pub) != 0) {
+        mbedtls_platform_zeroize(priv, BLUFI_DH_PRIV_LEN);
+        return -1;
+    }
+    return 0;
+}
+
+#if BLUFI_DH_SHORT_EXP_SELF_TEST
+static void blufi_dh_short_exp_self_test(void)
+{
+    uint8_t priv_a[BLUFI_DH_PRIV_LEN];
+    uint8_t priv_b[BLUFI_DH_PRIV_LEN];
+    uint8_t *buf = calloc(4, DH_SELF_PUB_KEY_LEN);
+    uint8_t *pub_a;
+    uint8_t *pub_b;
+    uint8_t *sec_a;
+    uint8_t *sec_b;
+    int ret = -1;
+
+    if (buf == NULL) {
+        BLUFI_ERROR("DH short-exp self-test alloc failed");
+        return;
+    }
+    pub_a = buf;
+    pub_b = buf + DH_SELF_PUB_KEY_LEN;
+    sec_a = buf + 2 * DH_SELF_PUB_KEY_LEN;
+    sec_b = buf + 3 * DH_SELF_PUB_KEY_LEN;
+
+    BLUFI_INFO("DH short-exp self-test start");
+    ret = blufi_dh_generate(priv_a, pub_a, s_entropy_before_rf);
+    if (ret == 0) {
+        ret = blufi_dh_generate(priv_b, pub_b, s_entropy_before_rf);
+    }
+    if (ret == 0) {
+        ret = blufi_dh_agree(priv_a, pub_b, DH_SELF_PUB_KEY_LEN, sec_a);
+    }
+    if (ret == 0) {
+        ret = blufi_dh_agree(priv_b, pub_a, DH_SELF_PUB_KEY_LEN, sec_b);
+    }
+    if (ret == 0 && memcmp(sec_a, sec_b, SHARE_KEY_LEN) != 0) {
+        ret = -1;
+    }
+
+    mbedtls_platform_zeroize(priv_a, sizeof(priv_a));
+    mbedtls_platform_zeroize(priv_b, sizeof(priv_b));
+    mbedtls_platform_zeroize(buf, 4 * DH_SELF_PUB_KEY_LEN);
+    free(buf);
+    BLUFI_INFO("DH short-exp self-test %s", ret == 0 ? "OK" : "FAILED");
+}
+#endif
+
 static void blufi_dh_pregen_task(void *arg)
 {
     (void)arg;
 
     blufi_wdt_set_timeout(BLUFI_DH_HEAVY_CRYPTO_WDT_MS);
 
-    psa_key_attributes_t attr = psa_key_attributes_init();
-    psa_set_key_type(&attr, PSA_KEY_TYPE_DH_KEY_PAIR(PSA_DH_FAMILY_RFC7919));
-    psa_set_key_bits(&attr, 3072);
-    psa_set_key_algorithm(&attr, PSA_ALG_FFDH);
-    psa_set_key_usage_flags(&attr, PSA_KEY_USAGE_DERIVE);
+#if BLUFI_DH_SHORT_EXP_SELF_TEST
+    blufi_dh_short_exp_self_test();
+#endif
 
-    psa_status_t status = psa_generate_key(&attr, &s_pregen_private_key);
-    if (status == PSA_SUCCESS) {
-        status = psa_export_public_key(s_pregen_private_key,
-                                       s_pregen_public_key, DH_SELF_PUB_KEY_LEN,
-                                       &s_pregen_public_key_len);
-    }
-    psa_reset_key_attributes(&attr);
-
-    s_pregen_ok = (status == PSA_SUCCESS);
-    if (!s_pregen_ok && s_pregen_private_key != 0) {
-        psa_destroy_key(s_pregen_private_key);
-        s_pregen_private_key = 0;
+    if (blufi_dh_generate(s_pregen_private, s_pregen_public_key, s_entropy_before_rf) == 0) {
+        s_pregen_public_key_len = DH_SELF_PUB_KEY_LEN;
+        s_pregen_has_private = true;
+        s_pregen_ok = true;
+    } else {
+        s_pregen_has_private = false;
+        s_pregen_ok = false;
     }
 
     BLUFI_INFO("DH keypair pre-generation %s", s_pregen_ok ? "done" : "FAILED");
@@ -174,6 +401,9 @@ static void blufi_dh_pregen_task(void *arg)
     blufi_wdt_set_timeout(CONFIG_ESP_TASK_WDT_TIMEOUT_S * 1000);
 
     xSemaphoreGive(s_pregen_done);
+
+    BLUFI_INFO("DH pregen stack free %u",
+               (unsigned)uxTaskGetStackHighWaterMark(NULL));
 
     if (s_pregen_complete_cb) {
         void (*cb)(void) = s_pregen_complete_cb;
@@ -184,13 +414,16 @@ static void blufi_dh_pregen_task(void *arg)
     vTaskSuspend(NULL);
 }
 
-static void blufi_dh_pregen_start_impl(void (*done_cb)(void))
+static void blufi_dh_pregen_start_impl(void (*done_cb)(void), bool before_rf)
 {
     if (s_pregen_done != NULL) {
         return;
     }
 
-    s_pregen_private_key = 0;
+    s_entropy_before_rf = before_rf;
+
+    mbedtls_platform_zeroize(s_pregen_private, sizeof(s_pregen_private));
+    s_pregen_has_private = false;
     s_pregen_public_key_len = 0;
     s_pregen_ok = false;
     s_pregen_task_hdl = NULL;
@@ -198,26 +431,52 @@ static void blufi_dh_pregen_start_impl(void (*done_cb)(void))
     s_pregen_done = xSemaphoreCreateBinary();
     if (s_pregen_done == NULL) {
         BLUFI_ERROR("Failed to create pre-gen semaphore");
+        if (done_cb) {
+            done_cb();
+        }
         return;
     }
 
     if (xTaskCreate(blufi_dh_pregen_task, "blufi_pregen",
                     BLUFI_DH_PREGEN_STACK_SIZE, NULL,
                     BLUFI_DH_PREGEN_PRIO, &s_pregen_task_hdl) != pdPASS) {
-        BLUFI_ERROR("Failed to create pre-gen task");
-        vSemaphoreDelete(s_pregen_done);
-        s_pregen_done = NULL;
+        /* Negotiate deletes this task so Y^X can reuse the stack. After
+         * Wi-Fi/BLE that stack often will not come back as one block. Build
+         * the next key here and still advertise. */
+        BLUFI_ERROR("Failed to create pre-gen task (free %u, largest %u)",
+                    (unsigned)esp_get_free_heap_size(),
+                    (unsigned)heap_caps_get_largest_free_block(MALLOC_CAP_INTERNAL));
+        blufi_wdt_set_timeout(BLUFI_DH_HEAVY_CRYPTO_WDT_MS);
+        if (blufi_dh_generate(s_pregen_private, s_pregen_public_key, s_entropy_before_rf) == 0) {
+            s_pregen_public_key_len = DH_SELF_PUB_KEY_LEN;
+            s_pregen_has_private = true;
+            s_pregen_ok = true;
+            BLUFI_INFO("DH keypair pre-generation done (inline)");
+        } else {
+            s_pregen_has_private = false;
+            s_pregen_ok = false;
+            BLUFI_ERROR("DH keypair pre-generation FAILED (inline)");
+        }
+        blufi_wdt_set_timeout(CONFIG_ESP_TASK_WDT_TIMEOUT_S * 1000);
+        xSemaphoreGive(s_pregen_done);
+        if (s_pregen_complete_cb) {
+            void (*cb)(void) = s_pregen_complete_cb;
+            s_pregen_complete_cb = NULL;
+            cb();
+        }
     }
 }
 
 void blufi_dh_pregen_start(void)
 {
-    blufi_dh_pregen_start_impl(NULL);
+    /* app_main only, before esp_wifi_start(). */
+    blufi_dh_pregen_start_impl(NULL, true);
 }
 
 void blufi_dh_pregen_start_with_cb(void (*done_cb)(void))
 {
-    blufi_dh_pregen_start_impl(done_cb);
+    /* Wi-Fi or BT is already up, so the RF entropy source is on. */
+    blufi_dh_pregen_start_impl(done_cb, false);
 }
 
 void blufi_dh_pregen_wait(void)
@@ -240,10 +499,8 @@ static void blufi_dh_pregen_cleanup(void)
         vTaskDelete(s_pregen_task_hdl);
         s_pregen_task_hdl = NULL;
     }
-    if (s_pregen_private_key != 0) {
-        psa_destroy_key(s_pregen_private_key);
-        s_pregen_private_key = 0;
-    }
+    mbedtls_platform_zeroize(s_pregen_private, sizeof(s_pregen_private));
+    s_pregen_has_private = false;
     s_pregen_ok = false;
 }
 #endif /* !SOC_MPI_SUPPORTED */
@@ -373,60 +630,43 @@ void blufi_dh_negotiate_data_handler(uint8_t *data, int len, uint8_t **output_da
             return;
         }
 
-        psa_algorithm_t alg = PSA_ALG_FFDH;
-        psa_key_id_t private_key = 0;
         size_t public_key_len = 0;
         psa_status_t status;
 
 #if !SOC_MPI_SUPPORTED
-        /* On SoCs without hardware MPI, 3072-bit modular exponentiation takes
-         * ~12s in software.  Use the pre-generated keypair, free all possible
-         * heap before key agreement, and widen the task WDT window. */
-        bool used_pregen = false;
+        /* No bignum accelerator: agree with the 256-bit exponent. The
+         * pre-generated keypair hides G^X; Y^X is what the phone waits on. */
+        uint8_t priv[BLUFI_DH_PRIV_LEN];
+        bool have_priv = false;
+        int dh_ret;
 
         if (s_pregen_done != NULL &&
             xSemaphoreTake(s_pregen_done, pdMS_TO_TICKS(BLUFI_DH_PREGEN_WAIT_MS)) == pdTRUE) {
             xSemaphoreGive(s_pregen_done);
-            if (s_pregen_ok && s_pregen_private_key != 0) {
-                private_key = s_pregen_private_key;
-                s_pregen_private_key = 0;
+            if (s_pregen_ok && s_pregen_has_private) {
+                memcpy(priv, s_pregen_private, BLUFI_DH_PRIV_LEN);
+                mbedtls_platform_zeroize(s_pregen_private, sizeof(s_pregen_private));
+                s_pregen_has_private = false;
                 memcpy(blufi_sec->self_public_key, s_pregen_public_key, s_pregen_public_key_len);
                 public_key_len = s_pregen_public_key_len;
-                used_pregen = true;
+                have_priv = true;
                 BLUFI_INFO("Using pre-generated DH keypair");
             }
         }
 
-        if (!used_pregen) {
+        if (!have_priv) {
             BLUFI_INFO("Pre-gen unavailable, generating DH keypair inline");
             blufi_wdt_set_timeout(BLUFI_DH_HEAVY_CRYPTO_WDT_MS);
-
-            psa_key_attributes_t keygen_attr = psa_key_attributes_init();
-            psa_set_key_type(&keygen_attr, PSA_KEY_TYPE_DH_KEY_PAIR(PSA_DH_FAMILY_RFC7919));
-            psa_set_key_bits(&keygen_attr, key_bits);
-            psa_set_key_algorithm(&keygen_attr, alg);
-            psa_set_key_usage_flags(&keygen_attr, PSA_KEY_USAGE_DERIVE);
-
-            status = psa_generate_key(&keygen_attr, &private_key);
-            if (status != PSA_SUCCESS) {
-                BLUFI_ERROR("%s psa_generate_key failed %d\n", __func__, status);
-                blufi_wdt_set_timeout(CONFIG_ESP_TASK_WDT_TIMEOUT_S * 1000);
+            dh_ret = blufi_dh_generate(priv, blufi_sec->self_public_key, false);
+            blufi_wdt_set_timeout(CONFIG_ESP_TASK_WDT_TIMEOUT_S * 1000);
+            if (dh_ret != 0) {
+                BLUFI_ERROR("%s DH keygen failed %d\n", __func__, dh_ret);
                 btc_blufi_report_error(ESP_BLUFI_DH_MALLOC_ERROR);
                 blufi_cleanup_dh_param();
                 return;
             }
-            psa_reset_key_attributes(&keygen_attr);
-
-            status = psa_export_public_key(private_key, blufi_sec->self_public_key,
-                                           DH_SELF_PUB_KEY_LEN, &public_key_len);
-            if (status != PSA_SUCCESS) {
-                BLUFI_ERROR("%s psa_export_public_key failed %d\n", __func__, status);
-                blufi_wdt_set_timeout(CONFIG_ESP_TASK_WDT_TIMEOUT_S * 1000);
-                psa_destroy_key(private_key);
-                btc_blufi_report_error(ESP_BLUFI_DH_MALLOC_ERROR);
-                blufi_cleanup_dh_param();
-                return;
-            }
+            public_key_len = DH_SELF_PUB_KEY_LEN;
+            have_priv = true;
         }
 
         uint8_t peer_pub[DH_SELF_PUB_KEY_LEN];
@@ -439,12 +679,19 @@ void blufi_dh_negotiate_data_handler(uint8_t *data, int len, uint8_t **output_da
         }
 
         blufi_wdt_set_timeout(BLUFI_DH_HEAVY_CRYPTO_WDT_MS);
-        status = psa_raw_key_agreement(alg, private_key, peer_pub, pub_len,
-                                       blufi_sec->share_key, SHARE_KEY_LEN,
-                                       &blufi_sec->share_len);
-        psa_destroy_key(private_key);
+        dh_ret = blufi_dh_agree(priv, peer_pub, pub_len, blufi_sec->share_key);
+        mbedtls_platform_zeroize(priv, sizeof(priv));
+        mbedtls_platform_zeroize(peer_pub, sizeof(peer_pub));
         blufi_wdt_set_timeout(CONFIG_ESP_TASK_WDT_TIMEOUT_S * 1000);
+        if (dh_ret == 0) {
+            blufi_sec->share_len = SHARE_KEY_LEN;
+            status = PSA_SUCCESS;
+        } else {
+            status = PSA_ERROR_GENERIC_ERROR;
+        }
 #else /* SOC_MPI_SUPPORTED */
+        psa_algorithm_t alg = PSA_ALG_FFDH;
+        psa_key_id_t private_key = 0;
         {
             psa_key_attributes_t keygen_attr = psa_key_attributes_init();
             psa_set_key_type(&keygen_attr, PSA_KEY_TYPE_DH_KEY_PAIR(PSA_DH_FAMILY_RFC7919));
@@ -480,7 +727,11 @@ void blufi_dh_negotiate_data_handler(uint8_t *data, int len, uint8_t **output_da
 #endif /* !SOC_MPI_SUPPORTED */
 
         if (status != PSA_SUCCESS) {
+#if !SOC_MPI_SUPPORTED
+            BLUFI_ERROR("%s DH agree failed %d\n", __func__, status);
+#else
             BLUFI_ERROR("%s psa_raw_key_agreement failed %d\n", __func__, status);
+#endif
             btc_blufi_report_error(ESP_BLUFI_DH_PARAM_ERROR);
             return;
         }
@@ -726,7 +977,8 @@ esp_err_t blufi_security_init(void)
     blufi_sec->dec_operation = psa_cipher_operation_init();
 
 #if !SOC_MPI_SUPPORTED
-    blufi_dh_pregen_start();
+    /* Connect is after Wi-Fi/BT init. A no-op when boot pregen is still live. */
+    blufi_dh_pregen_start_with_cb(NULL);
 #endif
 
     return 0;

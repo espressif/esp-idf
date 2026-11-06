@@ -520,6 +520,13 @@ void app_main(void)
     }
     ESP_ERROR_CHECK( ret );
 
+#if !SOC_MPI_SUPPORTED
+    /* Pregen priority is above app_main, so this returns only after the
+     * modexp workspace has been taken. The exponent is drawn while the
+     * SAR ADC entropy source is enabled; Wi-Fi has not started yet. */
+    blufi_dh_pregen_start();
+#endif
+
     initialise_wifi();
 
 #if CONFIG_BT_CONTROLLER_ENABLED || !CONFIG_BT_NIMBLE_ENABLED
@@ -537,7 +544,6 @@ void app_main(void)
     }
 
 #if !SOC_MPI_SUPPORTED
-    blufi_dh_pregen_start();
     blufi_dh_pregen_wait();
     esp_blufi_adv_start();
 #endif
