@@ -2738,6 +2738,11 @@
 #define GAP_MAX_CONNECTIONS         10 // 30
 #endif
 
+/* Drop further GAP RX payload once this many bytes are queued on one connection. */
+#ifndef GAP_RX_QUEUE_HIGH_WATERMARK
+#define GAP_RX_QUEUE_HIGH_WATERMARK (L2CAP_MTU_SIZE * 10)
+#endif
+
 /* keep the raw data received from SDP server in database. */
 #ifndef SDP_RAW_DATA_INCLUDED
 #define SDP_RAW_DATA_INCLUDED       TRUE

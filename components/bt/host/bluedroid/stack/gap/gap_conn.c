@@ -1019,8 +1019,19 @@ static void gap_data_ind (UINT16 l2cap_cid, BT_HDR *p_msg)
 
     if (p_ccb->con_state == GAP_CCB_STATE_CONNECTED) {
         UINT16 msg_len = p_msg->len;
-        bool ok = fixed_queue_enqueue(p_ccb->rx_queue, p_msg, FIXED_QUEUE_MAX_TIMEOUT);
+
+        osi_mutex_global_lock();
+        if (p_ccb->rx_queue_size + msg_len > GAP_RX_QUEUE_HIGH_WATERMARK) {
+            osi_mutex_global_unlock();
+            GAP_TRACE_WARNING("gap_data_ind - rx high watermark, drop len=%u", msg_len);
+            osi_free(p_msg);
+            return;
+        }
+        osi_mutex_global_unlock();
+
+        bool ok = fixed_queue_enqueue(p_ccb->rx_queue, p_msg, 0);
         if (!ok) {
+            GAP_TRACE_WARNING("gap_data_ind - rx queue full, drop len=%u", msg_len);
             osi_free(p_msg);
             return;
         }
