@@ -309,7 +309,8 @@ esp_err_t _ss_esp_tee_sec_storage_ecdsa_sign_pbkdf2(const esp_tee_sec_storage_pb
 
 /* ---------------------------------------------- MMU HAL ------------------------------------------------- */
 
-static bool tee_ree_ext_vaddr_ok(uint32_t mmu_id, uint32_t vaddr, uint32_t len)
+/* NOTE: force-inlined so each check stays within its service */
+FORCE_INLINE_ATTR bool tee_ree_ext_vaddr_ok(uint32_t mmu_id, uint32_t vaddr, uint32_t len)
 {
     uint32_t page = mmu_hal_pages_to_bytes(mmu_id, 1);
     uint32_t map_len = ESP_ALIGN_UP(len, page);
@@ -320,7 +321,7 @@ static bool tee_ree_ext_vaddr_ok(uint32_t mmu_id, uint32_t vaddr, uint32_t len)
             !esp_tee_flash_check_vrange_in_tee_region(vaddr, map_len));
 }
 
-static bool tee_ree_ext_paddr_ok(uint32_t mmu_id, uint32_t paddr, uint32_t len)
+FORCE_INLINE_ATTR bool tee_ree_ext_paddr_ok(uint32_t mmu_id, uint32_t paddr, uint32_t len)
 {
     uint32_t page = mmu_hal_pages_to_bytes(mmu_id, 1);
     uint32_t map_len = ESP_ALIGN_UP(len, page);
@@ -354,7 +355,6 @@ void _ss_mmu_hal_unmap_region(uint32_t mmu_id, uint32_t vaddr, uint32_t len)
         ESP_LOGD(TAG, "[%s] Illegal flash access at 0x%08x", __func__, vaddr);
         return;
     }
-    ESP_FAULT_ASSERT(valid_addr);
 
     mmu_hal_unmap_region(mmu_id, vaddr, len);
 }

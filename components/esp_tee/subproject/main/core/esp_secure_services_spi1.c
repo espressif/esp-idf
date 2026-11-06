@@ -8,6 +8,7 @@
 #include "esp_err.h"
 #include "esp_log.h"
 #include "esp_fault.h"
+#include "esp_attr.h"
 
 #include "hal/spi_flash_hal.h"
 #include "hal/spi_flash_types.h"
@@ -50,34 +51,36 @@ static __attribute__((unused)) const char *TAG = "esp_tee_sec_srv_spi1";
 
 #define FLASH_ADDR_24BIT_LIMIT (1U << 24)
 
+/* NOTE: validation helpers are force-inlined so each check stays within its service */
+
 /* `limit` caps the range to what the address phase can encode, so the flash decodes the validated address */
-static bool is_flash_range_in_bounds(uint32_t paddr, uint32_t len, uint32_t limit)
+FORCE_INLINE_ATTR bool is_flash_range_in_bounds(uint32_t paddr, uint32_t len, uint32_t limit)
 {
     limit = MIN(limit, FLASH_CHIP_CAPACITY);
     return (len <= limit) && (paddr <= limit - len);
 }
 
-static bool is_flash_addr_writable(uint32_t paddr, uint32_t len, uint32_t limit)
+FORCE_INLINE_ATTR bool is_flash_addr_writable(uint32_t paddr, uint32_t len, uint32_t limit)
 {
     return is_flash_range_in_bounds(paddr, len, limit) &&
            !esp_tee_flash_check_prange_in_tee_region(paddr, len) &&
            !esp_tee_flash_check_prange_write_protected(paddr, len);
 }
 
-static bool is_flash_addr_readable(uint32_t paddr, uint32_t len, uint32_t limit)
+FORCE_INLINE_ATTR bool is_flash_addr_readable(uint32_t paddr, uint32_t len, uint32_t limit)
 {
     return is_flash_range_in_bounds(paddr, len, limit) &&
            !esp_tee_flash_check_prange_in_tee_region(paddr, len);
 }
 
 /* Validate the whole aligned sector/block that the erase opcode clears */
-static bool is_flash_erase_ok(uint32_t paddr, uint32_t size, uint32_t limit)
+FORCE_INLINE_ATTR bool is_flash_erase_ok(uint32_t paddr, uint32_t size, uint32_t limit)
 {
     return is_flash_addr_writable(paddr & ~(size - 1U), size, limit);
 }
 
 /* NOTE: only a configured read opcode with a matching address phase gets a non-zero limit */
-static uint32_t spi1_read_addr_limit(void)
+FORCE_INLINE_ATTR uint32_t spi1_read_addr_limit(void)
 {
     uint32_t opcode_bitlen;
 
@@ -117,7 +120,7 @@ static uint32_t spi1_read_addr_limit(void)
 }
 
 /* Allowlist of REE flash opcodes, each bound to its address width and the flash range it touches */
-static bool is_common_trans_ok(const spi_flash_trans_t *trans)
+FORCE_INLINE_ATTR bool is_common_trans_ok(const spi_flash_trans_t *trans)
 {
     /* NOTE: keep transfers within the 64-byte SPI1 data buffer */
     if (trans->mosi_len > SPI_FLASH_HAL_MAX_WRITE_BYTES || trans->miso_len > SPI_FLASH_HAL_MAX_READ_BYTES) {
@@ -134,8 +137,10 @@ static bool is_common_trans_ok(const spi_flash_trans_t *trans)
         return false;
     }
 
-    const uint32_t addr = trans->address;
+    uint32_t addr = trans->address;
     uint32_t addr_bitlen = 24U;
+    uint32_t len;
+    bool is_write = true;
 
     switch (trans->command) {
     case CMD_WREN:                  /* 0x06 - write enable (set the write-enable latch) */
@@ -154,29 +159,49 @@ static bool is_common_trans_ok(const spi_flash_trans_t *trans)
         if (trans->mosi_len != 0 || trans->dummy_bitlen != 0) {
             return false;
         }
-        return trans->address_bitlen == 24U &&
-               is_flash_addr_readable(addr, MAX(1U, trans->miso_len), FLASH_ADDR_24BIT_LIMIT);
-    case CMD_PROGRAM_PAGE:          /* 0x02 - page program */
-        return trans->address_bitlen == 24U &&
-               is_flash_addr_writable(addr, MAX(1U, trans->mosi_len), FLASH_ADDR_24BIT_LIMIT);
+        len = MAX(1U, trans->miso_len);
+        is_write = false;
+        break;
     case CMD_PROGRAM_PAGE_4B:       /* 0x12 - page program, 4-byte address */
-        return trans->address_bitlen == 32U &&
-               is_flash_addr_writable(addr, MAX(1U, trans->mosi_len), UINT32_MAX);
+        addr_bitlen = 32U;
+    /* fall through */
+    case CMD_PROGRAM_PAGE:          /* 0x02 - page program */
+        len = MAX(1U, trans->mosi_len);
+        break;
     case CMD_SECTOR_ERASE_4B:       /* 0x21 - 4KB sector erase, 4-byte address */
         addr_bitlen = 32U;
     /* fall through */
     case CMD_SECTOR_ERASE:          /* 0x20 - 4KB sector erase */
-        return trans->address_bitlen == addr_bitlen &&
-               is_flash_erase_ok(addr, FLASH_SECTOR_SIZE, (addr_bitlen == 24U) ? FLASH_ADDR_24BIT_LIMIT : UINT32_MAX);
+        len = FLASH_SECTOR_SIZE;
+        addr &= ~(len - 1U);
+        break;
     case CMD_LARGE_BLOCK_ERASE_4B:  /* 0xDC - 64KB block erase, 4-byte address */
         addr_bitlen = 32U;
     /* fall through */
     case CMD_LARGE_BLOCK_ERASE:     /* 0xD8 - 64KB block erase */
-        return trans->address_bitlen == addr_bitlen &&
-               is_flash_erase_ok(addr, FLASH_BLOCK_SIZE, (addr_bitlen == 24U) ? FLASH_ADDR_24BIT_LIMIT : UINT32_MAX);
+        len = FLASH_BLOCK_SIZE;
+        addr &= ~(len - 1U);
+        break;
     default:
         return false;
     }
+
+    if (trans->address_bitlen != addr_bitlen) {
+        return false;
+    }
+
+    const uint32_t limit = (addr_bitlen == 24U) ? FLASH_ADDR_24BIT_LIMIT : UINT32_MAX;
+    return is_flash_range_in_bounds(addr, len, limit) &&
+           !esp_tee_flash_check_prange_in_tee_region(addr, len) &&
+           !(is_write && esp_tee_flash_check_prange_write_protected(addr, len));
+}
+
+/* NOTE: the suspend/resume services send these opcodes as-is, so pin them to the suspend/resume commands */
+FORCE_INLINE_ATTR bool is_sus_conf_ok(const spi_flash_sus_cmd_conf *sus_conf)
+{
+    return (sus_conf->sus_cmd == CMD_SUSPEND || sus_conf->sus_cmd == 0xB0) &&   /* 0x75 / 0xB0 - program/erase suspend */
+           (sus_conf->res_cmd == CMD_RESUME || sus_conf->res_cmd == 0x30) &&    /* 0x7A / 0x30 - program/erase resume */
+           (sus_conf->cmd_rdsr == CMD_RDSR || sus_conf->cmd_rdsr == CMD_RDSR2);
 }
 
 extern void spi_flash_hal_poll_cmd_done(spi_flash_host_inst_t *host);
@@ -189,6 +214,7 @@ static const spi_flash_host_driver_t tee_host_driver = {
     .configure_host_io_mode = spi_flash_hal_configure_host_io_mode,
 };
 
+/* NOTE: callers match the result against the snapshot address */
 static spi_flash_host_inst_t *tee_own_host(const spi_flash_host_inst_t *host, spi_flash_hal_context_t *snap)
 {
     if (!esp_tee_buf_in_ree(host, sizeof(spi_flash_hal_context_t))) {
@@ -215,10 +241,9 @@ uint32_t _ss_spi_flash_hal_check_status(spi_flash_host_inst_t *host)
 {
     spi_flash_hal_context_t host_snap;
     spi_flash_host_inst_t *tee_host = tee_own_host(host, &host_snap);
-    if (tee_host == NULL) {
+    if (tee_host != &host_snap.inst) {
         return 0;
     }
-    ESP_FAULT_ASSERT(tee_host != NULL);
 
     return spi_flash_hal_check_status(tee_host);
 }
@@ -227,10 +252,9 @@ esp_err_t _ss_spi_flash_hal_common_command(spi_flash_host_inst_t *host, spi_flas
 {
     spi_flash_hal_context_t host_snap;
     spi_flash_host_inst_t *tee_host = tee_own_host(host, &host_snap);
-    if (tee_host == NULL) {
+    if (tee_host != &host_snap.inst) {
         return ESP_ERR_INVALID_ARG;
     }
-    ESP_FAULT_ASSERT(tee_host != NULL);
 
     if (!esp_tee_buf_in_ree(trans, sizeof(spi_flash_trans_t))) {
         return ESP_ERR_INVALID_ARG;
@@ -252,10 +276,9 @@ esp_err_t _ss_spi_flash_hal_device_config(spi_flash_host_inst_t *host)
 {
     spi_flash_hal_context_t host_snap;
     spi_flash_host_inst_t *tee_host = tee_own_host(host, &host_snap);
-    if (tee_host == NULL) {
+    if (tee_host != &host_snap.inst) {
         return ESP_ERR_INVALID_ARG;
     }
-    ESP_FAULT_ASSERT(tee_host != NULL);
 
     return spi_flash_hal_device_config(tee_host);
 }
@@ -264,10 +287,9 @@ void _ss_spi_flash_hal_erase_block(spi_flash_host_inst_t *host, uint32_t start_a
 {
     spi_flash_hal_context_t host_snap;
     spi_flash_host_inst_t *tee_host = tee_own_host(host, &host_snap);
-    if (tee_host == NULL) {
+    if (tee_host != &host_snap.inst) {
         return;
     }
-    ESP_FAULT_ASSERT(tee_host != NULL);
 
     bool valid_addr = is_flash_erase_ok(start_address, FLASH_BLOCK_SIZE, FLASH_ADDR_24BIT_LIMIT);
     if (!valid_addr) {
@@ -283,10 +305,9 @@ void _ss_spi_flash_hal_erase_sector(spi_flash_host_inst_t *host, uint32_t start_
 {
     spi_flash_hal_context_t host_snap;
     spi_flash_host_inst_t *tee_host = tee_own_host(host, &host_snap);
-    if (tee_host == NULL) {
+    if (tee_host != &host_snap.inst) {
         return;
     }
-    ESP_FAULT_ASSERT(tee_host != NULL);
 
     bool valid_addr = is_flash_erase_ok(start_address, FLASH_SECTOR_SIZE, FLASH_ADDR_24BIT_LIMIT);
     if (!valid_addr) {
@@ -302,10 +323,9 @@ void _ss_spi_flash_hal_program_page(spi_flash_host_inst_t *host, const void *buf
 {
     spi_flash_hal_context_t host_snap;
     spi_flash_host_inst_t *tee_host = tee_own_host(host, &host_snap);
-    if (tee_host == NULL) {
+    if (tee_host != &host_snap.inst) {
         return;
     }
-    ESP_FAULT_ASSERT(tee_host != NULL);
 
     bool valid_addr = (length <= SPI_FLASH_HAL_MAX_WRITE_BYTES &&
                        is_flash_addr_writable(address, length, FLASH_ADDR_24BIT_LIMIT) &&
@@ -323,10 +343,9 @@ esp_err_t _ss_spi_flash_hal_read(spi_flash_host_inst_t *host, void *buffer, uint
 {
     spi_flash_hal_context_t host_snap;
     spi_flash_host_inst_t *tee_host = tee_own_host(host, &host_snap);
-    if (tee_host == NULL) {
+    if (tee_host != &host_snap.inst) {
         return ESP_ERR_INVALID_ARG;
     }
-    ESP_FAULT_ASSERT(tee_host != NULL);
 
     uint32_t addr_limit = spi1_read_addr_limit();
     bool valid_addr = (addr_limit != 0 && read_len <= SPI_FLASH_HAL_MAX_READ_BYTES &&
@@ -345,10 +364,9 @@ void _ss_spi_flash_hal_resume(spi_flash_host_inst_t *host)
 {
     spi_flash_hal_context_t host_snap;
     spi_flash_host_inst_t *tee_host = tee_own_host(host, &host_snap);
-    if (tee_host == NULL) {
+    if (tee_host != &host_snap.inst) {
         return;
     }
-    ESP_FAULT_ASSERT(tee_host != NULL);
 
     spi_flash_hal_resume(tee_host);
 }
@@ -357,10 +375,9 @@ esp_err_t _ss_spi_flash_hal_set_write_protect(spi_flash_host_inst_t *host, bool 
 {
     spi_flash_hal_context_t host_snap;
     spi_flash_host_inst_t *tee_host = tee_own_host(host, &host_snap);
-    if (tee_host == NULL) {
+    if (tee_host != &host_snap.inst) {
         return ESP_ERR_INVALID_ARG;
     }
-    ESP_FAULT_ASSERT(tee_host != NULL);
 
     return spi_flash_hal_set_write_protect(tee_host, wp);
 }
@@ -369,16 +386,23 @@ esp_err_t _ss_spi_flash_hal_setup_read_suspend(spi_flash_host_inst_t *host, cons
 {
     spi_flash_hal_context_t host_snap;
     spi_flash_host_inst_t *tee_host = tee_own_host(host, &host_snap);
-    if (tee_host == NULL) {
+    if (tee_host != &host_snap.inst) {
         return ESP_ERR_INVALID_ARG;
     }
-    ESP_FAULT_ASSERT(tee_host != NULL);
 
     if (!esp_tee_buf_in_ree(sus_conf, sizeof(spi_flash_sus_cmd_conf))) {
         return ESP_ERR_INVALID_ARG;
     }
 
     const spi_flash_sus_cmd_conf sus_snap = *sus_conf;
+
+    bool valid_conf = is_sus_conf_ok(&sus_snap);
+    if (!valid_conf) {
+        ESP_LOGD(TAG, "[%s] Illegal flash suspend configuration from REE", __func__);
+        return ESP_ERR_INVALID_ARG;
+    }
+    ESP_FAULT_ASSERT(valid_conf);
+
     return spi_flash_hal_setup_read_suspend(tee_host, &sus_snap);
 }
 
@@ -386,10 +410,9 @@ bool _ss_spi_flash_hal_supports_direct_read(spi_flash_host_inst_t *host, const v
 {
     spi_flash_hal_context_t host_snap;
     spi_flash_host_inst_t *tee_host = tee_own_host(host, &host_snap);
-    if (tee_host == NULL) {
+    if (tee_host != &host_snap.inst) {
         return false;
     }
-    ESP_FAULT_ASSERT(tee_host != NULL);
 
     if (!esp_tee_ptr_in_ree(p)) {
         return false;
@@ -402,10 +425,9 @@ bool _ss_spi_flash_hal_supports_direct_write(spi_flash_host_inst_t *host, const 
 {
     spi_flash_hal_context_t host_snap;
     spi_flash_host_inst_t *tee_host = tee_own_host(host, &host_snap);
-    if (tee_host == NULL) {
+    if (tee_host != &host_snap.inst) {
         return false;
     }
-    ESP_FAULT_ASSERT(tee_host != NULL);
 
     if (!esp_tee_ptr_in_ree(p)) {
         return false;
@@ -418,10 +440,9 @@ void _ss_spi_flash_hal_suspend(spi_flash_host_inst_t *host)
 {
     spi_flash_hal_context_t host_snap;
     spi_flash_host_inst_t *tee_host = tee_own_host(host, &host_snap);
-    if (tee_host == NULL) {
+    if (tee_host != &host_snap.inst) {
         return;
     }
-    ESP_FAULT_ASSERT(tee_host != NULL);
 
     spi_flash_hal_suspend(tee_host);
 }
@@ -432,7 +453,7 @@ extern uint32_t bootloader_flash_execute_command_common(uint8_t command, uint32_
                                                         uint8_t dummy_len, uint8_t mosi_len, uint32_t mosi_data,
                                                         uint8_t miso_len);
 
-static inline bool is_bootloader_cmd_allowed(uint8_t command)
+FORCE_INLINE_ATTR bool is_bootloader_cmd_allowed(uint8_t command)
 {
     switch (command) {
     case CMD_WRSR3:      /* 0x11 - write status register 3 */
@@ -474,10 +495,9 @@ esp_err_t _ss_memspi_host_flush_cache(spi_flash_host_inst_t *host, uint32_t addr
 {
     spi_flash_hal_context_t host_snap;
     spi_flash_host_inst_t *tee_host = tee_own_host(host, &host_snap);
-    if (tee_host == NULL) {
+    if (tee_host != &host_snap.inst) {
         return ESP_ERR_INVALID_ARG;
     }
-    ESP_FAULT_ASSERT(tee_host != NULL);
 
     if (esp_tee_flash_check_prange_in_tee_region(addr, size)) {
         return ESP_ERR_INVALID_ARG;
@@ -495,10 +515,9 @@ esp_err_t _ss_spi_flash_chip_generic_config_host_io_mode(esp_flash_t *chip, uint
     spi_flash_host_inst_t *const host = chip->host;
     spi_flash_hal_context_t host_snap;
     spi_flash_host_inst_t *tee_host = tee_own_host(host, &host_snap);
-    if (tee_host == NULL) {
+    if (tee_host != &host_snap.inst) {
         return ESP_ERR_INVALID_ARG;
     }
-    ESP_FAULT_ASSERT(tee_host != NULL);
 
     esp_flash_t chip_snap = {
         .host          = tee_host,
