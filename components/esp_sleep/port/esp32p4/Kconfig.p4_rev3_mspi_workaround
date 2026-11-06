@@ -7,4 +7,4 @@ config P4_REV3_MSPI_WORKAROUND_SIZE
     hex
     depends on IDF_TARGET_ESP32P4
     default 0x100 if ESP32P4_REV_MIN_300
-    default 0
+    default 0x0

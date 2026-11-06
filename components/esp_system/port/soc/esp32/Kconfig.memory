@@ -24,7 +24,7 @@ menu "Memory"
     config ESP32_FIXED_STATIC_RAM_SIZE
         hex "Fixed Static RAM size"
         default 0x1E000
-        range 0 0x2c200
+        range 0x0 0x2c200
         depends on ESP32_USE_FIXED_STATIC_RAM_SIZE
         help
             RAM size dedicated for static variables (.data & .bss sections).
