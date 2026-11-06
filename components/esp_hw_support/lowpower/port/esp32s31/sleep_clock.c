@@ -86,6 +86,7 @@ esp_err_t sleep_clock_modem_retention_init(void *arg)
         [3] = { .config = REGDMA_LINK_WRITE_INIT(REGDMA_CLOCK_ICG_LINK(0), HP_SYS_CLKRST_REF_160M_CTRL0_REG, HP_SYS_CLKRST_REG_REF_160M_CLK_EN, HP_SYS_CLKRST_REG_REF_160M_CLK_EN_M, 1, 0), .owner = ENTRY(1)},
         [4] = { .config = REGDMA_LINK_WRITE_INIT(REGDMA_CLOCK_ICG_LINK(1), HP_SYS_CLKRST_MODEM_CONF_REG, 0x15, 0xff, 1, 0), .owner = ENTRY(1)},
         [5] = { .config = REGDMA_LINK_WRITE_INIT(REGDMA_CLOCK_ICG_LINK(2), HP_SYS_CLKRST_MODEM_CONF_REG, 0x1d, 0xff, 1, 0), .owner = ENTRY(1)},
+        [6] = { .config = REGDMA_LINK_WRITE_INIT(REGDMA_CLOCK_ICG_LINK(3), HP_SYS_CLKRST_MODEM_CONF_REG, 0x3d, 0xff, 1, 0), .owner = ENTRY(1)},
     };
 
     esp_err_t err = sleep_retention_entries_create(modem_regs_retention, ARRAY_SIZE(modem_regs_retention), REGDMA_LINK_PRI_MODEM_CLK, SLEEP_RETENTION_MODULE_CLOCK_MODEM);
