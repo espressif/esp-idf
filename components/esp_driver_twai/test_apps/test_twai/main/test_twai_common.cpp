@@ -680,6 +680,100 @@ TEST_CASE("twai tx_wait_all_done thread safe", "[twai]")
     TEST_ESP_OK(twai_node_delete(node_hdl));
 }
 
+#define TEST_TWAI_CONCURRENT_TX_FRAMES 200
+
+typedef struct {
+    twai_node_handle_t node;
+    twai_frame_t *frames;
+    size_t frame_count;
+    atomic_int *tasks_finished;
+} concurrent_tx_task_args_t;
+
+static void test_concurrent_tx_task(void *arg)
+{
+    concurrent_tx_task_args_t *args = (concurrent_tx_task_args_t *)arg;
+    for (size_t i = 0; i < args->frame_count; i++) {
+        TEST_ESP_OK(twai_node_transmit(args->node, &args->frames[i], -1));
+    }
+    atomic_fetch_add(args->tasks_finished, 1);
+    vTaskDelete(NULL);
+}
+
+static IRAM_ATTR bool test_concurrent_tx_done_cb(twai_node_handle_t handle, const twai_tx_done_event_data_t *edata, void *user_ctx)
+{
+    atomic_int *tx_done = (atomic_int *)user_ctx;
+    if (edata->is_tx_success) {
+        atomic_fetch_add(tx_done, 1);
+    }
+    return false;
+}
+
+TEST_CASE("twai concurrent transmit does not lose TX handoff (loopback)", "[twai]")
+{
+    twai_node_handle_t node_hdl;
+    twai_onchip_node_config_t node_config = {};
+    node_config.io_cfg.tx = TEST_TX_GPIO;
+    node_config.io_cfg.rx = TEST_TX_GPIO;
+    node_config.io_cfg.quanta_clk_out = GPIO_NUM_NC;
+    node_config.io_cfg.bus_off_indicator = GPIO_NUM_NC;
+    node_config.bit_timing.bitrate = 1000000;
+    node_config.tx_queue_depth = 32;
+    node_config.flags.enable_self_test = true;
+    node_config.flags.enable_loopback = true;
+
+    TEST_ESP_OK(twai_new_node_onchip(&node_config, &node_hdl));
+
+    atomic_int tx_done = 0;
+    twai_event_callbacks_t user_cbs = {};
+    user_cbs.on_tx_done = test_concurrent_tx_done_cb;
+    TEST_ESP_OK(twai_node_register_event_callbacks(node_hdl, &user_cbs, &tx_done));
+    TEST_ESP_OK(twai_node_enable(node_hdl));
+
+    static twai_frame_t frames[2][TEST_TWAI_CONCURRENT_TX_FRAMES];
+    static uint8_t payload[2][TEST_TWAI_CONCURRENT_TX_FRAMES];
+    memset(frames, 0, sizeof(frames));
+    memset(payload, 0, sizeof(payload));
+    for (size_t task = 0; task < 2; task++) {
+        for (size_t i = 0; i < TEST_TWAI_CONCURRENT_TX_FRAMES; i++) {
+            frames[task][i].header.id = 0x100 + task;
+            frames[task][i].header.dlc = 1;
+            frames[task][i].buffer = &payload[task][i];
+            frames[task][i].buffer_len = 1;
+            payload[task][i] = i;
+        }
+    }
+
+    atomic_int tasks_finished = 0;
+    concurrent_tx_task_args_t args[2] = {
+        {
+            .node = node_hdl,
+            .frames = frames[0],
+            .frame_count = TEST_TWAI_CONCURRENT_TX_FRAMES,
+            .tasks_finished = &tasks_finished,
+        },
+        {
+            .node = node_hdl,
+            .frames = frames[1],
+            .frame_count = TEST_TWAI_CONCURRENT_TX_FRAMES,
+            .tasks_finished = &tasks_finished,
+        },
+    };
+
+    TEST_ASSERT_EQUAL(pdPASS, xTaskCreate(test_concurrent_tx_task, "twai_tx_0", 4096, &args[0], 2, NULL));
+    TEST_ASSERT_EQUAL(pdPASS, xTaskCreate(test_concurrent_tx_task, "twai_tx_1", 4096, &args[1], 2, NULL));
+
+    const TickType_t start = xTaskGetTickCount();
+    while ((atomic_load(&tasks_finished) != 2) && ((xTaskGetTickCount() - start) < pdMS_TO_TICKS(5000))) {
+        vTaskDelay(1);
+    }
+    TEST_ASSERT_EQUAL(2, atomic_load(&tasks_finished));
+    TEST_ESP_OK(twai_node_transmit_wait_all_done(node_hdl, 5000));
+    TEST_ASSERT_EQUAL(2 * TEST_TWAI_CONCURRENT_TX_FRAMES, atomic_load(&tx_done));
+
+    TEST_ESP_OK(twai_node_disable(node_hdl));
+    TEST_ESP_OK(twai_node_delete(node_hdl));
+}
+
 // Test data for ISR send functionality
 typedef struct {
     twai_node_handle_t node;
