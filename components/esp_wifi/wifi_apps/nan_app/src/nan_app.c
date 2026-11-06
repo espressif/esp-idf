@@ -255,12 +255,22 @@ static void nan_app_clear_one_peer_tks(const uint8_t *peer_nmi)
                                   NULL, 0, NAN_KEY_NM_TK);
 
 #ifdef CONFIG_ESP_WIFI_NAN_SECURITY
-    struct ndl_info *ndl = nan_find_ndl(0, (uint8_t *)peer_nmi);
-    uint8_t *key_addr = (uint8_t *)peer_nmi;
-
-    if (ndl) {
-        if (memcmp(ndl->peer_ndi, zero_mac, 6) != 0) {
-            key_addr = ndl->peer_ndi;
+    /* Clean up every NDL of this peer: delete firmware keys (ND-TK/GTK/
+     * IGTK/BIGTK), wipe local key material, and clear the SA if this NDL
+     * owns it. nan_find_ndl() returns only the first matching slot, so with
+     * one open + one secured NDP to the same peer the first match may not be
+     * the SA owner -- iterate all slots so both the keys and the SA are
+     * cleaned up for every NDL of the peer, keeping the strength gate
+     * consistent with the firmware key state. nan_sec_ndp_clear_sa() is a
+     * no-op for a non-owner ndp_id, so extra calls are harmless. */
+    for (int j = 0; j < ESP_WIFI_NAN_DATAPATH_MAX_PEERS; j++) {
+        struct ndl_info *n = &s_nan_ctx.ndl[j];
+        if (n->ndp_id == 0 || memcmp(n->peer_nmi, peer_nmi, MACADDR_LEN) != 0) {
+            continue;
+        }
+        uint8_t *key_addr = (uint8_t *)peer_nmi;
+        if (memcmp(n->peer_ndi, zero_mac, 6) != 0) {
+            key_addr = n->peer_ndi;
         }
 
         esp_wifi_set_nan_key_internal(NAN_WIFI_WPA_ALG_CCMP,
@@ -272,61 +282,47 @@ static void nan_app_clear_one_peer_tks(const uint8_t *peer_nmi)
          * state. The TX GTK keyed on the local NDI is released by the blob
          * when the NDI/interface is torn down. */
         esp_wifi_set_nan_key_internal(NAN_WIFI_WPA_ALG_CCMP,
-                                      key_addr, ndl->gtk_keyid, 0,
+                                      key_addr, n->gtk_keyid, 0,
                                       key_rsc, sizeof(key_rsc),
                                       NULL, 0, NAN_KEY_ND_GTK);
 
         /* Drop the peer's RX IGTK/BIGTK (BIP-CMAC-128, installed against the
          * peer NMI at NDP confirm) so no stale BIP keys linger in the blob. */
-        if (ndl->igtk_set) {
+        if (n->igtk_set) {
             esp_wifi_set_nan_key_internal(NAN_WIFI_WPA_ALG_BIP_CMAC_128,
-                                          (uint8_t *)peer_nmi, ndl->igtk_keyid, 0,
+                                          (uint8_t *)peer_nmi, n->igtk_keyid, 0,
                                           key_rsc, 6,
                                           NULL, 0, NAN_KEY_ND_IGTK);
         }
-        if (ndl->bigtk_set) {
+        if (n->bigtk_set) {
             esp_wifi_set_nan_key_internal(NAN_WIFI_WPA_ALG_BIP_CMAC_128,
-                                          (uint8_t *)peer_nmi, ndl->bigtk_keyid, 0,
+                                          (uint8_t *)peer_nmi, n->bigtk_keyid, 0,
                                           key_rsc, 6,
                                           NULL, 0, NAN_KEY_ND_BIGTK);
         }
 
-        forced_memzero(ndl->nd_tk, sizeof(ndl->nd_tk));
-        forced_memzero(ndl->nd_kck, sizeof(ndl->nd_kck));
-        forced_memzero(ndl->nd_kek, sizeof(ndl->nd_kek));
-        forced_memzero(ndl->gtk, sizeof(ndl->gtk));
-        forced_memzero(ndl->own_gtk, sizeof(ndl->own_gtk));
-        forced_memzero(ndl->igtk, sizeof(ndl->igtk));
-        forced_memzero(ndl->bigtk, sizeof(ndl->bigtk));
-        ndl->ptk_set = 0;
-        ndl->tk_len = 0;
-        ndl->kck_len = 0;
-        ndl->kek_len = 0;
-        ndl->gtk_set = 0;
-        ndl->own_gtk_set = 0;
-        ndl->gtk_len = 0;
-        ndl->own_gtk_len = 0;
-        ndl->igtk_set = 0;
-        ndl->bigtk_set = 0;
-        ndl->igtk_len = 0;
-        ndl->bigtk_len = 0;
+        forced_memzero(n->nd_tk, sizeof(n->nd_tk));
+        forced_memzero(n->nd_kck, sizeof(n->nd_kck));
+        forced_memzero(n->nd_kek, sizeof(n->nd_kek));
+        forced_memzero(n->gtk, sizeof(n->gtk));
+        forced_memzero(n->own_gtk, sizeof(n->own_gtk));
+        forced_memzero(n->igtk, sizeof(n->igtk));
+        forced_memzero(n->bigtk, sizeof(n->bigtk));
+        n->ptk_set = 0;
+        n->tk_len = 0;
+        n->kck_len = 0;
+        n->kek_len = 0;
+        n->gtk_set = 0;
+        n->own_gtk_set = 0;
+        n->gtk_len = 0;
+        n->own_gtk_len = 0;
+        n->igtk_set = 0;
+        n->bigtk_set = 0;
+        n->igtk_len = 0;
+        n->bigtk_len = 0;
 
-        /* Clear the SA if any NDL for this peer owns it. nan_find_ndl()
-         * returns only the first matching slot, so with one open + one
-         * secured NDP to the same peer the first match may not be the SA
-         * owner — iterate all slots so the owning NDP's entry is cleared
-         * regardless of slot order. nan_sec_ndp_clear_sa() is a no-op when
-         * the ndp_id is not the owner, so extra calls are harmless. */
-        for (int j = 0; j < ESP_WIFI_NAN_DATAPATH_MAX_PEERS; j++) {
-            struct ndl_info *n = &s_nan_ctx.ndl[j];
-            if (n->ndp_id != 0 && memcmp(n->peer_nmi, peer_nmi, MACADDR_LEN) == 0) {
-                nan_sec_ndp_clear_sa(n->ndp_id);
-            }
-        }
+        nan_sec_ndp_clear_sa(n->ndp_id);
     }
-    /* No else-branch SA clear: with ownership tracking, a peer with no NDL
-     * has no committed SA to clear, and clearing by address would risk wiping
-     * another NDP's entry. */
 
     /* Fallback when no NDL slot tracks peer_ndi yet. */
     esp_wifi_set_nan_key_internal(NAN_WIFI_WPA_ALG_CCMP,
