@@ -376,13 +376,6 @@ const pmu_hp_system_retention_param_t * pmu_hp_system_retention_param_default(pm
 
 
 /** LP system default parameter */
-
-#if CONFIG_ESP_SYSTEM_RTC_EXT_XTAL
-# define PMU_SLOW_CLK_USE_EXT_XTAL  (1)
-#else
-# define PMU_SLOW_CLK_USE_EXT_XTAL  (0)
-#endif
-
 /*
   vdd_io_mode :
     0: normal mode;
@@ -401,7 +394,7 @@ const pmu_hp_system_retention_param_t * pmu_hp_system_retention_param_default(pm
     }, \
     .clk_power = {              \
         .xpd_lppll      = 0,    \
-        .xpd_xtal32k    = PMU_SLOW_CLK_USE_EXT_XTAL,    \
+        .xpd_xtal32k    = 1,    \
         .xpd_rc32k      = 0,    \
         .xpd_fosc       = 1,    \
         .pd_osc         = 0     \
