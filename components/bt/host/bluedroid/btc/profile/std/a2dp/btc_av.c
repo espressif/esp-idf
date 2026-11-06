@@ -274,6 +274,9 @@ static void btc_report_connection_state(esp_a2d_connection_state_t state, bt_bda
     param.conn_stat.state = state;
     if (bd_addr) {
         memcpy(param.conn_stat.remote_bda, bd_addr, sizeof(esp_bd_addr_t));
+        if (memcmp(bd_addr, &(btc_av_cb.peer_bda), sizeof(bt_bdaddr_t)) == 0) {
+            param.conn_stat.conn_hdl = btc_av_cb.bta_handle;
+        }
     }
     if (state == ESP_A2D_CONNECTION_STATE_DISCONNECTED) {
         param.conn_stat.disc_rsn = (disc_rsn == 0) ? ESP_A2D_DISC_RSN_NORMAL :
@@ -291,6 +294,9 @@ static void btc_report_audio_state(esp_a2d_audio_state_t state, bt_bdaddr_t *bd_
     param.audio_stat.state = state;
     if (bd_addr) {
         memcpy(param.audio_stat.remote_bda, bd_addr, sizeof(esp_bd_addr_t));
+        if (memcmp(bd_addr, &(btc_av_cb.peer_bda), sizeof(bt_bdaddr_t)) == 0) {
+            param.audio_stat.conn_hdl = btc_av_cb.bta_handle;
+        }
     }
     btc_a2d_cb_to_app(ESP_A2D_AUDIO_STATE_EVT, &param);
 }
@@ -585,6 +591,37 @@ static BOOLEAN btc_av_state_opening_handler(btc_sm_event_t event, void *p_data)
 }
 
 
+#if BTC_A2DP_AUDIO_STATS
+static void btc_av_audio_stats_post(bool reset)
+{
+#if (BTC_AV_SRC_INCLUDED == TRUE)
+    if (btc_av_cb.peer_sep == AVDT_TSEP_SNK) {
+        if (reset) {
+            btc_a2dp_source_audio_stats_reset(btc_av_cb.bta_handle);
+        } else {
+            btc_a2dp_source_audio_stats_stop(btc_av_cb.bta_handle);
+        }
+        return;
+    }
+#endif
+#if (BTC_AV_SINK_INCLUDED == TRUE)
+    if (btc_av_cb.peer_sep == AVDT_TSEP_SRC) {
+        if (reset) {
+            btc_a2dp_sink_audio_stats_reset(btc_av_cb.bta_handle);
+        } else {
+            btc_a2dp_sink_audio_stats_stop(btc_av_cb.bta_handle);
+        }
+        return;
+    }
+#endif
+    if (reset) {
+        btc_a2dp_audio_stats_reset(btc_av_cb.bta_handle);
+    } else {
+        btc_a2dp_audio_stats_stop(btc_av_cb.bta_handle);
+    }
+}
+#endif /* BTC_A2DP_AUDIO_STATS */
+
 /*****************************************************************************
 **
 ** Function        btc_av_state_closing_handler
@@ -606,6 +643,9 @@ static BOOLEAN btc_av_state_closing_handler(btc_sm_event_t event, void *p_data)
 
     switch (event) {
     case BTC_SM_ENTER_EVT:
+#if BTC_A2DP_AUDIO_STATS
+        btc_av_audio_stats_post(false);
+#endif
 #if BTC_AV_SRC_INCLUDED
         if (btc_av_cb.peer_sep == AVDT_TSEP_SNK) {
             /* immediately stop transmission of frames */
@@ -784,6 +824,9 @@ static BOOLEAN btc_av_state_opened_handler(btc_sm_event_t event, void *p_data)
     case BTA_AV_CLOSE_EVT: {
         /* avdtp link is closed */
         btc_a2dp_on_stopped(NULL);
+#if BTC_A2DP_AUDIO_STATS
+        btc_a2dp_audio_stats_stop(btc_av_cb.bta_handle);
+#endif
         tBTA_AV_CLOSE *close = (tBTA_AV_CLOSE *)p_data;
         /* inform the application that we are disconnected */
         btc_report_connection_state(ESP_A2D_CONNECTION_STATE_DISCONNECTED, &(btc_av_cb.peer_bda),
@@ -877,6 +920,9 @@ static BOOLEAN btc_av_state_started_handler(btc_sm_event_t event, void *p_data)
         /* we are again in started state, clear any remote suspend flags */
         btc_av_cb.flags &= ~BTC_AV_FLAG_REMOTE_SUSPEND;
 
+#if BTC_A2DP_AUDIO_STATS
+        btc_av_audio_stats_post(true);
+#endif
         btc_report_audio_state(ESP_A2D_AUDIO_STATE_STARTED, &(btc_av_cb.peer_bda));
 
         /* increase the a2dp consumer task priority temporarily when start
@@ -959,6 +1005,10 @@ static BOOLEAN btc_av_state_started_handler(btc_sm_event_t event, void *p_data)
             return FALSE;
         }
 
+#if BTC_A2DP_AUDIO_STATS
+        btc_a2dp_audio_stats_stop(btc_av_cb.bta_handle);
+#endif
+
         if (p_av->suspend.initiator != TRUE) {
             /* remote suspend, notify HAL and await audioflinger to
                suspend/stop stream */
@@ -987,6 +1037,9 @@ static BOOLEAN btc_av_state_started_handler(btc_sm_event_t event, void *p_data)
 
         /* if stop was successful, change state to open */
         if (p_av->suspend.status == BTA_AV_SUCCESS) {
+#if BTC_A2DP_AUDIO_STATS
+            btc_a2dp_audio_stats_stop(btc_av_cb.bta_handle);
+#endif
             btc_sm_change_state(btc_av_cb.sm_handle, BTC_AV_STATE_OPENED);
         }
         break;
@@ -996,6 +1049,9 @@ static BOOLEAN btc_av_state_started_handler(btc_sm_event_t event, void *p_data)
 
         /* avdtp link is closed */
         btc_a2dp_on_stopped(NULL);
+#if BTC_A2DP_AUDIO_STATS
+        btc_a2dp_audio_stats_stop(btc_av_cb.bta_handle);
+#endif
         tBTA_AV_CLOSE *close = (tBTA_AV_CLOSE *)p_data;
         /* inform the application that we are disconnected */
         btc_report_connection_state(ESP_A2D_CONNECTION_STATE_DISCONNECTED, &(btc_av_cb.peer_bda),
@@ -1156,6 +1212,7 @@ static bt_status_t btc_av_init(int service_id)
             btc_dm_enable_service(BTA_A2DP_SOURCE_SERVICE_ID);
         }
 
+        btc_a2dp_audio_stats_init();
         btc_a2dp_on_init();
         g_a2dp_on_init = true;
         g_a2dp_on_deinit = false;
@@ -1229,6 +1286,8 @@ static void clean_up(int service_id)
     /* Also shut down the AV state machine */
     btc_sm_shutdown(btc_av_cb.sm_handle);
     btc_av_cb.sm_handle = NULL;
+
+    btc_a2dp_audio_stats_deinit();
 
 #if A2D_DYNAMIC_MEMORY == TRUE
     osi_free(btc_av_cb_ptr);
@@ -1627,6 +1686,14 @@ void btc_a2dp_call_handler(btc_msg_t *msg)
         btc_a2dp_control_media_ctrl(arg->ctrl);
         break;
     }
+#if BTC_A2DP_AUDIO_STATS
+    case BTC_AV_API_AUDIO_STATS_GET_EVT: {
+        esp_a2d_cb_param_t param = {0};
+        param.audio_stats.status = btc_a2dp_audio_stats_get(arg->audio_stats_conn_hdl, &param.audio_stats.stats);
+        btc_a2d_cb_to_app(ESP_A2D_AUDIO_STATS_EVT, &param);
+        break;
+    }
+#endif
     case BTC_AV_CONNECT_REQ_EVT:
         btc_sm_dispatch(btc_av_cb.sm_handle, msg->act, (char *)msg->arg);
         break;
@@ -1798,6 +1865,11 @@ static BOOLEAN btc_a2d_deinit_if_ongoing(void)
     }
 #endif
     return FALSE;
+}
+
+uint16_t btc_a2d_conn_handle_get(void)
+{
+    return btc_av_cb.bta_handle;
 }
 
 #endif /* #if BTC_AV_INCLUDED */
