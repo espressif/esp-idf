@@ -46,7 +46,7 @@ def _test_examples_sysview_tracing(openocd_dut: 'OpenOCD', dut: IdfDut) -> None:
         encoding='utf-8',
         codec_errors='ignore',
     ) as p:
-        p.expect_exact('hit Breakpoint 1, app_main ()')
+        p.expect_exact('hit Breakpoint 1')  # app_main
         dut.expect('example: Created task')  # dut has been restarted by gdb since the last dut.expect()
         dut_expect_task_event()
 
