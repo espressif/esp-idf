@@ -261,13 +261,23 @@ static void _node_isr_main(void *arg)
             .new_sta = curr_sta,
         };
         atomic_store(&twai_ctx->state, e_data.new_sta);
+        bool recovered_from_bus_off = (e_data.old_sta == TWAI_ERROR_BUS_OFF) &&
+                                      (e_data.new_sta == TWAI_ERROR_ACTIVE);
+        if (recovered_from_bus_off) {
+            /* Reserve TX ownership until recovery has restarted the queued
+             * frames. The callback (or another core) can submit a frame while
+             * the spinlock is released: it must enqueue instead of starting
+             * hardware that the recovery path could subsequently overwrite.
+             */
+            atomic_store(&twai_ctx->hw_busy, true);
+        }
         if (twai_ctx->cbs.on_state_change) {
             portEXIT_CRITICAL_ISR(&twai_ctx->spinlock);
             do_yield |= twai_ctx->cbs.on_state_change(&twai_ctx->api_base, &e_data, twai_ctx->user_data);
             portENTER_CRITICAL_ISR(&twai_ctx->spinlock);
         }
-        // node recover from busoff, restart remain tx transaction
-        if ((e_data.old_sta == TWAI_ERROR_BUS_OFF) && (e_data.new_sta == TWAI_ERROR_ACTIVE)) {
+        // Resume queued transmissions before releasing the TX reservation.
+        if (recovered_from_bus_off) {
             if (_node_start_tx_batch_from_isr(twai_ctx, &do_yield)) {
                 atomic_store(&twai_ctx->hw_busy, true);
             } else {
