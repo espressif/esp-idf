@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2019-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2019-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -37,6 +37,11 @@ static esp_err_t wpa3_build_sae_commit(u8 *bssid, size_t *sae_msg_len)
     bool valid_pwd_id = false;
     const u8 *rsnxe;
     u8 rsnxe_capa = 0;
+
+    if (!pw) {
+        wpa_printf(MSG_ERROR, "wpa3: no password configured");
+        return ESP_FAIL;
+    }
 
     if (wpa_sta_cur_pmksa_matches_akm()) {
         wpa_printf(MSG_INFO, "wpa3: Skip SAE and use cached PMK instead");
@@ -315,17 +320,18 @@ static int wpa3_parse_sae_commit(u8 *buf, u32 len, u16 status)
     if (status == WLAN_STATUS_ANTI_CLOGGING_TOKEN_REQ) {
         if (g_sae_token) {
             wpabuf_free(g_sae_token);
+            g_sae_token = NULL;
         }
         if (g_sae_data.h2e) {
+            if (len < 5) {
+                wpa_printf(MSG_ERROR, "Invalid SAE anti-clogging token length");
+                return ESP_FAIL;
+            }
             if ((buf[2] != WLAN_EID_EXTENSION) ||
                     (buf[3] == 0) ||
                     (buf[3] > len - 4) ||
                     (buf[4] != WLAN_EID_EXT_ANTI_CLOGGING_TOKEN)) {
                 wpa_printf(MSG_ERROR, "Invalid SAE anti-clogging token container header");
-                return ESP_FAIL;
-            }
-            if (len < 5) {
-                wpa_printf(MSG_ERROR, "Invalid SAE anti-clogging token length");
                 return ESP_FAIL;
             }
             g_sae_token = wpabuf_alloc_copy(buf + 5, len - 5);

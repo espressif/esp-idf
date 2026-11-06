@@ -597,7 +597,7 @@ int handle_auth_sae(struct hostapd_data *hapd, struct sta_info *sta,
             data = auth_build_token_req(
                 &hapd->last_comeback_key_update,
                 hapd->comeback_key,
-                hapd->comeback_idx,
+                &hapd->comeback_idx,
                 hapd->comeback_pending_idx,
                 sizeof(hapd->comeback_pending_idx),
                 sta->sae->group,
