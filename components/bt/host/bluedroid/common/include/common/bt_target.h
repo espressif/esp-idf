@@ -95,6 +95,9 @@
 #define SBC_DEC_INCLUDED            TRUE
 #define BTC_AV_SRC_INCLUDED         TRUE
 #define SBC_ENC_INCLUDED            TRUE
+#if (UC_BT_A2DP_AUDIO_STATS == TRUE)
+#define BTC_A2DP_AUDIO_STATS        TRUE
+#endif
 #endif /* UC_BT_A2DP_ENABLED */
 
 #if (UC_BT_SPP_ENABLED == TRUE)
@@ -686,6 +689,10 @@
 
 #ifndef BTC_AV_INCLUDED
 #define BTC_AV_INCLUDED FALSE
+#endif
+
+#ifndef BTC_A2DP_AUDIO_STATS
+#define BTC_A2DP_AUDIO_STATS FALSE
 #endif
 
 #ifndef BTC_AV_SINK_INCLUDED

@@ -89,6 +89,15 @@ config BT_A2DP_ENABLE
     help
         Advanced Audio Distribution Profile
 
+config BT_A2DP_AUDIO_STATS
+    bool "A2DP audio glitch statistics"
+    depends on BT_A2DP_ENABLE
+    default n
+    help
+        Count A2DP audio glitches, packet totals, and lost packets, and expose
+        them through esp_a2d_get_audio_stats(). This is for testing. Leave it
+        disabled in production.
+
 config BT_SPP_ENABLED
     bool "SPP"
     depends on BT_CLASSIC_ENABLED

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -72,6 +72,9 @@ typedef enum {
     BTC_AV_SRC_API_REG_DATA_CB_EVT,
 #endif  /* BTC_AV_SRC_INCLUDED */
     BTC_AV_API_MEDIA_CTRL_EVT,
+#if BTC_A2DP_AUDIO_STATS
+    BTC_AV_API_AUDIO_STATS_GET_EVT,
+#endif
 } btc_av_act_t;
 
 /* btc_av_args_t */
@@ -98,6 +101,10 @@ typedef union {
 #endif /* BTC_AV_SRC_INCLUDED */
     // BTC_AV_API_MEDIA_CTRL_EVT
     esp_a2d_media_ctrl_t ctrl;
+#if BTC_A2DP_AUDIO_STATS
+    // BTC_AV_API_AUDIO_STATS_GET_EVT
+    esp_a2d_conn_hdl_t audio_stats_conn_hdl;
+#endif
 } btc_av_args_t;
 
 /*******************************************************************************
@@ -224,6 +231,17 @@ void btc_av_clear_remote_suspend_flag(void);
  *
  ******************************************************************************/
 uint8_t btc_av_get_service_id(void);
+
+/*******************************************************************************
+**
+** Function         btc_a2d_conn_handle_get
+**
+** Description      Get the current A2DP connection handle.
+**
+** Returns          Connection handle associated with the active stream.
+**
+*******************************************************************************/
+uint16_t btc_a2d_conn_handle_get(void);
 
 #endif  ///BTC_AV_INCLUDED == TRUE
 

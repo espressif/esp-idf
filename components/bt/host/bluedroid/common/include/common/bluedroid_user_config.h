@@ -45,6 +45,12 @@
 #define UC_BT_A2DP_ENABLED                  FALSE
 #endif
 
+#ifdef CONFIG_BT_A2DP_AUDIO_STATS
+#define UC_BT_A2DP_AUDIO_STATS              CONFIG_BT_A2DP_AUDIO_STATS
+#else
+#define UC_BT_A2DP_AUDIO_STATS              FALSE
+#endif
+
 //SPP
 #ifdef CONFIG_BT_SPP_ENABLED
 #define UC_BT_SPP_ENABLED                   CONFIG_BT_SPP_ENABLED
