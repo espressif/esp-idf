@@ -132,6 +132,14 @@ static inline __attribute__((always_inline)) void clk_ll_xtalx2_disable(void)
 }
 
 /**
+ * @brief Release the root clock source locked by PMU
+ */
+static inline __attribute__((always_inline)) void clk_ll_cpu_clk_src_lock_release(void)
+{
+    SET_PERI_REG_MASK(PMU_IMM_SLEEP_SYSCLK_REG, PMU_UPDATE_DIG_SYS_CLK_SEL);
+}
+
+/**
  * @brief Get ref_80m clock source mux selection
  *
  * @return false: BBPLL divided path, true: XTALx2 80MHz (`clk_xtalx2_80m`)
