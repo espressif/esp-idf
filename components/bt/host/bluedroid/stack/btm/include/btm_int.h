@@ -101,6 +101,7 @@ typedef struct {
     UINT16         max_lat;   /* stored SSR maximum latency */
     UINT16         min_rmt_to;/* stored SSR minimum remote timeout */
     UINT16         min_loc_to;/* stored SSR minimum local timeout */
+    BOOLEAN        ssr_disable_pending; /* set until a latency-2 disable is sent in ACTIVE */
 #endif
     tBTM_PM_STATE  state;     /* contains the current mode of the connection */
     BOOLEAN        chg_ind;   /* a request change indication */

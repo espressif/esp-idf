@@ -1989,8 +1989,16 @@ typedef struct {
 /*************************************
 **  Power Manager Callback Functions
 **************************************/
+typedef struct {
+    UINT16 max_tx_lat;
+    UINT16 max_rx_lat;
+    UINT16 min_remote_to;
+    UINT16 min_local_to;
+} tBTM_SSR_PARAMS;
+
 typedef void (tBTM_PM_STATUS_CBACK) (BD_ADDR p_bda, tBTM_PM_STATUS status,
-                                     UINT16 value, UINT8 hci_status);
+                                     UINT16 value, UINT8 hci_status,
+                                     const tBTM_SSR_PARAMS *p_ssr);
 
 
 /************************
@@ -4142,9 +4150,15 @@ tBTM_STATUS BTM_ReadPowerMode (BD_ADDR remote_bda,
 **                  connection if it is in ACTIVE mode.
 **
 ** Input Param      remote_bda - device address of desired ACL connection
-**                  max_lat    - maximum latency (in 0.625ms)(0-0xFFFE)
-**                  min_rmt_to - minimum remote timeout
-**                  min_loc_to - minimum local timeout
+**                  max_lat    - maximum latency (in 0.625ms)(0x0002-0xFFFE);
+**                               0 disables subrating.
+**                               ACTIVE, with no mode command queued on this
+**                               link: send latency 2 and clear the flag.
+**                               SNIFF: send the current interval, keep the flag.
+**                               Any other state: store until the next
+**                               ACTIVE or SNIFF.
+**                  min_rmt_to - minimum remote timeout (0x0000-0xFFFE)
+**                  min_loc_to - minimum local timeout (0x0000-0xFFFE)
 **
 **
 ** Returns          BTM_SUCCESS if the HCI command is issued successful,
