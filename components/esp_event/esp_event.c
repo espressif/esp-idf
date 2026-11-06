@@ -521,10 +521,10 @@ static esp_err_t find_and_unregister_handler(esp_event_remove_handler_context_t*
     }
     /* handler found in the lists and not already marked as unregistered. Mark it as unregistered
      * and post an event to remove it from the lists */
-    handler_to_unregister->unregistered = true;
+    esp_event_handler_instance_context_t *handler_ctx_copy = NULL;
     if (ctx->legacy) {
         /* in case of legacy code, we have to copy the handler_ctx content since it was created in the calling function */
-        esp_event_handler_instance_context_t *handler_ctx_copy = calloc(1, sizeof(esp_event_handler_instance_context_t));
+        handler_ctx_copy = calloc(1, sizeof(esp_event_handler_instance_context_t));
         if (!handler_ctx_copy) {
             return ESP_ERR_NO_MEM;
         }
@@ -532,7 +532,16 @@ static esp_err_t find_and_unregister_handler(esp_event_remove_handler_context_t*
         handler_ctx_copy->handler = ctx->handler_ctx->handler;
         ctx->handler_ctx = handler_ctx_copy;
     }
-    return esp_event_post_to(ctx->loop, esp_event_handler_cleanup, 0, ctx, sizeof(esp_event_remove_handler_context_t), portMAX_DELAY);
+
+    handler_to_unregister->unregistered = true;
+    esp_err_t err = esp_event_post_to(ctx->loop, esp_event_handler_cleanup, 0, ctx, sizeof(esp_event_remove_handler_context_t), portMAX_DELAY);
+    if (err != ESP_OK) {
+        /* no cleanup event was queued, so the handler stays registered. Restore its state
+         * so that it keeps being dispatched and a later unregister can be retried */
+        handler_to_unregister->unregistered = false;
+        free(handler_ctx_copy);
+    }
+    return err;
 }
 
 static bool event_loop_has_posts_in_flight(esp_event_loop_instance_t* loop)
