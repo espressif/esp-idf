@@ -55,11 +55,12 @@ Enterprise security is the secure authentication mechanism for enterprise wirele
 
 {IDF_TARGET_NAME} supports the following EAP methods:
   - EAP-TLS: This is a certificate-based method and only requires SSID and EAP-IDF.
-  - PEAP: This is a Protected EAP method. Usernames and passwords are mandatory.
+  - PEAP: This is a Protected EAP method. Usernames and passwords are mandatory. Phase 2 authentication inside the tunnel is EAP-MSCHAPv2 (``ESP_EAP_PHASE2_MSCHAPV2``) or EAP-GTC (``ESP_EAP_PHASE2_GTC``). EAP-GTC sends the static password configured with ``esp_eap_client_set_password()`` and does not prompt for a token or OTP.
   - EAP-TTLS: This is a credential-based method. Only server authentication is mandatory while user authentication is optional. Username and Password are mandatory. It supports different Phase2 methods, such as:
      - PAP: Password Authentication Protocol.
      - CHAP: Challenge Handshake Authentication Protocol.
      - MSCHAP and MSCHAP-V2.
+     - EAP-GTC: Generic Token Card, tunneled. ESP-IDF sends the static password from ``esp_eap_client_set_password()``.
   - EAP-FAST: This is an authentication method based on Protected Access Credentials (PAC) which also uses identity and password. Currently, :ref:`CONFIG_ESP_WIFI_MBEDTLS_TLS_CLIENT` flag should be disabled to use this feature.
 
 - :example:`wifi/wifi_eap_fast` demonstrates how to connect {IDF_TARGET_NAME} to an AP with Wi-Fi Enterprise authentication using EAP-FAST, including the installation of a CA certificate, setting user credentials, enabling Wi-Fi Enterprise mode, and handling connection to the AP.
