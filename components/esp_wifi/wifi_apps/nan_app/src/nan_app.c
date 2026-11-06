@@ -311,10 +311,14 @@ static void nan_app_clear_one_peer_tks(const uint8_t *peer_nmi)
         ndl->igtk_len = 0;
         ndl->bigtk_len = 0;
 
-        nan_sec_ndp_clear_sa(key_addr);
-    } else {
-        nan_sec_ndp_clear_sa(peer_nmi);
+        /* Clear the SA this NDP owns (by ndp_id, not peer address) so a
+         * rejected/duplicate NDP sharing the same peer NDI cannot wipe a
+         * live NDP's SA. */
+        nan_sec_ndp_clear_sa(ndl->ndp_id);
     }
+    /* No else-branch SA clear: with ownership tracking, a peer with no NDL
+     * has no committed SA to clear, and clearing by address would risk wiping
+     * another NDP's entry. */
 
     /* Fallback when no NDL slot tracks peer_ndi yet. */
     esp_wifi_set_nan_key_internal(NAN_WIFI_WPA_ALG_CCMP,
@@ -554,7 +558,7 @@ static void nan_reset_ndl(uint8_t ndp_id, bool reset_all)
     if (reset_all) {
         memset(s_nan_ctx.ndl, 0, sizeof(struct ndl_info) * ESP_WIFI_NAN_DATAPATH_MAX_PEERS);
 #ifdef CONFIG_ESP_WIFI_NAN_SECURITY
-        nan_sec_ndp_clear_sa(NULL);
+        nan_sec_ndp_clear_sa(0);
 #endif
         return;
     }
@@ -562,13 +566,16 @@ static void nan_reset_ndl(uint8_t ndp_id, bool reset_all)
         ndl = &s_nan_ctx.ndl[i];
         if (ndl->ndp_id == ndp_id) {
 #ifdef CONFIG_ESP_WIFI_NAN_SECURITY
-            /* Drop the §7.4 SA cache for this peer NDI when a secured NDP
-             * ends, otherwise the next secured NDP is strength-ranked against
-             * a stale (possibly stronger) entry and its keys get skipped,
-             * leaving the new NDP up with no working datapath. The WiFi
-             * library already deletes the firmware key on peer removal. */
+            /* Drop the §7.4 SA cache for this NDP when a secured NDP ends,
+             * otherwise the next secured NDP is strength-ranked against a
+             * stale (possibly stronger) entry and its keys get skipped,
+             * leaving the new NDP up with no working datapath. Clear by the
+             * owning ndp_id so a rejected/duplicate NDP (which never
+             * committed) cannot wipe a live NDP's SA when they share a peer
+             * NDI. The WiFi library already deletes the firmware key on peer
+             * removal. */
             if (ndl->ptk_set) {
-                nan_sec_ndp_clear_sa(ndl->peer_ndi);
+                nan_sec_ndp_clear_sa(ndl->ndp_id);
             }
 #endif
             memset(ndl, 0, sizeof(struct ndl_info));
@@ -1522,7 +1529,7 @@ static void nan_app_ndp_confirm_cb(uint8_t status, struct ndp_cb_peer_info *peer
             }
             /* Commit SA only after firmware install succeeds so a failed
              * set_key cannot leave the §7.4 cache ahead of the driver. */
-            nan_sec_ndp_commit_keys(peer_ndi, csid, pairing_akmp);
+            nan_sec_ndp_commit_keys(peer_ndi, ndp_id, csid, pairing_akmp);
         } else {
             /* A weaker/equal second secured NDP cannot share the single SA
              * cache entry without corrupting the live secured datapath
@@ -1969,9 +1976,9 @@ void esp_nan_action_stop(void)
     /* Clear the §7.4 SA cache under the lock: nan_sec_ndp_commit_keys()
      * (confirm callback on the wifi task) writes the same object and also
      * needs NAN_DATA_LOCK, so wiping it unlocked can leave a half-written SA
-     * that nan_sec_ndp_clear_sa(peer_ndi) never matches again. Running it
+     * that nan_sec_ndp_clear_sa(ndp_id) never matches again. Running it
      * here is safe — it does not call into the wifi library. */
-    nan_sec_ndp_clear_sa(NULL);
+    nan_sec_ndp_clear_sa(0);
 #endif
     NAN_DATA_UNLOCK();
 

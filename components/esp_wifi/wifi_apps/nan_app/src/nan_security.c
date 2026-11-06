@@ -3089,7 +3089,8 @@ bool nan_sec_ndp_should_install_keys(uint8_t csid, int pairing_akmp)
     return true;
 }
 
-void nan_sec_ndp_commit_keys(const uint8_t *peer_ndi, uint8_t csid, int pairing_akmp)
+void nan_sec_ndp_commit_keys(const uint8_t *peer_ndi, uint8_t ndp_id,
+                             uint8_t csid, int pairing_akmp)
 {
     struct nan_ndi_sec_sa *sa = &s_nan_ctx.ndi_sec_sa;
 
@@ -3099,23 +3100,27 @@ void nan_sec_ndp_commit_keys(const uint8_t *peer_ndi, uint8_t csid, int pairing_
 
     memset(sa, 0, sizeof(*sa));
     sa->valid = true;
+    sa->owner_ndp_id = ndp_id;
     memcpy(sa->peer_ndi, peer_ndi, MACADDR_LEN);
     sa->csid = csid;
     sa->pairing_akmp = pairing_akmp;
 
-    ESP_LOGD(TAG, "SEC: Committed SA csid=%u akmp=0x%x strength=%d peer_ndi=" MACSTR,
+    ESP_LOGD(TAG, "SEC: Committed SA csid=%u akmp=0x%x strength=%d peer_ndi=" MACSTR " ndp_id=%u",
              csid, pairing_akmp, nan_sec_get_strength(csid, pairing_akmp),
-             MAC2STR(peer_ndi));
+             MAC2STR(peer_ndi), ndp_id);
 }
 
-void nan_sec_ndp_clear_sa(const uint8_t *peer_ndi)
+void nan_sec_ndp_clear_sa(uint8_t ndp_id)
 {
     struct nan_ndi_sec_sa *sa = &s_nan_ctx.ndi_sec_sa;
 
     if (!sa->valid) {
         return;
     }
-    if (peer_ndi && memcmp(sa->peer_ndi, peer_ndi, MACADDR_LEN) != 0) {
+    /* ndp_id == 0 clears all (used by NAN stop / reset-all). Otherwise only
+     * clear the entry this NDP owns, so a rejected/duplicate NDP cannot wipe
+     * a live NDP's SA when they share a peer NDI. */
+    if (ndp_id != 0 && sa->owner_ndp_id != ndp_id) {
         return;
     }
     memset(sa, 0, sizeof(*sa));
