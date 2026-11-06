@@ -553,6 +553,11 @@ void rtc_clk_cpu_freq_set_xtal_for_sleep(void)
 #endif
 }
 
+void rtc_clk_modem_pll_lock_release(void)
+{
+    clk_ll_cpu_clk_src_lock_release();
+}
+
 void rtc_clk_apll_enable(bool enable)
 {
     if (enable) {
