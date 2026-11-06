@@ -42,7 +42,7 @@ idf.py menuconfig
 ```
 * Set SSID of Access Point to connect in Example Configuration.
 * Select EAP method (TLS, TTLS or PEAP).
-* Select Phase2 method (only for TTLS).
+* Select Phase2 method (for TTLS and PEAP).
 * Enter EAP-ID.
 * Enter Username and Password (only for TTLS and PEAP).
 * Enable or disable Validate Server option.

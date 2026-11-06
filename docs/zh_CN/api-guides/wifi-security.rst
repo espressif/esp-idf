@@ -55,11 +55,12 @@ API 及用法
 
 {IDF_TARGET_NAME} 支持以下 EAP 方法：
   - EAP-TLS：该认证方法基于证书实现，仅需提供 SSID 和 EAP-IDF。
-  - PEAP：该认证方法为受保护的 EAP 方法，必须提供用户名和密码。
+  - PEAP：该认证方法为受保护的 EAP 方法，必须提供用户名和密码。隧道内的阶段 2 认证为 EAP-MSCHAPv2（``ESP_EAP_PHASE2_MSCHAPV2``）或 EAP-GTC（``ESP_EAP_PHASE2_GTC``）。EAP-GTC 发送 ``esp_eap_client_set_password()`` 配置的静态密码，不会提示输入令牌或 OTP。
   - EAP-TTLS：该认证方法基于凭证实现，必须提供服务器证书，用户证书为可选项。该方法支持多种第二阶段方法，如：
      - PAP：密码认证协议
      - CHAP：挑战握手认证协议
      - MSCHAP 和 MSCHAP-V2
+     - EAP-GTC：通用令牌卡，在隧道内使用。ESP-IDF 发送 ``esp_eap_client_set_password()`` 配置的静态密码。
   - EAP-FAST：该认证方法基于受保护访问凭证 (PAC) 实现，同时也使用身份和密码。目前，需禁用 :ref:`CONFIG_ESP_WIFI_MBEDTLS_TLS_CLIENT` 标志以使用此功能。
 
 - :example:`wifi/wifi_eap_fast` 演示如何使用 EAP-FAST 通过企业级 Wi-Fi 认证将 {IDF_TARGET_NAME} 连接到 AP，包括 CA 证书的安装、用户凭据的设置、启用 Wi-Fi 企业模式以及如何连接到 AP。
