@@ -728,7 +728,9 @@ esp_err_t ledc_set_multi_fade_and_start(ledc_mode_t speed_mode, ledc_channel_t c
  * @param[in] channel LEDC channel index (0 - LEDC_CHANNEL_MAX-1), select from ledc_channel_t
  * @param[in] start_duty Duty cycle [0, (2**duty_resolution)] where the multi-fade begins with. This value should be a non-gamma-corrected duty cycle.
  * @param[in] end_duty Duty cycle [0, (2**duty_resolution)] where the multi-fade ends with. This value should be a non-gamma-corrected duty cycle.
- * @param[in] linear_phase_num Number of linear fades to simulate a gamma curved fade (1 - SOC_LEDC_GAMMA_CURVE_FADE_RANGE_MAX)
+ * @param[in] linear_phase_num Number of linear fades to simulate a gamma curved fade (1 - SOC_LEDC_GAMMA_CURVE_FADE_RANGE_MAX).
+ *                             Better to keep this smaller than fade_params_list_size to leave extra room, since leftover
+ *                             duty may take one extra range, or one linear phase may be split into multiple hardware fade ranges.
  * @param[in] max_fade_time_ms The maximum time of the fading ( ms ).
  * @param[in] gamma_correction_operator User provided gamma correction function. The function argument should be able to
  *                                      take any value within [0, (2**duty_resolution)]. And returns the gamma-corrected duty cycle.
