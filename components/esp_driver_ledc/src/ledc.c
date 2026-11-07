@@ -1903,10 +1903,10 @@ esp_err_t ledc_fill_multi_fade_param_list(ledc_mode_t speed_mode, ledc_channel_t
                         " Please allocate more space, or split into smaller multi-fades, or reduce linear_phase_num");
 
     if (remaining_duty_delta) {
-        fade_params_list[total_fade_range].dir = dir;
-        fade_params_list[total_fade_range].step_num = 1;
-        fade_params_list[total_fade_range].cycle_num = 1;
-        fade_params_list[total_fade_range].scale = remaining_duty_delta;
+        fade_params_list[total_fade_range - 1].dir = dir;
+        fade_params_list[total_fade_range - 1].step_num = 1;
+        fade_params_list[total_fade_range - 1].cycle_num = 1;
+        fade_params_list[total_fade_range - 1].scale = remaining_duty_delta;
     }
 
     *hw_fade_range_num = total_fade_range;
