@@ -145,6 +145,9 @@ These options configure controller capacity and RF defaults. They do not enable 
        | ``SYNC_RX_BUF_NB_PER_LINK`` is the average RX buffer count per link (static + dynamic). If static RX buffers are fewer than ``SYNC_RX_BUF_NB_PER_LINK`` × active sync links, the RX pool grows or shrinks as links are created or torn down. Set it to ``0`` to disable dynamic sync RX buffers.
    * - ``CONFIG_BT_CTRL_BR_EDR_SCO_DATA_PATH_HCI``
      - Default SCO/eSCO data path. Only HCI is supported; PCM/I2S routing is not yet available.
+   * - :ref:`CONFIG_BT_CTRL_BR_EDR_RS_MAX_SLOT_RESTORE_EN`
+     - | Restore TX max slots and RX max slots to the values used before a role switch. Enabled by default.
+       | The Bluetooth Core Specification resets max slots on role switch and expects them to be renegotiated, so this controller behavior is not specified. Disable it for Bluetooth qualification. The default is disabled when :ref:`CONFIG_BT_CLASSIC_BQB_ENABLED` is enabled.
    * - | :ref:`CONFIG_BT_CTRL_BR_EDR_TX_CCA_ENABLED`
        | + :ref:`CONFIG_BT_CTRL_BR_EDR_CCA_RSSI_THRESH`
      - TX Clear Channel Assessment. When enabled, the controller may cancel a transmission if the measured signal is stronger than the CCA threshold (unit: -1 dBm). No dedicated HCI command.
