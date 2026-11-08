@@ -1,5 +1,22 @@
 menu "ESP-Driver:SPI Configurations"
     depends on SOC_GPSPI_SUPPORTED
+    config SPI_MASTER_STACK_BOUNCE_SIZE
+        int "SPI master stack bounce buffer size per direction"
+        range 0 1024
+        default 0
+        help
+            Reserve this many bytes on the stack of each blocking SPI master
+            transmit call for each DMA direction. Short transfers that need a
+            temporary internal DMA buffer can use this storage instead of
+            allocating from the heap. A value of 0 disables the optimization.
+
+            The configured amount is used separately for TX and RX, so a
+            blocking call can use up to twice this amount plus alignment
+            padding. The buffer is used only when the task stack is internal,
+            DMA-capable, and sufficiently aligned for the transfer. Otherwise
+            the SPI driver falls back to its normal heap allocation. Increase
+            the calling task's stack size accordingly.
+
     config SPI_MASTER_IN_IRAM
         bool "Place transmitting functions of SPI master into IRAM"
         default n

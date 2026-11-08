@@ -439,11 +439,16 @@ void SPI_COMMON_ISR_ATTR spicommon_dma_desc_setup_link(const spi_dma_ctx_t *dma_
     (void)ret;
 }
 
-esp_err_t SPI_COMMON_ISR_ATTR spicommon_dma_setup_priv_buffer(spi_host_device_t host_id, uint32_t *buffer, uint32_t len, bool is_tx, bool psram_prefer, bool auto_malloc, uint32_t **ret_buffer)
+esp_err_t SPI_COMMON_ISR_ATTR spicommon_dma_setup_priv_buffer_with_stack(spi_host_device_t host_id, uint32_t *buffer, uint32_t len,
+        bool is_tx, bool psram_prefer, bool auto_malloc, void *stack_buffer, size_t stack_buffer_size,
+        uint32_t **ret_buffer, bool *ret_stack_buffer)
 {
     spi_bus_attr_t *bus_attr = spi_bus_get_attr(host_id);
     spi_dma_ctx_t *dma_ctx = spi_bus_get_dma_ctx(host_id);
     assert(bus_attr && dma_ctx);
+    if (ret_stack_buffer) {
+        *ret_stack_buffer = false;
+    }
     if ((buffer == NULL) || (len == 0)) {
         *ret_buffer = buffer;
         return ESP_OK;
@@ -477,8 +482,18 @@ esp_err_t SPI_COMMON_ISR_ATTR spicommon_dma_setup_priv_buffer(spi_host_device_t 
 #endif
     if (need_malloc) {
         ESP_RETURN_ON_FALSE_ISR(auto_malloc, ESP_ERR_INVALID_STATE, SPI_TAG, "%s addr&len not align to %d, or not dma_capable, suggest use 'heap_caps_malloc' or enable auto_align", is_tx ? "TX" : "RX", alignment);
-        uint32_t *temp = heap_caps_aligned_alloc(alignment, align_len, mem_cap);
-        ESP_RETURN_ON_FALSE_ISR(temp != NULL, ESP_ERR_NO_MEM, SPI_TAG, "Failed to allocate priv %s buffer", is_tx ? "TX" : "RX");
+        uint32_t *temp = NULL;
+        bool borrowed = stack_buffer && ret_stack_buffer && !use_psram &&
+                        stack_buffer_size >= align_len &&
+                        (((uintptr_t)stack_buffer & (alignment - 1)) == 0) &&
+                        esp_ptr_dma_capable(stack_buffer);
+        if (borrowed) {
+            temp = stack_buffer;
+            *ret_stack_buffer = true;
+        } else {
+            temp = heap_caps_aligned_alloc(alignment, align_len, mem_cap);
+            ESP_RETURN_ON_FALSE_ISR(temp != NULL, ESP_ERR_NO_MEM, SPI_TAG, "Failed to allocate priv %s buffer", is_tx ? "TX" : "RX");
+        }
 
         if (is_tx) {
             memcpy(temp, buffer, len);
@@ -491,6 +506,13 @@ esp_err_t SPI_COMMON_ISR_ATTR spicommon_dma_setup_priv_buffer(spi_host_device_t 
     // ESP_ERR_NOT_SUPPORTED stands for not cache sync required, it's allowed here
     ESP_RETURN_ON_FALSE_ISR((ret == ESP_OK) || (ret == ESP_ERR_NOT_SUPPORTED), ESP_ERR_INVALID_ARG, SPI_TAG, "sync failed for %s buffer", is_tx ? "TX" : "RX");
     return ESP_OK;
+}
+
+esp_err_t SPI_COMMON_ISR_ATTR spicommon_dma_setup_priv_buffer(spi_host_device_t host_id, uint32_t *buffer, uint32_t len,
+        bool is_tx, bool psram_prefer, bool auto_malloc, uint32_t **ret_buffer)
+{
+    return spicommon_dma_setup_priv_buffer_with_stack(host_id, buffer, len, is_tx, psram_prefer, auto_malloc,
+            NULL, 0, ret_buffer, NULL);
 }
 
 void SPI_COMMON_ISR_ATTR spicommon_dma_rx_mb(spi_host_device_t host_id, void *rx_buffer)

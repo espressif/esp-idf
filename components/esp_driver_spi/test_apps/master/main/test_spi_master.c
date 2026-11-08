@@ -384,6 +384,82 @@ TEST_CASE("SPI Master test", "[spi]")
     TEST_ASSERT(success);
 }
 
+#if CONFIG_SPI_MASTER_STACK_BOUNCE_SIZE > 0
+TEST_CASE("SPI blocking transmit with stack bounce buffers", "[spi]")
+{
+    spi_device_handle_t handle = setup_spi_bus_loopback(80000, true);
+    uint8_t tx_storage[10];
+    uint8_t rx_storage[10];
+    uint8_t *tx = tx_storage + 1;
+    uint8_t *rx = rx_storage + 1;
+    const size_t transfer_size = 7;
+
+    for (size_t i = 0; i < transfer_size; i++) {
+        tx[i] = (uint8_t)(0x31 + i);
+        rx[i] = 0;
+    }
+
+    spi_transaction_t trans = {
+        .length = transfer_size * 8,
+        .rxlength = transfer_size * 8,
+        .tx_buffer = tx,
+        .rx_buffer = rx,
+    };
+    TEST_ESP_OK(spi_device_transmit(handle, &trans));
+    TEST_ASSERT_EQUAL_HEX8_ARRAY(tx, rx, transfer_size);
+
+    /* The split APIs keep their existing allocation and lifetime behavior. */
+    memset(rx, 0, transfer_size);
+    spi_transaction_t *ret_trans;
+    TEST_ESP_OK(spi_device_queue_trans(handle, &trans, portMAX_DELAY));
+    TEST_ESP_OK(spi_device_get_trans_result(handle, &ret_trans, portMAX_DELAY));
+    TEST_ASSERT_EQUAL_PTR(&trans, ret_trans);
+    TEST_ASSERT_EQUAL_HEX8_ARRAY(tx, rx, transfer_size);
+
+    memset(rx, 0, transfer_size);
+    TEST_ESP_OK(spi_device_polling_start(handle, &trans, portMAX_DELAY));
+    TEST_ESP_OK(spi_device_polling_end(handle, portMAX_DELAY));
+    TEST_ASSERT_EQUAL_HEX8_ARRAY(tx, rx, transfer_size);
+
+    /* A transfer larger than the configured stack area must keep using the heap fallback. */
+    size_t fallback_size = CONFIG_SPI_MASTER_STACK_BOUNCE_SIZE + 1;
+    uint8_t *fallback_tx_storage = malloc(fallback_size + 1);
+    uint8_t *fallback_rx_storage = malloc(fallback_size + 1);
+    TEST_ASSERT_NOT_NULL(fallback_tx_storage);
+    TEST_ASSERT_NOT_NULL(fallback_rx_storage);
+    uint8_t *fallback_tx = fallback_tx_storage + 1;
+    uint8_t *fallback_rx = fallback_rx_storage + 1;
+    for (size_t i = 0; i < fallback_size; i++) {
+        fallback_tx[i] = (uint8_t)(0x5A ^ i);
+        fallback_rx[i] = 0;
+    }
+    trans = (spi_transaction_t) {
+        .length = fallback_size * 8,
+        .rxlength = fallback_size * 8,
+        .tx_buffer = fallback_tx,
+        .rx_buffer = fallback_rx,
+    };
+    TEST_ESP_OK(spi_device_transmit(handle, &trans));
+    TEST_ASSERT_EQUAL_HEX8_ARRAY(fallback_tx, fallback_rx, fallback_size);
+    TEST_ESP_OK(spi_device_polling_transmit(handle, &trans));
+    TEST_ASSERT_EQUAL_HEX8_ARRAY(fallback_tx, fallback_rx, fallback_size);
+    free(fallback_tx_storage);
+    free(fallback_rx_storage);
+
+    memset(&trans, 0, sizeof(trans));
+    trans.length = sizeof(trans.tx_data) * 8;
+    trans.rxlength = sizeof(trans.rx_data) * 8;
+    trans.flags = SPI_TRANS_USE_TXDATA | SPI_TRANS_USE_RXDATA;
+    for (size_t i = 0; i < sizeof(trans.tx_data); i++) {
+        trans.tx_data[i] = (uint8_t)(0xA0 + i);
+    }
+    TEST_ESP_OK(spi_device_polling_transmit(handle, &trans));
+    TEST_ASSERT_EQUAL_HEX8_ARRAY(trans.tx_data, trans.rx_data, sizeof(trans.tx_data));
+
+    master_free_device_bus(handle);
+}
+#endif
+
 TEST_CASE("SPI Master test, interaction of multiple devs", "[spi]")
 {
     esp_err_t ret;
