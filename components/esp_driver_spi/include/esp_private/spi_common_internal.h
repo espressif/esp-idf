@@ -166,6 +166,22 @@ void spicommon_dma_desc_setup_link(const spi_dma_ctx_t *dma_ctx, int offset, con
 esp_err_t spicommon_dma_setup_priv_buffer(spi_host_device_t host_id, uint32_t *buffer, uint32_t len, bool is_tx, bool psram_prefer, bool auto_malloc, uint32_t **ret_buffer);
 
 /**
+ * @brief Setup a private DMA buffer, optionally borrowing synchronous stack storage
+ *
+ * The stack buffer is borrowed only when it is DMA-capable, aligned for this
+ * transfer, large enough for the aligned transfer length, and internal RAM is
+ * used. The caller must keep it alive until the transfer completes. If it
+ * cannot be used, the normal heap allocation path is used.
+ *
+ * @param stack_buffer       optional caller-owned storage
+ * @param stack_buffer_size  size of the caller-owned storage in bytes
+ * @param ret_stack_buffer   set to true when ret_buffer points to stack_buffer
+ */
+esp_err_t spicommon_dma_setup_priv_buffer_with_stack(spi_host_device_t host_id, uint32_t *buffer, uint32_t len,
+        bool is_tx, bool psram_prefer, bool auto_malloc, void *stack_buffer, size_t stack_buffer_size,
+        uint32_t **ret_buffer, bool *ret_stack_buffer);
+
+/**
  * @brief Memory barrier for DMA RX buffer
  *
  * @param host_id   SPI host ID

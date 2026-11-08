@@ -151,6 +151,16 @@ We have two bits to control the interrupt:
 #define SPI_MASTER_MALLOC_CAPS    (MALLOC_CAP_DEFAULT)
 #endif
 
+#ifdef CONFIG_CACHE_L1_CACHE_LINE_SIZE
+#if CONFIG_CACHE_L1_CACHE_LINE_SIZE > 64
+#define SPI_MASTER_STACK_BOUNCE_ALIGNMENT CONFIG_CACHE_L1_CACHE_LINE_SIZE
+#else
+#define SPI_MASTER_STACK_BOUNCE_ALIGNMENT 64
+#endif
+#else
+#define SPI_MASTER_STACK_BOUNCE_ALIGNMENT 64
+#endif
+
 #define SPI_PERIPH_SRC_FREQ_MAX     (80*1000*1000)    //peripheral hardware limitation for clock source into peripheral
 
 /**
@@ -182,10 +192,21 @@ typedef struct {
     const uint32_t *buffer_to_send;    //equals to tx_data, if SPI_TRANS_USE_RXDATA is applied; otherwise if original buffer wasn't in DMA-capable memory, this gets the address of a temporary buffer that is;
     //otherwise sets to the original buffer or NULL if no buffer is assigned.
     uint32_t *buffer_to_rcv;           //similar to buffer_to_send
+    uint8_t buffer_flags;
 #ifdef SPI_LL_PERIPH_HAS_SCT
-    uint32_t reserved[2];              //As we create the queue when in init, to use sct mode private descriptor as a queue item (when in sct mode), we need to add a dummy member here to keep the same size with `spi_sct_trans_priv_t`.
+    uint32_t reserved;                 //Keep this queue item the same size as `spi_sct_trans_priv_t`.
 #endif
 } spi_trans_priv_t;
+
+#define SPI_TRANS_PRIV_TX_BUFFER_BORROWED  BIT(0)
+#define SPI_TRANS_PRIV_RX_BUFFER_BORROWED  BIT(1)
+
+typedef struct {
+    void *tx_buffer;
+    size_t tx_size;
+    void *rx_buffer;
+    size_t rx_size;
+} spi_master_stack_bounce_t;
 
 #ifdef SPI_LL_PERIPH_HAS_SCT
 //Type of dma descriptors that used under SPI SCT mode
@@ -1194,7 +1215,8 @@ static SPI_MASTER_ISR_ATTR esp_err_t check_trans_valid(spi_device_handle_t handl
 static SPI_MASTER_ISR_ATTR void uninstall_priv_desc(spi_trans_priv_t* trans_buf)
 {
     spi_transaction_t *trans_desc = trans_buf->trans;
-    if ((void *)trans_buf->buffer_to_send != trans_desc->tx_data && trans_buf->buffer_to_send != trans_desc->tx_buffer) {
+    if (!(trans_buf->buffer_flags & SPI_TRANS_PRIV_TX_BUFFER_BORROWED) &&
+            (void *)trans_buf->buffer_to_send != trans_desc->tx_data && trans_buf->buffer_to_send != trans_desc->tx_buffer) {
         free((void *)trans_buf->buffer_to_send); //force free, ignore const
     }
 
@@ -1202,11 +1224,14 @@ static SPI_MASTER_ISR_ATTR void uninstall_priv_desc(spi_trans_priv_t* trans_buf)
     void *orig_rx_buffer = (trans_desc->flags & SPI_TRANS_USE_RXDATA) ? trans_desc->rx_data : trans_desc->rx_buffer;
     if (trans_buf->buffer_to_rcv && trans_buf->buffer_to_rcv != orig_rx_buffer) {
         memcpy(orig_rx_buffer, trans_buf->buffer_to_rcv, (trans_desc->rxlength + 7) / 8);
-        free(trans_buf->buffer_to_rcv);
+        if (!(trans_buf->buffer_flags & SPI_TRANS_PRIV_RX_BUFFER_BORROWED)) {
+            free(trans_buf->buffer_to_rcv);
+        }
     }
 }
 
-static SPI_MASTER_ISR_ATTR esp_err_t setup_priv_desc(spi_host_t *host, spi_trans_priv_t* priv_desc)
+static SPI_MASTER_ISR_ATTR esp_err_t setup_priv_desc(spi_host_t *host, spi_trans_priv_t* priv_desc,
+        const spi_master_stack_bounce_t *stack_bounce)
 {
     spi_transaction_t *trans_desc = priv_desc->trans;
     const spi_bus_attr_t *bus_attr = host->bus_attr;
@@ -1223,11 +1248,34 @@ static SPI_MASTER_ISR_ATTR esp_err_t setup_priv_desc(spi_host_t *host, spi_trans
 
     bool use_psram = trans_desc->flags & SPI_TRANS_DMA_USE_PSRAM;
     bool auto_malloc = !(trans_desc->flags & SPI_TRANS_DMA_BUFFER_ALIGN_MANUAL);
-    esp_err_t ret = spicommon_dma_setup_priv_buffer(host->id, send_ptr, (trans_desc->length + 7) / 8, true, use_psram, auto_malloc, (void *)&priv_desc->buffer_to_send);
+    /* The local buffers are aligned for the compile-time cache line size. */
+    const spi_master_stack_bounce_t *usable_stack_bounce = stack_bounce;
+    if (bus_attr->cache_align_int > SPI_MASTER_STACK_BOUNCE_ALIGNMENT) {
+        usable_stack_bounce = NULL;
+    }
+    bool borrowed = false;
+    uint32_t *dma_send_ptr = NULL;
+    esp_err_t ret = spicommon_dma_setup_priv_buffer_with_stack(host->id, send_ptr, (trans_desc->length + 7) / 8,
+            true, use_psram, auto_malloc,
+            usable_stack_bounce ? usable_stack_bounce->tx_buffer : NULL,
+            usable_stack_bounce ? usable_stack_bounce->tx_size : 0,
+            &dma_send_ptr, &borrowed);
+    priv_desc->buffer_to_send = dma_send_ptr;
+    if (borrowed) {
+        priv_desc->buffer_flags |= SPI_TRANS_PRIV_TX_BUFFER_BORROWED;
+    }
     if (ret != ESP_OK) {
         goto clean_up;
     }
-    ret = spicommon_dma_setup_priv_buffer(host->id, rcv_ptr, (trans_desc->rxlength + 7) / 8, false, use_psram, auto_malloc, &priv_desc->buffer_to_rcv);
+    borrowed = false;
+    ret = spicommon_dma_setup_priv_buffer_with_stack(host->id, rcv_ptr, (trans_desc->rxlength + 7) / 8,
+            false, use_psram, auto_malloc,
+            usable_stack_bounce ? usable_stack_bounce->rx_buffer : NULL,
+            usable_stack_bounce ? usable_stack_bounce->rx_size : 0,
+            &priv_desc->buffer_to_rcv, &borrowed);
+    if (borrowed) {
+        priv_desc->buffer_flags |= SPI_TRANS_PRIV_RX_BUFFER_BORROWED;
+    }
     if (ret != ESP_OK) {
         goto clean_up;
     }
@@ -1238,7 +1286,8 @@ clean_up:
     return ret;
 }
 
-esp_err_t SPI_MASTER_ATTR spi_device_queue_trans(spi_device_handle_t handle, spi_transaction_t *trans_desc, uint32_t ticks_to_wait)
+static esp_err_t SPI_MASTER_ATTR spi_device_queue_trans_internal(spi_device_handle_t handle, spi_transaction_t *trans_desc,
+        uint32_t ticks_to_wait, const spi_master_stack_bounce_t *stack_bounce)
 {
     esp_err_t ret = check_trans_valid(handle, trans_desc);
     if (ret != ESP_OK) {
@@ -1256,7 +1305,7 @@ esp_err_t SPI_MASTER_ATTR spi_device_queue_trans(spi_device_handle_t handle, spi
     }
 
     spi_trans_priv_t trans_buf = { .trans = trans_desc, };
-    ret = setup_priv_desc(host, &trans_buf);
+    ret = setup_priv_desc(host, &trans_buf, stack_bounce);
     if (ret != ESP_OK) {
         return ret;
     }
@@ -1290,6 +1339,11 @@ clean_up:
     return ret;
 }
 
+esp_err_t SPI_MASTER_ATTR spi_device_queue_trans(spi_device_handle_t handle, spi_transaction_t *trans_desc, uint32_t ticks_to_wait)
+{
+    return spi_device_queue_trans_internal(handle, trans_desc, ticks_to_wait, NULL);
+}
+
 esp_err_t SPI_MASTER_ATTR spi_device_get_trans_result(spi_device_handle_t handle, spi_transaction_t **trans_desc, uint32_t ticks_to_wait)
 {
     BaseType_t r;
@@ -1317,10 +1371,24 @@ esp_err_t SPI_MASTER_ATTR spi_device_get_trans_result(spi_device_handle_t handle
 //Porcelain to do one blocking transmission.
 esp_err_t SPI_MASTER_ATTR spi_device_transmit(spi_device_handle_t handle, spi_transaction_t *trans_desc)
 {
+    SPI_CHECK(handle != NULL, "invalid dev handle", ESP_ERR_INVALID_ARG);
+    // A returned result is required to keep the stack buffers alive until DMA completes.
+    SPI_CHECK(!(handle->cfg.flags & SPI_DEVICE_NO_RETURN_RESULT),
+              "Blocking transmit requires transaction results", ESP_ERR_NOT_SUPPORTED);
+
     esp_err_t ret;
     spi_transaction_t *ret_trans;
+    spi_master_stack_bounce_t stack_bounce = {0};
+#if CONFIG_SPI_MASTER_STACK_BOUNCE_SIZE > 0
+    _Alignas(SPI_MASTER_STACK_BOUNCE_ALIGNMENT) uint8_t tx_bounce[CONFIG_SPI_MASTER_STACK_BOUNCE_SIZE];
+    _Alignas(SPI_MASTER_STACK_BOUNCE_ALIGNMENT) uint8_t rx_bounce[CONFIG_SPI_MASTER_STACK_BOUNCE_SIZE];
+    stack_bounce.tx_buffer = tx_bounce;
+    stack_bounce.tx_size = sizeof(tx_bounce);
+    stack_bounce.rx_buffer = rx_bounce;
+    stack_bounce.rx_size = sizeof(rx_bounce);
+#endif
     //ToDo: check if any spi transfers in flight
-    ret = spi_device_queue_trans(handle, trans_desc, portMAX_DELAY);
+    ret = spi_device_queue_trans_internal(handle, trans_desc, portMAX_DELAY, &stack_bounce);
     if (ret != ESP_OK) {
         return ret;
     }
@@ -1398,7 +1466,8 @@ void SPI_MASTER_ISR_ATTR spi_device_release_bus(spi_device_t *dev)
     (void) ret;
 }
 
-esp_err_t SPI_MASTER_ISR_ATTR spi_device_polling_start(spi_device_handle_t handle, spi_transaction_t *trans_desc, uint32_t ticks_to_wait)
+static esp_err_t SPI_MASTER_ISR_ATTR spi_device_polling_start_internal(spi_device_handle_t handle,
+        spi_transaction_t *trans_desc, uint32_t ticks_to_wait, const spi_master_stack_bounce_t *stack_bounce)
 {
     esp_err_t ret;
     SPI_CHECK(ticks_to_wait == portMAX_DELAY, "currently timeout is not available for polling transactions", ESP_ERR_INVALID_ARG);
@@ -1410,7 +1479,7 @@ esp_err_t SPI_MASTER_ISR_ATTR spi_device_polling_start(spi_device_handle_t handl
 
     spi_host_t *host = handle->host;
     spi_trans_priv_t priv_polling_trans = { .trans = trans_desc, };
-    ret = setup_priv_desc(host, &priv_polling_trans);
+    ret = setup_priv_desc(host, &priv_polling_trans, stack_bounce);
     if (ret != ESP_OK) {
         return ret;
     }
@@ -1443,6 +1512,11 @@ esp_err_t SPI_MASTER_ISR_ATTR spi_device_polling_start(spi_device_handle_t handl
     spi_new_trans(handle, &host->cur_trans_buf);
 
     return ESP_OK;
+}
+
+esp_err_t SPI_MASTER_ISR_ATTR spi_device_polling_start(spi_device_handle_t handle, spi_transaction_t *trans_desc, uint32_t ticks_to_wait)
+{
+    return spi_device_polling_start_internal(handle, trans_desc, ticks_to_wait, NULL);
 }
 
 esp_err_t SPI_MASTER_ISR_ATTR spi_device_polling_end(spi_device_handle_t handle, uint32_t ticks_to_wait)
@@ -1485,7 +1559,16 @@ esp_err_t SPI_MASTER_ISR_ATTR spi_device_polling_end(spi_device_handle_t handle,
 esp_err_t SPI_MASTER_ISR_ATTR spi_device_polling_transmit(spi_device_handle_t handle, spi_transaction_t* trans_desc)
 {
     esp_err_t ret;
-    ret = spi_device_polling_start(handle, trans_desc, portMAX_DELAY);
+    spi_master_stack_bounce_t stack_bounce = {0};
+#if CONFIG_SPI_MASTER_STACK_BOUNCE_SIZE > 0
+    _Alignas(SPI_MASTER_STACK_BOUNCE_ALIGNMENT) uint8_t tx_bounce[CONFIG_SPI_MASTER_STACK_BOUNCE_SIZE];
+    _Alignas(SPI_MASTER_STACK_BOUNCE_ALIGNMENT) uint8_t rx_bounce[CONFIG_SPI_MASTER_STACK_BOUNCE_SIZE];
+    stack_bounce.tx_buffer = tx_bounce;
+    stack_bounce.tx_size = sizeof(tx_bounce);
+    stack_bounce.rx_buffer = rx_bounce;
+    stack_bounce.rx_size = sizeof(rx_bounce);
+#endif
+    ret = spi_device_polling_start_internal(handle, trans_desc, portMAX_DELAY, &stack_bounce);
     if (ret != ESP_OK) {
         return ret;
     }
@@ -1714,7 +1797,7 @@ esp_err_t spi_bus_multi_trans_mode_enable(spi_device_handle_t handle, bool enabl
         spi_hal_context_t *hal = &handle->host->hal;
         spi_hal_dev_config_t *hal_dev = &handle->hal_dev;
         //As we know the `fake_trans` are internal, so no need to `uninstall_priv_desc`
-        ret = setup_priv_desc(host, &trans_buf);
+        ret = setup_priv_desc(host, &trans_buf, NULL);
         if (ret != ESP_OK) {
             return ret;
         }

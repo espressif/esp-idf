@@ -291,6 +291,18 @@ Normally, the data that needs to be transferred to or from a Device is read from
 
 If these requirements are not satisfied, the transaction efficiency will be affected due to the allocation and copying of temporary buffers.
 
+For blocking master transactions, the optional Kconfig setting
+``CONFIG_SPI_MASTER_STACK_BOUNCE_SIZE`` reserves an aligned temporary buffer on
+the calling task's stack for each DMA direction. This can avoid heap allocation
+for short transfers that need alignment or DMA-capable memory. The setting is
+disabled by default; when enabled, the configured size is reserved separately
+for TX and RX. The buffers are used only when the task stack is DMA-capable
+internal memory and the aligned transfer fits. Otherwise, the driver uses its
+normal heap allocation path. The setting applies to
+:cpp:func:`spi_device_transmit` and :cpp:func:`spi_device_polling_transmit`;
+the split queue and polling APIs retain their existing buffer lifetime rules.
+Account for the additional stack use when sizing the calling task.
+
 If using more than one data line to transmit, please set ``SPI_DEVICE_HALFDUPLEX`` flag for the member ``flags`` in the struct :cpp:type:`spi_device_interface_config_t`. And the member ``flags`` in the struct :cpp:type:`spi_transaction_t` should be set as described in :ref:`transaction-line-mode`.
 
 .. only:: esp32

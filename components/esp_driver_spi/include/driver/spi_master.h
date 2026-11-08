@@ -263,6 +263,7 @@ esp_err_t spi_device_get_trans_result(spi_device_handle_t handle, spi_transactio
  * @param trans_desc Description of transaction to execute
  * @return
  *         - ESP_ERR_INVALID_ARG   if parameter is invalid
+ *         - ESP_ERR_NOT_SUPPORTED if flag `SPI_DEVICE_NO_RETURN_RESULT` is set (no transaction is queued)
  *         - ESP_OK                on success
  */
 esp_err_t spi_device_transmit(spi_device_handle_t handle, spi_transaction_t *trans_desc);
