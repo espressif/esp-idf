@@ -1371,6 +1371,11 @@ esp_err_t SPI_MASTER_ATTR spi_device_get_trans_result(spi_device_handle_t handle
 //Porcelain to do one blocking transmission.
 esp_err_t SPI_MASTER_ATTR spi_device_transmit(spi_device_handle_t handle, spi_transaction_t *trans_desc)
 {
+    SPI_CHECK(handle != NULL, "invalid dev handle", ESP_ERR_INVALID_ARG);
+    // A returned result is required to keep the stack buffers alive until DMA completes.
+    SPI_CHECK(!(handle->cfg.flags & SPI_DEVICE_NO_RETURN_RESULT),
+              "Blocking transmit requires transaction results", ESP_ERR_NOT_SUPPORTED);
+
     esp_err_t ret;
     spi_transaction_t *ret_trans;
     spi_master_stack_bounce_t stack_bounce = {0};

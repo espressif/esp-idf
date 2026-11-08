@@ -33,6 +33,7 @@
 #include "test_spi_utils.h"
 #include "spi_performance.h"
 #include "esp_async_memcpy.h"
+#include "freertos/queue.h"
 
 const static char TAG[] = "test_spi";
 
@@ -459,6 +460,51 @@ TEST_CASE("SPI blocking transmit with stack bounce buffers", "[spi]")
     master_free_device_bus(handle);
 }
 #endif
+
+static void IRAM_ATTR record_no_result_completion(spi_transaction_t *trans)
+{
+    xQueueSendFromISR((QueueHandle_t)trans->user, &trans, NULL);
+}
+
+TEST_CASE("SPI blocking transmit rejects devices without a result queue", "[spi]")
+{
+    // Use non-DMA so a regression can be detected without using expired stack buffers.
+    spi_device_handle_t handle = setup_spi_bus_loopback(80000, false);
+    TEST_ESP_OK(spi_bus_remove_device(handle));
+    const spi_device_interface_config_t devcfg = {
+        .clock_speed_hz = 80000,
+        .spics_io_num = PIN_NUM_CS,
+        .queue_size = 2,
+        .flags = SPI_DEVICE_NO_RETURN_RESULT,
+        .post_cb = record_no_result_completion,
+    };
+    TEST_ESP_OK(spi_bus_add_device(TEST_SPI_HOST, &devcfg, &handle));
+
+    QueueHandle_t completions = xQueueCreate(2, sizeof(spi_transaction_t *));
+    TEST_ASSERT_NOT_NULL(completions);
+    spi_transaction_t rejected = {
+        .flags = SPI_TRANS_USE_TXDATA,
+        .length = 8,
+        .user = completions,
+    };
+    spi_transaction_t queued = rejected;
+    esp_err_t ret = spi_device_transmit(handle, &rejected);
+    TEST_ESP_OK(spi_device_queue_trans(handle, &queued, portMAX_DELAY));
+    // Acquiring the bus waits for pending work on this device to finish.
+    TEST_ESP_OK(spi_device_acquire_bus(handle, portMAX_DELAY));
+    spi_device_release_bus(handle);
+
+    spi_transaction_t *completed = NULL;
+    BaseType_t received = xQueueReceive(completions, &completed, 0);
+    UBaseType_t remaining = uxQueueMessagesWaiting(completions);
+    vQueueDelete(completions);
+    master_free_device_bus(handle);
+
+    TEST_ASSERT_EQUAL(ESP_ERR_NOT_SUPPORTED, ret);
+    TEST_ASSERT_EQUAL(pdTRUE, received);
+    TEST_ASSERT_EQUAL_PTR(&queued, completed);
+    TEST_ASSERT_EQUAL_UINT(0, remaining);
+}
 
 TEST_CASE("SPI Master test, interaction of multiple devs", "[spi]")
 {
