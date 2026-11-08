@@ -29,8 +29,6 @@
 #include "esp_riscv_trace_snapshot.h"
 #include "esp_riscv_trace_priv.h"
 
-#define ESP_RISCV_TRACE_OBJ_CAPS              (MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT)
-
 #define ESP_RISCV_TRACE_BUFFER_CAPS_INTERNAL  (MALLOC_CAP_DMA | MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT)
 #define ESP_RISCV_TRACE_BUFFER_CAPS_EXTERNAL  (MALLOC_CAP_SPIRAM | MALLOC_CAP_8BIT)
 
@@ -40,6 +38,9 @@
 #define ESP_RISCV_TRACE_BUFFER_MIN_SIZE       8
 
 static const char *TAG = "esp_riscv_trace";
+
+/* Per-core contexts. */
+static struct esp_riscv_trace_context_t s_ctx[SOC_CPU_CORES_NUM];
 
 /* Handles created at startup by esp_riscv_trace_early_init(), one slot per core. */
 static esp_riscv_trace_handle_t s_handle[SOC_CPU_CORES_NUM];
@@ -294,8 +295,6 @@ static esp_err_t validate_trace_config(esp_riscv_trace_core_t core_id, const esp
 static esp_err_t esp_riscv_trace_new(esp_riscv_trace_core_t core_id, const esp_riscv_trace_config_t *config,
                                      esp_riscv_trace_handle_t *ret_handle)
 {
-    esp_err_t ret = ESP_OK;
-
     ESP_RETURN_ON_ERROR_ISR(validate_trace_config(core_id, config, ret_handle), TAG, "invalid trace configuration");
 
     size_t trace_mem_size = 0;
@@ -303,9 +302,7 @@ static esp_err_t esp_riscv_trace_new(esp_riscv_trace_core_t core_id, const esp_r
                                               &trace_mem_size);
     ESP_RETURN_ON_FALSE_ISR(trace_mem != NULL, ESP_ERR_NO_MEM, TAG, "failed to allocate trace buffer");
 
-    esp_riscv_trace_handle_t handle = heap_caps_calloc(1, sizeof(struct esp_riscv_trace_context_t),
-                                                       ESP_RISCV_TRACE_OBJ_CAPS);
-    ESP_GOTO_ON_FALSE_ISR(handle != NULL, ESP_ERR_NO_MEM, err_alloc, TAG, "no mem for the trace handle");
+    esp_riscv_trace_handle_t handle = &s_ctx[core_id];
 
     riscv_trace_hal_context_t hal_ctx;
     riscv_trace_hal_config_t hal_config = {
@@ -350,10 +347,6 @@ static esp_err_t esp_riscv_trace_new(esp_riscv_trace_core_t core_id, const esp_r
     ESP_EARLY_LOGD(TAG, "RISC-V trace encoder initialized on core %d", core_id);
 
     return ESP_OK;
-
-err_alloc:
-    heap_caps_free(trace_mem);
-    return ret;
 }
 
 /* Called with handle->lock held, from the public API only. Not safe from the OpenOCD stubs or the panic path. */
