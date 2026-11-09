@@ -151,6 +151,12 @@ typedef union {
     struct {
         tBTA_AV_HNDL hndl;      /* connection the codec configuration belongs to */
         esp_a2d_mcc_t mcc;
+#if BTC_AV_SINK_INCLUDED
+        /* Raw AVDT codec. The BTC task stores it before the state machine
+         * runs, so a CLOSE queued earlier cannot leave the snapshot invalid. */
+        BOOLEAN has_codec;
+        UINT8 codec_info[AVDT_CODEC_SIZE];
+#endif
     } config;
     // BTC_AV_SINK_API_REG_SEP_EVT or BTC_AV_SRC_API_REG_SEP_EVT
     struct {
