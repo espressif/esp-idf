@@ -445,7 +445,7 @@ Light-sleep 模式配置
      - OFF
 
    * - 在 light sleep 状态配置 flash 进入 deep power-down 模式 (:menuitem:`CONFIG_ESP_SLEEP_SET_FLASH_DPD`)
-     - OFF
+     - ON
 
    * - ``max_freq_mhz``
      - {IDF_TARGET_NAME} 支持的最大 CPU 频率

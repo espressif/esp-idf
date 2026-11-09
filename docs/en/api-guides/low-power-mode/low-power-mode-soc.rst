@@ -445,7 +445,7 @@ Recommended Configuration
      - OFF
 
    * - Set flash into deep power-down mode in light sleep (:menuitem:`CONFIG_ESP_SLEEP_SET_FLASH_DPD`)
-     - OFF
+     - ON
 
    * - ``max_freq_mhz``
      - The maximum CPU frequency supported by {IDF_TARGET_NAME}
