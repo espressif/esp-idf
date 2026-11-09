@@ -57,8 +57,8 @@ void btc_a2dp_on_init(void);
  **
  ** Function         btc_a2dp_on_idle
  **
- ** Description      Process 'idle' request from BTC AV state machine during
- **                  initialization
+ ** Description      Tear down the shared media path when a connection that
+ **                  owned it enters idle.
  **
  *******************************************************************************/
 void btc_a2dp_on_idle(void);

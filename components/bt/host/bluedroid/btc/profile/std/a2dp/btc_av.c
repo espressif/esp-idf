@@ -906,10 +906,8 @@ static BOOLEAN btc_av_state_idle_handler(btc_sm_event_t event, void *p_data, voi
         p_cb->codec_info_valid = FALSE;
         p_cb->displace_ms = 0;
 #endif
-        /* Deinit posts BTA_AvClose before BTA_AvDisable, so CLOSE lands here
-         * while BTA is still deregistering and may read bta_av_co_cb.
-         * btc_a2dp_on_idle() reinitializes that block. The media path is
-         * shared: only tear it down when this connection owned it. */
+        /* The media path is shared: only tear it down when this connection
+         * owned it. Skip that during deinit; clean_up releases the path. */
         if (!btc_a2d_is_deinit_ongoing() &&
                 (btc_av_common.active_idx == BTC_AV_IDX_INVALID ||
                  btc_av_common.active_idx == (int)p_cb->idx)) {
@@ -2415,11 +2413,6 @@ static void bte_av_media_sink_cback_impl(UINT8 idx, tBTA_AV_EVT event, tBTA_AV_M
         btc_msg_t msg;
         btc_av_args_t arg;
 
-        /* remember the codec of this connection, it is needed again when this
-         * connection takes over the shared decoder */
-        memcpy(p_cb->codec_info, p_codec, AVDT_CODEC_SIZE);
-        p_cb->codec_info_valid = TRUE;
-
 #if (BTC_AV_EXT_CODEC == FALSE)
         /* re-configuring the decoder would cut off the connection that is being
          * rendered, it is done on hand over instead */
@@ -2434,6 +2427,10 @@ static void bte_av_media_sink_cback_impl(UINT8 idx, tBTA_AV_EVT event, tBTA_AV_M
         msg.act = BTC_AV_CONFIG_EVT;
         memset(&arg, 0, sizeof(btc_av_args_t));
         arg.config.hndl = p_cb->bta_handle;
+        /* Published on the BTC task. A CLOSE already in that queue clears the
+         * snapshot, and this event, queued after it, stores the new one. */
+        arg.config.has_codec = TRUE;
+        memcpy(arg.config.codec_info, p_codec, AVDT_CODEC_SIZE);
 
         if (p_codec[BTA_AV_CODEC_TYPE_IDX] == A2D_MEDIA_CT_SBC) {
             tA2D_SBC_CIE sbc_cie;
@@ -3408,6 +3405,18 @@ void btc_a2dp_cb_handler(btc_msg_t *msg)
     btc_av_cb_t *p_cb = btc_av_route_cb_event(msg->act, (tBTA_AV *)msg->arg);
 
     if (p_cb != NULL) {
+#if BTC_AV_SINK_INCLUDED
+        if (msg->act == BTC_AV_CONFIG_EVT) {
+            btc_av_args_t *arg = (btc_av_args_t *)msg->arg;
+
+            /* Before the state machine: IDLE entered by an earlier CLOSE must
+             * not be the last writer of this connection's codec snapshot. */
+            if (arg->config.has_codec) {
+                memcpy(p_cb->codec_info, arg->config.codec_info, AVDT_CODEC_SIZE);
+                p_cb->codec_info_valid = TRUE;
+            }
+        }
+#endif
         btc_sm_dispatch(p_cb->sm_handle, msg->act, (void *)(msg->arg));
     } else {
         BTC_TRACE_WARNING("dropped event %d, no matching connection", msg->act);
