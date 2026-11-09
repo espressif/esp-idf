@@ -566,9 +566,11 @@ void nan_security_reset_own_group_keys(void);
 uint8_t nan_sec_pairwise_csid_from_bitmap(uint16_t csid_bitmap);
 
 /*
- * §7.4 gate only: true if the new pairwise SA is same/stronger than any cached
- * SA (or none exists) and ND-TK/NM-TK should be installed. Does not mutate the
- * SA cache — call nan_sec_ndp_commit_keys() only after firmware key install
+ * §7.4 gate only: true if the new pairwise SA is strictly stronger than the
+ * cached SA, equal strength from the same owning NDP (re-key), or no cached
+ * SA exists; false otherwise (weaker, or equal strength from a different NDP).
+ * ND-TK/NM-TK should be installed only when this returns true. Does not mutate
+ * the SA cache — call nan_sec_ndp_commit_keys() only after firmware key install
  * succeeds so cache and driver keys stay aligned. Caller must hold NAN_DATA_LOCK.
  */
 bool nan_sec_ndp_should_install_keys(uint8_t csid, int pairing_akmp, uint8_t ndp_id);
