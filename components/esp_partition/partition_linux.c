@@ -59,6 +59,8 @@ static uint8_t s_esp_partition_emulated_power_off_mode = 0;
 
 // tracking erase count individually for each emulated sector
 static size_t *s_esp_partition_stat_sector_erase_count = NULL;
+// Element count for s_esp_partition_stat_sector_erase_count (ceil of flash size)
+static size_t s_esp_partition_stat_sector_count = 0;
 
 // forward declaration of hooks
 static void esp_partition_hook_read(const void *srcAddr, const size_t size);
@@ -482,7 +484,18 @@ esp_err_t esp_partition_file_mmap(const uint8_t **part_desc_addr_start)
 
 #ifdef CONFIG_ESP_PARTITION_ENABLE_STATS
     free(s_esp_partition_stat_sector_erase_count);
-    s_esp_partition_stat_sector_erase_count = malloc(sizeof(size_t) * s_esp_partition_file_mmap_ctrl_act.flash_file_size / ESP_PARTITION_EMULATED_SECTOR_SIZE);
+    s_esp_partition_stat_sector_erase_count = NULL;
+    s_esp_partition_stat_sector_count = 0;
+    if (s_esp_partition_file_mmap_ctrl_act.flash_file_size > 0) {
+        // Round up so every byte in [0, flash_file_size) has a valid sector slot
+        size_t sector_count = (s_esp_partition_file_mmap_ctrl_act.flash_file_size +
+                               ESP_PARTITION_EMULATED_SECTOR_SIZE - 1) /
+                              ESP_PARTITION_EMULATED_SECTOR_SIZE;
+        s_esp_partition_stat_sector_erase_count = calloc(sector_count, sizeof(size_t));
+        if (s_esp_partition_stat_sector_erase_count != NULL) {
+            s_esp_partition_stat_sector_count = sector_count;
+        }
+    }
 #endif
 
     //return mmapped file starting address
@@ -511,6 +524,7 @@ esp_err_t esp_partition_file_munmap(void)
 #ifdef CONFIG_ESP_PARTITION_ENABLE_STATS
     free(s_esp_partition_stat_sector_erase_count);
     s_esp_partition_stat_sector_erase_count = NULL;
+    s_esp_partition_stat_sector_count = 0;
 #endif
 
     // unmap the flash emulation memory file
@@ -884,8 +898,11 @@ static bool esp_partition_hook_erase(const void *dstAddr, size_t *size)
     // update statistics for all sectors until power down cycle
     for (size_t sector_index = first_sector_idx; sector_index < first_sector_idx + sector_count; sector_index++) {
         ++s_esp_partition_stat_erase_ops;
-        s_esp_partition_stat_sector_erase_count[sector_index]++;
         s_esp_partition_stat_total_time += s_esp_partition_stat_block_erase_time;
+        // Invariant: ceil-sized array covers every sector of a flash-bounded erase
+        assert(s_esp_partition_stat_sector_erase_count != NULL);
+        assert(sector_index < s_esp_partition_stat_sector_count);
+        s_esp_partition_stat_sector_erase_count[sector_index]++;
     }
 
     return ret_val;
@@ -900,7 +917,10 @@ void esp_partition_clear_stats(void)
     s_esp_partition_stat_write_ops = 0;
     s_esp_partition_stat_total_time = 0;
 
-    memset(s_esp_partition_stat_sector_erase_count, 0, sizeof(size_t) * s_esp_partition_file_mmap_ctrl_act.flash_file_size / ESP_PARTITION_EMULATED_SECTOR_SIZE);
+    if (s_esp_partition_stat_sector_erase_count != NULL && s_esp_partition_stat_sector_count > 0) {
+        memset(s_esp_partition_stat_sector_erase_count, 0,
+               sizeof(size_t) * s_esp_partition_stat_sector_count);
+    }
 }
 
 size_t esp_partition_get_read_ops(void)
@@ -941,6 +961,10 @@ void esp_partition_fail_after(size_t count, uint8_t mode)
 
 size_t esp_partition_get_sector_erase_count(size_t sector)
 {
+    if (s_esp_partition_stat_sector_erase_count == NULL ||
+            sector >= s_esp_partition_stat_sector_count) {
+        return 0;
+    }
     return s_esp_partition_stat_sector_erase_count[sector];
 }
 #endif

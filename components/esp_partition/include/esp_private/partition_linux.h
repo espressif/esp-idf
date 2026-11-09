@@ -196,6 +196,7 @@ void esp_partition_fail_after(size_t count, uint8_t mode);
  *
  * @return
  *      - count of erase operations performed on virtual emulated sector
+ *      - 0 if sector is out of range or per-sector stats are not allocated
  *
 */
 size_t esp_partition_get_sector_erase_count(size_t sector);
