@@ -21,7 +21,9 @@ extern "C" {
  *
  * @param enable true to enable livelock workaround, false to disable
  * @param deadline_us Absolute esp_timer deadline in microseconds, or 0 to use only the fixed cycle limit.
- * @return true on success, false if the deadline expired.
+ * @return true on success; false if the deadline expired and the previous mode is intact.
+ *         If registers were already touched, recovery may continue past the deadline
+ *         within the original fixed cycle limit.
  */
 bool esp_int_wdt_livelock_workaround(bool enable, int64_t deadline_us);
 

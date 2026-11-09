@@ -200,46 +200,67 @@ static bool ESP_SYSTEM_IRAM_ATTR iwdt_write_stages(uint32_t stage0_ticks)
            && iwdt_stage1_ticks() == IWDT_STAGE1_TIMEOUT_US;
 }
 
+/* Caller masks local high interrupts. The second check catches a handler
+ * that started during the writes and has not yet finished. */
+static bool ESP_SYSTEM_IRAM_ATTR iwdt_prepare_stages(bool *stages_touched)
+{
+    if (!iwdt_handler_idle()) {
+        return false;
+    }
+
+    if (stages_touched != NULL) {
+        *stages_touched = true;
+    }
+    return iwdt_write_stages(IWDT_STAGE0_TIMEOUT_US) && iwdt_handler_idle();
+}
+
+static void ESP_SYSTEM_IRAM_ATTR iwdt_finish_recovery(unsigned ps)
+{
+    bool restored = !s_livelock_enabled
+                    || iwdt_write_stages(esp_int_wdt_livelock_get_feed_stage0_ticks());
+    iwdt_restore_high_interrupts(ps);
+    if (!restored) {
+        abort();
+    }
+}
+
+/* Sleep entry has already expired. Reestablish a verified full timeout with
+ * no handler in flight before restoring the previous stage. Use the remainder
+ * of the fixed cycle budget so recovery cannot extend the hard limit. */
+static void ESP_SYSTEM_IRAM_ATTR iwdt_recover_mode(uint32_t t0)
+{
+    while ((uint32_t)(esp_cpu_get_cycle_count() - t0) < IWDT_MAX_WAIT_CYCLES) {
+        unsigned ps = iwdt_mask_high_interrupts();
+        if (iwdt_prepare_stages(NULL)) {
+            iwdt_finish_recovery(ps);
+            return;
+        }
+        iwdt_restore_high_interrupts(ps);
+    }
+    abort();
+}
+
 static bool ESP_SYSTEM_IRAM_ATTR iwdt_commit_mode(bool enable, int64_t deadline_us)
 {
     uint32_t t0 = esp_cpu_get_cycle_count();
     bool stages_touched = false;
     while ((uint32_t)(esp_cpu_get_cycle_count() - t0) < IWDT_MAX_WAIT_CYCLES) {
-        if (!stages_touched && deadline_us && esp_timer_get_time() >= deadline_us) {
+        if (deadline_us && esp_timer_get_time() >= deadline_us) {
+            if (stages_touched) {
+                iwdt_recover_mode(t0);
+            }
             return false;
         }
 
         unsigned ps = iwdt_mask_high_interrupts();
-        if (!iwdt_handler_idle()) {
-            /* Let an active handler finish with high interrupts restored. */
+        if (!iwdt_prepare_stages(&stages_touched)) {
+            /* Allow pending handlers to run before checking the deadline again. */
             iwdt_restore_high_interrupts(ps);
             continue;
         }
 
-        /* Extend and feed before changing the handler mode. An expiry during
-         * this operation is detected by the following handler-state check. */
-        stages_touched = true;
-        if (!iwdt_write_stages(IWDT_STAGE0_TIMEOUT_US)) {
-            iwdt_restore_high_interrupts(ps);
-            continue;
-        }
-
-        /* A handler entering during the preceding writes must publish its
-         * bookkeeping before proceeding to its delayed register writes. */
-        if (!iwdt_handler_idle()) {
-            iwdt_restore_high_interrupts(ps);
-            continue;
-        }
-
-        /* Once stages have been touched, restore the previous timeout with
-         * the handler idle before reporting an expired sleep deadline. */
         if (deadline_us && esp_timer_get_time() >= deadline_us) {
-            bool restored = !s_livelock_enabled
-                            || iwdt_write_stages(esp_int_wdt_livelock_get_feed_stage0_ticks());
-            iwdt_restore_high_interrupts(ps);
-            if (!restored) {
-                abort();
-            }
+            iwdt_finish_recovery(ps);
             return false;
         }
 
