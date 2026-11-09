@@ -1246,7 +1246,7 @@ static esp_err_t FORCE_IRAM_ATTR deep_sleep_start(bool allow_sleep_rejection)
     // which naturally avoids cache livelock, so the 20ms livelock workaround timeout is not needed.
     // Must do it before stalling another core, since s_iwdt_configure_lock spinlock is acquired in
     // esp_int_wdt_livelock_workaround, which may cause deadlock.
-    esp_int_wdt_livelock_workaround(false);
+    esp_int_wdt_livelock_workaround(false, 0);
 #endif
 
     /* Disable interrupts and stall another core in case another task writes
@@ -1364,7 +1364,7 @@ static esp_err_t FORCE_IRAM_ATTR deep_sleep_start(bool allow_sleep_rejection)
 
 #if CONFIG_ESP_INT_WDT && CONFIG_ESP32_ECO3_CACHE_LOCK_FIX
     // Configure WDT to use livelock workaround timeout after releasing other CPU
-    esp_int_wdt_livelock_workaround(true);
+    esp_int_wdt_livelock_workaround(true, 0);
 #endif
 
     esp_sleep_exit_critical();
@@ -1448,15 +1448,18 @@ static SLEEP_FN_ATTR esp_err_t esp_light_sleep_inner(uint32_t sleep_flags,
 }
 
 #if !CONFIG_FREERTOS_UNICORE
-static SLEEP_FN_ATTR esp_err_t sleep_smp_cpu_sleep_prepare(void)
+static SLEEP_FN_ATTR esp_err_t sleep_smp_cpu_sleep_prepare(int64_t iwdt_deadline_us)
 {
+#if CONFIG_ESP_INT_WDT && CONFIG_ESP32_ECO3_CACHE_LOCK_FIX
+    // The other core will be stalled in internal RAM, so the short workaround timeout is not needed.
+    if (!esp_int_wdt_livelock_workaround(false, iwdt_deadline_us)) {
+        return ESP_ERR_SLEEP_REJECT;
+    }
+#else
+    (void)iwdt_deadline_us;
+#endif
 #if CONFIG_PM_ESP_SLEEP_POWER_DOWN_CPU && SOC_PM_CPU_RETENTION_BY_SW
     sleep_cpu_retention_start();
-#endif
-#if CONFIG_ESP_INT_WDT && CONFIG_ESP32_ECO3_CACHE_LOCK_FIX
-    // The other core will be stalled by high-priority interrupt and spins on variables in internal RAM,
-    // which naturally avoids cache livelock, so the 20ms livelock workaround timeout is not needed.
-    esp_int_wdt_livelock_workaround(false);
 #endif
 #if CONFIG_FREERTOS_PORT_THREAD_SAFE_CLAIM
     esp_err_t ipc_isr_err = ESP_OK;
@@ -1480,7 +1483,7 @@ static SLEEP_FN_ATTR esp_err_t sleep_smp_cpu_sleep_prepare(void)
 #endif
 #if CONFIG_ESP_INT_WDT && CONFIG_ESP32_ECO3_CACHE_LOCK_FIX
         // Configure WDT to use livelock workaround timeout after releasing other CPU
-        esp_int_wdt_livelock_workaround(true);
+        esp_int_wdt_livelock_workaround(true, 0);
 #endif
         return ESP_ERR_SLEEP_REJECT;
     }
@@ -1496,7 +1499,7 @@ static SLEEP_FN_ATTR void sleep_smp_cpu_wakeup_prepare(void)
     esp_ipc_isr_release_other_cpu();
 #if CONFIG_ESP_INT_WDT && CONFIG_ESP32_ECO3_CACHE_LOCK_FIX
     // Configure WDT to use livelock workaround timeout after releasing other CPU
-    esp_int_wdt_livelock_workaround(true);
+    esp_int_wdt_livelock_workaround(true, 0);
 #endif
 }
 #endif  // !CONFIG_FREERTOS_UNICORE
@@ -1517,7 +1520,7 @@ FORCE_INLINE_ATTR bool can_power_down_vddsdio(uint32_t sleep_flags, const uint32
     return (sleep_flags & RTC_SLEEP_PD_VDDSDIO) ? force_pd : safe_pd;
 }
 
-esp_err_t esp_light_sleep_start(void)
+esp_err_t esp_light_sleep_start_with_iwdt_deadline(int64_t iwdt_deadline_us)
 {
     s_config.ccount_ticks_record = esp_cpu_get_cycle_count();
     esp_sleep_execute_event_callbacks(SLEEP_EVENT_SW_GOTO_SLEEP, (void *)0);
@@ -1536,10 +1539,12 @@ esp_err_t esp_light_sleep_start(void)
 #endif
 
 #if !CONFIG_FREERTOS_UNICORE
-    if (sleep_smp_cpu_sleep_prepare() != ESP_OK) {
+    if (sleep_smp_cpu_sleep_prepare(iwdt_deadline_us) != ESP_OK) {
         esp_sleep_exit_critical();
         return ESP_ERR_SLEEP_REJECT;
     }
+#else
+    (void)iwdt_deadline_us;
 #endif
 
     /* Another core is stalled and interrupts are disabled, so we can safely claim the thread-safe
@@ -1807,6 +1812,11 @@ esp_err_t esp_light_sleep_start(void)
 
     esp_sleep_exit_critical();
     return err;
+}
+
+esp_err_t esp_light_sleep_start(void)
+{
+    return esp_light_sleep_start_with_iwdt_deadline(0);
 }
 
 esp_err_t esp_sleep_disable_wakeup_source(esp_sleep_source_t source)

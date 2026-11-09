@@ -43,12 +43,12 @@ uint32_t ESP_SYSTEM_IRAM_ATTR esp_int_wdt_livelock_get_feed_stage0_ticks(void)
     return IWDT_STAGE0_TIMEOUT_US / (_lx_intr_livelock_max + 1);
 }
 
-void ESP_SYSTEM_IRAM_ATTR esp_int_wdt_livelock_workaround(bool enable)
+bool ESP_SYSTEM_IRAM_ATTR esp_int_wdt_livelock_workaround(bool enable, int64_t deadline_us)
 {
     if (!soc_has_cache_lock_bug()) {
-        return;
+        return true;
     }
-    esp_int_wdt_set_livelock_mode(enable);
+    return esp_int_wdt_set_livelock_mode(enable, deadline_us);
 }
 
 void esp_int_wdt_init_for_livelock_fix(void)

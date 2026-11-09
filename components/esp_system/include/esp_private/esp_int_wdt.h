@@ -86,8 +86,10 @@ void esp_int_wdt_reconfigure_ticks(uint32_t stage0_ticks, uint32_t stage1_ticks)
  * an active handler. Call before stalling the other CPU.
  *
  * @param enable Whether cache livelock recovery should be enabled.
+ * @param deadline_us Absolute esp_timer deadline in microseconds, or 0 to use only the fixed cycle limit.
+ * @return true if committed; false if the deadline expired and the previous mode was preserved.
  */
-void esp_int_wdt_set_livelock_mode(bool enable);
+bool esp_int_wdt_set_livelock_mode(bool enable, int64_t deadline_us);
 #endif
 
 #ifdef __cplusplus

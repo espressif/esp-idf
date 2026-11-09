@@ -20,8 +20,10 @@ extern "C" {
  * @brief Enable or disable the livelock workaround and reconfigure the interrupt WDT.
  *
  * @param enable true to enable livelock workaround, false to disable
+ * @param deadline_us Absolute esp_timer deadline in microseconds, or 0 to use only the fixed cycle limit.
+ * @return true on success, false if the deadline expired.
  */
-void esp_int_wdt_livelock_workaround(bool enable);
+bool esp_int_wdt_livelock_workaround(bool enable, int64_t deadline_us);
 
 /**
  * @brief Get stage0 ticks for a feed (from current livelock params).

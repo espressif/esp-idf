@@ -11,6 +11,8 @@
 #include "sdkconfig.h"
 #include "esp_chip_info.h"
 #include "esp_sleep.h"
+#include "esp_timer.h"
+#include "esp_private/esp_sleep_internal.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "freertos/semphr.h"
@@ -79,12 +81,12 @@ static void test_iwdt_on_core(void *arg)
                 context->passed = false;
             }
         } else {
-            esp_int_wdt_livelock_workaround(false);
+            esp_int_wdt_livelock_workaround(false, 0);
             context->passed = check_iwdt_mode(context, false);
             // Allow ticks on both CPUs, including the CPU0 watchdog feed hook.
             vTaskDelay(3);
             context->passed = check_iwdt_mode(context, false) && context->passed;
-            esp_int_wdt_livelock_workaround(true);
+            esp_int_wdt_livelock_workaround(true, 0);
             context->passed = check_iwdt_mode(context, true) && context->passed;
             ++context->successes;
         }
@@ -95,7 +97,7 @@ static void test_iwdt_on_core(void *arg)
     }
     context->passed = context->passed && context->successes == iterations;
     // Restore the mode before reporting a failed check to Unity.
-    esp_int_wdt_livelock_workaround(true);
+    esp_int_wdt_livelock_workaround(true, 0);
     xSemaphoreGive(context->done);
     vTaskSuspend(NULL);
 }
@@ -136,7 +138,7 @@ static void run_iwdt_test(bool sleep)
                    core, context.attempts, context.successes, context.rejections);
         }
         if (completed != pdTRUE || !context.passed) {
-            esp_int_wdt_livelock_workaround(true);
+            esp_int_wdt_livelock_workaround(true, 0);
             vSemaphoreDelete(context.done);
             if (sleep) {
                 esp_sleep_disable_wakeup_source(ESP_SLEEP_WAKEUP_TIMER);
@@ -162,5 +164,22 @@ TEST_CASE("interrupt watchdog mode survives light sleep on both cores", "[int_wd
 {
     run_iwdt_test(true);
 }
+
+#if !CONFIG_FREERTOS_UNICORE
+TEST_CASE("expired interrupt watchdog deadline rejects light sleep", "[int_wdt][lightsleep]")
+{
+    if (!soc_has_cache_lock_bug()) {
+        TEST_IGNORE_MESSAGE("Requires an ESP32 revision with the cache livelock workaround");
+    }
+    iwdt_test_context_t context = { 0 };
+    TEST_ASSERT_TRUE(check_iwdt_mode(&context, true));
+    TEST_ESP_OK(esp_sleep_enable_timer_wakeup(20000));
+    esp_err_t result = esp_light_sleep_start_with_iwdt_deadline(esp_timer_get_time());
+    TEST_ESP_OK(esp_sleep_disable_wakeup_source(ESP_SLEEP_WAKEUP_TIMER));
+
+    TEST_ASSERT_EQUAL(ESP_ERR_SLEEP_REJECT, result);
+    TEST_ASSERT_TRUE(check_iwdt_mode(&context, true));
+}
+#endif
 
 #endif // CONFIG_IDF_TARGET_ESP32 && CONFIG_ESP_INT_WDT && CONFIG_ESP32_ECO3_CACHE_LOCK_FIX

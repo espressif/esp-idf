@@ -33,6 +33,7 @@
 
 #if CONFIG_ESP_INT_WDT && CONFIG_ESP32_ECO3_CACHE_LOCK_FIX
 #include "esp_private/eco3_livelock_workaround.h"
+#include "esp_timer.h"
 #include "hal/mwdt_periph.h"
 #include "soc/timer_group_reg.h"
 #endif
@@ -199,10 +200,15 @@ static bool ESP_SYSTEM_IRAM_ATTR iwdt_write_stages(uint32_t stage0_ticks)
            && iwdt_stage1_ticks() == IWDT_STAGE1_TIMEOUT_US;
 }
 
-static void ESP_SYSTEM_IRAM_ATTR iwdt_commit_mode(bool enable)
+static bool ESP_SYSTEM_IRAM_ATTR iwdt_commit_mode(bool enable, int64_t deadline_us)
 {
     uint32_t t0 = esp_cpu_get_cycle_count();
+    bool stages_touched = false;
     while ((uint32_t)(esp_cpu_get_cycle_count() - t0) < IWDT_MAX_WAIT_CYCLES) {
+        if (!stages_touched && deadline_us && esp_timer_get_time() >= deadline_us) {
+            return false;
+        }
+
         unsigned ps = iwdt_mask_high_interrupts();
         if (!iwdt_handler_idle()) {
             /* Let an active handler finish with high interrupts restored. */
@@ -212,6 +218,7 @@ static void ESP_SYSTEM_IRAM_ATTR iwdt_commit_mode(bool enable)
 
         /* Extend and feed before changing the handler mode. An expiry during
          * this operation is detected by the following handler-state check. */
+        stages_touched = true;
         if (!iwdt_write_stages(IWDT_STAGE0_TIMEOUT_US)) {
             iwdt_restore_high_interrupts(ps);
             continue;
@@ -222,6 +229,18 @@ static void ESP_SYSTEM_IRAM_ATTR iwdt_commit_mode(bool enable)
         if (!iwdt_handler_idle()) {
             iwdt_restore_high_interrupts(ps);
             continue;
+        }
+
+        /* Once stages have been touched, restore the previous timeout with
+         * the handler idle before reporting an expired sleep deadline. */
+        if (deadline_us && esp_timer_get_time() >= deadline_us) {
+            bool restored = !s_livelock_enabled
+                            || iwdt_write_stages(esp_int_wdt_livelock_get_feed_stage0_ticks());
+            iwdt_restore_high_interrupts(ps);
+            if (!restored) {
+                abort();
+            }
+            return false;
         }
 
         /* Disable only after installing the full timeout. On enable, publish
@@ -241,21 +260,25 @@ static void ESP_SYSTEM_IRAM_ATTR iwdt_commit_mode(bool enable)
             /* Do not continue with an unverified watchdog configuration. */
             abort();
         }
-        return;
+        return true;
     }
     abort();
 }
 
-void ESP_SYSTEM_IRAM_ATTR esp_int_wdt_set_livelock_mode(bool enable)
+bool ESP_SYSTEM_IRAM_ATTR esp_int_wdt_set_livelock_mode(bool enable, int64_t deadline_us)
 {
+    bool committed = true;
     portENTER_CRITICAL_SAFE(&s_iwdt_configure_lock);
     if (soc_has_cache_lock_bug()) {
-        iwdt_commit_mode(enable);
-        s_livelock_enabled = enable;
+        committed = iwdt_commit_mode(enable, deadline_us);
+        if (committed) {
+            s_livelock_enabled = enable;
+        }
     } else {
         reconfigure_ticks(IWDT_STAGE0_TIMEOUT_US, IWDT_STAGE1_TIMEOUT_US);
     }
     portEXIT_CRITICAL_SAFE(&s_iwdt_configure_lock);
+    return committed;
 }
 
 /* Preserve the selected mode when the tick feeds the watchdog. */
