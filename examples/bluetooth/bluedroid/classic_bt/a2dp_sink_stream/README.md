@@ -17,12 +17,15 @@ This example involves the use of Bluetooth legacy profile A2DP for audio stream 
 - [a2dp_sink_common_utils](../common/a2dp_utils/a2dp_sink_common_utils)
 - [a2dp_sink_int_codec_utils](../common/a2dp_utils/a2dp_sink_int_codec_utils)
 - [a2dp_sink_ext_codec_utils](../common/a2dp_utils/a2dp_sink_ext_codec_utils)
+- [avrcp_common_utils](../common/avrcp_utils/avrcp_common_utils)
 
 ```
 +-------------------------+-------------------------+---------------------+
 |a2dp_sink_int_codec_utils|a2dp_sink_ext_codec_utils|                     |
 +-------------------------+-------------------------+                     |
-|               a2dp_sink_common_utils              |  bt_app_core_utils  |
+|               a2dp_sink_common_utils              |                     |
++---------------------------------------------------+                     |
+|               avrcp_common_utils                  |  bt_app_core_utils  |
 +---------------------------------------------------+                     |
 |               bredr_app_common_utils              |                     |
 +---------------------------------------------------+---------------------+
@@ -67,6 +70,7 @@ idf.py menuconfig
 ```
 
 * Choose external I2S codec or internal DAC for audio output, and configure the output PINs under A2DP Sink Internal Codec Example Configuration.
+* `CONFIG_BT_A2DP_SINK_MAX_CONN` defaults to 1, so one A2DP source can connect. Set `Component config` → `Bluetooth` → `Bluedroid Options` → `Maximum number of simultaneous A2DP sink connections` to 2 to keep two sources connected. `CONFIG_BT_ACL_CONNECTIONS` and the controller BR/EDR ACL connection count must be at least 2; the ESP32 and ESP32-S31 defaults already are.
 
 ### Build and Flash
 
@@ -100,6 +104,12 @@ I (128697) BT_AV: Audio packet count 400
 
 Also, the sound will be heard if a loudspeaker is connected and possible external I2S codec is correctly configured. For [A2DP source example](../a2dp_source), the sound is noise as the audio source generates the samples with a random sequence.
 
+With `CONFIG_BT_A2DP_SINK_MAX_CONN=2`, a second phone can connect while the first is playing. Starting music on the second phone switches rendering to that phone and suspends the first. The first stays connected, and starting playback on it later takes over without reconnecting. The log names the source being rendered:
+
+```
+I (140000) BT_AV: A2DP rendering [aa:bb:cc:dd:ee:ff], other sources suspended
+```
+
 ## Troubleshooting
 * At the current stage, the supported audio codecs are SBC and AAC. If the internal A2DP codec is used, only SBC is supported; if the external A2DP codec is used, both SBC and AAC are supported, which can be achieved by registering Stream Endpoints (SEPs). Additionally, both internal and external codec options can be reconfigured via API calls.
-* As a usage limitation, A2DP sink can support at most one connection with remote A2DP source devices. Also, A2DP sink cannot be used together with A2DP source at the same time, but can be used with other profiles such as SPP and HFP.
+* A2DP sink cannot be used together with A2DP source at the same time, but with `CONFIG_BT_A2DP_SINK_MAX_CONN=2`, two sources stay connected and only the one that started playback most recently is rendered. Media from the other source is discarded.
