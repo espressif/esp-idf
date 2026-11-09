@@ -738,7 +738,7 @@ static UINT8 avdt_msg_prs_cfg(tAVDT_CFG *p_cfg, UINT8 *p, UINT16 len, UINT8 *p_e
                 tmp = AVDT_CODEC_SIZE - 1;
             }
             p_cfg->num_codec++;
-            p_cfg->codec_info[0] = elem_len;
+            p_cfg->codec_info[0] = tmp;
             memcpy(&p_cfg->codec_info[1], p, tmp);
             p += elem_len;
             break;
