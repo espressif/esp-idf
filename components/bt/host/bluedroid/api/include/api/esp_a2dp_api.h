@@ -662,12 +662,14 @@ __attribute__((deprecated("Please use esp_a2d_sink_disconnect_by_handle() instea
  *
  * @param[in]       conn_hdl: connection handle, reported in ESP_A2D_CONNECTION_STATE_EVT
  *
- * @note            If @p conn_hdl does not match a connected A2DP peer, the request is ignored.
+ * @note            If @p conn_hdl is not ESP_A2D_INVALID_CONN_HDL but does not match a
+ *                  connected A2DP peer, this function still returns ESP_OK and the
+ *                  request is then ignored. No further event is reported.
  *
  * @return
  *                  - ESP_OK: disconnect request is sent to lower layer successfully
  *                  - ESP_ERR_INVALID_STATE: if bluetooth stack is not yet enabled
- *                  - ESP_ERR_INVALID_ARG: invalid connection handle
+ *                  - ESP_ERR_INVALID_ARG: @p conn_hdl is ESP_A2D_INVALID_CONN_HDL
  *                  - ESP_FAIL: others
  *
  */
@@ -785,13 +787,14 @@ __attribute__((deprecated("Please use esp_a2d_media_ctrl_by_handle() instead")))
  * @param[in]       conn_hdl: connection handle, reported in ESP_A2D_CONNECTION_STATE_EVT
  * @param[in]       ctrl: control commands for A2DP data channel
  *
- * @note            If @p conn_hdl does not match a connected A2DP peer, the command is
- *                  rejected with ESP_A2D_MEDIA_CTRL_ACK_FAILURE.
+ * @note            If @p conn_hdl is not ESP_A2D_INVALID_CONN_HDL but does not match a
+ *                  connected A2DP peer, this function still returns ESP_OK. The command
+ *                  is then rejected with ESP_A2D_MEDIA_CTRL_ACK_FAILURE.
  *
  * @return
  *                  - ESP_OK: control command is sent to lower layer successfully
  *                  - ESP_ERR_INVALID_STATE: if bluetooth stack is not yet enabled
- *                  - ESP_ERR_INVALID_ARG: invalid connection handle or control command
+ *                  - ESP_ERR_INVALID_ARG: @p conn_hdl is ESP_A2D_INVALID_CONN_HDL, or @p ctrl is invalid
  *                  - ESP_FAIL: others
  *
  */
@@ -951,12 +954,14 @@ __attribute__((deprecated("Please use esp_a2d_source_disconnect_by_handle() inst
  *
  * @param[in]       conn_hdl: connection handle, reported in ESP_A2D_CONNECTION_STATE_EVT
  *
- * @note            If @p conn_hdl does not match a connected A2DP peer, the request is ignored.
+ * @note            If @p conn_hdl is not ESP_A2D_INVALID_CONN_HDL but does not match a
+ *                  connected A2DP peer, this function still returns ESP_OK and the
+ *                  request is then ignored. No further event is reported.
  *
  * @return
  *                  - ESP_OK: disconnect request is sent to lower layer
  *                  - ESP_ERR_INVALID_STATE: if bluetooth stack is not yet enabled
- *                  - ESP_ERR_INVALID_ARG: invalid connection handle
+ *                  - ESP_ERR_INVALID_ARG: @p conn_hdl is ESP_A2D_INVALID_CONN_HDL
  *                  - ESP_FAIL: others
  *
  */

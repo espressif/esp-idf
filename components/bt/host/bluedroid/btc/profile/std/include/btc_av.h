@@ -243,18 +243,6 @@ void btc_dispatch_sm_event(btc_av_sm_event_t event, void *p_data, int len);
 
 /*******************************************************************************
 **
-** Function         btc_av_is_connected
-**
-** Description      Checks if av has a connected sink
-**
-** Returns          BOOLEAN
-**
-*******************************************************************************/
-
-BOOLEAN btc_av_is_connected(void);
-
-/*******************************************************************************
-**
 ** Function         btc_av_is_started
 **
 ** Description      Checks if av is started

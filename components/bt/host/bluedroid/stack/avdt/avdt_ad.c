@@ -256,7 +256,7 @@ tAVDT_TC_TBL *avdt_ad_tc_tbl_by_type(UINT8 type, tAVDT_CCB *p_ccb, tAVDT_SCB *p_
 ** Description      Allocate an entry in the traffic channel table.
 **
 **
-** Returns          Pointer to entry.
+** Returns          Pointer to entry, or NULL when every entry is in use.
 **
 *******************************************************************************/
 tAVDT_TC_TBL *avdt_ad_tc_tbl_alloc(tAVDT_CCB *p_ccb)
@@ -271,9 +271,10 @@ tAVDT_TC_TBL *avdt_ad_tc_tbl_alloc(tAVDT_CCB *p_ccb)
         }
     }
 
-    /* sanity check */
-    assert(i != AVDT_NUM_TC_TBL);
-
+    if (i == AVDT_NUM_TC_TBL) {
+        AVDT_TRACE_ERROR("avdt_ad_tc_tbl_alloc: no free entry");
+        return NULL;
+    }
 
     /* initialize entry */
     p_tbl->peer_mtu = L2CAP_DEFAULT_MTU;

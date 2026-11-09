@@ -1338,6 +1338,8 @@ void bta_av_co_clear_peer(tBTA_AV_HNDL hndl)
         return;
     }
 
+    osi_mutex_global_lock();
+
     /* Retrieve the peer info */
     p_peer = bta_av_co_get_peer(hndl);
     if (p_peer) {
@@ -1356,6 +1358,10 @@ void bta_av_co_clear_peer(tBTA_AV_HNDL hndl)
 #if (BTC_AV_EXT_CODEC == TRUE)
         bta_av_co_cb.cur_seid = 0;
 #endif
+#if defined(BTA_AV_CO_CP_SCMS_T) && (BTA_AV_CO_CP_SCMS_T == TRUE)
+        bta_av_co_cb.cp.active = FALSE;
+#endif
+        bta_av_co_audio_codec_reset();
     } else {
         int i;
 
@@ -1368,6 +1374,8 @@ void bta_av_co_clear_peer(tBTA_AV_HNDL hndl)
             }
         }
     }
+
+    osi_mutex_global_unlock();
 }
 
 /*******************************************************************************

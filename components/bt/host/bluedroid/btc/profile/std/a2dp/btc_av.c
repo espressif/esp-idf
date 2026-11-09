@@ -662,6 +662,12 @@ static void btc_av_set_active(btc_av_cb_t *p_cb, BOOLEAN force)
             btc_a2dp_sink_reset_decoder(p_cb->codec_info);
         }
 #endif
+#if (BTC_AV_EXT_CODEC == TRUE)
+        if (p_cb->sm_handle != NULL &&
+                btc_sm_get_state(p_cb->sm_handle) == BTC_AV_STATE_STARTED) {
+            btc_a2dp_control_set_datachnl_stat(TRUE);
+        }
+#endif
         btc_a2dp_sink_set_rx_flush(FALSE);
         BTC_TRACE_DEBUG("active a2dp sink stream is h:0x%x", p_cb->bta_handle);
     }
@@ -2826,20 +2832,6 @@ bt_status_t btc_av_sink_execute_service(BOOLEAN b_enable)
     BTA_AvEnable_Sink(b_enable);
 #endif
     return BT_STATUS_SUCCESS;
-}
-
-/*******************************************************************************
-**
-** Function         btc_av_is_connected
-**
-** Description      Checks if av has a connected sink
-**
-** Returns          BOOLEAN
-**
-*******************************************************************************/
-BOOLEAN btc_av_is_connected(void)
-{
-    return (btc_av_any_connected_cb() != NULL);
 }
 
 BOOLEAN btc_av_is_started(void)
