@@ -168,8 +168,12 @@ void wps_task(void *pvParameters)
                 if (e.sig == SIG_WPS_ENABLE) {
                     param->ret = wifi_wps_enable_internal((esp_wps_config_t *)(param->arg));
                 } else if (e.sig == SIG_WPS_DISABLE) {
-                    DATA_MUTEX_TAKE();
+                    /* Do not hold s_wps_data_lock across disable: wifi_station_wps_deinit()
+                     * sync-IPCs to the Wi-Fi task, and in-flight wps_sm_rx_eapol() takes
+                     * the same lock in wps_rxq_enqueue() — holding it here deadlocks.
+                     */
                     param->ret = wifi_wps_disable_internal();
+                    DATA_MUTEX_TAKE();
                     del_task = true;
                     s_wps_task_hdl = NULL;
                     DATA_MUTEX_GIVE();
@@ -1691,6 +1695,7 @@ static int wps_wifi_rx_barrier(void *arg)
 static void wps_drain_wifi_rx(void)
 {
     wifi_ipc_config_t cfg;
+    int ret;
 
     /* Sync IPC to the Wi-Fi task deadlocks if we are already on it; RX is
      * serialized on that task in that case. */
@@ -1701,7 +1706,10 @@ static void wps_drain_wifi_rx(void)
     cfg.fn = wps_wifi_rx_barrier;
     cfg.arg = NULL;
     cfg.arg_size = 0;
-    esp_wifi_ipc_internal(&cfg, true);
+    ret = esp_wifi_ipc_internal(&cfg, true);
+    if (ret != ESP_OK) {
+        wpa_printf(MSG_ERROR, "wps: wifi RX drain IPC failed (%d)", ret);
+    }
 }
 
 int
