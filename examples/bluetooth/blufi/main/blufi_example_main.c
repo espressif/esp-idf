@@ -597,9 +597,9 @@ void app_main(void)
     ESP_ERROR_CHECK( ret );
 
 #if !SOC_MPI_SUPPORTED
-    /* Software 3072-bit modular exponentiation needs ~4.2 kB of contiguous
-     * internal heap.  Start it before Wi-Fi and the BLE host claim their pools,
-     * otherwise the allocation fails with PSA_ERROR_INSUFFICIENT_MEMORY. */
+    /* Pregen runs above app_main, so G^X takes its ~4.2 kB block before
+     * Wi-Fi and the BLE host fragment the heap. The exponent is drawn
+     * while the SAR ADC entropy source is enabled. */
     blufi_dh_pregen_start();
 #endif
 
