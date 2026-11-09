@@ -67,6 +67,8 @@ FORCE_INLINE_ATTR void _modem_clock_ll_enable_pll_clock_source(bool enable)
         HP_SYS_CLKRST.modem_conf.val = conf.val;
         conf.modem_clk_source_sel = 1;
         HP_SYS_CLKRST.modem_conf.val = conf.val;
+        conf.modem_xtal_clk_en = 1;
+        HP_SYS_CLKRST.modem_conf.val = conf.val;
     } else {
         conf.modem_xtal_clk_en = 1;
         conf.modem_pll_clk_en = 0;
