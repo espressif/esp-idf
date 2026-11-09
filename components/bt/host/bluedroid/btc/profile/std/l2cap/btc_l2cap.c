@@ -69,6 +69,7 @@ typedef struct {
     uint16_t security;
     esp_bd_addr_t addr;
     slot_data_t rx;
+    bool rx_pending; /* GAP still holds data because rx.queue was full */
     slot_data_t tx;
     uint8_t service_uuid[16];
 } l2cap_slot_t;
@@ -894,6 +895,59 @@ void btc_l2cap_call_handler(btc_msg_t *msg)
     }
 }
 
+static void l2cap_rx_pull(l2cap_slot_t *slot, uint32_t handle)
+{
+    /* Queue is full. Leave the bytes in GAP and let read() resume the pull. */
+    if (fixed_queue_length(slot->rx.queue) >= fixed_queue_capacity(slot->rx.queue)) {
+        slot->rx_pending = true;
+        return;
+    }
+
+    /* Keep rx_pending set until the bytes have left GAP. Clearing it before the
+     * allocation succeeds leaves nothing to resume the pull. */
+    uint32_t count = 0;
+    if (BTA_JvL2capReady(handle, &count) == BTA_JV_SUCCESS && count > 0) {
+        BT_HDR *p_data_buf = osi_malloc(count + sizeof(BT_HDR));
+        if (p_data_buf == NULL) {
+            BTC_TRACE_ERROR("%s, count = %d malloc failed!", __func__, count);
+            slot->rx_pending = true;
+            return;
+        }
+        memset(p_data_buf, 0, count + sizeof(BT_HDR));
+        p_data_buf->len = BTA_JvL2capRead(handle, slot->id, p_data_buf->data, count);
+        if (p_data_buf->len > 0) {
+            if (!fixed_queue_enqueue(slot->rx.queue, p_data_buf, 0)) {
+                BTC_TRACE_WARNING("%s rx enqueue failed, drop %d bytes!", __func__, p_data_buf->len);
+                osi_free(p_data_buf);
+                slot->rx_pending = true;
+            } else {
+                slot->rx_pending = false;
+            }
+        } else {
+            osi_free(p_data_buf);
+            slot->rx_pending = false;
+        }
+    } else {
+        slot->rx_pending = false;
+    }
+}
+
+static void l2cap_rx_resume(uint32_t handle)
+{
+    btc_msg_t msg = {0};
+    msg.sig = BTC_SIG_API_CB;
+    msg.pid = BTC_PID_L2CAP;
+    msg.act = BTA_JV_L2CAP_DATA_IND_EVT;
+
+    tBTA_JV_DATA_IND data_ind = {0};
+    data_ind.handle = handle;
+
+    bool ok = btc_transfer_context(&msg, &data_ind, sizeof(data_ind), NULL, NULL) == BT_STATUS_SUCCESS;
+    if (!ok) {
+        BTC_TRACE_ERROR("%s btc_transfer_context failed", __func__);
+    }
+}
+
 void btc_l2cap_cb_handler(btc_msg_t *msg)
 {
     esp_bt_l2cap_cb_param_t param = {0};
@@ -901,7 +955,6 @@ void btc_l2cap_cb_handler(btc_msg_t *msg)
     l2cap_slot_t *slot = NULL;
     uint8_t event = msg->act;
     uint8_t serial = 0;
-    uint32_t count = 0;
 
     BTC_TRACE_DEBUG("%s act %d", __func__, msg->act);
 
@@ -1028,21 +1081,7 @@ void btc_l2cap_cb_handler(btc_msg_t *msg)
             BTC_TRACE_ERROR("%s unable to find L2CAP slot, event:%d!", __func__, event);
             break;
         }
-        if (BTA_JvL2capReady(p_data->data_ind.handle, &count) == BTA_JV_SUCCESS && count > 0) {
-            BT_HDR *p_data_buf = osi_malloc(count + sizeof(BT_HDR));
-            if (p_data_buf == NULL) {
-                osi_mutex_unlock(&l2cap_local_param.l2cap_slot_mutex);
-                BTC_TRACE_ERROR("%s, %d count = %d malloc failed!", __func__, __LINE__, count);
-                break; // to do disconnect
-            }
-            memset(p_data_buf, 0, count + sizeof(BT_HDR));
-            p_data_buf->len = BTA_JvL2capRead(p_data->data_ind.handle, slot->id, p_data_buf->data, count);
-            if (p_data_buf->len > 0) {
-                fixed_queue_enqueue(slot->rx.queue, p_data_buf, FIXED_QUEUE_MAX_TIMEOUT);
-            } else {
-                osi_free(p_data_buf);
-            }
-        }
+        l2cap_rx_pull(slot, p_data->data_ind.handle);
         osi_mutex_unlock(&l2cap_local_param.l2cap_slot_mutex);
         break;
     case BTA_JV_L2CAP_CONG_EVT:
@@ -1071,21 +1110,7 @@ void btc_l2cap_cb_handler(btc_msg_t *msg)
             BTC_TRACE_ERROR("%s unable to find L2CAP slot, event:%d!", __func__, event);
             break;
         }
-        if (BTA_JvL2capReady(p_data->l2c_read.handle, &count) == BTA_JV_SUCCESS && count > 0) {
-            BT_HDR *p_data_buf = osi_malloc(count + sizeof(BT_HDR));
-            if (p_data_buf == NULL) {
-                osi_mutex_unlock(&l2cap_local_param.l2cap_slot_mutex);
-                BTC_TRACE_ERROR("%s, %d count = %d malloc failed!", __func__, __LINE__, count);
-                break; // to do disconnect
-            }
-            memset(p_data_buf, 0, count + sizeof(BT_HDR));
-            p_data_buf->len = BTA_JvL2capRead(p_data->l2c_read.handle, slot->id, p_data_buf->data, count);
-            if (p_data_buf->len > 0) {
-                fixed_queue_enqueue(slot->rx.queue, p_data_buf, FIXED_QUEUE_MAX_TIMEOUT);
-            } else {
-                osi_free(p_data_buf);
-            }
-        }
+        l2cap_rx_pull(slot, p_data->l2c_read.handle);
         osi_mutex_unlock(&l2cap_local_param.l2cap_slot_mutex);
         break;
     case BTA_JV_L2CAP_WRITE_EVT:
@@ -1295,6 +1320,8 @@ static ssize_t l2cap_vfs_read(int fd, void * dst, size_t size)
 
     ssize_t item_size = 0;
     BT_HDR *p_buf;
+    bool need_resume = false;
+    uint32_t resume_handle = 0;
     while (1) {
         osi_mutex_lock(&l2cap_local_param.l2cap_slot_mutex, OSI_MUTEX_MAX_TIMEOUT);
         if ((slot = l2cap_local_param.l2cap_slots[serial]) != NULL) {
@@ -1303,6 +1330,10 @@ static ssize_t l2cap_vfs_read(int fd, void * dst, size_t size)
                 if ((p_buf = (BT_HDR *)fixed_queue_try_peek_first(slot->rx.queue)) != NULL && p_buf->len == 0) {
                     osi_free(fixed_queue_dequeue(slot->rx.queue, FIXED_QUEUE_MAX_TIMEOUT));
                     p_buf = NULL;
+                    if (slot->rx_pending && !need_resume) {
+                        need_resume = true;
+                        resume_handle = slot->handle;
+                    }
                 }
                 if (size == 0 || (p_buf = (BT_HDR *)fixed_queue_try_peek_first(slot->rx.queue)) == NULL) {
                     osi_mutex_unlock(&l2cap_local_param.l2cap_slot_mutex);
@@ -1316,6 +1347,9 @@ static ssize_t l2cap_vfs_read(int fd, void * dst, size_t size)
                 if (slot->close_alarm && osi_alarm_is_active(slot->close_alarm)) {
                     osi_alarm_cancel(slot->close_alarm);
                     osi_alarm_set(slot->close_alarm, 0);
+                } else if (slot->rx_pending && !need_resume) {
+                    need_resume = true;
+                    resume_handle = slot->handle;
                 }
                 osi_mutex_unlock(&l2cap_local_param.l2cap_slot_mutex);
                 break;
@@ -1342,6 +1376,10 @@ static ssize_t l2cap_vfs_read(int fd, void * dst, size_t size)
             size = 0;
         }
         osi_mutex_unlock(&l2cap_local_param.l2cap_slot_mutex);
+    }
+
+    if (need_resume) {
+        l2cap_rx_resume(resume_handle);
     }
 
     if (errno != 0) {
