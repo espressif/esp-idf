@@ -19,6 +19,7 @@ entries:
     if PM_SLP_IRAM_OPT = y:
         if SOC_LIGHT_SLEEP_SUPPORTED = y:
             sleep_modes:esp_light_sleep_start (noflash)
+            sleep_modes:esp_light_sleep_start_with_iwdt_deadline (noflash)
             sleep_modes:esp_sleep_enable_timer_wakeup (noflash)
             sleep_modem:modem_domain_pd_allowed (noflash)
             sleep_modem:periph_inform_out_light_sleep_overhead (noflash)
