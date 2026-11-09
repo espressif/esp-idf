@@ -2939,7 +2939,9 @@ static void btc_a2d_sink_get_active_device(void)
 ** Description      Choose which connected peer gets rendered. The peer only
 **                  needs to be connected (OPENED or STARTED). A started peer
 **                  on the other connection is paused/suspended. An idle
-**                  (OPENED) target is sent AVRCP Play so it can start.
+**                  (OPENED) target is sent AVRCP Play so it can start. If a
+**                  stack Play/Pause pair for either peer is still outstanding,
+**                  the request is rejected and the selection stays as it is.
 **
 ** Returns          TRUE when the peer became the active one
 **
@@ -2948,6 +2950,7 @@ BOOLEAN btc_av_set_active_peer(esp_a2d_conn_hdl_t conn_hdl)
 {
 #if BTC_AV_SINK_INCLUDED
     btc_av_cb_t *p_cb = NULL;
+    btc_av_cb_t *p_prev = NULL;
     btc_sm_state_t state;
     esp_bt_status_t status;
 
@@ -2974,7 +2977,26 @@ BOOLEAN btc_av_set_active_peer(esp_a2d_conn_hdl_t conn_hdl)
         status =  ESP_BT_STATUS_FAIL;
         goto _error;
     }
+    /* Do not change the selection while a stack Play/Pause pair is still
+     * outstanding. A failure status leaves the current device rendered, and
+     * the caller can retry. No AVRCP session is not busy: those commands
+     * stay a silent skip. */
+    if (state != BTC_AV_STATE_STARTED &&
+            btc_rc_stack_pt_busy_peer(p_cb->peer_bda.address)) {
+        BTC_TRACE_WARNING("stack Play/Pause still outstanding, reject set-active");
+        status = ESP_BT_STATUS_BUSY;
+        goto _error;
+    }
     if (btc_av_common.active_idx != (int)p_cb->idx) {
+        p_prev = btc_av_active_cb();
+
+        if (p_prev != NULL && p_prev->sm_handle != NULL &&
+                btc_sm_get_state(p_prev->sm_handle) == BTC_AV_STATE_STARTED &&
+                btc_rc_stack_pt_busy_peer(p_prev->peer_bda.address)) {
+            BTC_TRACE_WARNING("stack Play/Pause still outstanding, reject set-active");
+            status = ESP_BT_STATUS_BUSY;
+            goto _error;
+        }
         btc_av_take_over_active(p_cb, TRUE);
     } else {
         /* already the rendered peer; still ack the set-active request */
