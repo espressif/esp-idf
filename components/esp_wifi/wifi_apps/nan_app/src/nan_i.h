@@ -225,13 +225,13 @@ struct nan_paired_peer {
 #ifdef CONFIG_ESP_WIFI_NAN_SECURITY
 /*
  * Single secured-datapath SA (Wi-Fi Aware v4.0 §7.4).
- * Mirrors hostap nan_peer_sec_info_entry for one NDI pair: store/update only
- * when the new SA strength is same or greater than the existing one.
+ * Mirrors hostap nan_peer_sec_info_entry for one NDI pair: store/update when
+ * the new SA is strictly stronger, or when it is the same NDP re-keying at
+ * equal strength; reject equal-strength SAs from a different NDP.
  */
 struct nan_ndi_sec_sa {
     bool     valid;
     uint8_t  owner_ndp_id;  /* NDP that committed this SA; 0 when none */
-    uint8_t  peer_ndi[MACADDR_LEN];
     uint8_t  csid;
     int      pairing_akmp;   /* 0 if not from pairing */
 };
@@ -571,7 +571,7 @@ uint8_t nan_sec_pairwise_csid_from_bitmap(uint16_t csid_bitmap);
  * SA cache — call nan_sec_ndp_commit_keys() only after firmware key install
  * succeeds so cache and driver keys stay aligned. Caller must hold NAN_DATA_LOCK.
  */
-bool nan_sec_ndp_should_install_keys(uint8_t csid, int pairing_akmp);
+bool nan_sec_ndp_should_install_keys(uint8_t csid, int pairing_akmp, uint8_t ndp_id);
 
 /*
  * Commit NDI pairwise SA into the cache after successful ND-TK (/NM-TK) install.

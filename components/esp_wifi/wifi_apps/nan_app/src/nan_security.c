@@ -3062,7 +3062,7 @@ uint8_t nan_sec_pairwise_csid_from_bitmap(uint16_t csid_bitmap)
     return 0;
 }
 
-bool nan_sec_ndp_should_install_keys(uint8_t csid, int pairing_akmp)
+bool nan_sec_ndp_should_install_keys(uint8_t csid, int pairing_akmp, uint8_t ndp_id)
 {
     struct nan_ndi_sec_sa *sa = &s_nan_ctx.ndi_sec_sa;
     int new_strength;
@@ -3079,11 +3079,20 @@ bool nan_sec_ndp_should_install_keys(uint8_t csid, int pairing_akmp)
     }
 
     int cur_strength = nan_sec_get_strength(sa->csid, sa->pairing_akmp);
-    ESP_LOGD(TAG, "SEC: Comparing strength: new=%d (csid=%u akmp=0x%x) vs cur=%d (csid=%u akmp=0x%x)",
-             new_strength, csid, pairing_akmp, cur_strength, sa->csid, sa->pairing_akmp);
+    ESP_LOGD(TAG, "SEC: Comparing strength: new=%d (csid=%u akmp=0x%x ndp_id=%u) vs cur=%d (csid=%u akmp=0x%x owner_ndp_id=%u)",
+             new_strength, csid, pairing_akmp, ndp_id, cur_strength, sa->csid, sa->pairing_akmp, sa->owner_ndp_id);
 
     if (new_strength < cur_strength) {
         ESP_LOGI(TAG, "SEC: New security weaker than existing, discarding keys");
+        return false;
+    }
+    /* Equal strength: only allow the same NDP to re-key itself. An
+     * equal-strength SA from a different NDP would overwrite the live entry
+     * and then be cleared by that NDP's teardown while the first NDP is
+     * still up, leaving the session with no SA. Reject it instead. */
+    if (new_strength == cur_strength && sa->owner_ndp_id != ndp_id) {
+        ESP_LOGI(TAG, "SEC: Equal-strength SA from a different NDP (owner=%u, new=%u), discarding keys",
+                 sa->owner_ndp_id, ndp_id);
         return false;
     }
     return true;
@@ -3101,7 +3110,6 @@ void nan_sec_ndp_commit_keys(const uint8_t *peer_ndi, uint8_t ndp_id,
     memset(sa, 0, sizeof(*sa));
     sa->valid = true;
     sa->owner_ndp_id = ndp_id;
-    memcpy(sa->peer_ndi, peer_ndi, MACADDR_LEN);
     sa->csid = csid;
     sa->pairing_akmp = pairing_akmp;
 
