@@ -419,11 +419,13 @@ static void process_service_attr_req (tCONN_CB *p_ccb, UINT16 trans_num,
     } else {
         if (p_ccb->rsp_list) {
             osi_free (p_ccb->rsp_list);
+            p_ccb->rsp_list = NULL;
         }
 
         p_ccb->rsp_list = (UINT8 *)osi_malloc (max_list_len);
         if (p_ccb->rsp_list == NULL) {
             SDP_TRACE_ERROR ("SDP - no scratch buf for search rsp\n");
+            sdpu_build_n_send_error (p_ccb, trans_num, SDP_NO_RESOURCES, NULL);
             return;
         }
 
@@ -663,6 +665,7 @@ static void process_service_search_attr_req (tCONN_CB *p_ccb, UINT16 trans_num,
         p_ccb->rsp_list = (UINT8 *)osi_malloc (max_list_len);
         if (p_ccb->rsp_list == NULL) {
             SDP_TRACE_ERROR ("SDP - no scratch buf for search rsp\n");
+            sdpu_build_n_send_error (p_ccb, trans_num, SDP_NO_RESOURCES, NULL);
             return;
         }
 
@@ -703,6 +706,7 @@ static void process_service_search_attr_req (tCONN_CB *p_ccb, UINT16 trans_num,
         p_ccb->rsp_list = (UINT8 *)osi_malloc (max_list_len);
         if (p_ccb->rsp_list == NULL) {
             SDP_TRACE_ERROR ("SDP - no scratch buf for search rsp\n");
+            sdpu_build_n_send_error (p_ccb, trans_num, SDP_NO_RESOURCES, NULL);
             return;
         }
 
