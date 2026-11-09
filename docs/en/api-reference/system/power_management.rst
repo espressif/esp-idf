@@ -115,9 +115,11 @@ Currently, the following peripheral drivers are aware of DFS and use the ``ESP_P
 
   - SPI master
   - I2C
-  :SOC_I2S_HW_VERSION_1 or not SOC_I2S_SUPPORTS_APLL: - I2S
-  :not SOC_I2S_HW_VERSION_1 and SOC_I2S_SUPPORTS_APLL: - I2S (if the APLL clock is used, then it will use the ``ESP_PM_NO_LIGHT_SLEEP`` lock)
   - SDMMC
+
+.. only:: SOC_I2S_SUPPORTED
+
+    The I2S driver holds a power management lock between calls to :cpp:func:`i2s_channel_enable` and :cpp:func:`i2s_channel_disable`. The lock type depends on the target and the selected clock source.
 
 The following drivers hold the ``ESP_PM_APB_FREQ_MAX`` lock while the driver is enabled:
 

@@ -11,6 +11,13 @@ set(include "include")
 if(CONFIG_SOC_I2S_SUPPORTED)
     list(APPEND srcs "i2s_common.c"
                      "i2s_std.c")
+    if(CONFIG_PM_ENABLE)
+        if(EXISTS "${CMAKE_CURRENT_LIST_DIR}/${target}/i2s_pm.c")
+            list(APPEND srcs "${target}/i2s_pm.c")
+        else()
+            list(APPEND srcs "i2s_pm.c")
+        endif()
+    endif()
     if(CONFIG_SOC_I2S_SUPPORTS_PDM)
         list(APPEND srcs "i2s_pdm.c")
     endif()
@@ -36,5 +43,6 @@ endif()
 
 idf_component_register(SRCS ${srcs}
                     INCLUDE_DIRS ${include}
+                    PRIV_INCLUDE_DIRS "."
                     PRIV_REQUIRES esp_driver_gpio esp_pm esp_mm
                     )

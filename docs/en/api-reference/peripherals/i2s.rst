@@ -290,7 +290,12 @@ Power Management
 
 When the power management is enabled (i.e., :ref:`CONFIG_PM_ENABLE` is on), the system will adjust or stop the source clock of I2S before entering Light-sleep, thus potentially changing the I2S signals and leading to transmitting or receiving invalid data.
 
-The I2S driver can prevent the system from changing or stopping the source clock by acquiring a power management lock. When the source clock is generated from APB, the lock type will be set to :cpp:enumerator:`esp_pm_lock_type_t::ESP_PM_APB_FREQ_MAX` and when the source clock is APLL (if supported), it will be set to :cpp:enumerator:`esp_pm_lock_type_t::ESP_PM_NO_LIGHT_SLEEP`. The driver guarantees that the power management lock is acquired when the channel is enabled by :cpp:func:`i2s_channel_enable`. Likewise, the driver releases the lock when the channel is disabled by :cpp:func:`i2s_channel_disable`, which keeps the I2S source clock stable while the channel is running.
+The I2S driver acquires a power management lock when the channel is enabled by :cpp:func:`i2s_channel_enable`, and releases it when the channel is disabled by :cpp:func:`i2s_channel_disable`.
+
+The lock type depends on the clock source:
+
+- If the selected PLL clock source is not stable during DFS on the target, the lock type is :cpp:enumerator:`esp_pm_lock_type_t::ESP_PM_APB_FREQ_MAX`.
+- Otherwise, the lock type is :cpp:enumerator:`esp_pm_lock_type_t::ESP_PM_NO_LIGHT_SLEEP`.
 
 .. only:: SOC_I2S_SUPPORT_SLEEP_RETENTION
 
