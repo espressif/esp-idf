@@ -1039,11 +1039,13 @@ def test_trel_connect(dut: tuple[IdfDut, IdfDut]) -> None:
     trel_list = [trel_c6]
     router_extaddr_list = ['7766554433221101']
 
-    trel_s3.expect('IPv4 address:', timeout=10)
-    trel_c6.expect('IPv4 address:', timeout=10)
     ocf.init_thread(trel_s3)
     for trel in trel_list:
         ocf.init_thread(trel)
+    trel_wifi_para = copy.copy(default_br_wifi_para)
+    ocf.joinWiFiNetwork(trel_s3, trel_wifi_para)
+    for trel in trel_list:
+        ocf.joinWiFiNetwork(trel, trel_wifi_para)
     trel_leader_para = copy.copy(default_br_ot_para)
     trel_leader_para.bbr = False
     ocf.SetThreadNetworkPara(trel_s3, trel_leader_para)
