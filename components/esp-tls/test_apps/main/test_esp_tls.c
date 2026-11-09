@@ -5,9 +5,14 @@
  */
 
 #include "memory_checks.h"
+#include <arpa/inet.h>
+#include <netdb.h>
+#include <netinet/in.h>
+#include <unistd.h>
 #include "esp_tls.h"
 #include "esp_tls_custom_stack.h"
 #include "esp_tls_private.h"
+#include "esp_tls_platform_port.h"
 #include "unity.h"
 #include "esp_err.h"
 #include "esp_log.h"
@@ -62,6 +67,90 @@ const char *test_key_pem =    "-----BEGIN PRIVATE KEY-----\n"\
                               "-----END PRIVATE KEY-----\n";
 
 static ssize_t dummy_read(esp_tls_t *tls, char *data, size_t datalen) { return (ssize_t)datalen; }
+
+TEST_CASE("esp-tls tries the next resolved address after the first fails", "[esp-tls]")
+{
+    int server_fd = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
+    TEST_ASSERT_GREATER_OR_EQUAL(0, server_fd);
+
+    struct sockaddr_in server_addr = {
+        .sin_family = AF_INET,
+        .sin_addr.s_addr = inet_addr("127.0.0.1"),
+    };
+    TEST_ASSERT_EQUAL(0, bind(server_fd, (struct sockaddr *)&server_addr, sizeof(server_addr)));
+    TEST_ASSERT_EQUAL(0, listen(server_fd, 1));
+    socklen_t addr_len = sizeof(server_addr);
+    TEST_ASSERT_EQUAL(0, getsockname(server_fd, (struct sockaddr *)&server_addr, &addr_len));
+
+    struct sockaddr_in refused_addr = server_addr;
+    refused_addr.sin_addr.s_addr = inet_addr("127.0.0.2");
+    struct addrinfo addresses[2] = { 0 };
+    addresses[0].ai_family = AF_INET;
+    addresses[0].ai_socktype = SOCK_STREAM;
+    addresses[0].ai_protocol = IPPROTO_TCP;
+    addresses[0].ai_addr = (struct sockaddr *)&refused_addr;
+    addresses[0].ai_addrlen = sizeof(refused_addr);
+    addresses[0].ai_next = &addresses[1];
+    addresses[1].ai_family = AF_INET;
+    addresses[1].ai_socktype = SOCK_STREAM;
+    addresses[1].ai_protocol = IPPROTO_TCP;
+    addresses[1].ai_addr = (struct sockaddr *)&server_addr;
+    addresses[1].ai_addrlen = sizeof(server_addr);
+
+    esp_tls_t *tls = esp_tls_init();
+    TEST_ASSERT_NOT_NULL(tls);
+    esp_tls_error_handle_t error_handle = NULL;
+    TEST_ASSERT_EQUAL(ESP_OK, esp_tls_get_error_handle(tls, &error_handle));
+    esp_tls_cfg_t cfg = { .timeout_ms = 1000 };
+    int client_fd = -1;
+    TEST_ASSERT_EQUAL(ESP_OK, esp_tls_tcp_connect_addrinfo(addresses, ntohs(server_addr.sin_port),
+                                                           &cfg, error_handle, &client_fd));
+
+    int accepted_fd = accept(server_fd, NULL, NULL);
+    TEST_ASSERT_GREATER_OR_EQUAL(0, accepted_fd);
+    TEST_ASSERT_EQUAL(0, close(accepted_fd));
+    TEST_ASSERT_EQUAL(0, close(client_fd));
+    TEST_ASSERT_EQUAL(0, esp_tls_conn_destroy(tls));
+
+    struct addrinfo hints = {
+        .ai_family = AF_INET,
+        .ai_socktype = SOCK_STREAM,
+        .ai_protocol = IPPROTO_TCP,
+    };
+    struct addrinfo *async_addresses = NULL;
+    TEST_ASSERT_EQUAL(0, getaddrinfo("127.0.0.2", NULL, &hints, &async_addresses));
+    TEST_ASSERT_NOT_NULL(async_addresses);
+    struct addrinfo *reachable_address = NULL;
+    TEST_ASSERT_EQUAL(0, getaddrinfo("127.0.0.1", NULL, &hints, &reachable_address));
+    TEST_ASSERT_NOT_NULL(reachable_address);
+    async_addresses->ai_next = reachable_address;
+
+    esp_tls_t *async_tls = esp_tls_init();
+    TEST_ASSERT_NOT_NULL(async_tls);
+    async_tls->addrinfo = async_addresses;
+    async_tls->next_addrinfo = async_addresses;
+    async_tls->connect_start_time_us = esp_tls_get_platform_time();
+    async_tls->connect_error = ESP_ERR_ESP_TLS_UNSUPPORTED_PROTOCOL_FAMILY;
+    esp_tls_cfg_t async_cfg = {
+        .is_plain_tcp = true,
+        .non_block = true,
+        .timeout_ms = 1000,
+    };
+    int connect_result = esp_tls_connect_next_address(async_tls,
+                                                       ntohs(server_addr.sin_port), &async_cfg) == ESP_OK ?
+                         (async_tls->connect_pending ? 0 : 1) : -1;
+    while (connect_result == 0) {
+        connect_result = esp_tls_poll_connect_address(async_tls,
+                                                       ntohs(server_addr.sin_port), &async_cfg);
+    }
+    TEST_ASSERT_EQUAL(1, connect_result);
+
+    accepted_fd = accept(server_fd, NULL, NULL);
+    TEST_ASSERT_GREATER_OR_EQUAL(0, accepted_fd);
+    TEST_ASSERT_EQUAL(0, close(accepted_fd));
+    TEST_ASSERT_EQUAL(0, close(server_fd));
+    TEST_ASSERT_EQUAL(0, esp_tls_conn_destroy(async_tls));
+}
 
 TEST_CASE("esp_tls_conn_write/read reject NULL tls", "[esp-tls]")
 {

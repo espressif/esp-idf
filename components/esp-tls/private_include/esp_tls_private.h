@@ -7,10 +7,12 @@
 #pragma once
 
 #include <stdbool.h>
+#include <netdb.h>
 #include <sys/socket.h>
 #include <fcntl.h>
 #include "esp_err.h"
 #include "esp_tls_errors.h"
+#include "esp_tls.h"
 #ifdef CONFIG_ESP_TLS_USING_MBEDTLS
 #include "mbedtls/platform.h"
 #include "mbedtls/net_sockets.h"
@@ -91,11 +93,27 @@ struct esp_tls {
 
     esp_tls_error_handle_t error_handle;                                        /*!< handle to error descriptor */
 
+    struct addrinfo *addrinfo;                                                  /*!< Resolver results owned while connecting asynchronously */
+    struct addrinfo *next_addrinfo;                                             /*!< Next address candidate for an async connect */
+    bool connect_pending;                                                       /*!< Whether the current async TCP connect is pending */
+    uint64_t connect_start_time_us;                                             /*!< Start time for the complete address iteration */
+    uint64_t connect_attempt_start_time_us;                                     /*!< Start time for the current async address */
+    int connect_attempt_timeout_ms;                                             /*!< Timeout budget for the current address */
+    int connect_errno;                                                          /*!< Last address-specific connect error */
+    esp_err_t connect_error;                                                    /*!< Last address-specific ESP-TLS error */
+
 #if CONFIG_MBEDTLS_DYNAMIC_BUFFER
     esp_tls_dyn_buf_strategy_t esp_tls_dyn_buf_strategy;                        /*!< ESP-TLS dynamic buffer strategy */
 #endif
 
 };
+
+/* Internal helper used by the ESP-TLS tests to exercise address fallback. */
+esp_err_t esp_tls_tcp_connect_addrinfo(const struct addrinfo *address_info, int port,
+                                       const esp_tls_cfg_t *cfg,
+                                       esp_tls_error_handle_t error_handle, int *sockfd);
+esp_err_t esp_tls_connect_next_address(esp_tls_t *tls, int port, const esp_tls_cfg_t *cfg);
+int esp_tls_poll_connect_address(esp_tls_t *tls, int port, const esp_tls_cfg_t *cfg);
 
 // Function pointer for the server configuration API
 typedef esp_err_t (*set_server_config_func_ptr) (esp_tls_cfg_server_t *cfg, esp_tls_t *tls);

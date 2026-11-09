@@ -8,6 +8,7 @@
 #include "freertos/task.h"
 #include "unity.h"
 #include "memory_checks.h"
+#include "esp_netif.h"
 #include "soc/soc_caps.h"
 #if SOC_SHA_SUPPORT_PARALLEL_ENG
 #include "sha/sha_parallel_engine.h"
@@ -90,5 +91,6 @@ void tearDown(void)
 
 void app_main(void)
 {
+    ESP_ERROR_CHECK(esp_netif_init());
     unity_run_menu();
 }

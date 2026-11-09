@@ -826,6 +826,9 @@ void esp_tls_server_session_delete(esp_tls_t *tls);
 /**
  * @brief Creates a plain TCP connection, returning a valid socket fd on success or an error handle
  *
+ * This function waits for TCP connection establishment even when `cfg->non_block` is set. In that
+ * case, the returned socket is configured as non-blocking for subsequent I/O.
+ *
  * @param[in]  host      Hostname of the host.
  * @param[in]  hostlen   Length of hostname.
  * @param[in]  port      Port number of the host.
