@@ -221,7 +221,7 @@ typedef union {
         uint16_t len;                     /*!< Length of the payload pointed to by data. */
         uint8_t *data;                    /*!< Pointer to L3 payload. Ethernet header is not included. */
         bool ext;                         /*!< TRUE if BNEP extension headers are present. */
-        bool forward;                     /*!< TRUE if the frame is forwarded by GN/NAP. */
+        bool forward;                     /*!< TRUE if the local role is NAP. */
     } data_ind;                           /*!< PAN callback param of ESP_PAN_DATA_IND_EVT */
 
     /**
