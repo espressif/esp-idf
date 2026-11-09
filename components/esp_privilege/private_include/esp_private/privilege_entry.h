@@ -31,7 +31,7 @@ typedef struct esp_privilege_run_context esp_privilege_run_context_t;
 uint64_t esp_privilege_call_user_code(esp_privilege_user_fn_t entry, uint32_t arg0, uint32_t arg1, void *sp,
                                       uint32_t satp, const esp_privilege_run_context_t *runtime);
 
-/* M-mode continuation that ends a run, implemented in user_mode_entry.S. */
+/* M-mode continuation that ends a run, implemented in privilege_user_mode_entry.S. */
 void esp_privilege_return_to_caller(void);
 
 /** Make the trap frame resume in M-mode, with the M-mode gp and tp. */
