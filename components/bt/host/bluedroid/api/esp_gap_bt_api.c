@@ -659,6 +659,27 @@ esp_err_t esp_bt_gap_set_acl_pkt_types(esp_bd_addr_t remote_bda, uint16_t pkt_ty
     return (btc_transfer_context(&msg, &arg, sizeof(btc_gap_bt_args_t), NULL, NULL) == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
 }
 
+esp_err_t esp_bt_gap_set_sniff_allowed(esp_bd_addr_t remote_bda, bool allowed)
+{
+    ESP_BLUEDROID_STATUS_CHECK(ESP_BLUEDROID_STATUS_ENABLED);
+
+    if (remote_bda == NULL) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    btc_msg_t msg = {0};
+    msg.sig = BTC_SIG_API_CALL;
+    msg.pid = BTC_PID_GAP_BT;
+    msg.act = BTC_GAP_BT_ACT_SET_SNIFF_ALLOWED;
+
+    btc_gap_bt_args_t arg = {0};
+    arg.set_sniff_allowed.allowed = allowed;
+    memcpy(&arg.set_sniff_allowed.bda, remote_bda, sizeof(bt_bdaddr_t));
+
+    bt_status_t status = btc_transfer_context(&msg, &arg, sizeof(btc_gap_bt_args_t), NULL, NULL);
+    return (status == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
+}
+
 esp_err_t esp_bt_gap_set_min_enc_key_size(uint8_t key_size)
 {
     btc_msg_t msg = {0};

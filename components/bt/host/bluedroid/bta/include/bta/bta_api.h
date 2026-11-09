@@ -436,6 +436,8 @@ typedef tBTM_SET_ACL_PKT_TYPES_RESULTS tBTA_SET_ACL_PKT_TYPES_RESULTS;
 
 typedef tBTM_SET_MIN_ENC_KEY_SIZE_RESULTS tBTA_SET_MIN_ENC_KEY_SIZE_RESULTS;
 
+typedef tBTM_SET_SNIFF_ALLOWED_RESULTS tBTA_SET_SNIFF_ALLOWED_RESULTS;
+
 typedef tBTM_REMOTE_DEV_NAME tBTA_REMOTE_DEV_NAME;
 
 /* advertising channel map */
@@ -2009,6 +2011,18 @@ void BTA_DmGetPageTimeout(tBTM_CMPL_CB *p_cb);
 **
 *******************************************************************************/
 void BTA_DmSetAclPktTypes(BD_ADDR remote_addr, UINT16 pkt_types, tBTM_CMPL_CB *p_cb);
+
+/*******************************************************************************
+**
+** Function         BTA_DmSetSniffAllowed
+**
+** Description      Allow or disallow sniff mode on one ACL connection.
+**
+**
+** Returns          void
+**
+*******************************************************************************/
+void BTA_DmSetSniffAllowed(BD_ADDR remote_bda, BOOLEAN allowed, tBTM_CMPL_CB *p_cb);
 
 /*******************************************************************************
 **

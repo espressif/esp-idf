@@ -295,6 +295,7 @@ typedef enum {
     ESP_BT_GAP_READ_TX_PWR_LVL_EVT,                 /*!< Read inq/iscan/page/pscan transmit power level event */
     ESP_BT_GAP_WRITE_TX_PWR_LVL_EVT,                /*!< Write inq/iscan/page/pscan transmit power level event */
     ESP_BT_GAP_SNIFF_SUBRATING_EVT,                 /*!< Sniff subrating event */
+    ESP_BT_GAP_SET_SNIFF_ALLOWED_EVT,               /*!< Set whether sniff is allowed on an ACL */
     ESP_BT_GAP_EVT_MAX,
 } esp_bt_gap_cb_event_t;
 
@@ -607,6 +608,15 @@ typedef union {
         uint16_t min_remote_timeout;           /*!< Min remote timeout, unit is 0.625ms */
         uint16_t min_local_timeout;            /*!< Min local timeout, unit is 0.625ms */
     } sniff_subrating;                         /*!< Sniff Subrating event parameter struct */
+
+    /**
+     * @brief ESP_BT_GAP_SET_SNIFF_ALLOWED_EVT
+     */
+    struct set_sniff_allowed_param {
+        esp_bt_status_t status;                /*!< set sniff-allowed status */
+        esp_bd_addr_t bda;                     /*!< remote bluetooth device address */
+        bool allowed;                          /*!< sniff allowed value applied to this command */
+    } set_sniff_allowed;                       /*!< set sniff-allowed parameter struct */
 } esp_bt_gap_cb_param_t;
 
 /**
@@ -1150,6 +1160,44 @@ esp_err_t esp_bt_gap_get_page_timeout(void);
  *                  - other: failed
  */
 esp_err_t esp_bt_gap_set_acl_pkt_types(esp_bd_addr_t remote_bda, esp_bt_acl_pkt_type_t pkt_types);
+
+/**
+ * @brief           Allow or disallow sniff mode on a specific ACL connection.
+ *                  esp_bt_gap_cb_t will be called with ESP_BT_GAP_SET_SNIFF_ALLOWED_EVT
+ *                  when the host has submitted the link policy command. The controller
+ *                  command complete is not reported. If the controller rejects the write,
+ *                  the application is not notified and the host state is not rolled back.
+ *                  This call does not by itself put the link into sniff mode.
+ *
+ *                  When allowed is false, sniff is disallowed for the lifetime of this
+ *                  ACL. The local controller is expected to reject later sniff requests,
+ *                  including those from the peer, and the host power manager will not
+ *                  start sniff. If the link is already in sniff, the host asks it to
+ *                  return to active mode. The peer may reject that request. Whether the
+ *                  link actually left sniff is reported by ESP_BT_GAP_MODE_CHG_EVT.
+ *                  When allowed is true after this API disallowed sniff, the app
+ *                  restriction is cleared and the current stack link policy is written.
+ *                  If the stack still has sniff cleared for a temporary disable, sniff
+ *                  stays off until that disable ends. Otherwise sniff may be entered
+ *                  again after the normal idle timeout. The link stays in its current
+ *                  mode when this call returns. When sniff is already allowed, this
+ *                  call leaves the stack link policy unchanged, including a temporary
+ *                  disable owned by the stack.
+ *                  If the stack link policy does not include sniff, a request with allowed
+ *                  set to true completes with ESP_BT_STATUS_UNSUPPORTED and this ACL is
+ *                  left unchanged. A request with allowed set to false succeeds and is
+ *                  recorded.
+ *                  The setting is cleared when the ACL disconnects.
+ *
+ * @param[in]       remote_bda: remote bluetooth device address
+ * @param[in]       allowed: true to allow sniff, false to disallow sniff
+ *
+ * @return          - ESP_OK: success
+ *                  - ESP_ERR_INVALID_ARG: if remote_bda is NULL
+ *                  - ESP_ERR_INVALID_STATE: if bluetooth stack is not yet enabled
+ *                  - other: failed
+ */
+esp_err_t esp_bt_gap_set_sniff_allowed(esp_bd_addr_t remote_bda, bool allowed);
 
 /**
  * @brief           Set the minimal size of encryption key

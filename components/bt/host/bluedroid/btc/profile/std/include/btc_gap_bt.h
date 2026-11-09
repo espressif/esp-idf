@@ -44,6 +44,7 @@ typedef enum {
     BTC_GAP_BT_SET_MIN_ENC_KEY_SIZE_EVT,
     BTC_GAP_BT_GET_DEV_NAME_CMPL_EVT,
     BTC_GAP_BT_SSR_EVT,
+    BTC_GAP_BT_SET_SNIFF_ALLOWED_EVT,
 }btc_gap_bt_evt_t;
 
 typedef enum {
@@ -75,6 +76,7 @@ typedef enum {
     BTC_GAP_BT_ACT_GET_PAGE_TIMEOUT,
     BTC_GAP_BT_ACT_SET_ACL_PKT_TYPES,
     BTC_GAP_BT_ACT_SET_MIN_ENC_KEY_SIZE,
+    BTC_GAP_BT_ACT_SET_SNIFF_ALLOWED,
     BTC_GAP_BT_ACT_SET_DEV_NAME,
     BTC_GAP_BT_ACT_GET_DEV_NAME,
 } btc_gap_bt_act_t;
@@ -212,6 +214,12 @@ typedef union {
     struct set_min_enc_key_size_args {
         uint8_t key_size;
     } set_min_enc_key_size;
+
+    // BTC_GAP_BT_ACT_SET_SNIFF_ALLOWED
+    struct set_sniff_allowed_args {
+        bt_bdaddr_t bda;
+        bool allowed;
+    } set_sniff_allowed;
 
     // BTC_GAP_BT_ACT_SET_DEV_NAME
     struct bt_set_dev_name_args {

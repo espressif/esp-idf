@@ -410,6 +410,40 @@ void BTA_DmSetMinEncKeySize(UINT8 key_size, tBTM_CMPL_CB *p_cb)
         bta_sys_sendmsg(p_msg);
     }
 }
+
+/*******************************************************************************
+**
+** Function         BTA_DmSetSniffAllowed
+**
+** Description      Allow or disallow sniff mode on one ACL connection.
+**
+**
+** Returns          void
+**
+*******************************************************************************/
+void BTA_DmSetSniffAllowed(BD_ADDR remote_bda, BOOLEAN allowed, tBTM_CMPL_CB *p_cb)
+{
+    tBTA_DM_API_SET_SNIFF_ALLOWED *p_msg;
+
+    if ((p_msg = (tBTA_DM_API_SET_SNIFF_ALLOWED *) osi_malloc(sizeof(tBTA_DM_API_SET_SNIFF_ALLOWED))) != NULL) {
+        p_msg->hdr.event = BTA_DM_API_SET_SNIFF_ALLOWED_EVT;
+        bdcpy(p_msg->remote_bda, remote_bda);
+        p_msg->allowed = allowed;
+        p_msg->set_sniff_allowed_cb = p_cb;
+
+        bta_sys_sendmsg(p_msg);
+    } else {
+        APPL_TRACE_ERROR("%s malloc failed", __func__);
+
+        if (p_cb != NULL) {
+            tBTA_SET_SNIFF_ALLOWED_RESULTS results;
+            results.status = BTM_NO_RESOURCES;
+            bdcpy(results.rem_bda, remote_bda);
+            results.allowed = allowed;
+            (*p_cb)(&results);
+        }
+    }
+}
 #endif /// CLASSIC_BT_INCLUDED == TRUE
 
 #if (SDP_INCLUDED == TRUE)
@@ -1122,7 +1156,7 @@ void BTA_GetEirService( UINT8 *p_eir, tBTA_SERVICE_MASK *p_services )
 *******************************************************************************/
 UINT16 BTA_DmGetConnectionState( BD_ADDR bd_addr )
 {
-    tBTA_DM_PEER_DEVICE *p_dev = bta_dm_find_peer_device(bd_addr);
+    tBTA_DM_PEER_DEVICE *p_dev = bta_dm_find_peer_device(bd_addr, BT_TRANSPORT_INVALID);
     return (p_dev && p_dev->conn_state == BTA_DM_CONNECTED);
 }
 

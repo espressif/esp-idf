@@ -73,6 +73,7 @@ enum {
     BTA_DM_API_PAGE_TO_GET_EVT,
     BTA_DM_API_SET_ACL_PKT_TYPES_EVT,
     BTA_DM_API_SET_MIN_ENC_KEY_SIZE_EVT,
+    BTA_DM_API_SET_SNIFF_ALLOWED_EVT,
     BTA_DM_API_SET_AFH_CHANNELS_EVT,
 #if (SDP_INCLUDED == TRUE)
     BTA_DM_API_GET_REMOTE_NAME_EVT,
@@ -451,6 +452,14 @@ typedef struct {
     UINT8               key_size;
     tBTM_CMPL_CB        *set_min_enc_key_size_cb;
 } tBTA_DM_API_SET_MIN_ENC_KEY_SIZE;
+
+/* data type for BTA_DM_API_SET_SNIFF_ALLOWED_EVT */
+typedef struct {
+    BT_HDR              hdr;
+    BD_ADDR             remote_bda;
+    BOOLEAN             allowed;
+    tBTM_CMPL_CB        *set_sniff_allowed_cb;
+} tBTA_DM_API_SET_SNIFF_ALLOWED;
 
 /* data type for BTA_DM_API_GET_REMOTE_NAME_EVT */
 typedef struct {
@@ -1791,6 +1800,7 @@ typedef union {
     tBTA_DM_API_PAGE_TO_SET set_page_timeout;
     tBTA_DM_API_PAGE_TO_GET get_page_timeout;
     tBTA_DM_API_SET_ACL_PKT_TYPES set_acl_pkt_types;
+    tBTA_DM_API_SET_SNIFF_ALLOWED set_sniff_allowed;
 #endif /* CLASSIC_BT_INCLUDED */
     tBTA_DM_API_SET_MIN_ENC_KEY_SIZE set_min_enc_key_size;
 #if (SDP_INCLUDED == TRUE)
@@ -2079,6 +2089,7 @@ typedef UINT8   tBTA_DM_PM_REQ;
 typedef struct {
     BD_ADDR                     peer_bdaddr;
     UINT16                      link_policy;
+    UINT16                      active_link_policy;     /* policy last submitted to the controller */
     tBTA_DM_CONN_STATE          conn_state;
     tBTA_PREF_ROLES             pref_role;
     BOOLEAN                     in_use;
@@ -2090,6 +2101,7 @@ typedef struct {
     tBTA_DM_PM_ACTION           pm_mode_attempted;
     tBTA_DM_PM_ACTION           pm_mode_failed;
     BOOLEAN                     remove_dev_pending;
+    BOOLEAN                     sniff_allowed;          /* FALSE: host keeps this ACL out of sniff */
 #if BLE_INCLUDED == TRUE
     UINT16                      conn_handle;
 #endif
@@ -2415,6 +2427,8 @@ extern void bta_dm_set_page_timeout (tBTA_DM_MSG *p_data);
 extern void bta_dm_get_page_timeout (tBTA_DM_MSG *p_data);
 extern void bta_dm_set_acl_pkt_types (tBTA_DM_MSG *p_data);
 extern void bta_dm_set_min_enc_key_size (tBTA_DM_MSG *p_data);
+extern void bta_dm_set_sniff_allowed (tBTA_DM_MSG *p_data);
+extern tBTM_STATUS bta_dm_apply_link_policy(tBTA_DM_PEER_DEVICE *p_dev, UINT16 settings);
 #endif
 extern void bta_dm_set_afh_channels (tBTA_DM_MSG *p_data);
 extern void bta_dm_read_rmt_name(tBTA_DM_MSG *p_data);
@@ -2572,7 +2586,7 @@ extern void bta_dm_search_cancel_cmpl (tBTA_DM_MSG *p_data);
 extern void bta_dm_search_cancel_notify (tBTA_DM_MSG *p_data);
 extern void bta_dm_search_cancel_transac_cmpl(tBTA_DM_MSG *p_data);
 extern void bta_dm_disc_rmt_name (tBTA_DM_MSG *p_data);
-extern tBTA_DM_PEER_DEVICE *bta_dm_find_peer_device(BD_ADDR peer_addr);
+extern tBTA_DM_PEER_DEVICE *bta_dm_find_peer_device(BD_ADDR peer_addr, tBT_TRANSPORT transport);
 void bta_dm_eir_update_uuid(tBT_UUID uuid, BOOLEAN adding);
 
 extern void bta_dm_enable_test_mode(tBTA_DM_MSG *p_data);
