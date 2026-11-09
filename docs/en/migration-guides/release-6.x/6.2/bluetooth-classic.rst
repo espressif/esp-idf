@@ -202,6 +202,14 @@ Bluedroid
 
         - ``esp_bt_config_file_path_get()`` and ``esp_bt_config_file_path_update()`` return ``ESP_ERR_INVALID_ARG`` when ``file_path`` is NULL. They previously returned ``ESP_FAIL``. ``esp_bt_config_file_path_update()`` still returns ``ESP_FAIL`` when the path length is not less than ``NVS_NS_NAME_MAX_SIZE``.
 
+    - :component_file:`/bt/host/bluedroid/api/include/api/esp_pan_api.h`
+
+        - ``ESP_PAN_OPENING_EVT`` and the ``opening`` member of ``esp_pan_cb_param_t`` are removed. A ``case ESP_PAN_OPENING_EVT:`` label no longer compiles. Remove that branch. The peer address and connection handle previously read from ``param->opening`` are reported on ``ESP_PAN_OPEN_EVT`` as ``param->open.remote_bda`` and ``param->open.handle``.
+
+        - In ESP-IDF v6.2, ``ESP_PAN_OPENING_EVT`` is 3 and ``ESP_PAN_OPEN_EVT`` is 4. After the removal, ``ESP_PAN_OPEN_EVT`` is 3 and every later enumerator is one smaller. Code that switches on the numeric value 3 now handles ``ESP_PAN_OPEN_EVT``. Switch on the enumerator names. The same shift applies to ``ESP_PAN_CLOSE_EVT`` and every event after it.
+
+        - A connection that is still opening is no longer reported on its own. An open that does not complete is reported only as ``ESP_PAN_OPEN_EVT`` with ``status`` equal to ``ESP_PAN_FAILURE``. ``ESP_PAN_OPEN_EVT`` with ``ESP_PAN_SUCCESS`` is still reported when the connection completes.
+
     Function signatures are unchanged. An argument that was already valid still returns ``ESP_OK`` when the request is sent. Code that only tests the result against ``ESP_OK`` does not need to change. Code that treats a NULL-pointer failure as ``ESP_FAIL`` must accept ``ESP_ERR_INVALID_ARG``.
 
     Suggested replacements:

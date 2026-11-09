@@ -109,9 +109,6 @@ static void bte_pan_evt(tBTA_PAN_EVT event, tBTA_PAN *p_data)
     case BTA_PAN_SET_ROLE_EVT:
         param_len = (event == BTA_PAN_SET_ROLE_EVT) ? sizeof(tBTA_PAN_SET_ROLE) : 0;
         break;
-    case BTA_PAN_OPENING_EVT:
-        param_len = sizeof(tBTA_PAN_OPENING);
-        break;
     case BTA_PAN_OPEN_EVT:
         param_len = sizeof(tBTA_PAN_OPEN);
         break;
@@ -626,11 +623,6 @@ void btc_pan_cb_handler(btc_msg_t *msg)
         param.set_role.status = param.init.status;
         param.set_role.role = (esp_pan_role_mask_t)p_data->set_role.role;
         btc_pan_cb_to_app(ESP_PAN_SET_ROLE_EVT, &param);
-        break;
-    case BTA_PAN_OPENING_EVT:
-        param.opening.handle = p_data->opening.handle;
-        memcpy(param.opening.remote_bda, p_data->opening.bd_addr, ESP_BD_ADDR_LEN);
-        btc_pan_cb_to_app(ESP_PAN_OPENING_EVT, &param);
         break;
     case BTA_PAN_OPEN_EVT:
         param.open.status = btc_pan_status_from_bta(p_data->open.status);
