@@ -3079,8 +3079,10 @@ bool nan_sec_ndp_should_install_keys(uint8_t csid, int pairing_akmp, uint8_t ndp
     }
 
     int cur_strength = nan_sec_get_strength(sa->csid, sa->pairing_akmp);
-    ESP_LOGD(TAG, "SEC: Comparing strength: new=%d (csid=%u akmp=0x%x ndp_id=%u) vs cur=%d (csid=%u akmp=0x%x owner_ndp_id=%u)",
-             new_strength, csid, pairing_akmp, ndp_id, cur_strength, sa->csid, sa->pairing_akmp, sa->owner_ndp_id);
+    ESP_LOGD(TAG, "SEC: Comparing strength: new=%d (csid=%u akmp=0x%x ndp_id=%u) vs cur=%d "
+             "(csid=%u akmp=0x%x owner_ndp_id=%u)",
+             new_strength, csid, pairing_akmp, ndp_id, cur_strength, sa->csid,
+             sa->pairing_akmp, sa->owner_ndp_id);
 
     if (new_strength < cur_strength) {
         ESP_LOGI(TAG, "SEC: New security weaker than existing, discarding keys");
