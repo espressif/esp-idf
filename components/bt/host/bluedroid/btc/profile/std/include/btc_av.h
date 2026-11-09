@@ -295,7 +295,10 @@ BOOLEAN btc_av_get_active_peer(esp_a2d_conn_hdl_t *conn_hdl);
 ** Function         btc_av_set_active_peer
 **
 ** Description      Choose which connected peer gets rendered. Accepts OPENED
-**                  or STARTED. An idle target is sent AVRCP Play.
+**                  or STARTED. An idle target is sent AVRCP Play. Returns
+**                  FALSE and reports ESP_BT_STATUS_BUSY, without changing the
+**                  selection, when a stack Play/Pause pair for the target or
+**                  the previously rendered peer is still outstanding.
 **
 ** Returns          TRUE when the peer became the active one
 **

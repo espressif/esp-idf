@@ -739,9 +739,18 @@ esp_err_t esp_a2d_sink_get_active_device(void);
  *                  those commands are silently skipped and only a local A2DP Suspend is sent;
  *                  the previously streaming phone may look like it is still playing.
  *
+ * @note            If @p conn_hdl is not ESP_A2D_INVALID_CONN_HDL but does not match a
+ *                  connected peer, this function still returns ESP_OK. Failure is
+ *                  reported in ESP_A2D_SNK_ACTIVE_DEVICE_EVT.
+ *
+ * @note            When a stack Play/Pause pair for the target, or for the device
+ *                  that would be suspended, is still outstanding, the event status
+ *                  is ESP_BT_STATUS_BUSY and the current selection is unchanged.
+ *                  Retry the call after that pair completes, about one second.
+ *
  * @return
  *                  - ESP_OK: if the request is sent successfully
- *                  - ESP_ERR_INVALID_ARG: invalid connection handle
+ *                  - ESP_ERR_INVALID_ARG: @p conn_hdl is ESP_A2D_INVALID_CONN_HDL
  *                  - ESP_ERR_INVALID_STATE: if bluetooth stack is not yet enabled
  *                  - ESP_FAIL: others
  *
