@@ -43,7 +43,6 @@ def send_file_via_uart(port: str, baud_rate: int, file_path: str, packet_size: i
     ],
     indirect=True,
 )
-@pytest.mark.temp_skip_ci(targets=['esp32h4', 'esp32h21'], reason='cannot pass')  # IDF-16462
 @idf_parametrize('target', soc_filtered_targets('SOC_UHCI_SUPPORTED == 1'), indirect=['target'])
 def test_uart_dma_ota(dut: Dut) -> None:
     dut.expect_exact('uhci-example: OTA process started')
