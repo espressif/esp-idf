@@ -99,7 +99,7 @@ Bluedroid
                * - ``esp_a2d_media_ctrl()``
                  - ``esp_a2d_media_ctrl_by_handle()``
 
-        - A handle that does not match the active A2DP connection is not applied. Media control reports ``ESP_A2D_MEDIA_CTRL_ACK_FAILURE``. Disconnect is ignored.
+        - A handle that does not match a connected A2DP peer is not applied. Media control reports ``ESP_A2D_MEDIA_CTRL_ACK_FAILURE``. Disconnect is ignored.
 
         - ``esp_a2d_register_callback()`` returns ``ESP_ERR_INVALID_ARG`` when ``callback`` is NULL. It previously returned ``ESP_FAIL``.
 

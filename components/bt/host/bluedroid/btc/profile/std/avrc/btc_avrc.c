@@ -135,7 +135,7 @@ static btc_rc_cb_t *btc_rc_alloc_cb(void)
 **                  on. That is the session of the device whose audio is being
 **                  rendered, or any connected one if none is rendering.
 **
-** Returns          Pointer to a control block, never NULL
+** Returns          Pointer to a control block, NULL only if btc_rc_cb_arr[0] is NULL
 **
 *******************************************************************************/
 static btc_rc_cb_t *btc_rc_default_cb(void)
@@ -1244,8 +1244,8 @@ static void handle_rc_passthrough_rsp ( tBTA_AV_REMOTE_RSP *p_remote_rsp)
                           p_remote_rsp->rc_handle);
         return;
     }
-    /* Label 15 is the release half of a stack Play/Pause pair. */
-    if (p_remote_rsp->label == ESP_AVRC_TRANS_LABEL_MAX &&
+
+    if (p_remote_rsp->label == ESP_AVRC_PLAY_RELEASED_LABEL &&
             (p_remote_rsp->rc_id == BTA_AV_RC_PLAY || p_remote_rsp->rc_id == BTA_AV_RC_PAUSE)) {
         p_cb->stack_pt_ms = 0;
     }
@@ -1538,10 +1538,10 @@ BOOLEAN btc_rc_pause_peer(const BD_ADDR peer_addr)
         BTC_TRACE_DEBUG("stack Play/Pause still outstanding, skip pause");
         return FALSE;
     }
-    /* Labels 14/15 are reserved for the stack; application APIs only accept 0-13. */
+
     btc_rc_stack_pt_mark(p_cb);
-    BTA_AvRemoteCmd(p_cb->rc_handle, ESP_AVRC_TRANS_LABEL_MAX - 1, BTA_AV_RC_PAUSE, BTA_AV_STATE_PRESS);
-    BTA_AvRemoteCmd(p_cb->rc_handle, ESP_AVRC_TRANS_LABEL_MAX, BTA_AV_RC_PAUSE, BTA_AV_STATE_RELEASE);
+    BTA_AvRemoteCmd(p_cb->rc_handle, ESP_AVRC_PAUSE_PRESSED_LABEL, BTA_AV_RC_PAUSE, BTA_AV_STATE_PRESS);
+    BTA_AvRemoteCmd(p_cb->rc_handle, ESP_AVRC_PAUSE_RELEASED_LABEL, BTA_AV_RC_PAUSE, BTA_AV_STATE_RELEASE);
     return TRUE;
 #else
     UNUSED(peer_addr);
@@ -1577,8 +1577,8 @@ BOOLEAN btc_rc_play_peer(const BD_ADDR peer_addr)
     }
     /* Labels 14/15 are reserved for the stack; application APIs only accept 0-13. */
     btc_rc_stack_pt_mark(p_cb);
-    BTA_AvRemoteCmd(p_cb->rc_handle, ESP_AVRC_TRANS_LABEL_MAX - 1, BTA_AV_RC_PLAY, BTA_AV_STATE_PRESS);
-    BTA_AvRemoteCmd(p_cb->rc_handle, ESP_AVRC_TRANS_LABEL_MAX, BTA_AV_RC_PLAY, BTA_AV_STATE_RELEASE);
+    BTA_AvRemoteCmd(p_cb->rc_handle, ESP_AVRC_PLAY_PRESSED_LABEL, BTA_AV_RC_PLAY, BTA_AV_STATE_PRESS);
+    BTA_AvRemoteCmd(p_cb->rc_handle, ESP_AVRC_PLAY_RELEASED_LABEL, BTA_AV_RC_PLAY, BTA_AV_STATE_RELEASE);
     return TRUE;
 #else
     UNUSED(peer_addr);
