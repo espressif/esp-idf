@@ -373,7 +373,7 @@ Recommended Configuration
      - ON
 
    * - RTC slow clock source (:menuitem:`CONFIG_RTC_CLK_SRC`)
-     - Internal 150 kHz OSC
+     - Internal 136 kHz RC oscillator
 
    * - Disable all GPIO when chip at sleep (:menuitem:`CONFIG_PM_SLP_DISABLE_GPIO`)
      - ON
@@ -487,7 +487,7 @@ Recommended Configuration
      - ON
 
    * - RTC slow clock source (:menuitem:`CONFIG_RTC_CLK_SRC`)
-     - Internal 150 kHz OSC
+     - Internal 136 kHz RC oscillator
 
    * - Disable all GPIO when chip at sleep (:menuitem:`CONFIG_PM_SLP_DISABLE_GPIO`)
      - ON

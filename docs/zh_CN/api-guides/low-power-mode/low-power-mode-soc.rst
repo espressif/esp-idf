@@ -373,7 +373,7 @@ Light-sleep 模式配置
      - ON
 
    * - RTC 慢速时钟源 (:menuitem:`CONFIG_RTC_CLK_SRC`)
-     - 内部 150 kHz 振荡器
+     - 内部 136 kHz RC 振荡器
 
    * - 芯片休眠时禁用所有 GPIO (:menuitem:`CONFIG_PM_SLP_DISABLE_GPIO`)
      - ON
@@ -487,7 +487,7 @@ Light-sleep 模式配置
      - ON
 
    * - RTC 慢速时钟源 (:menuitem:`CONFIG_RTC_CLK_SRC`)
-     - 内部 150 kHz 振荡器
+     - 内部 136 kHz RC 振荡器
 
    * - 芯片休眠时禁用所有 GPIO (:menuitem:`CONFIG_PM_SLP_DISABLE_GPIO`)
      - ON
