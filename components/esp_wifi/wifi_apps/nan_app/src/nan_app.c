@@ -1492,7 +1492,7 @@ static void nan_app_ndp_confirm_cb(uint8_t status, struct ndp_cb_peer_info *peer
             goto done;
         }
 
-        install_keys = nan_sec_ndp_should_install_keys(csid, pairing_akmp);
+        install_keys = nan_sec_ndp_should_install_keys(csid, pairing_akmp, ndp_id);
         if (install_keys) {
             int ret = esp_wifi_set_nan_key_internal(NAN_WIFI_WPA_ALG_CCMP,
                                                     peer_ndi,
@@ -1535,12 +1535,12 @@ static void nan_app_ndp_confirm_cb(uint8_t status, struct ndp_cb_peer_info *peer
              * set_key cannot leave the §7.4 cache ahead of the driver. */
             nan_sec_ndp_commit_keys(peer_ndi, ndp_id, csid, pairing_akmp);
         } else {
-            /* A weaker/equal second secured NDP cannot share the single SA
-             * cache entry without corrupting the live secured datapath
-             * (overwriting its SA or coming up with no pairwise key). Tear it
-             * down instead of confirming a dead datapath. */
+            /* A weaker or equal-strength duplicate secured NDP cannot share
+             * the single SA cache entry without corrupting the live secured
+             * datapath (overwriting its SA or coming up with no pairwise key).
+             * Tear it down instead of confirming a dead datapath. */
             ESP_LOGE(TAG, "NDP confirm: rejecting weaker/duplicate secured NDP for "
-                     MACSTR " (ndp_id=%d csid=%u); a stronger secured SA is active",
+                     MACSTR " (ndp_id=%d csid=%u); a same-or-stronger secured SA is active",
                      MAC2STR(peer_nmi), ndp_id, csid);
             os_free(evt);
             nan_ndp_confirm_teardown(peer_nmi, ndp_id);
