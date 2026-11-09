@@ -202,6 +202,14 @@ Bluedroid
 
         - ``esp_bt_config_file_path_get()`` 和 ``esp_bt_config_file_path_update()`` 在 ``file_path`` 为 NULL 时返回 ``ESP_ERR_INVALID_ARG``。原先返回 ``ESP_FAIL``。路径长度不小于 ``NVS_NS_NAME_MAX_SIZE`` 时，``esp_bt_config_file_path_update()`` 仍返回 ``ESP_FAIL``。
 
+    - :component_file:`/bt/host/bluedroid/api/include/api/esp_pan_api.h`
+
+        - ``ESP_PAN_OPENING_EVT`` 以及 ``esp_pan_cb_param_t`` 的 ``opening`` 成员已移除。``case ESP_PAN_OPENING_EVT:`` 不再能通过编译，请删除该分支。原先从 ``param->opening`` 读取的对端地址和连接句柄，改从 ``ESP_PAN_OPEN_EVT`` 的 ``param->open.remote_bda`` 和 ``param->open.handle`` 获取。
+
+        - 在 ESP-IDF v6.2 中，``ESP_PAN_OPENING_EVT`` 的值为 3，``ESP_PAN_OPEN_EVT`` 为 4。移除后 ``ESP_PAN_OPEN_EVT`` 变为 3，其后每个枚举值都减 1。按数值 3 做 ``switch`` 的代码现在会进入 ``ESP_PAN_OPEN_EVT``。请改用枚举名，不要依赖数值。``ESP_PAN_CLOSE_EVT`` 及其后的事件同样前移。
+
+        - 不再单独上报“连接正在建立”。连接未能建立时，只通过 ``status`` 为 ``ESP_PAN_FAILURE`` 的 ``ESP_PAN_OPEN_EVT`` 上报。连接建立完成时，仍通过 ``status`` 为 ``ESP_PAN_SUCCESS`` 的 ``ESP_PAN_OPEN_EVT`` 上报。
+
     函数签名未改。原先合法的参数在请求成功下发时仍返回 ``ESP_OK``。只判断返回值是否等于 ``ESP_OK`` 的代码无需修改。把空指针失败当成 ``ESP_FAIL`` 来比较的代码需要同时接受 ``ESP_ERR_INVALID_ARG``。
 
     建议替换：

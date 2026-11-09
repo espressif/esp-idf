@@ -135,8 +135,8 @@ static void bta_pan_conn_state_cback(UINT16 handle, BD_ADDR bd_addr,
             p_scb->app_id = bta_pan_cb.app_id[2];
         }
     } else if ((state != PAN_SUCCESS) && !is_role_change) {
-        /* Setup failure while still IDLE (e.g. after OPENING_EVT): report
-         * CONN_OPEN so bta_pan_conn_open can emit OPEN_EVT with FAIL.
+        /* Setup failure while still IDLE: report CONN_OPEN so
+         * bta_pan_conn_open can emit OPEN_EVT with FAIL.
          * Disconnect of an established (or closing) connection: CLOSE_EVT. */
         p_scb = bta_pan_scb_by_handle(handle);
         if (p_scb != NULL && p_scb->state == BTA_PAN_IDLE_ST) {
@@ -498,9 +498,6 @@ void bta_pan_open(tBTA_PAN_SCB *p_scb, tBTA_PAN_DATA *p_data)
         bdcpy(p_scb->bd_addr, p_data->api_open.bd_addr);
         p_scb->local_role = p_data->api_open.local_role;
         p_scb->peer_role = p_data->api_open.peer_role;
-        bdcpy(bta_pan.opening.bd_addr, p_data->api_open.bd_addr);
-        bta_pan.opening.handle = p_scb->handle;
-        bta_pan_cb.p_cback(BTA_PAN_OPENING_EVT, &bta_pan);
 
     } else {
         bta_pan_scb_dealloc(p_scb);
