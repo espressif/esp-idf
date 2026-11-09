@@ -94,6 +94,7 @@ esp_err_t lp_core_lp_spi_slave_arm(lp_spi_transaction_t *trans_desc);
  *
  * @return esp_err_t        ESP_OK when successful
  *                          ESP_ERR_INVALID_ARG if the configuration is invalid
+ *                          ESP_ERR_INVALID_STATE if no transaction was armed with `lp_core_lp_spi_slave_arm()`
  *                          ESP_ERR_TIMEOUT when the operation times out
  */
 esp_err_t lp_core_lp_spi_slave_wait(lp_spi_transaction_t *trans_desc, int32_t cycles_to_wait);
