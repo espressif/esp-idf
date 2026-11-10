@@ -1476,6 +1476,12 @@ typedef UINT8 tHCI_STATUS;
 /* that until he created the connection */
 #define HCI_DEFAULT_POLICY_SETTINGS     HCI_DISABLE_ALL_LM_MODES
 
+/* HCI Sniff Subrating parameters, unit 0.625 ms */
+#define HCI_SSR_MAX_LAT_MIN             0x0002
+#define HCI_SSR_MAX_LAT_MAX             0xFFFE
+#define HCI_SSR_MIN_TO_MIN              0x0000
+#define HCI_SSR_MIN_TO_MAX              0xFFFE
+
 /* Filters that are sent in set filter command */
 #define HCI_FILTER_TYPE_CLEAR_ALL       0x00
 #define HCI_FILTER_INQUIRY_RESULT       0x01

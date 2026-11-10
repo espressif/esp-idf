@@ -2108,6 +2108,12 @@ static void btu_hcif_mode_change_evt (UINT8 *p)
 *******************************************************************************/
 static void btu_hcif_ssr_evt (UINT8 *p, UINT16 evt_len)
 {
+    /* status(1) + handle(2) + max_tx(2) + max_rx(2) + min_remote(2) + min_local(2) */
+    if (evt_len < 11) {
+        HCI_TRACE_ERROR("%s: invalid len %d", __func__, evt_len);
+        return;
+    }
+
 #if (BTM_SSR_INCLUDED == TRUE)
     btm_pm_proc_ssr_evt(p, evt_len);
 #endif

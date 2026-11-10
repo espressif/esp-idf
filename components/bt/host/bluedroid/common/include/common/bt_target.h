@@ -1503,12 +1503,16 @@
 #define BTM_OOB_INCLUDED                TRUE
 #endif
 
-/* TRUE to include Sniff Subrating */
-#if (BTA_DM_PM_INCLUDED == TRUE)
+/* TRUE to include Sniff Subrating. Only when HID Host or HID Device is built in. */
+#if (BTA_DM_PM_INCLUDED == TRUE) && ((HID_HOST_INCLUDED == TRUE) || (HID_DEV_INCLUDED == TRUE))
+#ifndef BTM_SSR_INCLUDED
+#define BTM_SSR_INCLUDED                TRUE
+#endif
+#else
 #ifndef BTM_SSR_INCLUDED
 #define BTM_SSR_INCLUDED                FALSE
 #endif
-#endif /* BTA_DM_PM_INCLUDED */
+#endif
 
 /*************************
 ** End of Lisbon Features

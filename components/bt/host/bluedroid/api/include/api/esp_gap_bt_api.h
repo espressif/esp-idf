@@ -300,6 +300,7 @@ typedef enum {
     ESP_BT_GAP_WRITE_NEW_CONN_TX_PWR_RNG_EVT,       /*!< Write new connection transmit power range event (for ACL) */
     ESP_BT_GAP_READ_TX_PWR_LVL_EVT,                 /*!< Read inq/iscan/page/pscan transmit power level event */
     ESP_BT_GAP_WRITE_TX_PWR_LVL_EVT,                /*!< Write inq/iscan/page/pscan transmit power level event */
+    ESP_BT_GAP_SNIFF_SUBRATING_EVT,                 /*!< Sniff subrating event */
     ESP_BT_GAP_EVT_MAX,
 } esp_bt_gap_cb_event_t;
 
@@ -588,6 +589,18 @@ typedef union {
         esp_bt_status_t status;                /*!< Indicate the get device name success status */
         char *name;                            /*!< Name of bluetooth device */
     } get_dev_name_cmpl;                       /*!< Get device name complete status parameter struct */
+
+    /**
+     * @brief ESP_BT_GAP_SNIFF_SUBRATING_EVT
+     */
+    struct sniff_subrating_param {
+        esp_bt_status_t stat;                  /*!< Sniff Subrating status */
+        esp_bd_addr_t bda;                     /*!< remote bluetooth device address */
+        uint16_t max_tx_latency;               /*!< Max transmit latency, unit is 0.625ms */
+        uint16_t max_rx_latency;               /*!< Max receive latency, unit is 0.625ms */
+        uint16_t min_remote_timeout;           /*!< Min remote timeout, unit is 0.625ms */
+        uint16_t min_local_timeout;            /*!< Min local timeout, unit is 0.625ms */
+    } sniff_subrating;                         /*!< Sniff Subrating event parameter struct */
 } esp_bt_gap_cb_param_t;
 
 /**
