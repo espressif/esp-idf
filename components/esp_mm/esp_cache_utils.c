@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2026 Espressif Systems (Shanghai) CO LTD
 *
 * SPDX-License-Identifier: Apache-2.0
 */
@@ -18,9 +18,7 @@
 #include "hal/cache_ll.h"
 #include "esp_private/esp_cache_private.h"
 #include "esp_private/critical_section.h"
-#if __riscv
-#include "riscv/rv_utils.h"
-#endif
+#include "esp_cpu.h"
 
 void esp_cache_suspend_ext_mem_cache(void)
 {
@@ -62,6 +60,14 @@ void esp_cache_freeze_ext_mem_cache(void)
     cache_ll_writeback_all(CACHE_LL_LEVEL_INT_MEM, CACHE_TYPE_DATA, CACHE_LL_ID_ALL);
 #endif
 
+#if SOC_BRANCH_PREDICTOR_SUPPORTED
+    /**
+     * A speculative fetch never completes while the cache is frozen. The
+     * unfinished fetch stalls the CPU, so branch prediction is turned off
+     * until esp_cache_unfreeze_ext_mem_cache().
+     */
+    esp_cpu_branch_prediction_disable();
+#endif
     cache_hal_freeze(CACHE_LL_LEVEL_EXT_MEM, CACHE_TYPE_ALL);
 
 #if (CONFIG_SPIRAM && SOC_CACHE_INTERNAL_MEM_VIA_L1CACHE)
@@ -76,6 +82,9 @@ void esp_cache_freeze_ext_mem_cache(void)
 void esp_cache_unfreeze_ext_mem_cache(void)
 {
     cache_hal_unfreeze(CACHE_LL_LEVEL_EXT_MEM, CACHE_TYPE_ALL);
+#if SOC_BRANCH_PREDICTOR_SUPPORTED
+    esp_cpu_branch_prediction_enable();
+#endif
 }
 
 static inline bool s_task_stack_is_sane_when_cache_frozen(void)
