@@ -20,6 +20,18 @@
 
 #define TX_IDLE_BUFFER_SIZE (MBEDTLS_SSL_HEADER_LEN + CACHE_BUFFER_SIZE)
 
+/*
+ * Idle RX buffer: the input counter and IV cache, followed by room for the
+ * record header (plus the handshake header) that esp_mbedtls_add_rx_buffer()
+ * peeks before it can size the real buffer. The peek must outlive that call:
+ * on a non-blocking socket the header can arrive in pieces, over several
+ * calls that return MBEDTLS_ERR_SSL_WANT_READ, and mbedtls keeps the bytes
+ * read so far (in_left) at in_hdr.
+ */
+#define RX_CACHE_SIZE       (16)
+#define RX_PEEK_SIZE        (5 + 4)     /* TLS record header + handshake header */
+#define RX_IDLE_BUFFER_SIZE (RX_CACHE_SIZE + RX_PEEK_SIZE)
+
 #define ESP_MBEDTLS_RETURN_IF_RX_BUF_STATIC(ssl) \
     do { \
         if (ssl->MBEDTLS_PRIVATE(in_buf)) { \
@@ -376,7 +388,7 @@ exit:
 
 /*
  * Decide how many content bytes the RX buffer must hold for the record whose
- * 5-byte header has just been peeked into msg_head.
+ * 5-byte header has just been peeked into msg_head (the idle RX buffer).
  *
  * The dynamic buffer is normally sized to this single record. That is unsafe
  * whenever mbedtls pulls more than the peeked record into the same buffer:
@@ -456,8 +468,9 @@ struct esp_ssl_bio {
     mbedtls_ssl_recv_timeout_t *f_recv_timeout;
 };
 
-/* True if reading `len` bytes to `buf` would overrun the dynamic RX buffer.
- * Destinations outside it (stack header-peek, unallocated, DTLS) return false. */
+/* True if reading `len` bytes to `buf` would overrun the dynamic RX buffer
+ * (the header peek into the idle buffer included). Destinations outside it
+ * (unallocated, DTLS) return false. */
 static bool rx_read_rejected(mbedtls_ssl_context *ssl,
                              const unsigned char *buf, size_t len)
 {
@@ -580,12 +593,11 @@ int esp_mbedtls_add_rx_buffer(mbedtls_ssl_context *ssl)
     /* Interpose the overflow-checking BIO trampolines before any network read. */
     esp_mbedtls_install_bio(ssl);
 
-    int cached = 0;
     int ret = 0;
     int buffer_len, content_len = 0;
     struct esp_mbedtls_ssl_buf *esp_buf;
-    unsigned char cache_buf[16];
-    unsigned char msg_head[9];
+    unsigned char *idle_buf;
+    unsigned char *msg_head;
     size_t in_msglen, in_left;
 
     ESP_LOGV(TAG, "--> add rx");
@@ -595,11 +607,29 @@ int esp_mbedtls_add_rx_buffer(mbedtls_ssl_context *ssl)
             ESP_LOGV(TAG, "in buffer is not empty");
             ret = 0;
             goto exit;
-        } else {
-            cached = 1;
         }
+    } else {
+        /* New or reset context: start from an idle buffer (zero counter/IV),
+         * so the header peek below has a place that outlives this call. */
+        esp_buf = mbedtls_calloc(1, SSL_BUF_HEAD_OFFSET_SIZE + RX_IDLE_BUFFER_SIZE);
+        if (!esp_buf) {
+            ESP_LOGE(TAG, "alloc(%d bytes) failed", SSL_BUF_HEAD_OFFSET_SIZE + RX_IDLE_BUFFER_SIZE);
+            ret = MBEDTLS_ERR_SSL_ALLOC_FAILED;
+            goto exit;
+        }
+        esp_mbedtls_init_ssl_buf(esp_buf, RX_IDLE_BUFFER_SIZE);
+        init_rx_buffer(ssl, esp_buf->buf);
+        esp_mbedtls_set_buf_state(ssl->MBEDTLS_PRIVATE(in_buf), ESP_MBEDTLS_SSL_BUF_NO_CACHED);
     }
 
+    /*
+     * Peek the header into the idle buffer, not onto the stack: if only part
+     * of it has arrived, mbedtls_ssl_fetch_input() returns WANT_READ and
+     * continues at in_hdr + in_left on the next call, so the bytes read so
+     * far must still be there.
+     */
+    idle_buf = ssl->MBEDTLS_PRIVATE(in_buf);
+    msg_head = idle_buf + RX_CACHE_SIZE;
     ssl->MBEDTLS_PRIVATE(in_hdr) = msg_head;
     ssl->MBEDTLS_PRIVATE(in_len) = msg_head + 3;
 
@@ -630,12 +660,8 @@ int esp_mbedtls_add_rx_buffer(mbedtls_ssl_context *ssl)
     ESP_LOGV(TAG, "message length is %d RX buffer length should be %d left is %d",
                 (int)in_msglen, (int)buffer_len, (int)ssl->MBEDTLS_PRIVATE(in_left));
 
-    if (cached) {
-        memcpy(cache_buf, ssl->MBEDTLS_PRIVATE(in_buf), 16);
-        esp_mbedtls_free_buf(ssl->MBEDTLS_PRIVATE(in_buf));
-        init_rx_buffer(ssl, NULL);
-    }
-
+    /* Allocate the record buffer before freeing the idle one, so an
+     * allocation failure leaves the counter/IV and the peeked header intact. */
     esp_buf = mbedtls_calloc(1, SSL_BUF_HEAD_OFFSET_SIZE + buffer_len);
     if (!esp_buf) {
         ESP_LOGE(TAG, "alloc(%d bytes) failed", SSL_BUF_HEAD_OFFSET_SIZE + buffer_len);
@@ -646,14 +672,14 @@ int esp_mbedtls_add_rx_buffer(mbedtls_ssl_context *ssl)
     ESP_LOGV(TAG, "add in buffer %d bytes @ %p", buffer_len, esp_buf->buf);
 
     esp_mbedtls_init_ssl_buf(esp_buf, buffer_len);
+    init_rx_buffer(ssl, NULL);
     init_rx_buffer(ssl, esp_buf->buf);
 
-    if (cached) {
-        memcpy(ssl->MBEDTLS_PRIVATE(in_ctr), cache_buf, 8);
-        memcpy(ssl->MBEDTLS_PRIVATE(in_iv), cache_buf + 8, 8);
-    }
-
+    memcpy(ssl->MBEDTLS_PRIVATE(in_ctr), idle_buf, 8);
+    memcpy(ssl->MBEDTLS_PRIVATE(in_iv), idle_buf + 8, 8);
     memcpy(ssl->MBEDTLS_PRIVATE(in_hdr), msg_head, in_left);
+    esp_mbedtls_free_buf(idle_buf);
+
     ssl->MBEDTLS_PRIVATE(in_left) = in_left;
     ssl->MBEDTLS_PRIVATE(in_msglen) = 0;
 
@@ -672,7 +698,7 @@ int esp_mbedtls_free_rx_buffer(mbedtls_ssl_context *ssl)
     ESP_MBEDTLS_RETURN_IF_RX_BUF_STATIC(ssl);
 
     int ret = 0;
-    unsigned char buf[16];
+    unsigned char buf[RX_CACHE_SIZE];
     struct esp_mbedtls_ssl_buf *esp_buf;
 
     ESP_LOGV(TAG, "--> free rx");
@@ -705,9 +731,9 @@ int esp_mbedtls_free_rx_buffer(mbedtls_ssl_context *ssl)
     /* Allocate the replacement cache buffer before freeing the current one, so
      * an allocation failure leaves in_buf (and its counter/IV) intact and the
      * context usable, instead of stranding it with in_buf == NULL. */
-    esp_buf = mbedtls_calloc(1, SSL_BUF_HEAD_OFFSET_SIZE + 16);
+    esp_buf = mbedtls_calloc(1, SSL_BUF_HEAD_OFFSET_SIZE + RX_IDLE_BUFFER_SIZE);
     if (!esp_buf) {
-        ESP_LOGE(TAG, "alloc(%d bytes) failed", SSL_BUF_HEAD_OFFSET_SIZE + 16);
+        ESP_LOGE(TAG, "alloc(%d bytes) failed", SSL_BUF_HEAD_OFFSET_SIZE + RX_IDLE_BUFFER_SIZE);
         ret = MBEDTLS_ERR_SSL_ALLOC_FAILED;
         goto exit;
     }
@@ -718,8 +744,8 @@ int esp_mbedtls_free_rx_buffer(mbedtls_ssl_context *ssl)
     esp_mbedtls_free_buf(ssl->MBEDTLS_PRIVATE(in_buf));
     init_rx_buffer(ssl, NULL);
 
-    esp_mbedtls_init_ssl_buf(esp_buf, 16);
-    memcpy(esp_buf->buf, buf, 16);
+    esp_mbedtls_init_ssl_buf(esp_buf, RX_IDLE_BUFFER_SIZE);
+    memcpy(esp_buf->buf, buf, RX_CACHE_SIZE);
     init_rx_buffer(ssl, esp_buf->buf);
     esp_mbedtls_set_buf_state(ssl->MBEDTLS_PRIVATE(in_buf), ESP_MBEDTLS_SSL_BUF_NO_CACHED);
 exit:
