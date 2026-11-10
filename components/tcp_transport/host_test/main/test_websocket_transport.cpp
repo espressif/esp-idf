@@ -961,6 +961,156 @@ TEST_CASE_METHOD(HostTestCMockReset, "WebSocket Transport UTF-8 validation", "[u
         REQUIRE(esp_transport_write(websocket_transport.get(), "x", 1, timeout) < 0);
     }
 
+    SECTION("CLOSE frame with a forbidden status code fails the connection") {
+        const uint16_t codes[] = {0, 999, 1004, 1005, 1006, 1015, 1016, 2999, 5000, 65535};
+        for (size_t i = 0; i < sizeof(codes) / sizeof(codes[0]); i++) {
+            set_server_stream({
+                0x88, 0x02, static_cast<uint8_t>(codes[i] >> 8), static_cast<uint8_t>(codes[i]),
+            });
+            if (i > 0) {
+                mock_connect_ExpectAndReturn(parent_handle.get(), host, port, timeout, ESP_OK);
+            }
+            s_client_bytes_written.clear();
+            s_close_calls = 0;
+            REQUIRE(esp_transport_connect(websocket_transport.get(), host, port, timeout) == 0);
+
+            REQUIRE(esp_transport_read(websocket_transport.get(), buffer, sizeof(buffer), timeout) < 0);
+            REQUIRE(!close_frame_written());
+            REQUIRE(s_close_calls == 1);
+        }
+    }
+
+    SECTION("Propagated CLOSE frame with a forbidden status code fails the connection") {
+        esp_transport_ws_config_t propagate = ws_config;
+        propagate.propagate_control_frames = true;
+        REQUIRE(esp_transport_ws_set_config(websocket_transport.get(), &propagate) == ESP_OK);
+        const uint16_t codes[] = {0, 999, 1004, 1005, 1006, 1015, 2999, 5000};
+        for (size_t i = 0; i < sizeof(codes) / sizeof(codes[0]); i++) {
+            set_server_stream({
+                0x88, 0x02, static_cast<uint8_t>(codes[i] >> 8), static_cast<uint8_t>(codes[i]),
+            });
+            if (i > 0) {
+                mock_connect_ExpectAndReturn(parent_handle.get(), host, port, timeout, ESP_OK);
+            }
+            s_client_bytes_written.clear();
+            s_close_calls = 0;
+            REQUIRE(esp_transport_connect(websocket_transport.get(), host, port, timeout) == 0);
+
+            REQUIRE(esp_transport_read(websocket_transport.get(), buffer, sizeof(buffer), timeout) < 0);
+            REQUIRE(!close_frame_written());
+            REQUIRE(s_close_calls == 1);
+            REQUIRE(esp_transport_write(websocket_transport.get(), "x", 1, timeout) < 0);
+        }
+    }
+
+    SECTION("Read opcode is still CLOSE after a CLOSE frame with a forbidden status code") {
+        // The esp-protocols client checks the opcode after a failed read to tell a bad CLOSE from other errors
+        set_server_stream({
+            0x88, 0x02, 0x03, 0xED,                         // CLOSE, code 1005
+        });
+        REQUIRE(esp_transport_connect(websocket_transport.get(), host, port, timeout) == 0);
+        REQUIRE(esp_transport_read(websocket_transport.get(), buffer, sizeof(buffer), timeout) < 0);
+        REQUIRE(esp_transport_ws_get_read_opcode(websocket_transport.get()) == WS_TRANSPORT_OPCODES_CLOSE);
+
+        esp_transport_ws_config_t propagate = ws_config;
+        propagate.propagate_control_frames = true;
+        REQUIRE(esp_transport_ws_set_config(websocket_transport.get(), &propagate) == ESP_OK);
+        set_server_stream({
+            0x88, 0x02, 0x03, 0xED,                         // CLOSE, code 1005
+        });
+        mock_connect_ExpectAndReturn(parent_handle.get(), host, port, timeout, ESP_OK);
+        REQUIRE(esp_transport_connect(websocket_transport.get(), host, port, timeout) == 0);
+        REQUIRE(esp_transport_read(websocket_transport.get(), buffer, sizeof(buffer), timeout) < 0);
+        REQUIRE(esp_transport_ws_get_read_opcode(websocket_transport.get()) == WS_TRANSPORT_OPCODES_CLOSE);
+    }
+
+    SECTION("CLOSE frame with a forbidden status code leaves the transport failed") {
+        set_server_stream({
+            0x88, 0x02, 0x03, 0xEE,                         // CLOSE, code 1006
+            0x81, 0x02, 'o', 'k',                           // TEXT, FIN=1, must not be delivered
+        });
+        REQUIRE(esp_transport_connect(websocket_transport.get(), host, port, timeout) == 0);
+
+        REQUIRE(esp_transport_read(websocket_transport.get(), buffer, sizeof(buffer), timeout) < 0);
+        REQUIRE(esp_transport_read(websocket_transport.get(), buffer, sizeof(buffer), timeout) < 0);
+        REQUIRE(esp_transport_write(websocket_transport.get(), "x", 1, timeout) < 0);
+        REQUIRE(esp_transport_ws_send_raw(websocket_transport.get(), WS_TRANSPORT_OPCODES_TEXT, "x", 1, timeout) < 0);
+        REQUIRE(esp_transport_poll_read(websocket_transport.get(), timeout) < 0);
+        REQUIRE(esp_transport_poll_write(websocket_transport.get(), timeout) < 0);
+        REQUIRE(s_close_calls == 1);
+        REQUIRE(!close_frame_written());
+    }
+
+    SECTION("Empty CLOSE frame is accepted") {
+        set_server_stream({
+            0x88, 0x00,                                     // CLOSE, no payload
+        });
+        REQUIRE(esp_transport_connect(websocket_transport.get(), host, port, timeout) == 0);
+        esp_transport_read(websocket_transport.get(), buffer, sizeof(buffer), timeout);
+        REQUIRE(close_frame_written());                     // echoed, not failed
+        REQUIRE(s_close_calls == 0);
+
+        esp_transport_ws_config_t propagate = ws_config;
+        propagate.propagate_control_frames = true;
+        REQUIRE(esp_transport_ws_set_config(websocket_transport.get(), &propagate) == ESP_OK);
+        set_server_stream({
+            0x88, 0x00,                                     // CLOSE, no payload
+        });
+        mock_connect_ExpectAndReturn(parent_handle.get(), host, port, timeout, ESP_OK);
+        REQUIRE(esp_transport_connect(websocket_transport.get(), host, port, timeout) == 0);
+        REQUIRE(esp_transport_read(websocket_transport.get(), buffer, sizeof(buffer), timeout) == 0);
+        REQUIRE(esp_transport_ws_get_read_opcode(websocket_transport.get()) == WS_TRANSPORT_OPCODES_CLOSE);
+        REQUIRE(s_close_calls == 0);
+        REQUIRE(esp_transport_poll_write(websocket_transport.get(), timeout) == 1);
+    }
+
+    SECTION("Propagated CLOSE frame with an allowed status code is delivered") {
+        esp_transport_ws_config_t propagate = ws_config;
+        propagate.propagate_control_frames = true;
+        REQUIRE(esp_transport_ws_set_config(websocket_transport.get(), &propagate) == ESP_OK);
+        const uint16_t codes[] = {1000, 1003, 1007, 1014, 3000, 4999};
+        for (size_t i = 0; i < sizeof(codes) / sizeof(codes[0]); i++) {
+            const uint8_t hi = static_cast<uint8_t>(codes[i] >> 8);
+            const uint8_t lo = static_cast<uint8_t>(codes[i]);
+            set_server_stream({
+                0x88, 0x04, hi, lo, 'o', 'k',               // CLOSE, code, reason "ok"
+            });
+            if (i > 0) {
+                mock_connect_ExpectAndReturn(parent_handle.get(), host, port, timeout, ESP_OK);
+            }
+            REQUIRE(esp_transport_connect(websocket_transport.get(), host, port, timeout) == 0);
+
+            REQUIRE(esp_transport_read(websocket_transport.get(), buffer, sizeof(buffer), timeout) == 4);
+            REQUIRE(static_cast<uint8_t>(buffer[0]) == hi);
+            REQUIRE(static_cast<uint8_t>(buffer[1]) == lo);
+            REQUIRE(std::string(buffer + 2, 2) == "ok");
+            REQUIRE(esp_transport_ws_get_read_opcode(websocket_transport.get()) == WS_TRANSPORT_OPCODES_CLOSE);
+            REQUIRE(s_close_calls == 0);
+        }
+    }
+
+    SECTION("CLOSE frame with a private status code is accepted") {
+        set_server_stream({
+            0x88, 0x02, 0x0B, 0xB8,                         // CLOSE, code 3000
+        });
+        REQUIRE(esp_transport_connect(websocket_transport.get(), host, port, timeout) == 0);
+
+        esp_transport_read(websocket_transport.get(), buffer, sizeof(buffer), timeout);
+        REQUIRE(close_frame_written());
+        REQUIRE(s_close_calls == 0);
+    }
+
+    SECTION("CLOSE frame with the highest private status code is accepted") {
+        set_server_stream({
+            0x88, 0x02, 0x13, 0x87,                         // CLOSE, code 4999
+        });
+        REQUIRE(esp_transport_connect(websocket_transport.get(), host, port, timeout) == 0);
+
+        esp_transport_read(websocket_transport.get(), buffer, sizeof(buffer), timeout);
+        REQUIRE(close_frame_written());
+        REQUIRE(s_close_calls == 0);
+    }
+
     SECTION("CLOSE frame with a 1-byte payload fails the connection") {
         set_server_stream({
             0x88, 0x01, 0x03,                               // CLOSE, payload length 1

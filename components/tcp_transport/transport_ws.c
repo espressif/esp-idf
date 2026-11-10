@@ -604,10 +604,20 @@ static int ws_check_text_payload(transport_ws_t *ws, const char *data, int len)
     return 0;
 }
 
-/* RFC 6455 Section 5.5.1: an empty body is valid. A 1-byte body cannot hold a
- * status code and fails the connection. The bytes after a 2-byte status code
- * must be UTF-8. The same check applies whether the CLOSE frame is handled
- * here or returned to the caller. */
+/* RFC 6455 §7.4.1/§7.4.2: 1000-1003, 1007-1014 and 3000-4999 may appear in a
+ * Close frame. Everything else (0-999, 1004-1006, 1015-2999, 5000+) fails the connection. */
+static bool ws_close_code_valid(uint16_t code)
+{
+    return (code >= 1000 && code <= 1003) ||
+           (code >= 1007 && code <= 1014) ||
+           (code >= 3000 && code <= 4999);
+}
+
+/* RFC 6455 §5.5.1: an empty body is valid. A 1-byte body cannot hold a status
+ * code and fails the connection. A forbidden status code (§7.4.1, §7.4.2)
+ * fails the connection. The bytes after a 2-byte status code must be UTF-8.
+ * The same check applies whether the CLOSE frame is handled here or returned
+ * to the caller. */
 static int ws_check_close_reason(transport_ws_t *ws, const char *buffer, int payload_len)
 {
     if (ws->frame_state.opcode != WS_OPCODE_CLOSE || buffer == NULL || payload_len == 0) {
@@ -615,6 +625,13 @@ static int ws_check_close_reason(transport_ws_t *ws, const char *buffer, int pay
     }
     if (payload_len < (int)sizeof(uint16_t)) {
         ESP_LOGE(TAG, "CLOSE payload of length 1 - protocol violation");
+        return ws_fail_connection(ws);
+    }
+    uint16_t code_network_order;
+    memcpy(&code_network_order, buffer, sizeof(code_network_order));
+    uint16_t code = ntohs(code_network_order);
+    if (!ws_close_code_valid(code)) {
+        ESP_LOGE(TAG, "CLOSE status code %u - protocol violation", code);
         return ws_fail_connection(ws);
     }
     ws_utf8_state_t reason_state = { 0 };
