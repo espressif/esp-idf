@@ -1,10 +1,6 @@
 # Documentation: .gitlab/ci/README.md#manifest-file-to-control-the-buildtest-apps
 
 examples/storage/custom_flash_driver:
-  disable_test:
-    - if: IDF_TARGET in ["esp32h4", "esp32h21"] # TODO: IDF-15601, IDF-16195
-      temporary: true
-      reason: cannot pass
   depends_components:
     - spi_flash
 
