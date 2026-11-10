@@ -27,6 +27,13 @@
 #include "hal/gpio_ll.h"
 #include "esp_private/periph_ctrl.h"
 #include "esp_private/gptimer.h"
+#if __riscv
+#include "esp_cpu.h"
+#include "soc/system_reg.h"
+#elif __XTENSA__
+#include "esp_cpu.h"
+#include "soc/dport_reg.h"
+#endif
 
 #if SOC_GPTIMER_SUPPORTED
 static bool on_timer_alarm(gptimer_handle_t timer, const gptimer_alarm_event_data_t *edata, void *user_ctx)
@@ -423,6 +430,92 @@ TEST_CASE("alloc and free isr handle on different core when isr_free_task is NO_
 }
 #endif //CONFIG_FREERTOS_UNICORE
 #endif //SOC_GPSPI_SUPPORTED
+
+#if __riscv || __XTENSA__
+#if SOC_CPU_CORES_NUM > 1 && defined(SYSTEM_CPU_INTR_FROM_CPU_1_REG)
+#define EDGE_TEST_INTR_SOURCE   SYS_CPU_INTR_FROM_CPU_1_SOURCE
+#define EDGE_TEST_INTR_REG      SYSTEM_CPU_INTR_FROM_CPU_1_REG
+#define EDGE_TEST_INTR_BIT      SYSTEM_CPU_INTR_FROM_CPU_1
+#elif SOC_CPU_CORES_NUM > 1 && defined(HP_SYSTEM_CPU_INT_FROM_CPU_1_REG)
+#define EDGE_TEST_INTR_SOURCE   SYS_CPU_INTR_FROM_CPU_1_SOURCE
+#define EDGE_TEST_INTR_REG      HP_SYSTEM_CPU_INT_FROM_CPU_1_REG
+#define EDGE_TEST_INTR_BIT      HP_SYSTEM_CPU_INT_FROM_CPU_1
+#elif SOC_CPU_CORES_NUM > 1
+#define EDGE_TEST_INTR_SOURCE   SYS_CPU_INTR_FROM_CPU_1_SOURCE
+#define EDGE_TEST_INTR_REG      DPORT_CPU_INTR_FROM_CPU_1_REG
+#define EDGE_TEST_INTR_BIT      DPORT_CPU_INTR_FROM_CPU_1
+#elif defined(INTPRI_CPU_INTR_FROM_CPU_2_REG)
+#define EDGE_TEST_INTR_SOURCE   SYS_CPU_INTR_FROM_CPU_2_SOURCE
+#define EDGE_TEST_INTR_REG      INTPRI_CPU_INTR_FROM_CPU_2_REG
+#define EDGE_TEST_INTR_BIT      INTPRI_CPU_INTR_FROM_CPU_2
+#elif defined(SYSTEM_CPU_INTR_FROM_CPU_2_REG)
+#define EDGE_TEST_INTR_SOURCE   SYS_CPU_INTR_FROM_CPU_2_SOURCE
+#define EDGE_TEST_INTR_REG      SYSTEM_CPU_INTR_FROM_CPU_2_REG
+#define EDGE_TEST_INTR_BIT      SYSTEM_CPU_INTR_FROM_CPU_2
+#else
+#define EDGE_TEST_INTR_SOURCE   SYS_CPU_INTR_FROM_CPU_2_SOURCE
+#define EDGE_TEST_INTR_REG      DPORT_CPU_INTR_FROM_CPU_2_REG
+#define EDGE_TEST_INTR_BIT      DPORT_CPU_INTR_FROM_CPU_2
+#endif
+
+#if __XTENSA__
+#define EDGE_TEST_INTR_WRITE(v) DPORT_REG_WRITE(EDGE_TEST_INTR_REG, (v))
+#else
+#define EDGE_TEST_INTR_WRITE(v) REG_WRITE(EDGE_TEST_INTR_REG, (v))
+#endif
+
+#define EDGE_TEST_MAX_ENTRIES   50
+
+static volatile int edge_test_intno;
+static volatile int edge_test_count;
+
+static void IRAM_ATTR edge_test_isr(void *arg)
+{
+    edge_test_count++;
+    esp_cpu_intr_edge_ack(edge_test_intno);
+    if (edge_test_count >= EDGE_TEST_MAX_ENTRIES) {
+        EDGE_TEST_INTR_WRITE(0);
+        esp_cpu_intr_disable(1 << edge_test_intno);
+    }
+}
+
+TEST_CASE("Intr_alloc test, acknowledged edge interrupt fires once per rising edge", "[intr_alloc]")
+{
+    intr_handle_t handle;
+
+    EDGE_TEST_INTR_WRITE(0);
+    edge_test_count = 0;
+    esp_err_t err = esp_intr_alloc(EDGE_TEST_INTR_SOURCE,
+                                   ESP_INTR_FLAG_EDGE | ESP_INTR_FLAG_IRAM | ESP_INTR_FLAG_INTRDISABLED,
+                                   edge_test_isr, NULL, &handle);
+#if __XTENSA__
+    if (err == ESP_ERR_NOT_FOUND) {
+        TEST_IGNORE_MESSAGE("no free edge-type interrupt line");
+    }
+#endif
+    TEST_ESP_OK(err);
+    edge_test_intno = esp_intr_get_intno(handle);
+    printf("Edge interrupt allocated: %d\n", edge_test_intno);
+    TEST_ESP_OK(esp_intr_enable(handle));
+
+    EDGE_TEST_INTR_WRITE(EDGE_TEST_INTR_BIT);
+    vTaskDelay(2);
+    const int after_first_edge = edge_test_count;
+
+    EDGE_TEST_INTR_WRITE(0);
+    vTaskDelay(2);
+    EDGE_TEST_INTR_WRITE(EDGE_TEST_INTR_BIT);
+    vTaskDelay(2);
+    const int after_second_edge = edge_test_count;
+
+    EDGE_TEST_INTR_WRITE(0);
+    TEST_ESP_OK(esp_intr_free(handle));
+
+    printf("ISR entries: %d after the first rising edge, %d after the second\n", after_first_edge, after_second_edge);
+    TEST_ASSERT_EQUAL(1, after_first_edge);
+    TEST_ASSERT_EQUAL(2, after_second_edge);
+}
+#endif
 
 #if __XTENSA__
 static volatile int int_timer_ctr;

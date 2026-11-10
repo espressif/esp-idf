@@ -334,7 +334,7 @@ FORCE_INLINE_ATTR uint32_t rv_utils_intr_get_enabled_mask(void)
  */
 FORCE_INLINE_ATTR void rv_utils_intr_edge_ack(uint32_t intr_num)
 {
-    REG_SET_BIT(CLIC_INT_CTRL_REG(intr_num + CLIC_EXT_INTR_NUM_OFFSET) , CLIC_INT_IP);
+    REG_CLR_BIT(CLIC_INT_CTRL_REG(intr_num + CLIC_EXT_INTR_NUM_OFFSET), CLIC_INT_IP);
 }
 
 #ifdef __cplusplus
