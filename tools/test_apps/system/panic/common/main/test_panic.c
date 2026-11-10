@@ -295,6 +295,27 @@ void test_stack_overflow(void)
     vTaskDelay(pdMS_TO_TICKS(0));
 }
 
+static volatile int s_keep_recursing = 1;
+
+static int __attribute__((noinline)) recurse_until_overflow(int depth)
+{
+    volatile uint8_t buf[64];
+    buf[0] = (uint8_t)depth;
+    if (s_keep_recursing) {
+        return recurse_until_overflow(depth + 1) + buf[0];
+    }
+    return buf[0];
+}
+
+/**
+ * Unlike test_stack_overflow(), this recursion moves the stack pointer to the end of the stack,
+ * so the panic handler runs on the memory below the stack.
+ */
+void test_stack_overflow_recursion(void)
+{
+    recurse_until_overflow(0);
+}
+
 void test_illegal_instruction(void)
 {
 #if __XTENSA__

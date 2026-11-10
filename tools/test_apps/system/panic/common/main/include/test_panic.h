@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -57,6 +57,8 @@ void test_cache_error(void);
 void test_int_wdt_cache_disabled(void);
 
 void test_stack_overflow(void);
+
+void test_stack_overflow_recursion(void);
 
 void test_illegal_instruction(void);
 
