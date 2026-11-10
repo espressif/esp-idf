@@ -1076,7 +1076,6 @@ esp_err_t esp_dpp_start_net_intro_protocol(uint8_t *bssid)
             if (tx_ret != ESP_OK) {
                 return ESP_FAIL;
             }
-            wpabuf_free(buf);
         } else {
             return ESP_ERR_NO_MEM;
         }
