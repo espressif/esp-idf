@@ -40,6 +40,24 @@ esp_err_t test_domain_map(esp_privilege_umode_domain_handle_t domain, uint32_t a
  */
 esp_err_t test_domain_destroy(esp_privilege_umode_domain_handle_t domain);
 
+/** Virtual address at which test_domain_load_app() loads a program */
+#define TEST_APP_BASE 0x20000000u
+
+/**
+ * @brief Create a domain that runs a U-mode program that umode_elf_add_program() built
+ *
+ * Loads the program at TEST_APP_BASE with umode_elf_load(), maps a two-page stack above it with an unmapped
+ * page in between, and finalizes the domain with the entry point of the program.
+ *
+ * @param[in] elf ELF file of the program
+ * @param[in] size Size of the file in bytes
+ * @param[out] domain Finalized domain. test_domain_destroy() destroys it and frees its memory
+ * @return
+ *      - ESP_OK
+ *      - Other. The error of a domain function or of umode_elf_load(). Nothing is left allocated
+ */
+esp_err_t test_domain_load_app(const uint8_t *elf, size_t size, esp_privilege_umode_domain_handle_t *domain);
+
 #ifdef __cplusplus
 }
 #endif
