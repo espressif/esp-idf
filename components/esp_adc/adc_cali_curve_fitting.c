@@ -19,7 +19,7 @@
 #include "esp_private/adc_share_hw_ctrl.h"
 
 #if ADC_CALI_SCHEME_CURVE_FITTING_SUPPORTED
-#include "esp_efuse_rtc_calib.h"
+#include "hal/adc_efuse_hal.h"
 #include "curve_fitting_coefficients.h"
 
 const __attribute__((unused)) static char *TAG = "adc_cali";
@@ -76,10 +76,10 @@ esp_err_t adc_cali_create_scheme_curve_fitting(const adc_cali_curve_fitting_conf
     if (ret != ESP_OK) {
         return ret;
     }
-    // current version only accepts encoding version: ESP_EFUSE_ADC_CALIB_VER_MIN <= adc_encoding_version <= ESP_EFUSE_ADC_CALIB_VER_MAX.
-    uint32_t adc_encoding_version = esp_efuse_rtc_calib_get_ver();
-    ESP_RETURN_ON_FALSE((adc_encoding_version >= ESP_EFUSE_ADC_CALIB_VER_MIN) &&
-                        (adc_encoding_version <= ESP_EFUSE_ADC_CALIB_VER_MAX), ESP_ERR_NOT_SUPPORTED, TAG, "Calibration required eFuse bits not burnt");
+    // Current version only accepts supported eFuse calibration encoding versions.
+    uint32_t adc_encoding_version = adc_hal_efuse_get_version();
+    ESP_RETURN_ON_FALSE((adc_encoding_version >= ADC_HAL_EFUSE_CALIB_VER_MIN) &&
+                        (adc_encoding_version <= ADC_HAL_EFUSE_CALIB_VER_MAX), ESP_ERR_NOT_SUPPORTED, TAG, "Calibration required eFuse bits not burnt");
 
     cali_chars_curve_fitting_t *chars = (cali_chars_curve_fitting_t *)heap_caps_calloc(1, sizeof(cali_chars_curve_fitting_t), MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT);
     ESP_RETURN_ON_FALSE(chars, ESP_ERR_NO_MEM, TAG, "no memory for the calibration characteristics");
@@ -141,8 +141,8 @@ static esp_err_t cali_raw_to_voltage(void *arg, int raw, int *voltage)
 //To get the reference point (Dout, Vin)
 static void get_first_step_reference_point(int version_num, adc_unit_t unit_id, adc_atten_t atten, adc_calib_info_t *calib_info)
 {
-    assert((version_num >= ESP_EFUSE_ADC_CALIB_VER_MIN) &&
-           (version_num <= ESP_EFUSE_ADC_CALIB_VER_MAX));
+    assert((version_num >= ADC_HAL_EFUSE_CALIB_VER_MIN) &&
+           (version_num <= ADC_HAL_EFUSE_CALIB_VER_MAX));
     esp_err_t ret;
 
     calib_info->version_num = version_num;
@@ -151,7 +151,7 @@ static void get_first_step_reference_point(int version_num, adc_unit_t unit_id, 
 
     uint32_t voltage = 0;
     uint32_t digi = 0;
-    ret = esp_efuse_rtc_calib_get_cal_voltage(version_num, unit_id, (int)atten, &digi, &voltage);
+    ret = adc_hal_efuse_get_cal_voltage(version_num, unit_id, (int)atten, &digi, &voltage);
     assert(ret == ESP_OK);
     (void)ret;
 

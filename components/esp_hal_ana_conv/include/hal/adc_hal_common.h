@@ -98,11 +98,6 @@ uint32_t adc_hal_self_calibration(adc_unit_t adc_n, adc_atten_t atten, bool inte
 
 #if ADC_LL_SW_WEIGHT_CALIBRATION_SUPPORTED
 /**
- * @return true if this unit already has a software-weight table.
- */
-bool adc_hal_sw_weight_is_calibrated(adc_unit_t adc_n);
-
-/**
  * Sample internal calibration muxes in oneshot mode and compute weights.
  * Subsequent calls on an already-calibrated unit only restore `cal_done`.
  */

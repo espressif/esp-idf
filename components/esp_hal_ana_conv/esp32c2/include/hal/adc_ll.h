@@ -11,6 +11,8 @@
 
 #include "soc/apb_saradc_struct.h"
 #include "soc/apb_saradc_reg.h"
+#include "soc/efuse_reg.h"
+#include "soc/soc.h"
 #include "soc/rtc_cntl_struct.h"
 #include "soc/rtc_cntl_reg.h"
 #include "soc/clk_tree_defs.h"
@@ -790,6 +792,23 @@ static inline adc_atten_t adc_ll_get_atten(adc_unit_t adc_n, adc_channel_t chann
     (void)adc_n;
     (void)channel;
     return (adc_atten_t)(APB_SARADC.saradc_onetime_sample.saradc_saradc_onetime_atten);
+}
+
+__attribute__((always_inline)) static inline uint32_t adc_ll_get_efuse_init_code(uint32_t atten)
+{
+    return (atten == 0)
+           ? REG_GET_FIELD(EFUSE_RD_BLK2_DATA2_REG, EFUSE_ADC1_INIT_CODE_ATTEN0)
+           : REG_GET_FIELD(EFUSE_RD_BLK2_DATA2_REG, EFUSE_ADC1_INIT_CODE_ATTEN3);
+}
+
+__attribute__((always_inline)) static inline uint32_t adc_ll_get_efuse_cal_voltage(uint32_t atten)
+{
+    if (atten == 0) {
+        uint32_t low = REG_GET_FIELD(EFUSE_RD_BLK2_DATA2_REG, EFUSE_ADC1_CAL_VOL_ATTEN0);
+        uint32_t high = REG_GET_FIELD(EFUSE_RD_BLK2_DATA3_REG, EFUSE_ADC1_CAL_VOL_ATTEN0_1);
+        return low | (high << 5);
+    }
+    return REG_GET_FIELD(EFUSE_RD_BLK2_DATA3_REG, EFUSE_ADC1_CAL_VOL_ATTEN3);
 }
 
 #ifdef __cplusplus

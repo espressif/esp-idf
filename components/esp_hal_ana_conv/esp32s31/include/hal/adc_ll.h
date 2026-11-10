@@ -11,10 +11,13 @@
 #include "soc/adc_struct.h"
 #include "soc/adc_reg.h"
 #include "soc/clk_tree_defs.h"
+#include "soc/efuse_reg.h"
 #include "soc/lp_peri_clkrst_struct.h"
+#include "soc/soc.h"
 #include "hal/misc.h"
 #include "hal/assert.h"
 #include "hal/adc_types.h"
+#include "hal/efuse_ll.h"
 #include "hal/regi2c_ctrl.h"
 #include "soc/regi2c_saradc.h"
 
@@ -815,6 +818,59 @@ static inline void adc_oneshot_ll_set_atten(adc_unit_t adc_n, adc_channel_t chan
     (void)adc_n;
     (void)channel;
     (void)atten;
+}
+
+__attribute__((always_inline)) static inline uint32_t adc_ll_read_efuse_bits(uint32_t base,
+                                                                             uint32_t bit,
+                                                                             uint32_t length)
+{
+    uint32_t word = bit / 32;
+    uint32_t shift = bit % 32;
+    uint64_t value = REG_READ(base + word * sizeof(uint32_t));
+    if (shift + length > 32) {
+        value |= (uint64_t)REG_READ(base + (word + 1) * sizeof(uint32_t)) << 32;
+    }
+    return (uint32_t)((value >> shift) & ((1U << length) - 1U));
+}
+
+__attribute__((always_inline)) static inline bool adc_ll_has_efuse_weight_calibration(void)
+{
+    return efuse_ll_get_blk_version_major() == 0 &&
+           efuse_ll_get_blk_version_minor() >= 3;
+}
+
+__attribute__((always_inline)) static inline uint32_t adc_ll_get_efuse_line_fitting_k(uint32_t adc_unit,
+                                                                                      bool n_side)
+{
+    static const uint16_t bit[2][2] = {
+        {21, 42},
+        {84, 105},
+    };
+    return adc_ll_read_efuse_bits(EFUSE_RD_SYS_PART2_DATA0_REG,
+                                  bit[adc_unit][n_side ? 1 : 0], 11);
+}
+
+__attribute__((always_inline)) static inline uint32_t adc_ll_get_efuse_line_fitting_b(uint32_t adc_unit,
+                                                                                      bool n_side)
+{
+    static const uint16_t bit[2][2] = {
+        {32, 53},
+        {95, 116},
+    };
+    return adc_ll_read_efuse_bits(EFUSE_RD_SYS_PART2_DATA0_REG,
+                                  bit[adc_unit][n_side ? 1 : 0], 10);
+}
+
+__attribute__((always_inline)) static inline uint32_t adc_ll_get_efuse_weight(uint32_t adc_unit,
+                                                                              uint32_t bit_from_msb)
+{
+    static const uint16_t bit[2][7] = {
+        {145, 155, 164, 172, 180, 188, 194},
+        {199, 209, 218, 226, 234, 242, 248},
+    };
+    static const uint8_t length[7] = {10, 9, 8, 8, 8, 6, 5};
+    return adc_ll_read_efuse_bits(EFUSE_RD_SYS_PART1_DATA0_REG,
+                                  bit[adc_unit][bit_from_msb], length[bit_from_msb]);
 }
 
 #ifdef __cplusplus

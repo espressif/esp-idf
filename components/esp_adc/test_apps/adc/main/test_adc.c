@@ -17,6 +17,12 @@
 #include "test_common_adc.h"
 #include "esp_rom_sys.h"
 
+#if ADC_LL_SW_WEIGHT_CALIBRATION_SUPPORTED
+#include "hal/adc_efuse_hal.h"
+#include "hal/adc_hal_common.h"
+#include "hal/adc_ll.h"
+#endif
+
 const __attribute__((unused)) static char *TAG = "TEST_ADC";
 
 /*---------------------------------------------------------------
@@ -136,7 +142,36 @@ TEST_CASE("ADC oneshot basic test", "[adc_oneshot]")
     adc_oneshot_deinit_test();
 }
 
-#if CONFIG_IDF_TARGET_ESP32S31
+#if ADC_LL_SW_WEIGHT_CALIBRATION_SUPPORTED
+TEST_CASE("ADC S31 initializes weight calibration", "[adc_oneshot][adc_cali]")
+{
+    for (adc_unit_t unit = ADC_UNIT_1; unit <= ADC_UNIT_2; unit++) {
+        adc_oneshot_unit_handle_t handle;
+        adc_oneshot_unit_init_cfg_t unit_config = {
+            .unit_id = unit,
+            .ulp_mode = ADC_ULP_MODE_DISABLE,
+        };
+        TEST_ESP_OK(adc_oneshot_new_unit(&unit_config, &handle));
+
+        bool has_efuse_weights = adc_ll_has_efuse_weight_calibration();
+        bool software_weights_changed = false;
+        for (int bit_from_msb = 0; bit_from_msb < 7; bit_from_msb++) {
+            int32_t actual = adc_hal_sw_weight_get(unit, bit_from_msb);
+            if (has_efuse_weights) {
+                int32_t expected = adc_hal_sw_weight_ideal_weights[bit_from_msb] +
+                                   (int32_t)adc_ll_get_efuse_weight(unit, bit_from_msb) * 1000;
+                TEST_ASSERT_EQUAL_INT32(expected, actual);
+            } else {
+                software_weights_changed |= actual != adc_hal_sw_weight_ideal_weights[bit_from_msb];
+            }
+        }
+        if (!has_efuse_weights) {
+            TEST_ASSERT_TRUE(software_weights_changed);
+        }
+        TEST_ESP_OK(adc_oneshot_del_unit(handle));
+    }
+}
+
 TEST_CASE("ADC S31 calibrated oneshot conversion", "[adc_oneshot][adc_cali]")
 {
     adc_oneshot_unit_handle_t handle;

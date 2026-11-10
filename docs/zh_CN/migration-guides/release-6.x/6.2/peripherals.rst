@@ -3,6 +3,11 @@
 
 :link_to_translation:`en:[English]`
 
+ADC
+---
+
+ADC eFuse 校准的内部实现已迁移至 ``esp_hal_ana_conv`` 组件。内部头文件 ``esp_efuse_rtc_calib.h`` 和 ``esp_efuse_rtc_table.h`` 已被移除。应用程序应使用公开的 :doc:`ADC 校准 API </api-reference/peripherals/adc/adc_calibration>`，不应依赖内部 HAL 接口。
+
 DMA
 ---
 

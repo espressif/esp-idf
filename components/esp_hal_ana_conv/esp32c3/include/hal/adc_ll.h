@@ -11,6 +11,8 @@
 
 #include "soc/apb_saradc_struct.h"
 #include "soc/apb_saradc_reg.h"
+#include "soc/efuse_reg.h"
+#include "soc/soc.h"
 #include "soc/rtc_cntl_struct.h"
 #include "soc/rtc_cntl_reg.h"
 #include "soc/clk_tree_defs.h"
@@ -1111,6 +1113,37 @@ static inline adc_atten_t adc_ll_get_atten(adc_unit_t adc_n, adc_channel_t chann
     (void)adc_n;
     (void)channel;
     return (adc_atten_t)(APB_SARADC.onetime_sample.onetime_atten);
+}
+
+__attribute__((always_inline)) static inline uint32_t adc_ll_get_efuse_init_code(uint32_t atten)
+{
+    switch (atten) {
+    case 0:
+        return REG_GET_FIELD(EFUSE_RD_SYS_PART1_DATA4_REG, EFUSE_ADC1_INIT_CODE_ATTEN0);
+    case 1:
+        return REG_GET_FIELD(EFUSE_RD_SYS_PART1_DATA4_REG, EFUSE_ADC1_INIT_CODE_ATTEN1)
+               | (REG_GET_FIELD(EFUSE_RD_SYS_PART1_DATA5_REG, EFUSE_ADC1_INIT_CODE_ATTEN1_1) << 2);
+    case 2:
+        return REG_GET_FIELD(EFUSE_RD_SYS_PART1_DATA5_REG, EFUSE_ADC1_INIT_CODE_ATTEN2);
+    default:
+        return REG_GET_FIELD(EFUSE_RD_SYS_PART1_DATA5_REG, EFUSE_ADC1_INIT_CODE_ATTEN3);
+    }
+}
+
+__attribute__((always_inline)) static inline uint32_t adc_ll_get_efuse_cal_voltage(uint32_t atten)
+{
+    switch (atten) {
+    case 0:
+        return REG_GET_FIELD(EFUSE_RD_SYS_PART1_DATA5_REG, EFUSE_ADC1_CAL_VOL_ATTEN0)
+               | (REG_GET_FIELD(EFUSE_RD_SYS_PART1_DATA6_REG, EFUSE_ADC1_CAL_VOL_ATTEN0_1) << 4);
+    case 1:
+        return REG_GET_FIELD(EFUSE_RD_SYS_PART1_DATA6_REG, EFUSE_ADC1_CAL_VOL_ATTEN1);
+    case 2:
+        return REG_GET_FIELD(EFUSE_RD_SYS_PART1_DATA6_REG, EFUSE_ADC1_CAL_VOL_ATTEN2);
+    default:
+        return REG_GET_FIELD(EFUSE_RD_SYS_PART1_DATA6_REG, EFUSE_ADC1_CAL_VOL_ATTEN3)
+               | (REG_GET_FIELD(EFUSE_RD_SYS_PART1_DATA7_REG, EFUSE_ADC1_CAL_VOL_ATTEN3_1) << 6);
+    }
 }
 
 #ifdef __cplusplus

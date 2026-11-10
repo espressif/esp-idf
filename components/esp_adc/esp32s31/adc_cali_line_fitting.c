@@ -8,7 +8,7 @@
 #include "esp_check.h"
 #include "esp_heap_caps.h"
 #include "esp_log.h"
-#include "esp_efuse_rtc_calib.h"
+#include "hal/adc_efuse_hal.h"
 #include "hal/adc_hal_common.h"
 #include "hal/adc_ll.h"
 #include "esp_adc/adc_cali_scheme.h"
@@ -38,7 +38,7 @@ static int apply_efuse_calibration(uint32_t code, int32_t k_scaled, int32_t b_sc
      * without truncating the first-stage mV conversion before the divide. */
     int64_t voltage_times_den = (int64_t)code * ADC_CODE_SLOPE_NUMERATOR +
                                 (int64_t)ADC_CODE_OFFSET_MV * ADC_CODE_SLOPE_DENOMINATOR;
-    int64_t num = voltage_times_den * ESP_EFUSE_ADC_CALI_SCALE -
+    int64_t num = voltage_times_den * ADC_HAL_EFUSE_CALI_SCALE -
                   (int64_t)b_scaled * ADC_CODE_SLOPE_DENOMINATOR;
     int64_t den = (int64_t)k_scaled * ADC_CODE_SLOPE_DENOMINATOR;
     num += (num >= 0) ? (den / 2) : -(den / 2);
@@ -75,12 +75,12 @@ esp_err_t adc_cali_create_scheme_line_fitting(const adc_cali_line_fitting_config
 
     chars->unit_id = config->unit_id;
 
-    int version = esp_efuse_rtc_calib_get_ver();
-    esp_err_t ret = esp_efuse_rtc_calib_get_adc_cali_params(version, chars->unit_id, false,
-                                                            &chars->p_k_scaled, &chars->p_b_scaled);
+    int version = adc_hal_efuse_get_version();
+    esp_err_t ret = adc_hal_efuse_get_line_fitting_params(version, chars->unit_id, false,
+                                                          &chars->p_k_scaled, &chars->p_b_scaled);
     if (ret == ESP_OK) {
-        ret = esp_efuse_rtc_calib_get_adc_cali_params(version, chars->unit_id, true,
-                                                      &chars->n_k_scaled, &chars->n_b_scaled);
+        ret = adc_hal_efuse_get_line_fitting_params(version, chars->unit_id, true,
+                                                    &chars->n_k_scaled, &chars->n_b_scaled);
     }
     if (ret != ESP_OK) {
         free(chars);

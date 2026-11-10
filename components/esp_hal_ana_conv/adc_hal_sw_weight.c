@@ -37,11 +37,6 @@ uint32_t adc_hal_sw_weight_apply(adc_unit_t adc_n, uint32_t raw)
     return adc_hal_sw_weight_fold(s_adc_hal_sw_weights[adc_n], raw);
 }
 
-bool adc_hal_sw_weight_is_calibrated(adc_unit_t adc_n)
-{
-    return s_adc_hal_sw_calibrated[adc_n];
-}
-
 int32_t adc_hal_sw_weight_get(adc_unit_t adc_n, int bit_from_msb)
 {
     return s_adc_hal_sw_weights[adc_n][bit_from_msb];
@@ -120,6 +115,18 @@ void adc_hal_sw_weight_calibrate(adc_unit_t adc_n, adc_oneshot_clk_src_t clk_src
 
     memcpy(s_adc_hal_sw_weights[adc_n], adc_hal_sw_weight_ideal_weights,
            sizeof(s_adc_hal_sw_weights[adc_n]));
+
+    if (adc_ll_has_efuse_weight_calibration()) {
+        for (int i = 0; i < ADC_HAL_SW_WEIGHT_CONFIG_NUM; i++) {
+            uint32_t raw = adc_ll_get_efuse_weight(adc_n, (uint32_t)i);
+            s_adc_hal_sw_weights[adc_n][i] =
+                adc_hal_sw_weight_ideal_weights[i] + (int32_t)raw * 1000;
+        }
+        s_adc_hal_sw_calibrated[adc_n] = true;
+        adc_hal_sw_weight_restore(adc_n);
+        return;
+    }
+
     memset(s_adc_hal_sw_bit_counts, 0, sizeof(s_adc_hal_sw_bit_counts));
 
     /* Internal weight calibration, not a user-channel conversion:

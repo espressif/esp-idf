@@ -12,6 +12,7 @@
 #include "hal/adc_types_private.h"
 #include "hal/assert.h"
 #include "soc/apb_saradc_struct.h"
+#include "soc/efuse_reg.h"
 #include "soc/sens_struct.h"
 #include "soc/sens_reg.h"
 #include "soc/apb_saradc_reg.h"
@@ -22,6 +23,7 @@
 #include "hal/regi2c_ctrl.h"
 #include "soc/regi2c_saradc.h"
 #include "soc/system_reg.h"
+#include "soc/soc.h"
 #include "soc/dport_reg.h"
 
 #ifdef __cplusplus
@@ -1363,6 +1365,18 @@ static inline void adc_ll_vref_output(adc_unit_t adc, adc_channel_t channel, boo
         //set en_pad for ADC2 channels (bits 0x380)
         SENS.sar_meas2_ctrl2.sar2_en_pad = 0;
     }
+}
+
+__attribute__((always_inline)) static inline uint32_t adc_ll_read_efuse_calibration_bits(uint32_t bit,
+                                                                                         uint32_t length)
+{
+    uint32_t word = bit / 32;
+    uint32_t shift = bit % 32;
+    uint64_t value = REG_READ(EFUSE_RD_SYS_PART1_DATA0_REG + word * sizeof(uint32_t));
+    if (shift + length > 32) {
+        value |= (uint64_t)REG_READ(EFUSE_RD_SYS_PART1_DATA0_REG + (word + 1) * sizeof(uint32_t)) << 32;
+    }
+    return (uint32_t)((value >> shift) & ((1U << length) - 1U));
 }
 
 #ifdef __cplusplus

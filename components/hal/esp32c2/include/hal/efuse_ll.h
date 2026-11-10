@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -214,6 +214,7 @@ __attribute__((always_inline)) static inline void efuse_ll_set_tpgm_inactive(uin
 {
     HAL_FORCE_MODIFY_U32_REG_FIELD(EFUSE.wr_tim_conf0, tpgm_inactive, value);
 }
+
 /******************* eFuse control functions *************************/
 
 #ifdef __cplusplus

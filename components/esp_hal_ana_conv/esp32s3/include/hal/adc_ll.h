@@ -13,6 +13,7 @@
 #include "hal/assert.h"
 #include "hal/misc.h"
 #include "soc/apb_saradc_struct.h"
+#include "soc/efuse_reg.h"
 #include "soc/sens_struct.h"
 #include "soc/apb_saradc_reg.h"
 #include "soc/rtc_cntl_struct.h"
@@ -22,6 +23,7 @@
 #include "soc/system_struct.h"
 #include "hal/regi2c_ctrl.h"
 #include "soc/regi2c_saradc.h"
+#include "soc/soc.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -1307,6 +1309,65 @@ static inline void adc_oneshot_ll_enable(adc_unit_t adc_n)
 static inline void adc_oneshot_ll_disable_all_unit(void)
 {
     //For compatibility
+}
+
+__attribute__((always_inline)) static inline uint32_t adc_ll_get_efuse_init_code(uint32_t adc_unit,
+                                                                                 uint32_t atten)
+{
+    if (adc_unit == 0) {
+        switch (atten) {
+        case 0:
+            return REG_GET_FIELD(EFUSE_RD_SYS_PART1_DATA4_REG, EFUSE_ADC1_INIT_CODE_ATTEN0);
+        case 1:
+            return REG_GET_FIELD(EFUSE_RD_SYS_PART1_DATA4_REG, EFUSE_ADC1_INIT_CODE_ATTEN1)
+                   | (REG_GET_FIELD(EFUSE_RD_SYS_PART1_DATA5_REG, EFUSE_ADC1_INIT_CODE_ATTEN1_1) << 3);
+        case 2:
+            return REG_GET_FIELD(EFUSE_RD_SYS_PART1_DATA5_REG, EFUSE_ADC1_INIT_CODE_ATTEN2);
+        default:
+            return REG_GET_FIELD(EFUSE_RD_SYS_PART1_DATA5_REG, EFUSE_ADC1_INIT_CODE_ATTEN3);
+        }
+    }
+
+    switch (atten) {
+    case 0:
+        return REG_GET_FIELD(EFUSE_RD_SYS_PART1_DATA5_REG, EFUSE_ADC2_INIT_CODE_ATTEN0);
+    case 1:
+        return REG_GET_FIELD(EFUSE_RD_SYS_PART1_DATA5_REG, EFUSE_ADC2_INIT_CODE_ATTEN1);
+    case 2:
+        return REG_GET_FIELD(EFUSE_RD_SYS_PART1_DATA5_REG, EFUSE_ADC2_INIT_CODE_ATTEN2)
+               | (REG_GET_FIELD(EFUSE_RD_SYS_PART1_DATA6_REG, EFUSE_ADC2_INIT_CODE_ATTEN2_1) << 3);
+    default:
+        return REG_GET_FIELD(EFUSE_RD_SYS_PART1_DATA6_REG, EFUSE_ADC2_INIT_CODE_ATTEN3);
+    }
+}
+
+__attribute__((always_inline)) static inline uint32_t adc_ll_get_efuse_cal_voltage(uint32_t adc_unit,
+                                                                                   uint32_t atten)
+{
+    if (adc_unit == 0) {
+        switch (atten) {
+        case 0:
+            return REG_GET_FIELD(EFUSE_RD_SYS_PART1_DATA6_REG, EFUSE_ADC1_CAL_VOL_ATTEN0);
+        case 1:
+            return REG_GET_FIELD(EFUSE_RD_SYS_PART1_DATA6_REG, EFUSE_ADC1_CAL_VOL_ATTEN1);
+        case 2:
+            return REG_GET_FIELD(EFUSE_RD_SYS_PART1_DATA6_REG, EFUSE_ADC1_CAL_VOL_ATTEN2)
+                   | (REG_GET_FIELD(EFUSE_RD_SYS_PART1_DATA7_REG, EFUSE_ADC1_CAL_VOL_ATTEN2_1) << 7);
+        default:
+            return REG_GET_FIELD(EFUSE_RD_SYS_PART1_DATA7_REG, EFUSE_ADC1_CAL_VOL_ATTEN3);
+        }
+    }
+
+    switch (atten) {
+    case 0:
+        return REG_GET_FIELD(EFUSE_RD_SYS_PART1_DATA7_REG, EFUSE_ADC2_CAL_VOL_ATTEN0);
+    case 1:
+        return REG_GET_FIELD(EFUSE_RD_SYS_PART1_DATA7_REG, EFUSE_ADC2_CAL_VOL_ATTEN1);
+    case 2:
+        return REG_GET_FIELD(EFUSE_RD_SYS_PART1_DATA7_REG, EFUSE_ADC2_CAL_VOL_ATTEN2);
+    default:
+        return REG_GET_FIELD(EFUSE_RD_MAC_SPI_SYS_5_REG, EFUSE_ADC2_CAL_VOL_ATTEN3);
+    }
 }
 
 #ifdef __cplusplus

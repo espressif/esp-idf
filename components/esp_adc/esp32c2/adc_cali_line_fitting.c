@@ -12,8 +12,8 @@
 #include "esp_log.h"
 #include "esp_check.h"
 #include "esp_heap_caps.h"
-#include "esp_efuse_rtc_calib.h"
 #include "soc/soc_caps.h"
+#include "hal/adc_efuse_hal.h"
 #include "hal/adc_ll.h"
 #include "esp_adc/adc_cali_scheme.h"
 #include "adc_cali_interface.h"
@@ -57,10 +57,10 @@ esp_err_t adc_cali_create_scheme_line_fitting(const adc_cali_line_fitting_config
         return ret;
     }
 
-    //current version only accepts encoding version: ESP_EFUSE_ADC_CALIB_VER_MIN <= adc_encoding_version <= ESP_EFUSE_ADC_CALIB_VER_MAX.
-    uint8_t adc_cali_version = esp_efuse_rtc_calib_get_ver();
-    ESP_RETURN_ON_FALSE((adc_cali_version >= ESP_EFUSE_ADC_CALIB_VER_MIN) &&
-                        (adc_cali_version <= ESP_EFUSE_ADC_CALIB_VER_MAX), ESP_ERR_NOT_SUPPORTED, TAG, "Calibration required eFuse bits not burnt");
+    // Current version only accepts supported ADC eFuse calibration encodings.
+    uint8_t adc_cali_version = adc_hal_efuse_get_version();
+    ESP_RETURN_ON_FALSE((adc_cali_version >= ADC_HAL_EFUSE_CALIB_VER_MIN) &&
+                        (adc_cali_version <= ADC_HAL_EFUSE_CALIB_VER_MAX), ESP_ERR_NOT_SUPPORTED, TAG, "Calibration required eFuse bits not burnt");
 
     cali_chars_line_fitting_t *chars = (cali_chars_line_fitting_t *)heap_caps_calloc(1, sizeof(cali_chars_line_fitting_t), MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT);
     ESP_RETURN_ON_FALSE(chars, ESP_ERR_NO_MEM, TAG, "no memory for the calibration characteristics");
@@ -70,7 +70,7 @@ esp_err_t adc_cali_create_scheme_line_fitting(const adc_cali_line_fitting_config
 
     uint32_t voltage_mv = 0;
     uint32_t digi_val = 0;
-    ret = esp_efuse_rtc_calib_get_cal_voltage(adc_cali_version, chars->unit_id, chars->atten, &digi_val, &voltage_mv);
+    ret = adc_hal_efuse_get_cal_voltage(adc_cali_version, chars->unit_id, chars->atten, &digi_val, &voltage_mv);
     assert(ret == ESP_OK);
     chars->coeff_a = coeff_a_scaling * voltage_mv / digi_val;
     chars->coeff_b = 0;

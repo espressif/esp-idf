@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2019-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2019-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -31,11 +31,8 @@
 #include "esp_private/periph_ctrl.h"
 #include "esp_private/critical_section.h"
 #include "soc/periph_defs.h"
-//For calibration
-#if CONFIG_IDF_TARGET_ESP32S2
-#include "esp_efuse_rtc_table.h"
-#elif SOC_ADC_CALIBRATION_V1_SUPPORTED
-#include "esp_efuse_rtc_calib.h"
+#if SOC_ADC_CALIBRATION_V1_SUPPORTED
+#include "hal/adc_efuse_hal.h"
 #endif
 
 
@@ -47,16 +44,6 @@ extern portMUX_TYPE rtc_spinlock;
 /*---------------------------------------------------------------
             ADC Hardware Calibration
 ---------------------------------------------------------------*/
-#if CONFIG_IDF_TARGET_ESP32S2
-#define esp_efuse_rtc_calib_get_ver()     esp_efuse_rtc_table_read_calib_version()
-
-static inline uint32_t esp_efuse_rtc_calib_get_init_code(int version, uint32_t adc_unit, int atten)
-{
-    int tag = esp_efuse_rtc_table_get_tag(version, adc_unit, atten, RTCCALIB_V2_PARAM_VINIT);
-    return esp_efuse_rtc_table_get_parsed_efuse_value(tag, false);
-}
-#endif
-
 static uint32_t s_adc_cali_param[SOC_ADC_PERIPH_NUM][SOC_ADC_ATTEN_NUM] = {};
 
 void adc_calc_hw_calibration_code(adc_unit_t adc_n, adc_atten_t atten)
@@ -67,14 +54,14 @@ void adc_calc_hw_calibration_code(adc_unit_t adc_n, adc_atten_t atten)
     }
 
     // check if we can fetch the values from eFuse.
-    int version = esp_efuse_rtc_calib_get_ver();
+    int version = adc_hal_efuse_get_version();
 
     uint32_t init_code = 0;
-
-    if ((version >= ESP_EFUSE_ADC_CALIB_VER_MIN) &&
-        (version <= ESP_EFUSE_ADC_CALIB_VER_MAX)) {
-        // Guarantee the calibration version before calling efuse function
-        init_code = esp_efuse_rtc_calib_get_init_code(version, adc_n, atten);
+    uint32_t efuse_init_code = version ?
+                               adc_hal_efuse_get_init_code(version, adc_n, atten) :
+                               ADC_HAL_EFUSE_INIT_CODE_INVALID;
+    if (efuse_init_code != ADC_HAL_EFUSE_INIT_CODE_INVALID) {
+        init_code = efuse_init_code;
     }
 #if SOC_ADC_SELF_HW_CALI_SUPPORTED
     else {
@@ -106,11 +93,9 @@ void IRAM_ATTR adc_set_hw_calibration_code(adc_unit_t adc_n, adc_atten_t atten)
 static int s_adc_cali_chan_compens[ADC_LL_MAX_CHANNEL_NUM][SOC_ADC_ATTEN_NUM] = {};
 void adc_load_hw_calibration_chan_compens(adc_unit_t adc_n, adc_channel_t chan, adc_atten_t atten)
 {
-    int version = esp_efuse_rtc_calib_get_ver();
-    if ((version >= ESP_EFUSE_ADC_CALIB_VER_MIN) &&
-        (version <= ESP_EFUSE_ADC_CALIB_VER_MAX)) {
-        // Guarantee the calibration version before calling efuse function
-        s_adc_cali_chan_compens[chan][atten] = esp_efuse_rtc_calib_get_chan_compens(version, adc_n, chan, atten);
+    int version = adc_hal_efuse_get_version();
+    if (version) {
+        s_adc_cali_chan_compens[chan][atten] = adc_hal_efuse_get_chan_compens(version, adc_n, chan, atten);
     }
     // No warning when version doesn't match because should has warned in adc_calc_hw_calibration_code
 }
