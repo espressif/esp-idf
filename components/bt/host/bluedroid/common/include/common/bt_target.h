@@ -2546,9 +2546,13 @@
 #define BNEP_MAX_XMITQ_DEPTH        20
 #endif
 
-/* Maximum number BNEP of connections supported. */
+/* Maximum number of BNEP connections. One per ACL link. */
 #ifndef BNEP_MAX_CONNECTIONS
-#define BNEP_MAX_CONNECTIONS        7
+#ifdef MAX_ACL_CONNECTIONS
+#define BNEP_MAX_CONNECTIONS        MAX_ACL_CONNECTIONS
+#else
+#define BNEP_MAX_CONNECTIONS        3
+#endif
 #endif
 
 
@@ -2669,9 +2673,18 @@
 #define PAN_SUPPORTS_DEBUG_DUMP             FALSE
 #endif
 
-/* Maximum number of PAN connections allowed */
+/* Maximum number of PAN connections. One per ACL link. */
 #ifndef MAX_PAN_CONNS
-#define MAX_PAN_CONNS                    7
+#ifdef MAX_ACL_CONNECTIONS
+#define MAX_PAN_CONNS               MAX_ACL_CONNECTIONS
+#else
+#define MAX_PAN_CONNS               3
+#endif
+#endif
+
+/* BTA and BTC connection slots. Same limit as the PAN and BNEP control blocks. */
+#ifndef BTA_PAN_NUM_CONN
+#define BTA_PAN_NUM_CONN            MAX_PAN_CONNS
 #endif
 
 /* Default service name for NAP role */
