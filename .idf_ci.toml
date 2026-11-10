@@ -105,8 +105,14 @@ if_clause = 'CI_JOB_GROUP_NAME != "build_non_test_related_apps"'
 bucket = "idf-artifacts"
 patterns = [
     '**/build*/build_log.txt',
+]
+
+[gitlab.artifacts.s3.configs.size]
+bucket = "idf-artifacts"
+patterns = [
     '**/build*/size*.json',
 ]
+if_clause = 'CI_JOB_STAGE == "build"'
 
 [gitlab.artifacts.s3.configs.junit]
 bucket = "idf-artifacts"
@@ -123,7 +129,7 @@ patterns = [
 
 [gitlab.artifacts.s3.configs.longterm]
 bucket = "longterm"
-if_clause = 'CI_COMMIT_REF_PROTECTED == "true"'
+if_clause = 'CI_COMMIT_REF_PROTECTED == "true" and CI_JOB_STAGE == "build"'
 patterns = [
     '**/build*/size*.json',
 ]
