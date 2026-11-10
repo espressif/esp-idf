@@ -9,10 +9,11 @@ menu "PHY"
             bool "Store phy calibration data in NVS"
             default y
             help
-                If this option is enabled, NVS will be initialized and calibration data will be loaded from there.
-                PHY calibration will be skipped on deep sleep wakeup. If calibration data is not found, full
-                calibration will be performed and stored in NVS. Normally, only partial calibration will be performed.
-                If this option is disabled, full calibration will be performed.
+                If this option is disabled, `ESP_PHY_CALIBRATION_MODE` will be fixed to `ESP_PHY_RF_CAL_FULL`.
+                If this option is enabled, PHY calibration data will be loaded from and stored to NVS. The application
+                must initialize NVS by calling `nvs_flash_init()` before RF initialization. Regardless of the value
+                selected for `ESP_PHY_CALIBRATION_MODE`, PHY calibration will be skipped on deep sleep wakeup.
+                If calibration data is not found, full calibration will be performed and stored in NVS.
 
                 If it's easy that your board calibrate bad data, choose 'n'.
                 Two cases for example, you should choose 'n':
@@ -147,13 +148,14 @@ menu "PHY"
 
         choice ESP_PHY_CALIBRATION_MODE
             prompt "Calibration mode"
-            default ESP_PHY_RF_CAL_PARTIAL
+            depends on ESP_PHY_CALIBRATION_AND_DATA_STORAGE
+            default ESP_PHY_RF_CAL_FULL
             help
-                Select PHY calibration mode. During RF initialization, the partial calibration
-                method is used by default for RF calibration. Full calibration takes about 100ms
-                more than partial calibration. If boot duration is not critical, it is suggested
-                to use the full calibration method. No calibration method is only used when the
-                device wakes up from deep sleep.
+                Select PHY calibration mode. Currently, ESP_PHY_RF_CAL_PARTIAL and ESP_PHY_RF_CAL_FULL
+                are functionally equivalent. ESP_PHY_RF_CAL_NONE is normally not required because PHY
+                calibration is automatically skipped when waking up from deep sleep. Selecting
+                ESP_PHY_RF_CAL_NONE manually also skips RF calibration on normal cold boots, which may
+                cause RF performance issues.
 
             config ESP_PHY_RF_CAL_PARTIAL
                 bool "Calibration partial"
@@ -168,6 +170,7 @@ menu "PHY"
             default 0 if ESP_PHY_RF_CAL_PARTIAL
             default 1 if ESP_PHY_RF_CAL_NONE
             default 2 if ESP_PHY_RF_CAL_FULL
+            default 2
 
         config ESP_PHY_IMPROVE_RX_11B
             bool "Improve Wi-Fi receive 11b pkts"
