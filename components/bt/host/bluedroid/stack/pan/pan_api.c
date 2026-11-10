@@ -364,6 +364,17 @@ tPAN_RESULT PAN_Connect(BD_ADDR rem_bda, UINT8 src_role,
         }
         mx_chan_id = src_uuid.uu.uuid16;
     }
+    /* GN to GN. NAP to GN or NAP is not a PAN profile connection. */
+    else if (src_role == PAN_ROLE_GN_SERVER && dst_role == PAN_ROLE_GN_SERVER) {
+        if (pan_cb.num_conns && pan_cb.active_role == PAN_ROLE_CLIENT && !pcb) {
+            PAN_TRACE_ERROR("Device already have a connection in PANU role");
+            return PAN_INVALID_SRC_ROLE;
+        }
+
+        src_uuid.uu.uuid16 = UUID_SERVCLASS_GN;
+        dst_uuid.uu.uuid16 = UUID_SERVCLASS_GN;
+        mx_chan_id = src_uuid.uu.uuid16;
+    }
     /* The role combination is not valid */
     else {
         PAN_TRACE_ERROR(
