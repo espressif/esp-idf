@@ -1435,6 +1435,7 @@ void btc_gap_bt_cb_deep_free(btc_msg_t *msg)
     case BTC_GAP_BT_KEY_REQ_EVT:
 #if (BTC_DM_PM_INCLUDED == TRUE)
     case BTC_GAP_BT_MODE_CHG_EVT:
+    case BTC_GAP_BT_SSR_EVT:
 #endif /// BTC_DM_PM_INCLUDED == TRUE
 #if (ENC_KEY_SIZE_CTRL_MODE != ENC_KEY_SIZE_CTRL_MODE_NONE)
     case BTC_GAP_BT_SET_MIN_ENC_KEY_SIZE_EVT:
@@ -1534,6 +1535,9 @@ void btc_gap_bt_cb_handler(btc_msg_t *msg)
 #if (BTC_DM_PM_INCLUDED == TRUE)
     case BTC_GAP_BT_MODE_CHG_EVT:
         btc_gap_bt_cb_to_app(ESP_BT_GAP_MODE_CHG_EVT,(esp_bt_gap_cb_param_t *)msg->arg);
+        break;
+    case BTC_GAP_BT_SSR_EVT:
+        btc_gap_bt_cb_to_app(ESP_BT_GAP_SNIFF_SUBRATING_EVT,(esp_bt_gap_cb_param_t *)msg->arg);
         break;
 #endif /// BTC_DM_PM_INCLUDED == TRUE
     case BTC_GAP_BT_REMOVE_BOND_DEV_COMPLETE_EVT:{
