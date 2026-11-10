@@ -57,6 +57,13 @@ typedef struct {
 } ws_transport_frame_state_t;
 
 typedef struct {
+    bool is_text;                       /*!< The data message being received is TEXT (set by its first frame) */
+    uint8_t needed;                     /*!< Continuation bytes still expected for the current code point */
+    uint8_t min;                        /*!< Lowest valid value of the next continuation byte */
+    uint8_t max;                        /*!< Highest valid value of the next continuation byte */
+} ws_utf8_state_t;
+
+typedef struct {
     char *path;
     char *sub_protocol;
     char *user_agent;
@@ -70,6 +77,8 @@ typedef struct {
     bool propagate_control_frames;
     ws_transport_frame_state_t frame_state;
     bool fragmented_msg_in_progress;    /*!< A data frame with FIN=0 was received, continuation frames are expected */
+    ws_utf8_state_t utf8_state;         /*!< UTF-8 decoder state, carried across reads and continuation frames */
+    bool rx_failed;                     /*!< The connection was failed; reads, writes, and polls return -1 until the next ws_connect */
     esp_transport_handle_t parent;
     char *redir_host;
     char *response_header;
@@ -173,6 +182,9 @@ static int ws_connect(esp_transport_handle_t t, const char *host, int port, int 
     free(ws->redir_host);
     ws->redir_host = NULL;
     ws->fragmented_msg_in_progress = false;
+    memset(&ws->utf8_state, 0, sizeof(ws->utf8_state));
+    ws->rx_failed = false;
+    ws->frame_state.bytes_remaining = 0;
 
     if (esp_transport_connect(ws->parent, host, port, timeout_ms) < 0) {
         ESP_LOGE(TAG, "Error connecting to host %s:%d", host, port);
@@ -481,12 +493,20 @@ int esp_transport_ws_send_raw(esp_transport_handle_t t, ws_transport_opcodes_t o
         ESP_LOGE(TAG, "Transport must be a valid ws handle");
         return ESP_ERR_INVALID_ARG;
     }
+    transport_ws_t *ws = esp_transport_get_context_data(t);
+    if (ws->rx_failed) {
+        return -1;
+    }
     ESP_LOGD(TAG, "Sending raw ws message with opcode %d", op_code);
     return _ws_write(t, op_code, WS_MASK, b, len, timeout_ms);
 }
 
 static int ws_write(esp_transport_handle_t t, const char *b, int len, int timeout_ms)
 {
+    transport_ws_t *ws = esp_transport_get_context_data(t);
+    if (ws->rx_failed) {
+        return -1;
+    }
     if (len == 0) {
         // Default transport write of zero length in ws layer sends out a ping message.
         // This behaviour could however be altered in IDF 5.0, since a separate API for sending
@@ -526,6 +546,89 @@ static int ws_read_payload(esp_transport_handle_t t, char *buffer, int len, int 
         buffer[i] = (buffer[i] ^ ws->frame_state.mask_key[i % 4]);
     }
     return rlen;
+}
+
+/* Incremental UTF-8 validation (RFC 3629): rejects overlong forms, surrogates and code points above U+10FFFF */
+static bool ws_utf8_validate(ws_utf8_state_t *s, const uint8_t *data, int len)
+{
+    for (int i = 0; i < len; i++) {
+        uint8_t c = data[i];
+        if (s->needed) {
+            if (c < s->min || c > s->max) {
+                return false;
+            }
+            s->needed--;
+            s->min = 0x80;
+            s->max = 0xBF;
+        } else if (c >= 0x80) {
+            s->min = 0x80;
+            s->max = 0xBF;
+            if (c >= 0xC2 && c <= 0xDF) {
+                s->needed = 1;
+            } else if (c >= 0xE0 && c <= 0xEF) {
+                s->needed = 2;
+                if (c == 0xE0) {
+                    s->min = 0xA0;      // overlong
+                } else if (c == 0xED) {
+                    s->max = 0x9F;      // UTF-16 surrogates
+                }
+            } else if (c >= 0xF0 && c <= 0xF4) {
+                s->needed = 3;
+                if (c == 0xF0) {
+                    s->min = 0x90;      // overlong
+                } else if (c == 0xF4) {
+                    s->max = 0x8F;      // above U+10FFFF
+                }
+            } else {
+                return false;
+            }
+        }
+    }
+    return true;
+}
+
+static int ws_fail_connection(transport_ws_t *ws)
+{
+    ws->rx_failed = true;
+    esp_transport_close(ws->parent);
+    return -1;
+}
+
+/* Validates a chunk of the current frame's payload; control frames are not part of the text message.
+ * RFC 6455 Section 8.1: invalid UTF-8 fails the connection. */
+static int ws_check_text_payload(transport_ws_t *ws, const char *data, int len)
+{
+    if (!ws->utf8_state.is_text || (ws->frame_state.opcode & WS_OPCODE_CONTROL_FRAME)) {
+        return 0;
+    }
+    if (!ws_utf8_validate(&ws->utf8_state, (const uint8_t *)data, len) ||
+            (ws->frame_state.fin && ws->frame_state.bytes_remaining == 0 && ws->utf8_state.needed)) {
+        ESP_LOGE(TAG, "Invalid UTF-8 in text message - protocol violation");
+        return ws_fail_connection(ws);
+    }
+    return 0;
+}
+
+/* RFC 6455 Section 5.5.1: an empty body is valid. A 1-byte body cannot hold a
+ * status code and fails the connection. The bytes after a 2-byte status code
+ * must be UTF-8. The same check applies whether the CLOSE frame is handled
+ * here or returned to the caller. */
+static int ws_check_close_reason(transport_ws_t *ws, const char *buffer, int payload_len)
+{
+    if (ws->frame_state.opcode != WS_OPCODE_CLOSE || buffer == NULL || payload_len == 0) {
+        return 0;
+    }
+    if (payload_len < (int)sizeof(uint16_t)) {
+        ESP_LOGE(TAG, "CLOSE payload of length 1 - protocol violation");
+        return ws_fail_connection(ws);
+    }
+    ws_utf8_state_t reason_state = { 0 };
+    if (!ws_utf8_validate(&reason_state, (const uint8_t *)buffer + sizeof(uint16_t),
+                          payload_len - (int)sizeof(uint16_t)) || reason_state.needed) {
+        ESP_LOGE(TAG, "Invalid UTF-8 in CLOSE reason - protocol violation");
+        return ws_fail_connection(ws);
+    }
+    return 0;
 }
 
 static int esp_transport_read_exact_size(transport_ws_t *ws, char *buffer, int requested_len, int timeout_ms)
@@ -625,6 +728,11 @@ static int ws_read_header(esp_transport_handle_t t, char *buffer, int len, int t
             return -1;
         }
         ws->fragmented_msg_in_progress = !ws->frame_state.fin;
+        if (ws->frame_state.opcode != WS_OPCODE_CONT) {
+            ws->utf8_state = (ws_utf8_state_t) {
+                .is_text = (ws->frame_state.opcode == WS_OPCODE_TEXT),
+            };
+        }
     }
 
     if (payload_len == 126) {
@@ -743,6 +851,10 @@ static int ws_read(esp_transport_handle_t t, char *buffer, int len, int timeout_
     int rlen = 0;
     transport_ws_t *ws = esp_transport_get_context_data(t);
 
+    if (ws->rx_failed) {
+        return -1;
+    }
+
     // If message exceeds buffer len then subsequent reads will skip reading header and read whatever is left of the payload
     if (ws->frame_state.bytes_remaining <= 0) {
 
@@ -776,11 +888,19 @@ static int ws_read(esp_transport_handle_t t, char *buffer, int len, int timeout_
                 return -1;
             }
             ws->frame_state.bytes_remaining = 0;
+            if (ws_check_close_reason(ws, buffer, payload_len) < 0) {
+                return -1;
+            }
             return payload_len;
         }
 
         if (rlen == 0) {
             ws->frame_state.bytes_remaining = 0;
+            // An empty final frame can still end a text message inside a UTF-8 sequence
+            if (ws->frame_state.header_received && !(ws->frame_state.opcode & WS_OPCODE_CONTROL_FRAME) &&
+                    ws_check_text_payload(ws, NULL, 0) < 0) {
+                return -1;
+            }
             return 0; // timeout
         }
     }
@@ -793,6 +913,12 @@ static int ws_read(esp_transport_handle_t t, char *buffer, int len, int timeout_
             }
             return rlen;
         }
+        if (ws_check_text_payload(ws, buffer, rlen) < 0) {
+            /* Leave bytes_remaining set so the unread tail is not parsed as a new header.
+             * The connection has been failed: further reads and writes return -1 until ws_connect.
+             */
+            return -1;
+        }
     }
 
     return rlen;
@@ -802,6 +928,9 @@ static int ws_read(esp_transport_handle_t t, char *buffer, int len, int timeout_
 static int ws_poll_read(esp_transport_handle_t t, int timeout_ms)
 {
     transport_ws_t *ws = esp_transport_get_context_data(t);
+    if (ws->rx_failed) {
+        return -1;
+    }
     if (ws->buffer_len > 0) {
         ESP_LOGD(TAG, "ws_poll_read: buffered data available (%zu bytes)", ws->buffer_len);
         return 1;
@@ -812,6 +941,9 @@ static int ws_poll_read(esp_transport_handle_t t, int timeout_ms)
 static int ws_poll_write(esp_transport_handle_t t, int timeout_ms)
 {
     transport_ws_t *ws = esp_transport_get_context_data(t);
+    if (ws->rx_failed) {
+        return -1;
+    }
     return esp_transport_poll_write(ws->parent, timeout_ms);;
 }
 
@@ -1155,8 +1287,9 @@ static int esp_transport_ws_handle_control_frames(esp_transport_handle_t t, char
 
     } else if (ws->frame_state.opcode == WS_OPCODE_CLOSE) {
         // handle CLOSE by the server: send a zero payload frame
-        // A CLOSE payload, if present, must be at least 2 bytes (the status code) per RFC 6455 5.5.1.
-        // Guard against a short (e.g. 1-byte) payload to avoid an out-of-bounds read of the uint16_t code.
+        if (ws_check_close_reason(ws, buffer, payload_len) < 0) {
+            return -1;
+        }
         if (buffer && payload_len >= (int)sizeof(uint16_t)) {     // if a status code is present, print it out
             uint16_t code_network_order;
             memcpy(&code_network_order, buffer, sizeof(code_network_order));
