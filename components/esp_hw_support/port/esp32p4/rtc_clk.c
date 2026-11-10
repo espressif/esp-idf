@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -310,14 +310,8 @@ bool rtc_clk_cpu_freq_mhz_to_config(uint32_t freq_mhz, rtc_cpu_freq_config_t *ou
         source = SOC_CPU_CLK_SRC_CPLL;
         source_freq_mhz = CLK_LL_PLL_360M_FREQ_MHZ;
         divider.integer = 1;
-    } else if (freq_mhz == 400) {
-        // If CONFIG_ESP_DEFAULT_CPU_FREQ_MHZ selects 400MHz, then at app startup stage will need a CPLL calibration to raise its freq from 360MHz to 400MHz
-        real_freq_mhz = freq_mhz;
-        source = SOC_CPU_CLK_SRC_CPLL;
-        source_freq_mhz = CLK_LL_PLL_400M_FREQ_MHZ;
-        divider.integer = 1;
     } else {
-        // unsupported frequency
+        // unsupported frequency (400MHz CPU is only available on P4 rev >= 3.0, which is not supported on this branch)
         return false;
     }
     *out_config = (rtc_cpu_freq_config_t) {
