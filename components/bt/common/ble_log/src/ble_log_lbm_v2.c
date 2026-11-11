@@ -616,6 +616,18 @@ void ble_log_pool_finish_frame(ble_log_prph_trans_t *trans, uint16_t payload_len
     }
 }
 
+BLE_LOG_IRAM_ATTR BLE_LOG_STATIC bool ble_log_writer_acquire(void)
+{
+    /* Rejected calls must leave no reference if their task is deleted. */
+    BLE_LOG_ENTER_CRITICAL();
+    bool enabled = BLE_LOG_ATOMIC_LOAD_ACQUIRE(lbm_enabled);
+    if (enabled) {
+        BLE_LOG_REF_COUNT_ACQUIRE_SEQ_CST(&lbm_ref_count);
+    }
+    BLE_LOG_EXIT_CRITICAL();
+    return enabled;
+}
+
 /* ---------------------------------------------- */
 /*     CLAIM / COMMIT INTERFACE (holds lock)      */
 /* ---------------------------------------------- */
@@ -633,7 +645,7 @@ uint8_t *ble_log_claim(ble_log_src_t src_code, size_t max_len,
     }
     *handle = UINT32_MAX;
 
-    if (!ble_log_ref_count_try_acquire(&lbm_ref_count, &lbm_enabled)) {
+    if (!ble_log_writer_acquire()) {
         return NULL;
     }
 
@@ -795,9 +807,45 @@ exit:
     return false;
 }
 
+bool ble_log_lbm_wait_writers(uint32_t caller_refs)
+{
+    TickType_t start_tick = xTaskGetTickCount();
+    bool writers_drained = false;
+    while (!writers_drained) {
+        if (BLE_LOG_ATOMIC_LOAD_SEQ_CST(lbm_ref_count) <= caller_refs) {
+#if CONFIG_BLE_LOG_PRPH_TEST
+            if (caller_refs && ble_log_test_flush_drain_between_loads_hook) {
+                ble_log_test_flush_drain_between_loads_hook();
+            }
+#endif
+            if (BLE_LOG_ATOMIC_LOAD_ACQUIRE(g_pool.waiting_task_count) == 0) {
+                /* The refcount and the waiter count are two separate
+                 * loads: a writer waking between them re-acquires its
+                 * reference BEFORE unregistering, so a zero waiter count
+                 * alone is not a drain. The SC fence pairs with that
+                 * re-acquire: once this load has observed the unregister,
+                 * the re-read must observe the re-acquired reference. */
+                __atomic_thread_fence(__ATOMIC_SEQ_CST);
+                writers_drained =
+                    BLE_LOG_ATOMIC_LOAD_SEQ_CST(lbm_ref_count) <= caller_refs;
+            }
+        }
+        if (writers_drained) {
+            break;
+        }
+        ble_log_pool_wake_all();
+        if ((xTaskGetTickCount() - start_tick) >= BLE_LOG_WAIT_TIMEOUT_TICKS) {
+            BLE_LOG_CONSOLE("@EW: Timed out waiting for BLE Log writers\n");
+            return false;
+        }
+        vTaskDelay(1);
+    }
+    return true;
+}
+
 void ble_log_lbm_begin_deinit(void)
 {
-    /* Serialize both producer-gate closes with enable and flush restore. */
+    /* Serialize gate closure with writer admission and enable. */
     BLE_LOG_ENTER_CRITICAL();
     ble_log_lbm_disable();
     BLE_LOG_ATOMIC_STORE_SEQ_CST(lbm_inited, false);
@@ -808,30 +856,8 @@ void ble_log_lbm_begin_deinit(void)
      * blocks, so this drain is immediate. */
     ble_log_task_registry_begin_deinit();
 
-    /* Wake any blocked task writers and wait until BOTH the reference count
-     * and the waiting-task count drain to zero. Blocked writers hold no
-     * reference while parked, so waiting on ref_count alone could free the
-     * pool while a woken task still touches it (use-after-free). The two
-     * counters are read separately: a writer waking between the loads
-     * re-acquires its reference before unregistering, so a zero waiter
-     * count alone is not a drain. The SC fence pairs with that acquire:
-     * once the waiter load has observed the unregister, the re-read below
-     * must observe the re-acquired reference. */
-    TickType_t ticks_waited = 0;
-    while (true) {
-        bool drained = false;
-        if (BLE_LOG_ATOMIC_LOAD_SEQ_CST(lbm_ref_count) == 0) {
-            if (BLE_LOG_ATOMIC_LOAD_ACQUIRE(g_pool.waiting_task_count) == 0) {
-                __atomic_thread_fence(__ATOMIC_SEQ_CST);
-                drained = BLE_LOG_ATOMIC_LOAD_SEQ_CST(lbm_ref_count) == 0;
-            }
-        }
-        if (drained) {
-            break;
-        }
-        ble_log_pool_wake_all();
-        vTaskDelay(1);
-        BLE_LOG_ASSERT(ticks_waited++ < BLE_LOG_WAIT_TIMEOUT_TICKS);
+    while (!ble_log_lbm_wait_writers(0)) {
+        BLE_LOG_ASSERT(false);
     }
 }
 
@@ -1129,6 +1155,23 @@ bool ble_log_enable(bool enable)
     return true;
 }
 
+void ble_log_pause(void)
+{
+    /* Lifecycle calls are serialized; share the lock with writer admission. */
+    BLE_LOG_ENTER_CRITICAL();
+    if (!BLE_LOG_ATOMIC_LOAD_ACQUIRE(lbm_inited)) {
+        BLE_LOG_EXIT_CRITICAL();
+        return;
+    }
+    ble_log_lbm_disable();
+    BLE_LOG_EXIT_CRITICAL();
+
+    /* Keep waiting if assertions are disabled; live writers cannot be deleted. */
+    while (!ble_log_lbm_wait_writers(0)) {
+        BLE_LOG_ASSERT(false);
+    }
+}
+
 void ble_log_flush(void)
 {
     BLE_LOG_ENTER_CRITICAL();
@@ -1143,38 +1186,12 @@ void ble_log_flush(void)
         goto done;
     }
 
+    BLE_LOG_ENTER_CRITICAL();
     bool lbm_enabled_copy = BLE_LOG_ATOMIC_LOAD_ACQUIRE(lbm_enabled);
     ble_log_lbm_disable();
-    TickType_t start_tick = xTaskGetTickCount();
-    bool writers_drained = false;
-    while (!writers_drained) {
-        if (BLE_LOG_ATOMIC_LOAD_SEQ_CST(lbm_ref_count) <= 1) {
-#if CONFIG_BLE_LOG_PRPH_TEST
-            if (ble_log_test_flush_drain_between_loads_hook) {
-                ble_log_test_flush_drain_between_loads_hook();
-            }
-#endif
-            if (BLE_LOG_ATOMIC_LOAD_ACQUIRE(g_pool.waiting_task_count) == 0) {
-                /* The refcount and the waiter count are two separate
-                 * loads: a writer waking between them re-acquires its
-                 * reference BEFORE unregistering, so a zero waiter count
-                 * alone is not a drain. The SC fence pairs with that
-                 * re-acquire: once this load has observed the unregister,
-                 * the re-read must observe the re-acquired reference. */
-                __atomic_thread_fence(__ATOMIC_SEQ_CST);
-                writers_drained =
-                    BLE_LOG_ATOMIC_LOAD_SEQ_CST(lbm_ref_count) <= 1;
-            }
-        }
-        if (writers_drained) {
-            break;
-        }
-        ble_log_pool_wake_all();
-        if ((xTaskGetTickCount() - start_tick) >= BLE_LOG_WAIT_TIMEOUT_TICKS) {
-            BLE_LOG_CONSOLE("@EW: Timed out waiting for BLE Log writers\n");
-            goto restore;
-        }
-        vTaskDelay(1);
+    BLE_LOG_EXIT_CRITICAL();
+    if (!ble_log_lbm_wait_writers(1)) {
+        goto restore;
     }
 
 #if BLE_LOG_UART_REDIR_ENABLED
@@ -1195,7 +1212,7 @@ void ble_log_flush(void)
         goto restore;
     }
 
-    start_tick = xTaskGetTickCount();
+    TickType_t start_tick = xTaskGetTickCount();
     while (BLE_LOG_ATOMIC_LOAD_ACQUIRE(internal_trans->state) !=
            BLE_LOG_TRANS_STATE_FREE) {
         (void)ble_log_rt_drain();
@@ -1241,7 +1258,7 @@ bool ble_log_write_hex(ble_log_src_t src_code, const uint8_t *addr, size_t len)
         return false;
     }
 
-    if (!ble_log_ref_count_try_acquire(&lbm_ref_count, &lbm_enabled)) {
+    if (!ble_log_writer_acquire()) {
         return false;
     }
     /* One Global SN per attempt, consumed before the length and pool checks
@@ -1295,7 +1312,7 @@ void ble_log_write_hex_ll(uint32_t len, const uint8_t *addr,
         return;
     }
 
-    if (!ble_log_ref_count_try_acquire(&lbm_ref_count, &lbm_enabled)) {
+    if (!ble_log_writer_acquire()) {
         return;
     }
 
