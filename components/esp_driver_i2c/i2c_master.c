@@ -886,7 +886,7 @@ static esp_err_t i2c_param_master_config(i2c_bus_handle_t handle, const i2c_mast
 {
     i2c_hal_context_t *hal = &handle->hal;
 
-    ESP_RETURN_ON_ERROR(i2c_common_set_pins(handle), TAG, "i2c master set pin failed");
+    ESP_RETURN_ON_ERROR(i2c_common_init_pins(handle), TAG, "i2c master init pin failed");
     soc_module_clk_t clk_source = i2c_conf->clk_source;
     ESP_RETURN_ON_ERROR(i2c_select_periph_clock(handle, clk_source), TAG, "i2c select clock failed");
     handle->clk_src = i2c_conf->clk_source;
