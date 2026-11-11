@@ -767,43 +767,52 @@ void l2c_fcr_proc_pdu (tL2C_CCB *p_ccb, BT_HDR *p_buf)
     if ( (!p_ccb->fcrb.local_busy) && (!p_ccb->fcrb.srej_sent) &&
          (!fixed_queue_is_empty(p_ccb->fcrb.srej_rcv_hold_q))) {
         fixed_queue_t *temp_q = p_ccb->fcrb.srej_rcv_hold_q;
-        p_ccb->fcrb.srej_rcv_hold_q = fixed_queue_new(QUEUE_SIZE_MAX);
+        fixed_queue_t *new_q = fixed_queue_new(QUEUE_SIZE_MAX);
 
-        while ((p_buf = (BT_HDR *)fixed_queue_dequeue(temp_q, 0)) != NULL) {
-            if (p_ccb->in_use && (p_ccb->chnl_state == CST_OPEN)) {
-                /* Get the control word */
-                p = ((UINT8 *)(p_buf + 1)) + p_buf->offset - L2CAP_FCR_OVERHEAD;
-
-                STREAM_TO_UINT16 (ctrl_word, p);
-
-                L2CAP_TRACE_DEBUG ("l2c_fcr_proc_pdu() CID: 0x%04x  Process Buffer from SREJ_Hold_Q   TxSeq: %u  Expected_Seq: %u",
-                                   p_ccb->local_cid, (ctrl_word & L2CAP_FCR_TX_SEQ_BITS) >> L2CAP_FCR_TX_SEQ_BITS_SHIFT,
-                                   p_ccb->fcrb.next_seq_expected);
-
-                /* Process the SREJ held I-frame, but do not send an RR for each individual frame */
-                process_i_frame (p_ccb, p_buf, ctrl_word, TRUE);
-            } else {
-                osi_free (p_buf);
-            }
-
-            /* If more frames were lost during SREJ, send a REJ */
-            if (p_ccb->fcrb.rej_after_srej) {
-                p_ccb->fcrb.rej_after_srej = FALSE;
-                p_ccb->fcrb.rej_sent       = TRUE;
-
-                l2c_fcr_send_S_frame (p_ccb, L2CAP_FCR_SUP_REJ, 0);
-            }
-        }
-        fixed_queue_free(temp_q, NULL);
-
-        /* Now, if needed, send one RR for the whole held queue */
-        if ( (!p_ccb->fcrb.local_busy) && (!p_ccb->fcrb.rej_sent) && (!p_ccb->fcrb.srej_sent)
-                &&  (p_ccb->fcrb.next_seq_expected != p_ccb->fcrb.last_ack_sent) ) {
-            l2c_fcr_send_S_frame (p_ccb, L2CAP_FCR_SUP_RR, 0);
+        /* Keep the existing queue if the replacement cannot be allocated.
+         * Installing NULL here makes the next SREJ peek crash. */
+        if (new_q == NULL) {
+            L2CAP_TRACE_ERROR("l2c_fcr_proc_pdu() CID: 0x%04x  no resources for SREJ hold queue",
+                              p_ccb->local_cid);
         } else {
-            L2CAP_TRACE_DEBUG ("l2c_fcr_proc_pdu() not sending RR CID: 0x%04x  local_busy:%d rej_sent:%d srej_sent:%d Expected_Seq:%u Last_Ack:%u",
-                               p_ccb->local_cid, p_ccb->fcrb.local_busy, p_ccb->fcrb.rej_sent, p_ccb->fcrb.srej_sent, p_ccb->fcrb.next_seq_expected,
-                               p_ccb->fcrb.last_ack_sent);
+            p_ccb->fcrb.srej_rcv_hold_q = new_q;
+
+            while ((p_buf = (BT_HDR *)fixed_queue_dequeue(temp_q, 0)) != NULL) {
+                if (p_ccb->in_use && (p_ccb->chnl_state == CST_OPEN)) {
+                    /* Get the control word */
+                    p = ((UINT8 *)(p_buf + 1)) + p_buf->offset - L2CAP_FCR_OVERHEAD;
+
+                    STREAM_TO_UINT16 (ctrl_word, p);
+
+                    L2CAP_TRACE_DEBUG ("l2c_fcr_proc_pdu() CID: 0x%04x  Process Buffer from SREJ_Hold_Q   TxSeq: %u  Expected_Seq: %u",
+                                       p_ccb->local_cid, (ctrl_word & L2CAP_FCR_TX_SEQ_BITS) >> L2CAP_FCR_TX_SEQ_BITS_SHIFT,
+                                       p_ccb->fcrb.next_seq_expected);
+
+                    /* Process the SREJ held I-frame, but do not send an RR for each individual frame */
+                    process_i_frame (p_ccb, p_buf, ctrl_word, TRUE);
+                } else {
+                    osi_free (p_buf);
+                }
+
+                /* If more frames were lost during SREJ, send a REJ */
+                if (p_ccb->fcrb.rej_after_srej) {
+                    p_ccb->fcrb.rej_after_srej = FALSE;
+                    p_ccb->fcrb.rej_sent       = TRUE;
+
+                    l2c_fcr_send_S_frame (p_ccb, L2CAP_FCR_SUP_REJ, 0);
+                }
+            }
+            fixed_queue_free(temp_q, NULL);
+
+            /* Now, if needed, send one RR for the whole held queue */
+            if ( (!p_ccb->fcrb.local_busy) && (!p_ccb->fcrb.rej_sent) && (!p_ccb->fcrb.srej_sent)
+                    &&  (p_ccb->fcrb.next_seq_expected != p_ccb->fcrb.last_ack_sent) ) {
+                l2c_fcr_send_S_frame (p_ccb, L2CAP_FCR_SUP_RR, 0);
+            } else {
+                L2CAP_TRACE_DEBUG ("l2c_fcr_proc_pdu() not sending RR CID: 0x%04x  local_busy:%d rej_sent:%d srej_sent:%d Expected_Seq:%u Last_Ack:%u",
+                                   p_ccb->local_cid, p_ccb->fcrb.local_busy, p_ccb->fcrb.rej_sent, p_ccb->fcrb.srej_sent, p_ccb->fcrb.next_seq_expected,
+                                   p_ccb->fcrb.last_ack_sent);
+            }
         }
     }
 
@@ -1112,8 +1121,16 @@ static void process_i_frame (tL2C_CCB *p_ccb, BT_HDR *p_buf, UINT16 ctrl_word, B
                                  p_ccb->local_cid, num_lost, tx_seq, p_fcrb->next_seq_expected, p_fcrb->rej_sent, p_fcrb->srej_sent);
 
             if (p_fcrb->srej_sent) {
-                /* If SREJ sent, save the frame for later processing as long as it is in sequence */
-                next_srej = (((BT_HDR *)fixed_queue_try_peek_last(p_fcrb->srej_rcv_hold_q))->layer_specific + 1) & L2CAP_FCR_SEQ_MODULO;
+                /* If SREJ sent, save the frame for later processing as long as it is in sequence.
+                 * try_peek_last is NULL when the hold queue is empty or was not allocated. */
+                BT_HDR *p_last = (BT_HDR *)fixed_queue_try_peek_last(p_fcrb->srej_rcv_hold_q);
+                if (p_last == NULL) {
+                    L2CAP_TRACE_WARNING("process_i_frame() CID: 0x%04x  SREJ sent but hold queue empty", p_ccb->local_cid);
+                    p_fcrb->srej_sent = FALSE;
+                    osi_free(p_buf);
+                    return;
+                }
+                next_srej = (p_last->layer_specific + 1) & L2CAP_FCR_SEQ_MODULO;
 
                 if ( (tx_seq == next_srej) && (fixed_queue_length(p_fcrb->srej_rcv_hold_q) < p_ccb->our_cfg.fcr.tx_win_sz) ) {
                     /* If user gave us a pool for held rx buffers, use that */
@@ -1138,7 +1155,9 @@ static void process_i_frame (tL2C_CCB *p_ccb, BT_HDR *p_buf, UINT16 ctrl_word, B
                                        num_lost, tx_seq, p_fcrb->next_seq_expected, p_fcrb->rej_sent);
 
                     p_buf->layer_specific = tx_seq;
-                    fixed_queue_enqueue(p_fcrb->srej_rcv_hold_q, p_buf, FIXED_QUEUE_MAX_TIMEOUT);
+                    if (!fixed_queue_enqueue(p_fcrb->srej_rcv_hold_q, p_buf, FIXED_QUEUE_MAX_TIMEOUT)) {
+                        osi_free(p_buf);
+                    }
                 } else {
                     L2CAP_TRACE_WARNING ("process_i_frame() CID: 0x%04x  frame dropped in Srej Sent next_srej:%u  hold_q.count:%u  win_sz:%u",
                                          p_ccb->local_cid, next_srej, fixed_queue_length(p_fcrb->srej_rcv_hold_q), p_ccb->our_cfg.fcr.tx_win_sz);
@@ -1167,9 +1186,12 @@ static void process_i_frame (tL2C_CCB *p_ccb, BT_HDR *p_buf, UINT16 ctrl_word, B
                                              p_ccb->local_cid, tx_seq, fixed_queue_length(p_fcrb->srej_rcv_hold_q));
                     }
                     p_buf->layer_specific = tx_seq;
-                    fixed_queue_enqueue(p_fcrb->srej_rcv_hold_q, p_buf, FIXED_QUEUE_MAX_TIMEOUT);
-                    p_fcrb->srej_sent = TRUE;
-                    l2c_fcr_send_S_frame (p_ccb, L2CAP_FCR_SUP_SREJ, 0);
+                    if (fixed_queue_enqueue(p_fcrb->srej_rcv_hold_q, p_buf, FIXED_QUEUE_MAX_TIMEOUT)) {
+                        p_fcrb->srej_sent = TRUE;
+                        l2c_fcr_send_S_frame (p_ccb, L2CAP_FCR_SUP_SREJ, 0);
+                    } else {
+                        osi_free(p_buf);
+                    }
                 }
                 btu_stop_quick_timer (&p_ccb->fcrb.ack_timer);
             }

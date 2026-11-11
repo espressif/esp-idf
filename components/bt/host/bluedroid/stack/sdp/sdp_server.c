@@ -247,6 +247,12 @@ static void process_service_search (tCONN_CB *p_ccb, UINT16 trans_num,
     }
 
     /* Calculate how many handles will fit in one PDU */
+    if (p_ccb->rem_mtu_size <= SDP_MAX_SERVICE_RSPHDR_LEN) {
+        sdpu_build_n_send_error (p_ccb, trans_num, SDP_INVALID_PDU_SIZE, NULL);
+        return;
+    }
+
+    /* subtract the header only after it is known to fit. */
     cur_handles = (UINT16)((p_ccb->rem_mtu_size - SDP_MAX_SERVICE_RSPHDR_LEN) / 4);
 
     if (rem_handles <= cur_handles) {
@@ -340,6 +346,12 @@ static void process_service_attr_req (tCONN_CB *p_ccb, UINT16 trans_num,
     /* Get the max list length we can send. Cap it at MTU size minus overhead */
     BE_STREAM_TO_UINT16 (max_list_len, p_req);
 
+    if (p_ccb->rem_mtu_size <= SDP_MAX_ATTR_RSPHDR_LEN) {
+        sdpu_build_n_send_error (p_ccb, trans_num, SDP_INVALID_PDU_SIZE, NULL);
+        return;
+    }
+
+    /* subtract the header only after it is known to fit. */
     if (max_list_len > (p_ccb->rem_mtu_size - SDP_MAX_ATTR_RSPHDR_LEN)) {
         max_list_len = p_ccb->rem_mtu_size - SDP_MAX_ATTR_RSPHDR_LEN;
     }
@@ -407,11 +419,13 @@ static void process_service_attr_req (tCONN_CB *p_ccb, UINT16 trans_num,
     } else {
         if (p_ccb->rsp_list) {
             osi_free (p_ccb->rsp_list);
+            p_ccb->rsp_list = NULL;
         }
 
         p_ccb->rsp_list = (UINT8 *)osi_malloc (max_list_len);
         if (p_ccb->rsp_list == NULL) {
             SDP_TRACE_ERROR ("SDP - no scratch buf for search rsp\n");
+            sdpu_build_n_send_error (p_ccb, trans_num, SDP_NO_RESOURCES, NULL);
             return;
         }
 
@@ -612,6 +626,12 @@ static void process_service_search_attr_req (tCONN_CB *p_ccb, UINT16 trans_num,
     /* Get the max list length we can send. Cap it at our max list length. */
     BE_STREAM_TO_UINT16 (max_list_len, p_req);
 
+    if (p_ccb->rem_mtu_size <= SDP_MAX_SERVATTR_RSPHDR_LEN) {
+        sdpu_build_n_send_error (p_ccb, trans_num, SDP_INVALID_PDU_SIZE, NULL);
+        return;
+    }
+
+    /* subtract the header only after it is known to fit. */
     if (max_list_len > (p_ccb->rem_mtu_size - SDP_MAX_SERVATTR_RSPHDR_LEN)) {
         max_list_len = p_ccb->rem_mtu_size - SDP_MAX_SERVATTR_RSPHDR_LEN;
     }
@@ -645,6 +665,7 @@ static void process_service_search_attr_req (tCONN_CB *p_ccb, UINT16 trans_num,
         p_ccb->rsp_list = (UINT8 *)osi_malloc (max_list_len);
         if (p_ccb->rsp_list == NULL) {
             SDP_TRACE_ERROR ("SDP - no scratch buf for search rsp\n");
+            sdpu_build_n_send_error (p_ccb, trans_num, SDP_NO_RESOURCES, NULL);
             return;
         }
 
@@ -685,6 +706,7 @@ static void process_service_search_attr_req (tCONN_CB *p_ccb, UINT16 trans_num,
         p_ccb->rsp_list = (UINT8 *)osi_malloc (max_list_len);
         if (p_ccb->rsp_list == NULL) {
             SDP_TRACE_ERROR ("SDP - no scratch buf for search rsp\n");
+            sdpu_build_n_send_error (p_ccb, trans_num, SDP_NO_RESOURCES, NULL);
             return;
         }
 
