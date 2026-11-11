@@ -430,7 +430,7 @@ Recommended Configuration
      - ON
 
    * - RTC slow clock source (:menuitem:`CONFIG_RTC_CLK_SRC`)
-     - Internal 136 kHz OSC
+     - Internal 136 kHz RC oscillator
 
    * - Disable all GPIO when chip at sleep (:menuitem:`CONFIG_PM_SLP_DISABLE_GPIO`)
      - ON
@@ -514,7 +514,7 @@ Recommended Configuration
       Configurations not mentioned in the above table are set to default.
 
   .. note::
-      On {IDF_TARGET_NAME}, SPI flash need remains powered during light sleep and :menuitem:`CONFIG_ESP_SLEEP_POWER_DOWN_FLASH` is not available.
+      On {IDF_TARGET_NAME}, SPI flash needs to remain powered during light sleep and :menuitem:`CONFIG_ESP_SLEEP_POWER_DOWN_FLASH` is not available.
 
 .. only:: esp32c61
 
@@ -544,7 +544,7 @@ Recommended Configuration
      - ON
 
    * - RTC slow clock source (:menuitem:`CONFIG_RTC_CLK_SRC`)
-     - Internal 136 kHz OSC
+     - Internal 136 kHz RC oscillator
 
    * - Disable all GPIO when chip at sleep (:menuitem:`CONFIG_PM_SLP_DISABLE_GPIO`)
      - ON

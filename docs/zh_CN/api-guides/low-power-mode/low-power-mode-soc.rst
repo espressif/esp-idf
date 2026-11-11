@@ -430,7 +430,7 @@ Light-sleep 模式配置
      - ON
 
    * - RTC 慢速时钟源 (:menuitem:`CONFIG_RTC_CLK_SRC`)
-     - 内部 136 kHz 振荡器
+     - 内部 136 kHz RC 振荡器
 
    * - 芯片休眠时禁用所有 GPIO (:menuitem:`CONFIG_PM_SLP_DISABLE_GPIO`)
      - ON
@@ -514,7 +514,7 @@ Light-sleep 模式配置
       上表中不涉及的配置均是默认。
 
   .. note::
-      在 {IDF_TARGET_NAME} 上，light sleep 期间 SPI flash 供电需保持开启，不提供 :menuitem:`CONFIG_ESP_SLEEP_POWER_DOWN_FLASH`。
+      在 {IDF_TARGET_NAME} 上，light sleep 期间 SPI flash 供电需保持开启，:menuitem:`CONFIG_ESP_SLEEP_POWER_DOWN_FLASH` 不可用。
 
 .. only:: esp32c61
 
@@ -544,7 +544,7 @@ Light-sleep 模式配置
      - ON
 
    * - RTC 慢速时钟源 (:menuitem:`CONFIG_RTC_CLK_SRC`)
-     - 内部 136 kHz 振荡器
+     - 内部 136 kHz RC 振荡器
 
    * - 芯片休眠时禁用所有 GPIO (:menuitem:`CONFIG_PM_SLP_DISABLE_GPIO`)
      - ON
@@ -571,7 +571,7 @@ Light-sleep 模式配置
       上表中不涉及的配置均是默认。
 
   .. note::
-      在 {IDF_TARGET_NAME} 上，light sleep 期间 SPI flash 供电需保持开启，不提供 :menuitem:`CONFIG_ESP_SLEEP_POWER_DOWN_FLASH`。
+      在 {IDF_TARGET_NAME} 上，light sleep 期间 SPI flash 供电需保持开启，:menuitem:`CONFIG_ESP_SLEEP_POWER_DOWN_FLASH` 不可用。
 
 .. only:: esp32s3
 
