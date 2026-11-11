@@ -157,12 +157,15 @@ TEST_CASE("osi_event duplicate post coalesces until handler runs", "[osi_event]"
     event = test_event_bind(thread, handler_count);
 
     TEST_ASSERT_TRUE(osi_thread_post_event(event, 0));
+    TEST_ASSERT_TRUE(osi_event_is_queued(event));
     TEST_ASSERT_FALSE(osi_thread_post_event(event, 0));
+    TEST_ASSERT_TRUE(osi_event_is_queued(event));
     TEST_ASSERT_EQUAL_UINT32(0, s_run_count);
 
     vTaskPrioritySet(NULL, saved_prio);
     TEST_ASSERT_EQUAL(pdTRUE, xSemaphoreTake(s_done, pdMS_TO_TICKS(TEST_WAIT_MS)));
     TEST_ASSERT_EQUAL_UINT32(1, s_run_count);
+    TEST_ASSERT_FALSE(osi_event_is_queued(event));
     TEST_ASSERT_EQUAL(pdFALSE, xSemaphoreTake(s_done, pdMS_TO_TICKS(TEST_NO_RUN_MS)));
     TEST_ASSERT_EQUAL_UINT32(1, s_run_count);
 

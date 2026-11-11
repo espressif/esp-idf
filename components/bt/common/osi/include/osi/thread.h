@@ -148,11 +148,16 @@ void osi_event_delete(struct osi_event* event);
  * brief: try sending a work to the binded thread's workqueue, so that it can be handled by the worker thread
  * param event: pointer to osi_event, created by osi_event_create
  * param timeout: post timeout, OSI_THREAD_MAX_TIMEOUT means blocking forever, 0 means never blocking, others means block millisecond
- * return: true if the message is enqueued to the thread workqueue, otherwise failed
- * note: if the return value of function is false, it is the case that the workqueue of the thread is full, and users
- *       are expected to post the event sometime later to get the work handled.
+ * return: true if this call enqueued the event. false if it is already QUEUED,
+ *        the queue is full, or the event cannot be posted.
+ * note: a false return with osi_event_is_queued() set means a handler is already
+ *       pending and will observe state written before this post. Retry only when
+ *       the event is not queued.
  */
 bool osi_thread_post_event(struct osi_event *event, uint32_t timeout);
+
+/* True while the event is waiting to run. Cleared before the handler is called. */
+bool osi_event_is_queued(struct osi_event *event);
 
 /*
  * Dynamic events may be created and destroyed repeatedly during one
