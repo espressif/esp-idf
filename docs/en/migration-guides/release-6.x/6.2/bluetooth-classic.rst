@@ -87,6 +87,45 @@ Bluedroid
 
         - The ``*_by_handle`` AVRCP Controller send APIs accept transaction labels ``0`` through ``ESP_USER_AVRC_TRANS_LABEL_MAX`` (13). Labels ``14`` and ``15`` are reserved for the stack (A2DP sink active-device Play/Pause). Passing 14 or 15 to those APIs returns ``ESP_ERR_INVALID_ARG``. The deprecated send APIs still accept ``0`` through ``ESP_AVRC_TRANS_LABEL_MAX`` (15).
 
+    - :component_file:`/bt/host/bluedroid/api/include/api/esp_spp_api.h`
+
+        - ``esp_spp_write()`` in ``ESP_SPP_MODE_CB`` copies the whole buffer into the transmit buffer and returns immediately. ``ESP_OK`` means the data is queued, not that it has been sent. If ``len`` can never fit in the TX buffer, the call returns ``ESP_ERR_INVALID_SIZE`` and queues nothing. For ``ESP_ERR_INVALID_SIZE``, waiting for ``ESP_SPP_CONG_EVT`` does not help because the buffer never shrinks. If ``len`` can fit but the free space is smaller, the call returns ``ESP_ERR_NO_MEM`` and queues nothing. Retry that buffer only after ``ESP_SPP_CONG_EVT`` with ``cong`` equal to false. After ``ESP_OK``, do not submit the same buffer again: a later failure inside the stack keeps the queued data and is not a reason to resend it.
+
+        - ``ESP_SPP_CONG_EVT`` is only the uncongest edge of the TX buffer. ``cong`` is always false. Becoming congested is ``ESP_ERR_NO_MEM`` from ``esp_spp_write()``. Update code that waits for ``cong == true``, or that treats every ``ESP_SPP_CONG_EVT`` as a signal to stop writing.
+
+        - ``ESP_SPP_WRITE_EVT`` reports that one chunk, of at most the peer MTU, has been submitted to RFCOMM. ``status`` is ``ESP_SPP_SUCCESS``. A failed submission is not reported through it. ``write.cong`` can still gate the next packet. Do not resend the same buffer from this event.
+
+        - ``esp_spp_cb_param_t.write.cong`` reports TX buffer congestion. It no longer reports RFCOMM congestion. Sending the next packet only after ``ESP_SPP_WRITE_EVT`` with ``cong`` equal to false still works, but is not recommended. Prefer the ``esp_spp_write()`` return value and ``ESP_SPP_CONG_EVT``.
+
+        - ``esp_spp_cfg_t::tx_buffer_size`` must be from ``ESP_SPP_MIN_TX_BUFFER_SIZE`` (100) to ``ESP_SPP_MAX_TX_BUFFER_SIZE`` (``ESP_SPP_MAX_MTU * 10``). 0 is accepted in both modes: ``esp_spp_enhanced_init()`` uses ``ESP_SPP_DEFAULT_TX_BUFFER_SIZE`` and logs a warning. Any other size outside this range returns ``ESP_ERR_INVALID_ARG``. ``BT_SPP_DEFAULT_CONFIG()`` is VFS mode and ``BT_SPP_CB_MODE_DEFAULT_CONFIG()`` is callback mode. Both use ``ESP_SPP_DEFAULT_TX_BUFFER_SIZE``, which is currently equal to the maximum.
+
+        - Each open SPP connection allocates a transmit buffer of ``tx_buffer_size`` bytes inside Bluedroid. ``ESP_SPP_DEFAULT_TX_BUFFER_SIZE`` is currently 9900 bytes. With up to 8 connections, callback-mode applications have less internal RAM available than before, when this buffer was not allocated.
+
+        - ``ESP_SPP_MODE_VFS`` ``write()`` still blocks until the data is queued. VFS applications do not handle ``ESP_SPP_CONG_EVT`` or ``ESP_SPP_WRITE_EVT``. ``tx_buffer_size`` 0 uses the default; any other value must be in the range above.
+
+        - :example:`bluetooth/bluedroid/classic_bt/bt_spp_initiator` creates a task on ``ESP_SPP_OPEN_EVT`` and loops on ``esp_spp_write()``. ``ESP_ERR_NO_MEM`` blocks that task until ``ESP_SPP_CONG_EVT`` with ``cong == false``. ``ESP_SPP_CLOSE_EVT`` stops the task, and the task deletes itself.
+
+          .. code-block:: c
+
+              // Before: the next write was started from ESP_SPP_WRITE_EVT,
+              // and ESP_SPP_CONG_EVT reported both congested and uncongested.
+              case ESP_SPP_WRITE_EVT:
+                  esp_spp_write(param->write.handle, len, data);
+                  break;
+              case ESP_SPP_CONG_EVT:
+                  if (!param->cong.cong) {
+                      esp_spp_write(param->cong.handle, len, data);
+                  }
+                  break;
+
+              // After: write from the application task. ESP_OK means queued.
+              // ESP_ERR_NO_MEM waits for the uncongest event, then retries this buffer.
+              esp_err_t err = esp_spp_write(handle, len, data);
+              if (err == ESP_ERR_NO_MEM) {
+                  // block until ESP_SPP_CONG_EVT with cong == false
+              }
+              // ESP_SPP_WRITE_EVT only reports that a chunk was submitted to RFCOMM.
+
     Suggested replacements:
 
     .. code-block:: c
