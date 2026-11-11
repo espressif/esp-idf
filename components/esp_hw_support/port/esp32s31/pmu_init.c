@@ -20,14 +20,21 @@
 #include "hal/pmu_hal.h"
 #include "pmu_param.h"
 #include "esp_private/esp_pmu.h"
-#include "esp_hw_log.h"
+#include "esp_log.h"
 #include "hal/regi2c_ctrl_ll.h"
 #include "soc/rtc.h"
 #include "soc/reset_reasons.h"
 #include "esp_rom_sys.h"
 #include "esp_private/ocode_init.h"
 
-ESP_HW_LOG_ATTR_TAG(TAG, "pmu_init");
+ESP_LOG_ATTR_TAG_DRAM(TAG, "pmu_init");
+
+/* Avoid assert strings in external rodata before PSRAM XIP is ready. */
+#ifdef NDEBUG
+#define PMU_EARLY_ASSERT(condition) ((void)0)
+#else
+#define PMU_EARLY_ASSERT(condition) do { if (!(condition)) { abort(); } } while (0)
+#endif
 
 typedef struct {
     const pmu_hp_system_power_param_t     *power;
@@ -77,7 +84,7 @@ void pmu_hp_system_init(pmu_context_t *ctx, pmu_hp_mode_t mode, pmu_hp_system_pa
     const pmu_hp_system_analog_param_t *anlg = param->analog;
     const pmu_hp_system_retention_param_t *ret = param->retent;
 
-    assert(ctx->hal);
+    PMU_EARLY_ASSERT(ctx->hal);
     /* Default configuration of hp-system power in active, modem and sleep modes */
     pmu_ll_hp_set_dig_power(ctx->hal->dev, mode, power->dig_power.val);
     if (mode == PMU_MODE_HP_ACTIVE) {
@@ -146,7 +153,7 @@ void pmu_lp_system_init(pmu_context_t *ctx, pmu_lp_mode_t mode, pmu_lp_system_pa
     const pmu_lp_system_power_param_t *power = param->power;
     const pmu_lp_system_analog_param_t *anlg = param->analog;
 
-    assert(ctx->hal);
+    PMU_EARLY_ASSERT(ctx->hal);
     /* Default configuration of lp-system power in active and sleep modes */
     pmu_ll_lp_set_dig_power(ctx->hal->dev, mode, power->dig_power.val);
     pmu_ll_lp_set_clk_power(ctx->hal->dev, mode, power->clk_power.val);
@@ -168,7 +175,7 @@ void pmu_lp_system_init(pmu_context_t *ctx, pmu_lp_mode_t mode, pmu_lp_system_pa
 
 static inline void pmu_power_domain_force_default(pmu_context_t *ctx)
 {
-    assert(ctx);
+    PMU_EARLY_ASSERT(ctx);
     // for bypass reserved power domain
     const pmu_hp_power_domain_t pmu_hp_domains[] = {
         PMU_HP_PD_TOP,
@@ -211,7 +218,7 @@ static inline void pmu_hp_system_param_default(pmu_hp_mode_t mode, pmu_hp_system
 
 static void pmu_hp_system_init_default(pmu_context_t *ctx)
 {
-    assert(ctx);
+    PMU_EARLY_ASSERT(ctx);
     pmu_hp_system_param_t param = { 0 };
     for (pmu_hp_mode_t mode = PMU_MODE_HP_ACTIVE; mode < PMU_MODE_HP_MAX; mode++) {
         pmu_hp_system_param_default(mode, &param);
@@ -227,7 +234,7 @@ static inline void pmu_lp_system_param_default(pmu_lp_mode_t mode, pmu_lp_system
 
 static void pmu_lp_system_init_default(pmu_context_t *ctx)
 {
-    assert(ctx);
+    PMU_EARLY_ASSERT(ctx);
     pmu_lp_system_param_t param;
     for (pmu_lp_mode_t mode = PMU_MODE_LP_ACTIVE; mode < PMU_MODE_LP_MAX; mode++) {
         pmu_lp_system_param_default(mode, &param);
@@ -258,7 +265,7 @@ void pmu_init(void)
         esp_rom_delay_us(1000);
     }
     else {
-        ESP_HW_LOGW(TAG, "blk_version is less than 1, pvt function not supported in efuse.");
+        ESP_DRAM_LOGW(TAG, "blk_version is less than 1, pvt function not supported in efuse.");
     }
 #endif
 }

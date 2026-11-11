@@ -16,7 +16,7 @@ entries:
     esp_clk_tree: esp_clk_tree_manage_src (noflash)
     esp_clk_tree:esp_clk_tree_port_is_power_on (noflash)
     esp_clk_tree_common:esp_clk_tree_is_power_on (noflash)
-    if RTC_CLK_FUNC_IN_IRAM = y:
+    if RTC_CLK_FUNC_IN_IRAM = y || SPIRAM_FLASH_LOAD_TO_PSRAM = y:
         esp_clk_tree:esp_clk_tree_enable_power (noflash)
         if SOC_CLK_MPLL_SUPPORTED = y:
             esp_clk_tree_common:esp_clk_tree_mpll_release (noflash)
@@ -26,7 +26,7 @@ entries:
         rtc_clk (noflash)
     if IDF_TARGET_ESP32 = y:
         rtc_clk:rtc_clk_cpu_freq_to_pll_mhz (noflash)
-    if RTC_TIME_FUNC_IN_IRAM = y:
+    if RTC_TIME_FUNC_IN_IRAM = y || SPIRAM_FLASH_LOAD_TO_PSRAM = y:
         rtc_time (noflash_text)
     if SOC_CONFIGURABLE_VDDSDIO_SUPPORTED = y:
         rtc_init:rtc_vddsdio_get_config (noflash)
@@ -45,6 +45,8 @@ entries:
         if SPIRAM_FLASH_LOAD_TO_PSRAM = y:
             pmu_init (noflash)
             pmu_param (noflash)
+            if IDF_TARGET_ESP32S31 = y:
+                ocode_init (noflash)
         if SOC_LIGHT_SLEEP_SUPPORTED = y:
             if PM_SLP_IRAM_OPT = y && IDF_TARGET_ESP32S31 != y:
                 pmu_param:get_act_lp_dbias (noflash)
@@ -56,7 +58,7 @@ entries:
         pmu_pvt (noflash)
     if IDF_TARGET_ESP32 = y || IDF_TARGET_ESP32S2 = y:
         rtc_wdt (noflash_text)
-    if ESP_PERIPH_CTRL_FUNC_IN_IRAM = y:
+    if ESP_PERIPH_CTRL_FUNC_IN_IRAM = y || SPIRAM_FLASH_LOAD_TO_PSRAM = y:
         periph_ctrl:periph_module_reset (noflash)
         periph_ctrl:periph_rcc_enter (noflash)
         periph_ctrl:periph_rcc_exit (noflash)
@@ -67,7 +69,7 @@ entries:
     if ESP_PERIPH_CTRL_FUNC_IN_IRAM = y && ESP_WIFI_ENABLED = y:
         periph_ctrl: wifi_module_enable (noflash)
         periph_ctrl: wifi_module_disable (noflash)
-    if ESP_REGI2C_CTRL_FUNC_IN_IRAM = y:
+    if ESP_REGI2C_CTRL_FUNC_IN_IRAM = y || SPIRAM_FLASH_LOAD_TO_PSRAM = y:
         regi2c_ctrl (noflash)
     if SOC_SYSTIMER_SUPPORTED = y:
         systimer (noflash)
