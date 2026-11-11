@@ -27,6 +27,13 @@ extern "C" {
          ? (MAX_L2CAP_LINKS + BTM_MAX_SCO_LINKS)                                                                          \
          : C2H_CREDIT_TAB_BATCH_CAP)
 
+#define C2H_CREDIT_HCI_DEFER_MS     (10)
+#define C2H_CREDIT_RETRY_DELAY_MS   (100)
+#define C2H_CREDIT_DEFER_MIN_MS     (10)
+#define C2H_CREDIT_DEFER_MAX_MS     (500)
+/* No rate sample yet. Every profile uses the minimum window. */
+#define C2H_CREDIT_DEFER_COLD_MS    C2H_CREDIT_DEFER_MIN_MS
+
 /* HCI-only: pending/mail, flush_ready, send_alarm. Bound to HCI thread. */
 bool hci_c2h_credit_init(void);
 void hci_c2h_credit_close(void);
@@ -61,9 +68,16 @@ void btu_c2h_credit_resume(void);
 UINT8 btu_c2h_credit_pkts_rcvd(UINT16 *num_pkts, UINT16 *handles);
 bool hci_c2h_credit_flush_alarm_is_active(void);
 UINT32 hci_c2h_credit_flush_alarm_remaining_ms(void);
+bool hci_c2h_credit_flush_alarm_is_outstanding(void);
+UINT32 btu_c2h_credit_interval_ewma_ms(void);
+void btu_c2h_credit_test_sample_ms(UINT32 sample_ms);
+UINT32 btu_c2h_credit_test_defer_delay_ms(UINT32 interval_ms, UINT32 pending_pkts);
 
 /* Force btsnd failure (default) or simulated success without a live HCI queue. */
 void hci_c2h_credit_test_set_btsnd_fail(bool fail);
+/* Runs on the thread that entered the handler. NULL clears the hook. */
+void hci_c2h_credit_test_set_flush_ready_hook(void (*hook)(void));
+void hci_c2h_credit_test_set_send_alarm_hook(void (*hook)(void));
 /* Sum of HCI mail + pending credits still waiting to be sent. */
 UINT32 hci_c2h_credit_pending_pkts(void);
 #endif
