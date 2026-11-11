@@ -101,6 +101,7 @@ struct ext_funcs_t {
     void (*_osi_assert)(const uint32_t ln, const char *fn, uint32_t param1, uint32_t param2);
     uint32_t (* _os_random)(void);
     int (* _ecc_gen_key_pair)(uint8_t *public, uint8_t *priv);
+    void (* _esp_reset_modem)(uint8_t mdl_opts, uint8_t start);
     int (* _ecc_gen_dh_key)(const uint8_t *remote_pub_key_x, const uint8_t *remote_pub_key_y,
                             const uint8_t *local_priv_key, uint8_t *dhkey);
     uint32_t magic;
@@ -127,6 +128,11 @@ typedef union {
 /* External functions or variables
  ************************************************************************
  */
+#if CONFIG_SW_COEXIST_ENABLE || CONFIG_EXTERNAL_COEX_ENABLE
+extern void coex_hw_timer_set(uint8_t idx,uint8_t src, uint8_t pti,uint32_t latency, uint32_t perioidc);
+extern void coex_hw_timer_enable(uint8_t idx);
+extern void coex_hw_timer_disable(uint8_t idx);
+#endif // CONFIG_SW_COEXIST_ENABLE || CONFIG_EXTERNAL_COEX_ENABLE
 extern int ble_osi_coex_funcs_register(struct osi_coex_funcs_t *coex_funcs);
 extern int r_ble_controller_init(esp_bt_controller_config_t *cfg);
 extern void esp_ble_controller_info_capture(uint32_t cycle_times);
@@ -200,6 +206,7 @@ static int esp_intr_alloc_wrapper(int source, int flags, intr_handler_t handler,
                                   void *arg, void **ret_handle_in);
 static int esp_intr_free_wrapper(void **ret_handle);
 static void osi_assert_wrapper(const uint32_t ln, const char *fn, uint32_t param1, uint32_t param2);
+static void esp_reset_modem(uint8_t mdl_opts,uint8_t start);
 static uint32_t osi_random_wrapper(void);
 static int esp_ecc_gen_key_pair(uint8_t *pub, uint8_t *priv);
 static int esp_ecc_gen_dh_key(const uint8_t *peer_pub_key_x, const uint8_t *peer_pub_key_y,
@@ -524,9 +531,29 @@ struct ext_funcs_t ext_funcs_ro = {
     ._osi_assert = osi_assert_wrapper,
     ._os_random = osi_random_wrapper,
     ._ecc_gen_key_pair = esp_ecc_gen_key_pair,
+    ._esp_reset_modem = esp_reset_modem,
     ._ecc_gen_dh_key = esp_ecc_gen_dh_key,
     .magic = EXT_FUNC_MAGIC_VALUE,
 };
+
+static void IRAM_ATTR esp_reset_modem(uint8_t mdl_opts,uint8_t start)
+{
+    if (mdl_opts == 0x05) {
+        if (start) {
+#if CONFIG_SW_COEXIST_ENABLE || CONFIG_EXTERNAL_COEX_ENABLE
+            coex_hw_timer_set(0x04, 0x02, 15, 0, 5000);
+            coex_hw_timer_enable(0x04);
+#endif // CONFIG_SW_COEXIST_ENABLE || CONFIG_EXTERNAL_COEX_ENABLE
+            MODEM_SYSCON.modem_rst_conf.val |= (BIT(16) | BIT(18));
+            MODEM_SYSCON.modem_rst_conf.val &= ~(BIT(16) | BIT(18));
+        } else {
+#if CONFIG_SW_COEXIST_ENABLE || CONFIG_EXTERNAL_COEX_ENABLE
+            coex_hw_timer_disable(0x04);
+#endif // CONFIG_SW_COEXIST_ENABLE || CONFIG_EXTERNAL_COEX_ENABLE
+        }
+
+    }
+}
 
 static void IRAM_ATTR osi_assert_wrapper(const uint32_t ln, const char *fn,
                                          uint32_t param1, uint32_t param2)
@@ -803,7 +830,7 @@ esp_err_t controller_sleep_init(void)
 #endif // CONFIG_BT_LE_SLEEP_ENABLE
 
 #ifdef CONFIG_PM_ENABLE
-    rc = esp_pm_lock_create(ESP_PM_APB_FREQ_MAX, 0, "bt", &s_pm_lock);
+    rc = esp_pm_lock_create(ESP_PM_CPU_FREQ_MAX, 0, "bt", &s_pm_lock);
     if (rc != ESP_OK) {
         goto error;
     }
