@@ -3,6 +3,7 @@
 """
 This file is used in CI generate binary files for different kinds of apps
 """
+
 import argparse
 import os
 import sys

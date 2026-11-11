@@ -10,19 +10,19 @@ This file implements controlling  APC PDU via telnet.
 import telnetlib
 
 
-class Control(object):
-    """ control APC via telnet """
+class Control:
+    """control APC via telnet"""
 
     @classmethod
     def apc_telnet_make_choice(cls, telnet, choice):
-        """ select a choice """
+        """select a choice"""
         telnet.read_until(b'Event Log')
         telnet.read_until(b'>')
         telnet.write(choice.encode() + b'\r\n')
 
     @classmethod
     def apc_telnet_common_action(cls, telnet, check_str, action):
-        """ wait until a pattern and then write a line """
+        """wait until a pattern and then write a line"""
         telnet.read_until(check_str.encode())
         telnet.write(action.encode() + b'\r\n')
 

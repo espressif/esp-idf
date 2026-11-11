@@ -3,6 +3,7 @@
 # Based on cally.py (https://github.com/chaudron/cally/), Copyright 2018, Eelco Chaudron
 # SPDX-FileCopyrightText: 2020-2024 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
+
 import argparse
 import fnmatch
 import os
@@ -19,14 +20,12 @@ from typing import Tuple
 import elftools
 from elftools.elf import elffile
 
-FUNCTION_REGEX = re.compile(
-    r'^;; Function (?P<mangle>.*)\s+\((?P<function>\S+)(,.*)?\).*$'
-)
+FUNCTION_REGEX = re.compile(r'^;; Function (?P<mangle>.*)\s+\((?P<function>\S+)(,.*)?\).*$')
 CALL_REGEX = re.compile(r'^.*\(call.*"(?P<target>.*)".*$')
 SYMBOL_REF_REGEX = re.compile(r'^.*\(symbol_ref[^()]*\("(?P<target>.*)"\).*$')
 
 
-class RtlFunction(object):
+class RtlFunction:
     def __init__(self, name: str, rtl_filename: str, tu_filename: str) -> None:
         self.name = name
         self.rtl_filename = rtl_filename
@@ -35,14 +34,14 @@ class RtlFunction(object):
         self.sym = None
 
 
-class SectionAddressRange(object):
+class SectionAddressRange:
     def __init__(self, name: str, addr: int, size: int) -> None:
         self.name = name
         self.low = addr
         self.high = addr + size
 
     def __str__(self) -> str:
-        return '{}: 0x{:08x} - 0x{:08x}'.format(self.name, self.low, self.high)
+        return f'{self.name}: 0x{self.low:08x} - 0x{self.high:08x}'
 
     def contains_address(self, addr: int) -> bool:
         return self.low <= addr < self.high
@@ -51,20 +50,20 @@ class SectionAddressRange(object):
 TARGET_SECTIONS: Dict[str, List[SectionAddressRange]] = {
     'esp32': [
         SectionAddressRange('.rom.text', 0x40000000, 0x70000),
-        SectionAddressRange('.rom.rodata', 0x3ff96000, 0x9018)
+        SectionAddressRange('.rom.rodata', 0x3FF96000, 0x9018),
     ],
     'esp32s2': [
-        SectionAddressRange('.rom.text', 0x40000000, 0x1bed0),
-        SectionAddressRange('.rom.rodata', 0x3ffac600, 0x392c)
+        SectionAddressRange('.rom.text', 0x40000000, 0x1BED0),
+        SectionAddressRange('.rom.rodata', 0x3FFAC600, 0x392C),
     ],
     'esp32s3': [
-        SectionAddressRange('.rom.text', 0x40000000, 0x568d0),
-        SectionAddressRange('.rom.rodata', 0x3ff071c0, 0x8e30)
-    ]
+        SectionAddressRange('.rom.text', 0x40000000, 0x568D0),
+        SectionAddressRange('.rom.rodata', 0x3FF071C0, 0x8E30),
+    ],
 }
 
 
-class Symbol(object):
+class Symbol:
     def __init__(self, name: str, addr: int, local: bool, filename: Optional[str], section: Optional[str]) -> None:
         self.name = name
         self.addr = addr
@@ -76,34 +75,27 @@ class Symbol(object):
 
     def __str__(self) -> str:
         return '{} @0x{:08x} [{}]{} {}'.format(
-            self.name,
-            self.addr,
-            self.section or 'unknown',
-            ' (local)' if self.local else '',
-            self.filename
+            self.name, self.addr, self.section or 'unknown', ' (local)' if self.local else '', self.filename
         )
 
 
-class Reference(object):
+class Reference:
     def __init__(self, from_sym: Symbol, to_sym: Symbol) -> None:
         self.from_sym = from_sym
         self.to_sym = to_sym
 
     def __str__(self) -> str:
-        return '{} @0x{:08x} ({}) -> {} @0x{:08x} ({})'.format(
-            self.from_sym.name,
-            self.from_sym.addr,
-            self.from_sym.section,
-            self.to_sym.name,
-            self.to_sym.addr,
-            self.to_sym.section
+        return (
+            f'{self.from_sym.name} @0x{self.from_sym.addr:08x} ({self.from_sym.section}) '
+            f'-> {self.to_sym.name} @0x{self.to_sym.addr:08x} ({self.to_sym.section})'
         )
 
 
-class IgnorePair():
+class IgnorePair:
     """
     A pair of symbol names which should be ignored when checking references.
     """
+
     def __init__(self, pair: str) -> None:
         try:
             self.source, self.dest = pair.split('/')
@@ -111,7 +103,7 @@ class IgnorePair():
             raise ValueError(f'Invalid ignore pair: {pair}. Must be in the form "source/dest".')
 
 
-class ElfInfo(object):
+class ElfInfo:
     def __init__(self, elf_file: BinaryIO) -> None:
         self.elf_file = elf_file
         self.elf_obj = elffile.ELFFile(self.elf_file)
@@ -149,11 +141,7 @@ class ElfInfo(object):
                 for section in self.elf_obj.iter_sections():
                     if not segment.section_in_segment(section):
                         continue
-                    result.append(
-                        SectionAddressRange(
-                            section.name, section['sh_addr'], section['sh_size']
-                        )
-                    )
+                    result.append(SectionAddressRange(section.name, section['sh_addr'], section['sh_size']))
 
         target = os.environ.get('IDF_TARGET')
         if target in TARGET_SECTIONS:
@@ -280,7 +268,9 @@ def match_local_target_func(rtl_filename: str, sym_from: Symbol, sym: Symbol) ->
         return rtl_filename_matches_sym_filename(rtl_filename, sym.filename)
 
 
-def match_rtl_funcs_to_symbols(rtl_functions: List[RtlFunction], elfinfo: ElfInfo) -> Tuple[List[Symbol], List[Reference]]:
+def match_rtl_funcs_to_symbols(
+    rtl_functions: List[RtlFunction], elfinfo: ElfInfo
+) -> Tuple[List[Symbol], List[Reference]]:
     symbols: List[Symbol] = []
     refs: List[Reference] = []
 
@@ -292,7 +282,9 @@ def match_rtl_funcs_to_symbols(rtl_functions: List[RtlFunction], elfinfo: ElfInf
     #     - record every pair (sym_from, sym_to) as a Reference object
 
     for source_rtl_func in rtl_functions:
-        maybe_sym_from = find_symbol_by_name(source_rtl_func.name, elfinfo, partial(match_local_source_func, source_rtl_func.rtl_filename))
+        maybe_sym_from = find_symbol_by_name(
+            source_rtl_func.name, elfinfo, partial(match_local_source_func, source_rtl_func.rtl_filename)
+        )
         if maybe_sym_from is None:
             # RTL references a symbol, but the symbol is not defined in the generated object file.
             # This means that the symbol was likely removed (or not included) at link time.
@@ -307,7 +299,9 @@ def match_rtl_funcs_to_symbols(rtl_functions: List[RtlFunction], elfinfo: ElfInf
             if '*.LC' in target_rtl_func_name:  # skip local labels
                 continue
 
-            maybe_sym_to = find_symbol_by_name(target_rtl_func_name, elfinfo, partial(match_local_target_func, source_rtl_func.rtl_filename, sym_from))
+            maybe_sym_to = find_symbol_by_name(
+                target_rtl_func_name, elfinfo, partial(match_local_target_func, source_rtl_func.rtl_filename, sym_from)
+            )
             if not maybe_sym_to:
                 # This may happen for a extern reference in the RTL file, if the reference was later removed
                 # by one of the optimization passes, and the external definition got garbage-collected.
@@ -325,7 +319,9 @@ def match_rtl_funcs_to_symbols(rtl_functions: List[RtlFunction], elfinfo: ElfInf
     return symbols, refs
 
 
-def get_symbols_and_refs(rtl_list: List[str], elf_file: BinaryIO, ignore_pairs: List[IgnorePair]) -> Tuple[List[Symbol], List[Reference]]:
+def get_symbols_and_refs(
+    rtl_list: List[str], elf_file: BinaryIO, ignore_pairs: List[IgnorePair]
+) -> Tuple[List[Symbol], List[Reference]]:
     elfinfo = ElfInfo(elf_file)
 
     rtl_functions: List[RtlFunction] = []
@@ -341,8 +337,9 @@ def get_symbols_and_refs(rtl_list: List[str], elf_file: BinaryIO, ignore_pairs: 
 def list_refs_from_to_sections(refs: List[Reference], from_sections: List[str], to_sections: List[str]) -> int:
     found = 0
     for ref in refs:
-        if (not from_sections or ref.from_sym.section in from_sections) and \
-           (not to_sections or ref.to_sym.section in to_sections):
+        if (not from_sections or ref.from_sym.section in from_sections) and (
+            not to_sections or ref.to_sym.section in to_sections
+        ):
             print(str(ref))
             found += 1
     return found
@@ -376,19 +373,15 @@ def main() -> None:
     action_sub = parser.add_subparsers(dest='action')
     find_refs_parser = action_sub.add_parser(
         'find-refs',
-        help='List the references coming from a given list of source sections'
-             'to a given list of target sections.',
+        help='List the references coming from a given list of source sections to a given list of target sections.',
     )
+    find_refs_parser.add_argument('--from-sections', help='comma-separated list of source sections')
+    find_refs_parser.add_argument('--to-sections', help='comma-separated list of target sections')
     find_refs_parser.add_argument(
-        '--from-sections', help='comma-separated list of source sections'
-    )
-    find_refs_parser.add_argument(
-        '--to-sections', help='comma-separated list of target sections'
-    )
-    find_refs_parser.add_argument(
-        '--ignore-refs', help='Comma-separated list of symbol pairs to exclude from the references list.'
-                              'The caller and the callee are separated by a slash. '
-                              'Wildcards are supported. Example: my_lib_*/some_lib_in_flash_*.'
+        '--ignore-refs',
+        help='Comma-separated list of symbol pairs to exclude from the references list.'
+        'The caller and the callee are separated by a slash. '
+        'Wildcards are supported. Example: my_lib_*/some_lib_in_flash_*.',
     )
     find_refs_parser.add_argument(
         '--exit-code',
@@ -403,14 +396,14 @@ def main() -> None:
     parser.parse_args()
     args = parser.parse_args()
     if args.rtl_list:
-        with open(args.rtl_list, 'r') as rtl_list_file:
+        with open(args.rtl_list, encoding='utf-8') as rtl_list_file:
             rtl_list = [line.strip() for line in rtl_list_file]
     else:
         if not args.rtl_dirs:
             raise RuntimeError('Either --rtl-list or --rtl-dirs must be specified')
         rtl_dirs = args.rtl_dirs.split(',')
         rtl_list = []
-        for dir in rtl_dirs:
+        for dir in rtl_dirs:  # noqa: A001
             rtl_list.extend(list(find_files_recursive(dir, '.expand')))
 
     if not rtl_list:
@@ -426,9 +419,7 @@ def main() -> None:
     if args.action == 'find-refs':
         from_sections = args.from_sections.split(',') if args.from_sections else []
         to_sections = args.to_sections.split(',') if args.to_sections else []
-        found = list_refs_from_to_sections(
-            refs, from_sections, to_sections
-        )
+        found = list_refs_from_to_sections(refs, from_sections, to_sections)
         if args.exit_code and found:
             raise SystemExit(1)
     elif args.action == 'all-refs':

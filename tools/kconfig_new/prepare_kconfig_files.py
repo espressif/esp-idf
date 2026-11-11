@@ -3,12 +3,10 @@
 # SPDX-FileCopyrightText: 2019-2021 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
 
-from __future__ import print_function, unicode_literals
 
 import argparse
 import json
 import sys
-from io import open
 
 
 def _prepare_source_files(env_dict, list_separator):
@@ -42,12 +40,12 @@ def _prepare_source_files(env_dict, list_separator):
     def _write_source_file(config_var, config_file):
         dequoted_var = _dequote(config_var)
         if dequoted_var:
-            new_content = '\n'.join(['source "{}"'.format(path) for path in dequoted_var.split(list_separator)])
+            new_content = '\n'.join([f'source "{path}"' for path in dequoted_var.split(list_separator)])
         else:
             new_content = ''
 
         try:
-            with open(config_file, 'r', encoding='utf-8') as f:
+            with open(config_file, encoding='utf-8') as f:
                 old_content = f.read()
         except Exception:
             # File doesn't exist or other issue
@@ -62,7 +60,9 @@ def _prepare_source_files(env_dict, list_separator):
 
     try:
         _write_source_file(env_dict['COMPONENT_KCONFIGS'], env_dict['COMPONENT_KCONFIGS_SOURCE_FILE'])
-        _write_source_file(env_dict['COMPONENT_KCONFIGS_PROJBUILD'], env_dict['COMPONENT_KCONFIGS_PROJBUILD_SOURCE_FILE'])
+        _write_source_file(
+            env_dict['COMPONENT_KCONFIGS_PROJBUILD'], env_dict['COMPONENT_KCONFIGS_PROJBUILD_SOURCE_FILE']
+        )
     except KeyError as e:
         print('Error:', e, 'is not defined!')
         sys.exit(1)
@@ -71,16 +71,21 @@ def _prepare_source_files(env_dict, list_separator):
 def main():
     parser = argparse.ArgumentParser(description='Kconfig Source File Generator')
 
-    parser.add_argument('--env', action='append', default=[],
-                        help='Environment value', metavar='NAME=VAL')
+    parser.add_argument('--env', action='append', default=[], help='Environment value', metavar='NAME=VAL')
 
-    parser.add_argument('--env-file', type=argparse.FileType('r'),
-                        help='Optional file to load environment variables from. Contents '
-                             'should be a JSON object where each key/value pair is a variable.')
+    parser.add_argument(
+        '--env-file',
+        type=argparse.FileType('r'),
+        help='Optional file to load environment variables from. Contents '
+        'should be a JSON object where each key/value pair is a variable.',
+    )
 
-    parser.add_argument('--list-separator', choices=['space', 'semicolon'],
-                        default='space',
-                        help='Separator used in environment list variables (COMPONENT_KCONFIGS, COMPONENT_KCONFIGS_PROJBUILD)')
+    parser.add_argument(
+        '--list-separator',
+        choices=['space', 'semicolon'],
+        default='space',
+        help='Separator used in environment list variables (COMPONENT_KCONFIGS, COMPONENT_KCONFIGS_PROJBUILD)',
+    )
 
     args = parser.parse_args()
 

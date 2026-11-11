@@ -15,7 +15,7 @@ def _get_local_host_ip() -> Any:
     return s.getsockname()[0]
 
 
-def _tcp_server(port:int, chan_num:int, vcd_out_io:TextIOWrapper) -> None:
+def _tcp_server(port: int, chan_num: int, vcd_out_io: TextIOWrapper) -> None:
     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
     host = _get_local_host_ip()
@@ -53,7 +53,9 @@ def tcp_server_main() -> None:
     parser = argparse.ArgumentParser(description='Dump raw data to VCD format')
     parser.add_argument('-n', '--chan-num', type=int, help='The channel number that probed')
     parser.add_argument('-p', '--port', type=int, help='The TCP port', default=8888)
-    parser.add_argument('-o', '--output-file', type=argparse.FileType('w'), help='The output vcd file name (optional)', default=None)
+    parser.add_argument(
+        '-o', '--output-file', type=argparse.FileType('w'), help='The output vcd file name (optional)', default=None
+    )
 
     # Parse args
     args = parser.parse_args()

@@ -6,14 +6,15 @@
 
 import argparse
 import time
-from io import FileIO, TextIOWrapper
+from io import FileIO
+from io import TextIOWrapper
 
 
-class VCDDumper():
+class VCDDumper:
     def __init__(self) -> None:
         pass
 
-    def open_new_vcd_file(self, chan_num: int, vcd_out_io:TextIOWrapper) -> None:
+    def open_new_vcd_file(self, chan_num: int, vcd_out_io: TextIOWrapper) -> None:
         self.ts = 0
         self.odd_samples = 0
         self.prev = 0
@@ -27,14 +28,10 @@ class VCDDumper():
             self.vcd = open(dump_file, 'w', encoding='utf-8')
 
         # Write VCD header
-        self.vcd.write('$date today $end\n'
-                       '$timescale 1 ns $end\n'
-                       '$scope module logic_analyzer $end\n')
+        self.vcd.write('$date today $end\n$timescale 1 ns $end\n$scope module logic_analyzer $end\n')
         for i in range(chan_num):
             self.vcd.write(f'$var wire 1 {chr(33 + i)} chan_{i} $end\n')
-        self.vcd.write('$upscope $end\n'
-                       '$enddefinitions $end\n'
-                       '$dumpvars\n')
+        self.vcd.write('$upscope $end\n$enddefinitions $end\n$dumpvars\n')
         for i in range(chan_num):
             self.vcd.write(f'0{chr(33 + i)}\n')
         self.vcd.write('$end\n')
@@ -43,7 +40,7 @@ class VCDDumper():
         if self.vcd:
             self.vcd.close()
 
-    def _dump_one_sample_to_vcd(self, prev:int, curr:int) -> None:
+    def _dump_one_sample_to_vcd(self, prev: int, curr: int) -> None:
         change_mask = prev ^ curr
         if change_mask == 0:
             return
@@ -55,7 +52,7 @@ class VCDDumper():
             change_mask >>= 1
             i += 1
 
-    def dump_samples(self, raw_data:bytes) -> None:
+    def dump_samples(self, raw_data: bytes) -> None:
         # Parse the raw data and write VCD body
         byte_cnt = 0
         # If last time is one byte left, load it
@@ -70,7 +67,7 @@ class VCDDumper():
         for byte in raw_data:
             byte_cnt += 1
             if byte_cnt % self.step == 0:
-                samples = (samples & 0xff00) | byte
+                samples = (samples & 0xFF00) | byte
                 self.odd_samples = 0
             else:
                 samples = byte << 8
@@ -80,18 +77,18 @@ class VCDDumper():
 
             # Loop the samples in one byte
             for _ in range((8 * self.step) // self.chan_num):
-                curr = samples & ((2 ** self.chan_num) - 1)
+                curr = samples & ((2**self.chan_num) - 1)
                 self._dump_one_sample_to_vcd(self.prev, curr)
                 samples >>= self.chan_num
                 self.prev = curr
                 self.ts += 1
 
-    def dump_samples_from_file(self, raw_in_io:FileIO) -> None:
+    def dump_samples_from_file(self, raw_in_io: FileIO) -> None:
         data_bytes = raw_in_io.read()
         self.dump_samples(data_bytes)
 
 
-def dump_binary_raw_data_to_vcd(chan_num:int, raw_in_io:FileIO, vcd_out_io:TextIOWrapper) -> None:
+def dump_binary_raw_data_to_vcd(chan_num: int, raw_in_io: FileIO, vcd_out_io: TextIOWrapper) -> None:
     vcd = VCDDumper()
     vcd.open_new_vcd_file(chan_num, vcd_out_io)
     vcd.dump_samples_from_file(raw_in_io)
@@ -104,7 +101,9 @@ def dump_vcd_main() -> None:
     parser = argparse.ArgumentParser(description='Dump raw data to VCD format')
     parser.add_argument('-n', '--chan-num', type=int, help='The channel number that probed')
     parser.add_argument('-i', '--input-file', type=argparse.FileType('rb'), help='The the input raw data file')
-    parser.add_argument('-o', '--output-file', type=argparse.FileType('w'), help='The output vcd file name (optional)', default=None)
+    parser.add_argument(
+        '-o', '--output-file', type=argparse.FileType('w'), help='The output vcd file name (optional)', default=None
+    )
 
     # Parse args
     args = parser.parse_args()
