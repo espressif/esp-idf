@@ -279,7 +279,8 @@ esp_err_t i2c_master_probe(i2c_master_bus_handle_t bus_handle, uint16_t address,
  *  - ESP_ERR_TIMEOUT: Transaction timed out.
  *
  * @note The `ack_value` field in the READ operation must be set to `I2C_NACK_VAL` if the next
- *       operation is a STOP command.
+ *       operation is a STOP command. A READ operation with `I2C_NACK_VAL` must contain exactly
+ *       one byte.
  */
 esp_err_t i2c_master_execute_defined_operations(i2c_master_dev_handle_t i2c_dev, i2c_operation_job_t *i2c_operation, size_t operation_list_num, int xfer_timeout_ms);
 
