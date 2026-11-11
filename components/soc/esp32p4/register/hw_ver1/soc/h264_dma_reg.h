@@ -13,7 +13,7 @@ extern "C" {
 /** H264_DMA_OUT_CONF0_CH0_REG register
  *  TX CH0 config0 register
  */
-#define H264_DMA_OUT_CONF0_CH0_REG (DR_REG_H264_DMA_BASE + 0x0)
+#define H264_DMA_OUT_CONF0_CH0_REG (DR_REG_H264_DMA_2D_BASE + 0x0)
 /** H264_DMA_OUT_AUTO_WRBACK_CH0 : R/W; bitpos: [0]; default: 0;
  *  Set this bit to enable automatic outlink-writeback when all the data pointed by
  *  outlink descriptor has been received.
@@ -103,7 +103,7 @@ extern "C" {
 /** H264_DMA_OUT_INT_RAW_CH0_REG register
  *  TX CH0  interrupt raw register
  */
-#define H264_DMA_OUT_INT_RAW_CH0_REG (DR_REG_H264_DMA_BASE + 0x4)
+#define H264_DMA_OUT_INT_RAW_CH0_REG (DR_REG_H264_DMA_2D_BASE + 0x4)
 /** H264_DMA_OUT_DONE_CH0_INT_RAW : R/WTC/SS; bitpos: [0]; default: 0;
  *  The raw interrupt bit turns to high level when the last data pointed by one outlink
  *  descriptor has been transmitted to peripherals for Tx channel 0.
@@ -177,7 +177,7 @@ extern "C" {
 /** H264_DMA_OUT_INT_ENA_CH0_REG register
  *  TX CH0  interrupt ena register
  */
-#define H264_DMA_OUT_INT_ENA_CH0_REG (DR_REG_H264_DMA_BASE + 0x8)
+#define H264_DMA_OUT_INT_ENA_CH0_REG (DR_REG_H264_DMA_2D_BASE + 0x8)
 /** H264_DMA_OUT_DONE_CH0_INT_ENA : R/W; bitpos: [0]; default: 0;
  *  The interrupt enable bit for the OUT_DONE_CH_INT interrupt.
  */
@@ -245,7 +245,7 @@ extern "C" {
 /** H264_DMA_OUT_INT_ST_CH0_REG register
  *  TX CH0  interrupt st register
  */
-#define H264_DMA_OUT_INT_ST_CH0_REG (DR_REG_H264_DMA_BASE + 0xc)
+#define H264_DMA_OUT_INT_ST_CH0_REG (DR_REG_H264_DMA_2D_BASE + 0xc)
 /** H264_DMA_OUT_DONE_CH0_INT_ST : RO; bitpos: [0]; default: 0;
  *  The raw interrupt status bit for the OUT_DONE_CH_INT interrupt.
  */
@@ -313,7 +313,7 @@ extern "C" {
 /** H264_DMA_OUT_INT_CLR_CH0_REG register
  *  TX CH0  interrupt clr register
  */
-#define H264_DMA_OUT_INT_CLR_CH0_REG (DR_REG_H264_DMA_BASE + 0x10)
+#define H264_DMA_OUT_INT_CLR_CH0_REG (DR_REG_H264_DMA_2D_BASE + 0x10)
 /** H264_DMA_OUT_DONE_CH0_INT_CLR : WT; bitpos: [0]; default: 0;
  *  Set this bit to clear the OUT_DONE_CH_INT interrupt.
  */
@@ -381,7 +381,7 @@ extern "C" {
 /** H264_DMA_OUTFIFO_STATUS_CH0_REG register
  *  TX CH0 outfifo status register
  */
-#define H264_DMA_OUTFIFO_STATUS_CH0_REG (DR_REG_H264_DMA_BASE + 0x14)
+#define H264_DMA_OUTFIFO_STATUS_CH0_REG (DR_REG_H264_DMA_2D_BASE + 0x14)
 /** H264_DMA_OUTFIFO_FULL_L2_CH0 : RO; bitpos: [0]; default: 0;
  *  Tx FIFO full signal for Tx channel 0.
  */
@@ -449,7 +449,7 @@ extern "C" {
 /** H264_DMA_OUT_PUSH_CH0_REG register
  *  TX CH0 outfifo push register
  */
-#define H264_DMA_OUT_PUSH_CH0_REG (DR_REG_H264_DMA_BASE + 0x18)
+#define H264_DMA_OUT_PUSH_CH0_REG (DR_REG_H264_DMA_2D_BASE + 0x18)
 /** H264_DMA_OUTFIFO_WDATA_CH0 : R/W; bitpos: [9:0]; default: 0;
  *  This register stores the data that need to be pushed into DMA Tx FIFO.
  */
@@ -468,7 +468,7 @@ extern "C" {
 /** H264_DMA_OUT_LINK_CONF_CH0_REG register
  *  TX CH0 out_link dscr ctrl register
  */
-#define H264_DMA_OUT_LINK_CONF_CH0_REG (DR_REG_H264_DMA_BASE + 0x1c)
+#define H264_DMA_OUT_LINK_CONF_CH0_REG (DR_REG_H264_DMA_2D_BASE + 0x1c)
 /** H264_DMA_OUTLINK_STOP_CH0 : R/W/SC; bitpos: [20]; default: 0;
  *  Set this bit to stop dealing with the outlink descriptors.
  */
@@ -502,7 +502,7 @@ extern "C" {
 /** H264_DMA_OUT_LINK_ADDR_CH0_REG register
  *  TX CH0 out_link dscr addr register
  */
-#define H264_DMA_OUT_LINK_ADDR_CH0_REG (DR_REG_H264_DMA_BASE + 0x20)
+#define H264_DMA_OUT_LINK_ADDR_CH0_REG (DR_REG_H264_DMA_2D_BASE + 0x20)
 /** H264_DMA_OUTLINK_ADDR_CH0 : R/W; bitpos: [31:0]; default: 0;
  *  This register stores the first outlink descriptor's address.
  */
@@ -514,7 +514,7 @@ extern "C" {
 /** H264_DMA_OUT_STATE_CH0_REG register
  *  TX CH0 state register
  */
-#define H264_DMA_OUT_STATE_CH0_REG (DR_REG_H264_DMA_BASE + 0x24)
+#define H264_DMA_OUT_STATE_CH0_REG (DR_REG_H264_DMA_2D_BASE + 0x24)
 /** H264_DMA_OUTLINK_DSCR_ADDR_CH0 : RO; bitpos: [17:0]; default: 0;
  *  This register stores the current outlink descriptor's address.
  */
@@ -547,7 +547,7 @@ extern "C" {
 /** H264_DMA_OUT_EOF_DES_ADDR_CH0_REG register
  *  TX CH0 eof des addr register
  */
-#define H264_DMA_OUT_EOF_DES_ADDR_CH0_REG (DR_REG_H264_DMA_BASE + 0x28)
+#define H264_DMA_OUT_EOF_DES_ADDR_CH0_REG (DR_REG_H264_DMA_2D_BASE + 0x28)
 /** H264_DMA_OUT_EOF_DES_ADDR_CH0 : RO; bitpos: [31:0]; default: 0;
  *  This register stores the address of the outlink descriptor when the EOF bit in this
  *  descriptor is 1.
@@ -560,7 +560,7 @@ extern "C" {
 /** H264_DMA_OUT_DSCR_CH0_REG register
  *  TX CH0 next dscr addr register
  */
-#define H264_DMA_OUT_DSCR_CH0_REG (DR_REG_H264_DMA_BASE + 0x2c)
+#define H264_DMA_OUT_DSCR_CH0_REG (DR_REG_H264_DMA_2D_BASE + 0x2c)
 /** H264_DMA_OUTLINK_DSCR_CH0 : RO; bitpos: [31:0]; default: 0;
  *  The address of the next outlink descriptor address y.
  */
@@ -572,7 +572,7 @@ extern "C" {
 /** H264_DMA_OUT_DSCR_BF0_CH0_REG register
  *  TX CH0 last dscr addr register
  */
-#define H264_DMA_OUT_DSCR_BF0_CH0_REG (DR_REG_H264_DMA_BASE + 0x30)
+#define H264_DMA_OUT_DSCR_BF0_CH0_REG (DR_REG_H264_DMA_2D_BASE + 0x30)
 /** H264_DMA_OUTLINK_DSCR_BF0_CH0 : RO; bitpos: [31:0]; default: 0;
  *  The address of the last outlink descriptor's next address y-1.
  */
@@ -584,7 +584,7 @@ extern "C" {
 /** H264_DMA_OUT_DSCR_BF1_CH0_REG register
  *  TX CH0 second-to-last dscr addr register
  */
-#define H264_DMA_OUT_DSCR_BF1_CH0_REG (DR_REG_H264_DMA_BASE + 0x34)
+#define H264_DMA_OUT_DSCR_BF1_CH0_REG (DR_REG_H264_DMA_2D_BASE + 0x34)
 /** H264_DMA_OUTLINK_DSCR_BF1_CH0 : RO; bitpos: [31:0]; default: 0;
  *  The address of the second-to-last outlink descriptor's next address y-2.
  */
@@ -596,7 +596,7 @@ extern "C" {
 /** H264_DMA_OUT_ARB_CH0_REG register
  *  TX CH0 arb register
  */
-#define H264_DMA_OUT_ARB_CH0_REG (DR_REG_H264_DMA_BASE + 0x3c)
+#define H264_DMA_OUT_ARB_CH0_REG (DR_REG_H264_DMA_2D_BASE + 0x3c)
 /** H264_DMA_OUT_ARB_TOKEN_NUM_CH0 : R/W; bitpos: [3:0]; default: 1;
  *  Set the max number of token count of arbiter
  */
@@ -615,7 +615,7 @@ extern "C" {
 /** H264_DMA_OUT_RO_STATUS_CH0_REG register
  *  TX CH0 reorder status register
  */
-#define H264_DMA_OUT_RO_STATUS_CH0_REG (DR_REG_H264_DMA_BASE + 0x40)
+#define H264_DMA_OUT_RO_STATUS_CH0_REG (DR_REG_H264_DMA_2D_BASE + 0x40)
 /** H264_DMA_OUTFIFO_RO_CNT_CH0 : RO; bitpos: [1:0]; default: 0;
  *  The register stores the 8byte number of the data in reorder Tx FIFO for channel 0.
  */
@@ -656,7 +656,7 @@ extern "C" {
 /** H264_DMA_OUT_RO_PD_CONF_CH0_REG register
  *  TX CH0 reorder power config register
  */
-#define H264_DMA_OUT_RO_PD_CONF_CH0_REG (DR_REG_H264_DMA_BASE + 0x44)
+#define H264_DMA_OUT_RO_PD_CONF_CH0_REG (DR_REG_H264_DMA_2D_BASE + 0x44)
 /** H264_DMA_OUT_RO_RAM_FORCE_PD_CH0 : R/W; bitpos: [4]; default: 0;
  *  dma reorder ram power down
  */
@@ -683,7 +683,7 @@ extern "C" {
 /** H264_DMA_OUT_MODE_ENABLE_CH0_REG register
  *  tx CH0 mode enable register
  */
-#define H264_DMA_OUT_MODE_ENABLE_CH0_REG (DR_REG_H264_DMA_BASE + 0x50)
+#define H264_DMA_OUT_MODE_ENABLE_CH0_REG (DR_REG_H264_DMA_2D_BASE + 0x50)
 /** H264_DMA_OUT_TEST_MODE_ENABLE_CH0 : R/W; bitpos: [0]; default: 0;
  *  tx CH0 test mode enable.0 : H264_DMA work in normal mode.1 : H264_DMA work in test
  *  mode
@@ -696,7 +696,7 @@ extern "C" {
 /** H264_DMA_OUT_MODE_YUV_CH0_REG register
  *  tx CH0 test mode yuv value register
  */
-#define H264_DMA_OUT_MODE_YUV_CH0_REG (DR_REG_H264_DMA_BASE + 0x54)
+#define H264_DMA_OUT_MODE_YUV_CH0_REG (DR_REG_H264_DMA_2D_BASE + 0x54)
 /** H264_DMA_OUT_TEST_Y_VALUE_CH0 : R/W; bitpos: [7:0]; default: 0;
  *  tx CH0 test mode y value
  */
@@ -722,7 +722,7 @@ extern "C" {
 /** H264_DMA_OUT_ETM_CONF_CH0_REG register
  *  TX CH0 ETM config register
  */
-#define H264_DMA_OUT_ETM_CONF_CH0_REG (DR_REG_H264_DMA_BASE + 0x68)
+#define H264_DMA_OUT_ETM_CONF_CH0_REG (DR_REG_H264_DMA_2D_BASE + 0x68)
 /** H264_DMA_OUT_ETM_EN_CH0 : R/W; bitpos: [0]; default: 0;
  *  Set this bit to 1 to enable ETM task function
  */
@@ -748,7 +748,7 @@ extern "C" {
 /** H264_DMA_OUT_BUF_LEN_CH0_REG register
  *  tx CH0 buf len register
  */
-#define H264_DMA_OUT_BUF_LEN_CH0_REG (DR_REG_H264_DMA_BASE + 0x70)
+#define H264_DMA_OUT_BUF_LEN_CH0_REG (DR_REG_H264_DMA_2D_BASE + 0x70)
 /** H264_DMA_OUT_CMDFIFO_BUF_LEN_HB_CH0 : RO; bitpos: [12:0]; default: 0;
  *  only for debug
  */
@@ -760,7 +760,7 @@ extern "C" {
 /** H264_DMA_OUT_FIFO_BCNT_CH0_REG register
  *  tx CH0 fifo byte cnt register
  */
-#define H264_DMA_OUT_FIFO_BCNT_CH0_REG (DR_REG_H264_DMA_BASE + 0x74)
+#define H264_DMA_OUT_FIFO_BCNT_CH0_REG (DR_REG_H264_DMA_2D_BASE + 0x74)
 /** H264_DMA_OUT_CMDFIFO_OUTFIFO_BCNT_CH0 : RO; bitpos: [9:0]; default: 0;
  *  only for debug
  */
@@ -772,7 +772,7 @@ extern "C" {
 /** H264_DMA_OUT_PUSH_BYTECNT_CH0_REG register
  *  tx CH0 push byte cnt register
  */
-#define H264_DMA_OUT_PUSH_BYTECNT_CH0_REG (DR_REG_H264_DMA_BASE + 0x78)
+#define H264_DMA_OUT_PUSH_BYTECNT_CH0_REG (DR_REG_H264_DMA_2D_BASE + 0x78)
 /** H264_DMA_OUT_CMDFIFO_PUSH_BYTECNT_CH0 : RO; bitpos: [7:0]; default: 255;
  *  only for debug
  */
@@ -784,7 +784,7 @@ extern "C" {
 /** H264_DMA_OUT_XADDR_CH0_REG register
  *  tx CH0 xaddr register
  */
-#define H264_DMA_OUT_XADDR_CH0_REG (DR_REG_H264_DMA_BASE + 0x7c)
+#define H264_DMA_OUT_XADDR_CH0_REG (DR_REG_H264_DMA_2D_BASE + 0x7c)
 /** H264_DMA_OUT_CMDFIFO_XADDR_CH0 : RO; bitpos: [31:0]; default: 0;
  *  only for debug
  */
@@ -796,7 +796,7 @@ extern "C" {
 /** H264_DMA_OUT_CONF0_CH1_REG register
  *  TX CH1 config0 register
  */
-#define H264_DMA_OUT_CONF0_CH1_REG (DR_REG_H264_DMA_BASE + 0x100)
+#define H264_DMA_OUT_CONF0_CH1_REG (DR_REG_H264_DMA_2D_BASE + 0x100)
 /** H264_DMA_OUT_AUTO_WRBACK_CH1 : R/W; bitpos: [0]; default: 0;
  *  Set this bit to enable automatic outlink-writeback when all the data pointed by
  *  outlink descriptor has been received.
@@ -878,7 +878,7 @@ extern "C" {
 /** H264_DMA_OUT_INT_RAW_CH1_REG register
  *  TX CH1  interrupt raw register
  */
-#define H264_DMA_OUT_INT_RAW_CH1_REG (DR_REG_H264_DMA_BASE + 0x104)
+#define H264_DMA_OUT_INT_RAW_CH1_REG (DR_REG_H264_DMA_2D_BASE + 0x104)
 /** H264_DMA_OUT_DONE_CH1_INT_RAW : R/WTC/SS; bitpos: [0]; default: 0;
  *  The raw interrupt bit turns to high level when the last data pointed by one outlink
  *  descriptor has been transmitted to peripherals for Tx channel 0.
@@ -952,7 +952,7 @@ extern "C" {
 /** H264_DMA_OUT_INT_ENA_CH1_REG register
  *  TX CH1  interrupt ena register
  */
-#define H264_DMA_OUT_INT_ENA_CH1_REG (DR_REG_H264_DMA_BASE + 0x108)
+#define H264_DMA_OUT_INT_ENA_CH1_REG (DR_REG_H264_DMA_2D_BASE + 0x108)
 /** H264_DMA_OUT_DONE_CH1_INT_ENA : R/W; bitpos: [0]; default: 0;
  *  The interrupt enable bit for the OUT_DONE_CH_INT interrupt.
  */
@@ -1020,7 +1020,7 @@ extern "C" {
 /** H264_DMA_OUT_INT_ST_CH1_REG register
  *  TX CH1  interrupt st register
  */
-#define H264_DMA_OUT_INT_ST_CH1_REG (DR_REG_H264_DMA_BASE + 0x10c)
+#define H264_DMA_OUT_INT_ST_CH1_REG (DR_REG_H264_DMA_2D_BASE + 0x10c)
 /** H264_DMA_OUT_DONE_CH1_INT_ST : RO; bitpos: [0]; default: 0;
  *  The raw interrupt status bit for the OUT_DONE_CH_INT interrupt.
  */
@@ -1088,7 +1088,7 @@ extern "C" {
 /** H264_DMA_OUT_INT_CLR_CH1_REG register
  *  TX CH1  interrupt clr register
  */
-#define H264_DMA_OUT_INT_CLR_CH1_REG (DR_REG_H264_DMA_BASE + 0x110)
+#define H264_DMA_OUT_INT_CLR_CH1_REG (DR_REG_H264_DMA_2D_BASE + 0x110)
 /** H264_DMA_OUT_DONE_CH1_INT_CLR : WT; bitpos: [0]; default: 0;
  *  Set this bit to clear the OUT_DONE_CH_INT interrupt.
  */
@@ -1156,7 +1156,7 @@ extern "C" {
 /** H264_DMA_OUTFIFO_STATUS_CH1_REG register
  *  TX CH1 outfifo status register
  */
-#define H264_DMA_OUTFIFO_STATUS_CH1_REG (DR_REG_H264_DMA_BASE + 0x114)
+#define H264_DMA_OUTFIFO_STATUS_CH1_REG (DR_REG_H264_DMA_2D_BASE + 0x114)
 /** H264_DMA_OUTFIFO_FULL_L2_CH1 : RO; bitpos: [0]; default: 0;
  *  Tx FIFO full signal for Tx channel 1.
  */
@@ -1224,7 +1224,7 @@ extern "C" {
 /** H264_DMA_OUT_PUSH_CH1_REG register
  *  TX CH1 outfifo push register
  */
-#define H264_DMA_OUT_PUSH_CH1_REG (DR_REG_H264_DMA_BASE + 0x118)
+#define H264_DMA_OUT_PUSH_CH1_REG (DR_REG_H264_DMA_2D_BASE + 0x118)
 /** H264_DMA_OUTFIFO_WDATA_CH1 : R/W; bitpos: [9:0]; default: 0;
  *  This register stores the data that need to be pushed into DMA Tx FIFO.
  */
@@ -1243,7 +1243,7 @@ extern "C" {
 /** H264_DMA_OUT_LINK_CONF_CH1_REG register
  *  TX CH1 out_link dscr ctrl register
  */
-#define H264_DMA_OUT_LINK_CONF_CH1_REG (DR_REG_H264_DMA_BASE + 0x11c)
+#define H264_DMA_OUT_LINK_CONF_CH1_REG (DR_REG_H264_DMA_2D_BASE + 0x11c)
 /** H264_DMA_OUTLINK_STOP_CH1 : R/W/SC; bitpos: [20]; default: 0;
  *  Set this bit to stop dealing with the outlink descriptors.
  */
@@ -1277,7 +1277,7 @@ extern "C" {
 /** H264_DMA_OUT_LINK_ADDR_CH1_REG register
  *  TX CH1 out_link dscr addr register
  */
-#define H264_DMA_OUT_LINK_ADDR_CH1_REG (DR_REG_H264_DMA_BASE + 0x120)
+#define H264_DMA_OUT_LINK_ADDR_CH1_REG (DR_REG_H264_DMA_2D_BASE + 0x120)
 /** H264_DMA_OUTLINK_ADDR_CH1 : R/W; bitpos: [31:0]; default: 0;
  *  This register stores the first outlink descriptor's address.
  */
@@ -1289,7 +1289,7 @@ extern "C" {
 /** H264_DMA_OUT_STATE_CH1_REG register
  *  TX CH1 state register
  */
-#define H264_DMA_OUT_STATE_CH1_REG (DR_REG_H264_DMA_BASE + 0x124)
+#define H264_DMA_OUT_STATE_CH1_REG (DR_REG_H264_DMA_2D_BASE + 0x124)
 /** H264_DMA_OUTLINK_DSCR_ADDR_CH1 : RO; bitpos: [17:0]; default: 0;
  *  This register stores the current outlink descriptor's address.
  */
@@ -1322,7 +1322,7 @@ extern "C" {
 /** H264_DMA_OUT_EOF_DES_ADDR_CH1_REG register
  *  TX CH1 eof des addr register
  */
-#define H264_DMA_OUT_EOF_DES_ADDR_CH1_REG (DR_REG_H264_DMA_BASE + 0x128)
+#define H264_DMA_OUT_EOF_DES_ADDR_CH1_REG (DR_REG_H264_DMA_2D_BASE + 0x128)
 /** H264_DMA_OUT_EOF_DES_ADDR_CH1 : RO; bitpos: [31:0]; default: 0;
  *  This register stores the address of the outlink descriptor when the EOF bit in this
  *  descriptor is 1.
@@ -1335,7 +1335,7 @@ extern "C" {
 /** H264_DMA_OUT_DSCR_CH1_REG register
  *  TX CH1 next dscr addr register
  */
-#define H264_DMA_OUT_DSCR_CH1_REG (DR_REG_H264_DMA_BASE + 0x12c)
+#define H264_DMA_OUT_DSCR_CH1_REG (DR_REG_H264_DMA_2D_BASE + 0x12c)
 /** H264_DMA_OUTLINK_DSCR_CH1 : RO; bitpos: [31:0]; default: 0;
  *  The address of the next outlink descriptor address y.
  */
@@ -1347,7 +1347,7 @@ extern "C" {
 /** H264_DMA_OUT_DSCR_BF0_CH1_REG register
  *  TX CH1 last dscr addr register
  */
-#define H264_DMA_OUT_DSCR_BF0_CH1_REG (DR_REG_H264_DMA_BASE + 0x130)
+#define H264_DMA_OUT_DSCR_BF0_CH1_REG (DR_REG_H264_DMA_2D_BASE + 0x130)
 /** H264_DMA_OUTLINK_DSCR_BF0_CH1 : RO; bitpos: [31:0]; default: 0;
  *  The address of the last outlink descriptor's next address y-1.
  */
@@ -1359,7 +1359,7 @@ extern "C" {
 /** H264_DMA_OUT_DSCR_BF1_CH1_REG register
  *  TX CH1 second-to-last dscr addr register
  */
-#define H264_DMA_OUT_DSCR_BF1_CH1_REG (DR_REG_H264_DMA_BASE + 0x134)
+#define H264_DMA_OUT_DSCR_BF1_CH1_REG (DR_REG_H264_DMA_2D_BASE + 0x134)
 /** H264_DMA_OUTLINK_DSCR_BF1_CH1 : RO; bitpos: [31:0]; default: 0;
  *  The address of the second-to-last outlink descriptor's next address y-2.
  */
@@ -1371,7 +1371,7 @@ extern "C" {
 /** H264_DMA_OUT_ARB_CH1_REG register
  *  TX CH1 arb register
  */
-#define H264_DMA_OUT_ARB_CH1_REG (DR_REG_H264_DMA_BASE + 0x13c)
+#define H264_DMA_OUT_ARB_CH1_REG (DR_REG_H264_DMA_2D_BASE + 0x13c)
 /** H264_DMA_OUT_ARB_TOKEN_NUM_CH1 : R/W; bitpos: [3:0]; default: 1;
  *  Set the max number of token count of arbiter
  */
@@ -1390,7 +1390,7 @@ extern "C" {
 /** H264_DMA_OUT_ETM_CONF_CH1_REG register
  *  TX CH1 ETM config register
  */
-#define H264_DMA_OUT_ETM_CONF_CH1_REG (DR_REG_H264_DMA_BASE + 0x168)
+#define H264_DMA_OUT_ETM_CONF_CH1_REG (DR_REG_H264_DMA_2D_BASE + 0x168)
 /** H264_DMA_OUT_ETM_EN_CH1 : R/W; bitpos: [0]; default: 0;
  *  Set this bit to 1 to enable ETM task function
  */
@@ -1416,7 +1416,7 @@ extern "C" {
 /** H264_DMA_OUT_BUF_LEN_CH1_REG register
  *  tx CH1 buf len register
  */
-#define H264_DMA_OUT_BUF_LEN_CH1_REG (DR_REG_H264_DMA_BASE + 0x170)
+#define H264_DMA_OUT_BUF_LEN_CH1_REG (DR_REG_H264_DMA_2D_BASE + 0x170)
 /** H264_DMA_OUT_CMDFIFO_BUF_LEN_HB_CH1 : RO; bitpos: [12:0]; default: 0;
  *  only for debug
  */
@@ -1428,7 +1428,7 @@ extern "C" {
 /** H264_DMA_OUT_FIFO_BCNT_CH1_REG register
  *  tx CH1 fifo byte cnt register
  */
-#define H264_DMA_OUT_FIFO_BCNT_CH1_REG (DR_REG_H264_DMA_BASE + 0x174)
+#define H264_DMA_OUT_FIFO_BCNT_CH1_REG (DR_REG_H264_DMA_2D_BASE + 0x174)
 /** H264_DMA_OUT_CMDFIFO_OUTFIFO_BCNT_CH1 : RO; bitpos: [9:0]; default: 0;
  *  only for debug
  */
@@ -1440,7 +1440,7 @@ extern "C" {
 /** H264_DMA_OUT_PUSH_BYTECNT_CH1_REG register
  *  tx CH1 push byte cnt register
  */
-#define H264_DMA_OUT_PUSH_BYTECNT_CH1_REG (DR_REG_H264_DMA_BASE + 0x178)
+#define H264_DMA_OUT_PUSH_BYTECNT_CH1_REG (DR_REG_H264_DMA_2D_BASE + 0x178)
 /** H264_DMA_OUT_CMDFIFO_PUSH_BYTECNT_CH1 : RO; bitpos: [7:0]; default: 255;
  *  only for debug
  */
@@ -1452,7 +1452,7 @@ extern "C" {
 /** H264_DMA_OUT_XADDR_CH1_REG register
  *  tx CH1 xaddr register
  */
-#define H264_DMA_OUT_XADDR_CH1_REG (DR_REG_H264_DMA_BASE + 0x17c)
+#define H264_DMA_OUT_XADDR_CH1_REG (DR_REG_H264_DMA_2D_BASE + 0x17c)
 /** H264_DMA_OUT_CMDFIFO_XADDR_CH1 : RO; bitpos: [31:0]; default: 0;
  *  only for debug
  */
@@ -1464,7 +1464,7 @@ extern "C" {
 /** H264_DMA_OUT_CONF0_CH2_REG register
  *  TX CH2 config0 register
  */
-#define H264_DMA_OUT_CONF0_CH2_REG (DR_REG_H264_DMA_BASE + 0x200)
+#define H264_DMA_OUT_CONF0_CH2_REG (DR_REG_H264_DMA_2D_BASE + 0x200)
 /** H264_DMA_OUT_AUTO_WRBACK_CH2 : R/W; bitpos: [0]; default: 0;
  *  Set this bit to enable automatic outlink-writeback when all the data pointed by
  *  outlink descriptor has been received.
@@ -1546,7 +1546,7 @@ extern "C" {
 /** H264_DMA_OUT_INT_RAW_CH2_REG register
  *  TX CH2  interrupt raw register
  */
-#define H264_DMA_OUT_INT_RAW_CH2_REG (DR_REG_H264_DMA_BASE + 0x204)
+#define H264_DMA_OUT_INT_RAW_CH2_REG (DR_REG_H264_DMA_2D_BASE + 0x204)
 /** H264_DMA_OUT_DONE_CH2_INT_RAW : R/WTC/SS; bitpos: [0]; default: 0;
  *  The raw interrupt bit turns to high level when the last data pointed by one outlink
  *  descriptor has been transmitted to peripherals for Tx channel 0.
@@ -1620,7 +1620,7 @@ extern "C" {
 /** H264_DMA_OUT_INT_ENA_CH2_REG register
  *  TX CH2  interrupt ena register
  */
-#define H264_DMA_OUT_INT_ENA_CH2_REG (DR_REG_H264_DMA_BASE + 0x208)
+#define H264_DMA_OUT_INT_ENA_CH2_REG (DR_REG_H264_DMA_2D_BASE + 0x208)
 /** H264_DMA_OUT_DONE_CH2_INT_ENA : R/W; bitpos: [0]; default: 0;
  *  The interrupt enable bit for the OUT_DONE_CH_INT interrupt.
  */
@@ -1688,7 +1688,7 @@ extern "C" {
 /** H264_DMA_OUT_INT_ST_CH2_REG register
  *  TX CH2  interrupt st register
  */
-#define H264_DMA_OUT_INT_ST_CH2_REG (DR_REG_H264_DMA_BASE + 0x20c)
+#define H264_DMA_OUT_INT_ST_CH2_REG (DR_REG_H264_DMA_2D_BASE + 0x20c)
 /** H264_DMA_OUT_DONE_CH2_INT_ST : RO; bitpos: [0]; default: 0;
  *  The raw interrupt status bit for the OUT_DONE_CH_INT interrupt.
  */
@@ -1756,7 +1756,7 @@ extern "C" {
 /** H264_DMA_OUT_INT_CLR_CH2_REG register
  *  TX CH2  interrupt clr register
  */
-#define H264_DMA_OUT_INT_CLR_CH2_REG (DR_REG_H264_DMA_BASE + 0x210)
+#define H264_DMA_OUT_INT_CLR_CH2_REG (DR_REG_H264_DMA_2D_BASE + 0x210)
 /** H264_DMA_OUT_DONE_CH2_INT_CLR : WT; bitpos: [0]; default: 0;
  *  Set this bit to clear the OUT_DONE_CH_INT interrupt.
  */
@@ -1824,7 +1824,7 @@ extern "C" {
 /** H264_DMA_OUTFIFO_STATUS_CH2_REG register
  *  TX CH2 outfifo status register
  */
-#define H264_DMA_OUTFIFO_STATUS_CH2_REG (DR_REG_H264_DMA_BASE + 0x214)
+#define H264_DMA_OUTFIFO_STATUS_CH2_REG (DR_REG_H264_DMA_2D_BASE + 0x214)
 /** H264_DMA_OUTFIFO_FULL_L2_CH2 : RO; bitpos: [0]; default: 0;
  *  Tx FIFO full signal for Tx channel 2.
  */
@@ -1892,7 +1892,7 @@ extern "C" {
 /** H264_DMA_OUT_PUSH_CH2_REG register
  *  TX CH2 outfifo push register
  */
-#define H264_DMA_OUT_PUSH_CH2_REG (DR_REG_H264_DMA_BASE + 0x218)
+#define H264_DMA_OUT_PUSH_CH2_REG (DR_REG_H264_DMA_2D_BASE + 0x218)
 /** H264_DMA_OUTFIFO_WDATA_CH2 : R/W; bitpos: [9:0]; default: 0;
  *  This register stores the data that need to be pushed into DMA Tx FIFO.
  */
@@ -1911,7 +1911,7 @@ extern "C" {
 /** H264_DMA_OUT_LINK_CONF_CH2_REG register
  *  TX CH2 out_link dscr ctrl register
  */
-#define H264_DMA_OUT_LINK_CONF_CH2_REG (DR_REG_H264_DMA_BASE + 0x21c)
+#define H264_DMA_OUT_LINK_CONF_CH2_REG (DR_REG_H264_DMA_2D_BASE + 0x21c)
 /** H264_DMA_OUTLINK_STOP_CH2 : R/W/SC; bitpos: [20]; default: 0;
  *  Set this bit to stop dealing with the outlink descriptors.
  */
@@ -1945,7 +1945,7 @@ extern "C" {
 /** H264_DMA_OUT_LINK_ADDR_CH2_REG register
  *  TX CH2 out_link dscr addr register
  */
-#define H264_DMA_OUT_LINK_ADDR_CH2_REG (DR_REG_H264_DMA_BASE + 0x220)
+#define H264_DMA_OUT_LINK_ADDR_CH2_REG (DR_REG_H264_DMA_2D_BASE + 0x220)
 /** H264_DMA_OUTLINK_ADDR_CH2 : R/W; bitpos: [31:0]; default: 0;
  *  This register stores the first outlink descriptor's address.
  */
@@ -1957,7 +1957,7 @@ extern "C" {
 /** H264_DMA_OUT_STATE_CH2_REG register
  *  TX CH2 state register
  */
-#define H264_DMA_OUT_STATE_CH2_REG (DR_REG_H264_DMA_BASE + 0x224)
+#define H264_DMA_OUT_STATE_CH2_REG (DR_REG_H264_DMA_2D_BASE + 0x224)
 /** H264_DMA_OUTLINK_DSCR_ADDR_CH2 : RO; bitpos: [17:0]; default: 0;
  *  This register stores the current outlink descriptor's address.
  */
@@ -1990,7 +1990,7 @@ extern "C" {
 /** H264_DMA_OUT_EOF_DES_ADDR_CH2_REG register
  *  TX CH2 eof des addr register
  */
-#define H264_DMA_OUT_EOF_DES_ADDR_CH2_REG (DR_REG_H264_DMA_BASE + 0x228)
+#define H264_DMA_OUT_EOF_DES_ADDR_CH2_REG (DR_REG_H264_DMA_2D_BASE + 0x228)
 /** H264_DMA_OUT_EOF_DES_ADDR_CH2 : RO; bitpos: [31:0]; default: 0;
  *  This register stores the address of the inlink descriptor when the EOF bit in this
  *  descriptor is 1.
@@ -2003,7 +2003,7 @@ extern "C" {
 /** H264_DMA_OUT_DSCR_CH2_REG register
  *  TX CH2 next dscr addr register
  */
-#define H264_DMA_OUT_DSCR_CH2_REG (DR_REG_H264_DMA_BASE + 0x22c)
+#define H264_DMA_OUT_DSCR_CH2_REG (DR_REG_H264_DMA_2D_BASE + 0x22c)
 /** H264_DMA_OUTLINK_DSCR_CH2 : RO; bitpos: [31:0]; default: 0;
  *  The address of the next outlink descriptor address y.
  */
@@ -2015,7 +2015,7 @@ extern "C" {
 /** H264_DMA_OUT_DSCR_BF0_CH2_REG register
  *  TX CH2 last dscr addr register
  */
-#define H264_DMA_OUT_DSCR_BF0_CH2_REG (DR_REG_H264_DMA_BASE + 0x230)
+#define H264_DMA_OUT_DSCR_BF0_CH2_REG (DR_REG_H264_DMA_2D_BASE + 0x230)
 /** H264_DMA_OUTLINK_DSCR_BF0_CH2 : RO; bitpos: [31:0]; default: 0;
  *  The address of the last outlink descriptor's next address y-1.
  */
@@ -2027,7 +2027,7 @@ extern "C" {
 /** H264_DMA_OUT_DSCR_BF1_CH2_REG register
  *  TX CH2 second-to-last dscr addr register
  */
-#define H264_DMA_OUT_DSCR_BF1_CH2_REG (DR_REG_H264_DMA_BASE + 0x234)
+#define H264_DMA_OUT_DSCR_BF1_CH2_REG (DR_REG_H264_DMA_2D_BASE + 0x234)
 /** H264_DMA_OUTLINK_DSCR_BF1_CH2 : RO; bitpos: [31:0]; default: 0;
  *  The address of the second-to-last outlink descriptor's next address y-2.
  */
@@ -2039,7 +2039,7 @@ extern "C" {
 /** H264_DMA_OUT_ARB_CH2_REG register
  *  TX CH2 arb register
  */
-#define H264_DMA_OUT_ARB_CH2_REG (DR_REG_H264_DMA_BASE + 0x23c)
+#define H264_DMA_OUT_ARB_CH2_REG (DR_REG_H264_DMA_2D_BASE + 0x23c)
 /** H264_DMA_OUT_ARB_TOKEN_NUM_CH2 : R/W; bitpos: [3:0]; default: 1;
  *  Set the max number of token count of arbiter
  */
@@ -2058,7 +2058,7 @@ extern "C" {
 /** H264_DMA_OUT_ETM_CONF_CH2_REG register
  *  TX CH2 ETM config register
  */
-#define H264_DMA_OUT_ETM_CONF_CH2_REG (DR_REG_H264_DMA_BASE + 0x268)
+#define H264_DMA_OUT_ETM_CONF_CH2_REG (DR_REG_H264_DMA_2D_BASE + 0x268)
 /** H264_DMA_OUT_ETM_EN_CH2 : R/W; bitpos: [0]; default: 0;
  *  Set this bit to 1 to enable ETM task function
  */
@@ -2084,7 +2084,7 @@ extern "C" {
 /** H264_DMA_OUT_BUF_LEN_CH2_REG register
  *  tx CH2 buf len register
  */
-#define H264_DMA_OUT_BUF_LEN_CH2_REG (DR_REG_H264_DMA_BASE + 0x270)
+#define H264_DMA_OUT_BUF_LEN_CH2_REG (DR_REG_H264_DMA_2D_BASE + 0x270)
 /** H264_DMA_OUT_CMDFIFO_BUF_LEN_HB_CH2 : RO; bitpos: [12:0]; default: 0;
  *  only for debug
  */
@@ -2096,7 +2096,7 @@ extern "C" {
 /** H264_DMA_OUT_FIFO_BCNT_CH2_REG register
  *  tx CH2 fifo byte cnt register
  */
-#define H264_DMA_OUT_FIFO_BCNT_CH2_REG (DR_REG_H264_DMA_BASE + 0x274)
+#define H264_DMA_OUT_FIFO_BCNT_CH2_REG (DR_REG_H264_DMA_2D_BASE + 0x274)
 /** H264_DMA_OUT_CMDFIFO_OUTFIFO_BCNT_CH2 : RO; bitpos: [9:0]; default: 0;
  *  only for debug
  */
@@ -2108,7 +2108,7 @@ extern "C" {
 /** H264_DMA_OUT_PUSH_BYTECNT_CH2_REG register
  *  tx CH2 push byte cnt register
  */
-#define H264_DMA_OUT_PUSH_BYTECNT_CH2_REG (DR_REG_H264_DMA_BASE + 0x278)
+#define H264_DMA_OUT_PUSH_BYTECNT_CH2_REG (DR_REG_H264_DMA_2D_BASE + 0x278)
 /** H264_DMA_OUT_CMDFIFO_PUSH_BYTECNT_CH2 : RO; bitpos: [7:0]; default: 255;
  *  only for debug
  */
@@ -2120,7 +2120,7 @@ extern "C" {
 /** H264_DMA_OUT_XADDR_CH2_REG register
  *  tx CH2 xaddr register
  */
-#define H264_DMA_OUT_XADDR_CH2_REG (DR_REG_H264_DMA_BASE + 0x27c)
+#define H264_DMA_OUT_XADDR_CH2_REG (DR_REG_H264_DMA_2D_BASE + 0x27c)
 /** H264_DMA_OUT_CMDFIFO_XADDR_CH2 : RO; bitpos: [31:0]; default: 0;
  *  only for debug
  */
@@ -2132,7 +2132,7 @@ extern "C" {
 /** H264_DMA_OUT_CONF0_CH3_REG register
  *  TX CH3 config0 register
  */
-#define H264_DMA_OUT_CONF0_CH3_REG (DR_REG_H264_DMA_BASE + 0x300)
+#define H264_DMA_OUT_CONF0_CH3_REG (DR_REG_H264_DMA_2D_BASE + 0x300)
 /** H264_DMA_OUT_AUTO_WRBACK_CH3 : R/W; bitpos: [0]; default: 0;
  *  Set this bit to enable automatic outlink-writeback when all the data pointed by
  *  outlink descriptor has been received.
@@ -2200,7 +2200,7 @@ extern "C" {
 /** H264_DMA_OUT_INT_RAW_CH3_REG register
  *  TX CH3  interrupt raw register
  */
-#define H264_DMA_OUT_INT_RAW_CH3_REG (DR_REG_H264_DMA_BASE + 0x304)
+#define H264_DMA_OUT_INT_RAW_CH3_REG (DR_REG_H264_DMA_2D_BASE + 0x304)
 /** H264_DMA_OUT_DONE_CH3_INT_RAW : R/WTC/SS; bitpos: [0]; default: 0;
  *  The raw interrupt bit turns to high level when the last data pointed by one outlink
  *  descriptor has been transmitted to peripherals for Tx channel 0.
@@ -2274,7 +2274,7 @@ extern "C" {
 /** H264_DMA_OUT_INT_ENA_CH3_REG register
  *  TX CH3  interrupt ena register
  */
-#define H264_DMA_OUT_INT_ENA_CH3_REG (DR_REG_H264_DMA_BASE + 0x308)
+#define H264_DMA_OUT_INT_ENA_CH3_REG (DR_REG_H264_DMA_2D_BASE + 0x308)
 /** H264_DMA_OUT_DONE_CH3_INT_ENA : R/W; bitpos: [0]; default: 0;
  *  The interrupt enable bit for the OUT_DONE_CH_INT interrupt.
  */
@@ -2342,7 +2342,7 @@ extern "C" {
 /** H264_DMA_OUT_INT_ST_CH3_REG register
  *  TX CH3  interrupt st register
  */
-#define H264_DMA_OUT_INT_ST_CH3_REG (DR_REG_H264_DMA_BASE + 0x30c)
+#define H264_DMA_OUT_INT_ST_CH3_REG (DR_REG_H264_DMA_2D_BASE + 0x30c)
 /** H264_DMA_OUT_DONE_CH3_INT_ST : RO; bitpos: [0]; default: 0;
  *  The raw interrupt status bit for the OUT_DONE_CH_INT interrupt.
  */
@@ -2410,7 +2410,7 @@ extern "C" {
 /** H264_DMA_OUT_INT_CLR_CH3_REG register
  *  TX CH3  interrupt clr register
  */
-#define H264_DMA_OUT_INT_CLR_CH3_REG (DR_REG_H264_DMA_BASE + 0x310)
+#define H264_DMA_OUT_INT_CLR_CH3_REG (DR_REG_H264_DMA_2D_BASE + 0x310)
 /** H264_DMA_OUT_DONE_CH3_INT_CLR : WT; bitpos: [0]; default: 0;
  *  Set this bit to clear the OUT_DONE_CH_INT interrupt.
  */
@@ -2478,7 +2478,7 @@ extern "C" {
 /** H264_DMA_OUTFIFO_STATUS_CH3_REG register
  *  TX CH3 outfifo status register
  */
-#define H264_DMA_OUTFIFO_STATUS_CH3_REG (DR_REG_H264_DMA_BASE + 0x314)
+#define H264_DMA_OUTFIFO_STATUS_CH3_REG (DR_REG_H264_DMA_2D_BASE + 0x314)
 /** H264_DMA_OUTFIFO_FULL_L2_CH3 : RO; bitpos: [0]; default: 0;
  *  Tx FIFO full signal for Tx channel 2.
  */
@@ -2546,7 +2546,7 @@ extern "C" {
 /** H264_DMA_OUT_PUSH_CH3_REG register
  *  TX CH3 outfifo push register
  */
-#define H264_DMA_OUT_PUSH_CH3_REG (DR_REG_H264_DMA_BASE + 0x318)
+#define H264_DMA_OUT_PUSH_CH3_REG (DR_REG_H264_DMA_2D_BASE + 0x318)
 /** H264_DMA_OUTFIFO_WDATA_CH3 : R/W; bitpos: [9:0]; default: 0;
  *  This register stores the data that need to be pushed into DMA Tx FIFO.
  */
@@ -2565,7 +2565,7 @@ extern "C" {
 /** H264_DMA_OUT_LINK_CONF_CH3_REG register
  *  TX CH3 out_link dscr ctrl register
  */
-#define H264_DMA_OUT_LINK_CONF_CH3_REG (DR_REG_H264_DMA_BASE + 0x31c)
+#define H264_DMA_OUT_LINK_CONF_CH3_REG (DR_REG_H264_DMA_2D_BASE + 0x31c)
 /** H264_DMA_OUTLINK_STOP_CH3 : R/W/SC; bitpos: [20]; default: 0;
  *  Set this bit to stop dealing with the outlink descriptors.
  */
@@ -2599,7 +2599,7 @@ extern "C" {
 /** H264_DMA_OUT_LINK_ADDR_CH3_REG register
  *  TX CH3 out_link dscr addr register
  */
-#define H264_DMA_OUT_LINK_ADDR_CH3_REG (DR_REG_H264_DMA_BASE + 0x320)
+#define H264_DMA_OUT_LINK_ADDR_CH3_REG (DR_REG_H264_DMA_2D_BASE + 0x320)
 /** H264_DMA_OUTLINK_ADDR_CH3 : R/W; bitpos: [31:0]; default: 0;
  *  This register stores the first outlink descriptor's address.
  */
@@ -2611,7 +2611,7 @@ extern "C" {
 /** H264_DMA_OUT_STATE_CH3_REG register
  *  TX CH3 state register
  */
-#define H264_DMA_OUT_STATE_CH3_REG (DR_REG_H264_DMA_BASE + 0x324)
+#define H264_DMA_OUT_STATE_CH3_REG (DR_REG_H264_DMA_2D_BASE + 0x324)
 /** H264_DMA_OUTLINK_DSCR_ADDR_CH3 : RO; bitpos: [17:0]; default: 0;
  *  This register stores the current outlink descriptor's address.
  */
@@ -2637,7 +2637,7 @@ extern "C" {
 /** H264_DMA_OUT_EOF_DES_ADDR_CH3_REG register
  *  TX CH3 eof des addr register
  */
-#define H264_DMA_OUT_EOF_DES_ADDR_CH3_REG (DR_REG_H264_DMA_BASE + 0x328)
+#define H264_DMA_OUT_EOF_DES_ADDR_CH3_REG (DR_REG_H264_DMA_2D_BASE + 0x328)
 /** H264_DMA_OUT_EOF_DES_ADDR_CH3 : RO; bitpos: [31:0]; default: 0;
  *  This register stores the address of the inlink descriptor when the EOF bit in this
  *  descriptor is 1.
@@ -2650,7 +2650,7 @@ extern "C" {
 /** H264_DMA_OUT_DSCR_CH3_REG register
  *  TX CH3 next dscr addr register
  */
-#define H264_DMA_OUT_DSCR_CH3_REG (DR_REG_H264_DMA_BASE + 0x32c)
+#define H264_DMA_OUT_DSCR_CH3_REG (DR_REG_H264_DMA_2D_BASE + 0x32c)
 /** H264_DMA_OUTLINK_DSCR_CH3 : RO; bitpos: [31:0]; default: 0;
  *  The address of the next outlink descriptor address y.
  */
@@ -2662,7 +2662,7 @@ extern "C" {
 /** H264_DMA_OUT_DSCR_BF0_CH3_REG register
  *  TX CH3 last dscr addr register
  */
-#define H264_DMA_OUT_DSCR_BF0_CH3_REG (DR_REG_H264_DMA_BASE + 0x330)
+#define H264_DMA_OUT_DSCR_BF0_CH3_REG (DR_REG_H264_DMA_2D_BASE + 0x330)
 /** H264_DMA_OUTLINK_DSCR_BF0_CH3 : RO; bitpos: [31:0]; default: 0;
  *  The address of the last outlink descriptor's next address y-1.
  */
@@ -2674,7 +2674,7 @@ extern "C" {
 /** H264_DMA_OUT_DSCR_BF1_CH3_REG register
  *  TX CH3 second-to-last dscr addr register
  */
-#define H264_DMA_OUT_DSCR_BF1_CH3_REG (DR_REG_H264_DMA_BASE + 0x334)
+#define H264_DMA_OUT_DSCR_BF1_CH3_REG (DR_REG_H264_DMA_2D_BASE + 0x334)
 /** H264_DMA_OUTLINK_DSCR_BF1_CH3 : RO; bitpos: [31:0]; default: 0;
  *  The address of the second-to-last outlink descriptor's next address y-2.
  */
@@ -2686,7 +2686,7 @@ extern "C" {
 /** H264_DMA_OUT_ARB_CH3_REG register
  *  TX CH3 arb register
  */
-#define H264_DMA_OUT_ARB_CH3_REG (DR_REG_H264_DMA_BASE + 0x33c)
+#define H264_DMA_OUT_ARB_CH3_REG (DR_REG_H264_DMA_2D_BASE + 0x33c)
 /** H264_DMA_OUT_ARB_TOKEN_NUM_CH3 : R/W; bitpos: [3:0]; default: 1;
  *  Set the max number of token count of arbiter
  */
@@ -2705,7 +2705,7 @@ extern "C" {
 /** H264_DMA_OUT_ETM_CONF_CH3_REG register
  *  TX CH3 ETM config register
  */
-#define H264_DMA_OUT_ETM_CONF_CH3_REG (DR_REG_H264_DMA_BASE + 0x368)
+#define H264_DMA_OUT_ETM_CONF_CH3_REG (DR_REG_H264_DMA_2D_BASE + 0x368)
 /** H264_DMA_OUT_ETM_EN_CH3 : R/W; bitpos: [0]; default: 0;
  *  Set this bit to 1 to enable ETM task function
  */
@@ -2731,7 +2731,7 @@ extern "C" {
 /** H264_DMA_OUT_BUF_LEN_CH3_REG register
  *  tx CH3 buf len register
  */
-#define H264_DMA_OUT_BUF_LEN_CH3_REG (DR_REG_H264_DMA_BASE + 0x370)
+#define H264_DMA_OUT_BUF_LEN_CH3_REG (DR_REG_H264_DMA_2D_BASE + 0x370)
 /** H264_DMA_OUT_CMDFIFO_BUF_LEN_HB_CH3 : RO; bitpos: [12:0]; default: 0;
  *  only for debug
  */
@@ -2743,7 +2743,7 @@ extern "C" {
 /** H264_DMA_OUT_FIFO_BCNT_CH3_REG register
  *  tx CH3 fifo byte cnt register
  */
-#define H264_DMA_OUT_FIFO_BCNT_CH3_REG (DR_REG_H264_DMA_BASE + 0x374)
+#define H264_DMA_OUT_FIFO_BCNT_CH3_REG (DR_REG_H264_DMA_2D_BASE + 0x374)
 /** H264_DMA_OUT_CMDFIFO_OUTFIFO_BCNT_CH3 : RO; bitpos: [9:0]; default: 0;
  *  only for debug
  */
@@ -2755,7 +2755,7 @@ extern "C" {
 /** H264_DMA_OUT_PUSH_BYTECNT_CH3_REG register
  *  tx CH3 push byte cnt register
  */
-#define H264_DMA_OUT_PUSH_BYTECNT_CH3_REG (DR_REG_H264_DMA_BASE + 0x378)
+#define H264_DMA_OUT_PUSH_BYTECNT_CH3_REG (DR_REG_H264_DMA_2D_BASE + 0x378)
 /** H264_DMA_OUT_CMDFIFO_PUSH_BYTECNT_CH3 : RO; bitpos: [7:0]; default: 63;
  *  only for debug
  */
@@ -2767,7 +2767,7 @@ extern "C" {
 /** H264_DMA_OUT_XADDR_CH3_REG register
  *  tx CH3 xaddr register
  */
-#define H264_DMA_OUT_XADDR_CH3_REG (DR_REG_H264_DMA_BASE + 0x37c)
+#define H264_DMA_OUT_XADDR_CH3_REG (DR_REG_H264_DMA_2D_BASE + 0x37c)
 /** H264_DMA_OUT_CMDFIFO_XADDR_CH3 : RO; bitpos: [31:0]; default: 0;
  *  only for debug
  */
@@ -2779,7 +2779,7 @@ extern "C" {
 /** H264_DMA_OUT_BLOCK_BUF_LEN_CH3_REG register
  *  tx CH3 block buf len register
  */
-#define H264_DMA_OUT_BLOCK_BUF_LEN_CH3_REG (DR_REG_H264_DMA_BASE + 0x380)
+#define H264_DMA_OUT_BLOCK_BUF_LEN_CH3_REG (DR_REG_H264_DMA_2D_BASE + 0x380)
 /** H264_DMA_OUT_BLOCK_BUF_LEN_CH3 : RO; bitpos: [27:0]; default: 0;
  *  only for debug
  */
@@ -2791,7 +2791,7 @@ extern "C" {
 /** H264_DMA_OUT_CONF0_CH4_REG register
  *  TX CH4 config0 register
  */
-#define H264_DMA_OUT_CONF0_CH4_REG (DR_REG_H264_DMA_BASE + 0x400)
+#define H264_DMA_OUT_CONF0_CH4_REG (DR_REG_H264_DMA_2D_BASE + 0x400)
 /** H264_DMA_OUT_AUTO_WRBACK_CH4 : R/W; bitpos: [0]; default: 0;
  *  Set this bit to enable automatic outlink-writeback when all the data pointed by
  *  outlink descriptor has been received.
@@ -2859,7 +2859,7 @@ extern "C" {
 /** H264_DMA_OUT_INT_RAW_CH4_REG register
  *  TX CH4  interrupt raw register
  */
-#define H264_DMA_OUT_INT_RAW_CH4_REG (DR_REG_H264_DMA_BASE + 0x404)
+#define H264_DMA_OUT_INT_RAW_CH4_REG (DR_REG_H264_DMA_2D_BASE + 0x404)
 /** H264_DMA_OUT_DONE_CH4_INT_RAW : R/WTC/SS; bitpos: [0]; default: 0;
  *  The raw interrupt bit turns to high level when the last data pointed by one outlink
  *  descriptor has been transmitted to peripherals for Tx channel 0.
@@ -2933,7 +2933,7 @@ extern "C" {
 /** H264_DMA_OUT_INT_ENA_CH4_REG register
  *  TX CH4  interrupt ena register
  */
-#define H264_DMA_OUT_INT_ENA_CH4_REG (DR_REG_H264_DMA_BASE + 0x408)
+#define H264_DMA_OUT_INT_ENA_CH4_REG (DR_REG_H264_DMA_2D_BASE + 0x408)
 /** H264_DMA_OUT_DONE_CH4_INT_ENA : R/W; bitpos: [0]; default: 0;
  *  The interrupt enable bit for the OUT_DONE_CH_INT interrupt.
  */
@@ -3001,7 +3001,7 @@ extern "C" {
 /** H264_DMA_OUT_INT_ST_CH4_REG register
  *  TX CH4  interrupt st register
  */
-#define H264_DMA_OUT_INT_ST_CH4_REG (DR_REG_H264_DMA_BASE + 0x40c)
+#define H264_DMA_OUT_INT_ST_CH4_REG (DR_REG_H264_DMA_2D_BASE + 0x40c)
 /** H264_DMA_OUT_DONE_CH4_INT_ST : RO; bitpos: [0]; default: 0;
  *  The raw interrupt status bit for the OUT_DONE_CH_INT interrupt.
  */
@@ -3069,7 +3069,7 @@ extern "C" {
 /** H264_DMA_OUT_INT_CLR_CH4_REG register
  *  TX CH4  interrupt clr register
  */
-#define H264_DMA_OUT_INT_CLR_CH4_REG (DR_REG_H264_DMA_BASE + 0x410)
+#define H264_DMA_OUT_INT_CLR_CH4_REG (DR_REG_H264_DMA_2D_BASE + 0x410)
 /** H264_DMA_OUT_DONE_CH4_INT_CLR : WT; bitpos: [0]; default: 0;
  *  Set this bit to clear the OUT_DONE_CH_INT interrupt.
  */
@@ -3137,7 +3137,7 @@ extern "C" {
 /** H264_DMA_OUTFIFO_STATUS_CH4_REG register
  *  TX CH4 outfifo status register
  */
-#define H264_DMA_OUTFIFO_STATUS_CH4_REG (DR_REG_H264_DMA_BASE + 0x414)
+#define H264_DMA_OUTFIFO_STATUS_CH4_REG (DR_REG_H264_DMA_2D_BASE + 0x414)
 /** H264_DMA_OUTFIFO_FULL_L2_CH4 : RO; bitpos: [0]; default: 0;
  *  Tx FIFO full signal for Tx channel 2.
  */
@@ -3205,7 +3205,7 @@ extern "C" {
 /** H264_DMA_OUT_PUSH_CH4_REG register
  *  TX CH4 outfifo push register
  */
-#define H264_DMA_OUT_PUSH_CH4_REG (DR_REG_H264_DMA_BASE + 0x418)
+#define H264_DMA_OUT_PUSH_CH4_REG (DR_REG_H264_DMA_2D_BASE + 0x418)
 /** H264_DMA_OUTFIFO_WDATA_CH4 : R/W; bitpos: [9:0]; default: 0;
  *  This register stores the data that need to be pushed into DMA Tx FIFO.
  */
@@ -3224,7 +3224,7 @@ extern "C" {
 /** H264_DMA_OUT_LINK_CONF_CH4_REG register
  *  TX CH4 out_link dscr ctrl register
  */
-#define H264_DMA_OUT_LINK_CONF_CH4_REG (DR_REG_H264_DMA_BASE + 0x41c)
+#define H264_DMA_OUT_LINK_CONF_CH4_REG (DR_REG_H264_DMA_2D_BASE + 0x41c)
 /** H264_DMA_OUTLINK_STOP_CH4 : R/W/SC; bitpos: [20]; default: 0;
  *  Set this bit to stop dealing with the outlink descriptors.
  */
@@ -3258,7 +3258,7 @@ extern "C" {
 /** H264_DMA_OUT_LINK_ADDR_CH4_REG register
  *  TX CH4 out_link dscr addr register
  */
-#define H264_DMA_OUT_LINK_ADDR_CH4_REG (DR_REG_H264_DMA_BASE + 0x420)
+#define H264_DMA_OUT_LINK_ADDR_CH4_REG (DR_REG_H264_DMA_2D_BASE + 0x420)
 /** H264_DMA_OUTLINK_ADDR_CH4 : R/W; bitpos: [31:0]; default: 0;
  *  This register stores the first outlink descriptor's address.
  */
@@ -3270,7 +3270,7 @@ extern "C" {
 /** H264_DMA_OUT_STATE_CH4_REG register
  *  TX CH4 state register
  */
-#define H264_DMA_OUT_STATE_CH4_REG (DR_REG_H264_DMA_BASE + 0x424)
+#define H264_DMA_OUT_STATE_CH4_REG (DR_REG_H264_DMA_2D_BASE + 0x424)
 /** H264_DMA_OUTLINK_DSCR_ADDR_CH4 : RO; bitpos: [17:0]; default: 0;
  *  This register stores the current outlink descriptor's address.
  */
@@ -3296,7 +3296,7 @@ extern "C" {
 /** H264_DMA_OUT_EOF_DES_ADDR_CH4_REG register
  *  TX CH4 eof des addr register
  */
-#define H264_DMA_OUT_EOF_DES_ADDR_CH4_REG (DR_REG_H264_DMA_BASE + 0x428)
+#define H264_DMA_OUT_EOF_DES_ADDR_CH4_REG (DR_REG_H264_DMA_2D_BASE + 0x428)
 /** H264_DMA_OUT_EOF_DES_ADDR_CH4 : RO; bitpos: [31:0]; default: 0;
  *  This register stores the address of the inlink descriptor when the EOF bit in this
  *  descriptor is 1.
@@ -3309,7 +3309,7 @@ extern "C" {
 /** H264_DMA_OUT_DSCR_CH4_REG register
  *  TX CH4 next dscr addr register
  */
-#define H264_DMA_OUT_DSCR_CH4_REG (DR_REG_H264_DMA_BASE + 0x42c)
+#define H264_DMA_OUT_DSCR_CH4_REG (DR_REG_H264_DMA_2D_BASE + 0x42c)
 /** H264_DMA_OUTLINK_DSCR_CH4 : RO; bitpos: [31:0]; default: 0;
  *  The address of the next outlink descriptor address y.
  */
@@ -3321,7 +3321,7 @@ extern "C" {
 /** H264_DMA_OUT_DSCR_BF0_CH4_REG register
  *  TX CH4 last dscr addr register
  */
-#define H264_DMA_OUT_DSCR_BF0_CH4_REG (DR_REG_H264_DMA_BASE + 0x430)
+#define H264_DMA_OUT_DSCR_BF0_CH4_REG (DR_REG_H264_DMA_2D_BASE + 0x430)
 /** H264_DMA_OUTLINK_DSCR_BF0_CH4 : RO; bitpos: [31:0]; default: 0;
  *  The address of the last outlink descriptor's next address y-1.
  */
@@ -3333,7 +3333,7 @@ extern "C" {
 /** H264_DMA_OUT_DSCR_BF1_CH4_REG register
  *  TX CH4 second-to-last dscr addr register
  */
-#define H264_DMA_OUT_DSCR_BF1_CH4_REG (DR_REG_H264_DMA_BASE + 0x434)
+#define H264_DMA_OUT_DSCR_BF1_CH4_REG (DR_REG_H264_DMA_2D_BASE + 0x434)
 /** H264_DMA_OUTLINK_DSCR_BF1_CH4 : RO; bitpos: [31:0]; default: 0;
  *  The address of the second-to-last outlink descriptor's next address y-2.
  */
@@ -3345,7 +3345,7 @@ extern "C" {
 /** H264_DMA_OUT_ARB_CH4_REG register
  *  TX CH4 arb register
  */
-#define H264_DMA_OUT_ARB_CH4_REG (DR_REG_H264_DMA_BASE + 0x43c)
+#define H264_DMA_OUT_ARB_CH4_REG (DR_REG_H264_DMA_2D_BASE + 0x43c)
 /** H264_DMA_OUT_ARB_TOKEN_NUM_CH4 : R/W; bitpos: [3:0]; default: 1;
  *  Set the max number of token count of arbiter
  */
@@ -3364,7 +3364,7 @@ extern "C" {
 /** H264_DMA_OUT_ETM_CONF_CH4_REG register
  *  TX CH4 ETM config register
  */
-#define H264_DMA_OUT_ETM_CONF_CH4_REG (DR_REG_H264_DMA_BASE + 0x468)
+#define H264_DMA_OUT_ETM_CONF_CH4_REG (DR_REG_H264_DMA_2D_BASE + 0x468)
 /** H264_DMA_OUT_ETM_EN_CH4 : R/W; bitpos: [0]; default: 0;
  *  Set this bit to 1 to enable ETM task function
  */
@@ -3390,7 +3390,7 @@ extern "C" {
 /** H264_DMA_OUT_BUF_LEN_CH4_REG register
  *  tx CH4 buf len register
  */
-#define H264_DMA_OUT_BUF_LEN_CH4_REG (DR_REG_H264_DMA_BASE + 0x470)
+#define H264_DMA_OUT_BUF_LEN_CH4_REG (DR_REG_H264_DMA_2D_BASE + 0x470)
 /** H264_DMA_OUT_CMDFIFO_BUF_LEN_HB_CH4 : RO; bitpos: [12:0]; default: 0;
  *  only for debug
  */
@@ -3402,7 +3402,7 @@ extern "C" {
 /** H264_DMA_OUT_FIFO_BCNT_CH4_REG register
  *  tx CH4 fifo byte cnt register
  */
-#define H264_DMA_OUT_FIFO_BCNT_CH4_REG (DR_REG_H264_DMA_BASE + 0x474)
+#define H264_DMA_OUT_FIFO_BCNT_CH4_REG (DR_REG_H264_DMA_2D_BASE + 0x474)
 /** H264_DMA_OUT_CMDFIFO_OUTFIFO_BCNT_CH4 : RO; bitpos: [9:0]; default: 0;
  *  only for debug
  */
@@ -3414,7 +3414,7 @@ extern "C" {
 /** H264_DMA_OUT_PUSH_BYTECNT_CH4_REG register
  *  tx CH4 push byte cnt register
  */
-#define H264_DMA_OUT_PUSH_BYTECNT_CH4_REG (DR_REG_H264_DMA_BASE + 0x478)
+#define H264_DMA_OUT_PUSH_BYTECNT_CH4_REG (DR_REG_H264_DMA_2D_BASE + 0x478)
 /** H264_DMA_OUT_CMDFIFO_PUSH_BYTECNT_CH4 : RO; bitpos: [7:0]; default: 63;
  *  only for debug
  */
@@ -3426,7 +3426,7 @@ extern "C" {
 /** H264_DMA_OUT_XADDR_CH4_REG register
  *  tx CH4 xaddr register
  */
-#define H264_DMA_OUT_XADDR_CH4_REG (DR_REG_H264_DMA_BASE + 0x47c)
+#define H264_DMA_OUT_XADDR_CH4_REG (DR_REG_H264_DMA_2D_BASE + 0x47c)
 /** H264_DMA_OUT_CMDFIFO_XADDR_CH4 : RO; bitpos: [31:0]; default: 0;
  *  only for debug
  */
@@ -3438,7 +3438,7 @@ extern "C" {
 /** H264_DMA_OUT_BLOCK_BUF_LEN_CH4_REG register
  *  tx CH4 block buf len register
  */
-#define H264_DMA_OUT_BLOCK_BUF_LEN_CH4_REG (DR_REG_H264_DMA_BASE + 0x480)
+#define H264_DMA_OUT_BLOCK_BUF_LEN_CH4_REG (DR_REG_H264_DMA_2D_BASE + 0x480)
 /** H264_DMA_OUT_BLOCK_BUF_LEN_CH4 : RO; bitpos: [27:0]; default: 0;
  *  only for debug
  */
@@ -3450,7 +3450,7 @@ extern "C" {
 /** H264_DMA_IN_CONF0_CH0_REG register
  *  RX CH0 config0 register
  */
-#define H264_DMA_IN_CONF0_CH0_REG (DR_REG_H264_DMA_BASE + 0x500)
+#define H264_DMA_IN_CONF0_CH0_REG (DR_REG_H264_DMA_2D_BASE + 0x500)
 /** H264_DMA_INDSCR_BURST_EN_CH0 : R/W; bitpos: [2]; default: 0;
  *  Set this bit to 1 to enable INCR burst transfer for Rx transmitting link descriptor
  *  when accessing SRAM.
@@ -3516,7 +3516,7 @@ extern "C" {
 /** H264_DMA_IN_INT_RAW_CH0_REG register
  *  RX CH0  interrupt raw register
  */
-#define H264_DMA_IN_INT_RAW_CH0_REG (DR_REG_H264_DMA_BASE + 0x504)
+#define H264_DMA_IN_INT_RAW_CH0_REG (DR_REG_H264_DMA_2D_BASE + 0x504)
 /** H264_DMA_IN_DONE_CH0_INT_RAW : R/WTC/SS; bitpos: [0]; default: 0;
  *  The raw interrupt bit turns to high level when the last data pointed by one inlink
  *  descriptor has been transmitted to peripherals for Rx channel 0.
@@ -3597,7 +3597,7 @@ extern "C" {
 /** H264_DMA_IN_INT_ENA_CH0_REG register
  *  RX CH0  interrupt ena register
  */
-#define H264_DMA_IN_INT_ENA_CH0_REG (DR_REG_H264_DMA_BASE + 0x508)
+#define H264_DMA_IN_INT_ENA_CH0_REG (DR_REG_H264_DMA_2D_BASE + 0x508)
 /** H264_DMA_IN_DONE_CH0_INT_ENA : R/W; bitpos: [0]; default: 0;
  *  The interrupt enable bit for the IN_DONE_CH_INT interrupt.
  */
@@ -3672,7 +3672,7 @@ extern "C" {
 /** H264_DMA_IN_INT_ST_CH0_REG register
  *  RX CH0  interrupt st register
  */
-#define H264_DMA_IN_INT_ST_CH0_REG (DR_REG_H264_DMA_BASE + 0x50c)
+#define H264_DMA_IN_INT_ST_CH0_REG (DR_REG_H264_DMA_2D_BASE + 0x50c)
 /** H264_DMA_IN_DONE_CH0_INT_ST : RO; bitpos: [0]; default: 0;
  *  The raw interrupt status bit for the IN_DONE_CH_INT interrupt.
  */
@@ -3747,7 +3747,7 @@ extern "C" {
 /** H264_DMA_IN_INT_CLR_CH0_REG register
  *  RX CH0  interrupt clr register
  */
-#define H264_DMA_IN_INT_CLR_CH0_REG (DR_REG_H264_DMA_BASE + 0x510)
+#define H264_DMA_IN_INT_CLR_CH0_REG (DR_REG_H264_DMA_2D_BASE + 0x510)
 /** H264_DMA_IN_DONE_CH0_INT_CLR : WT; bitpos: [0]; default: 0;
  *  Set this bit to clear the IN_DONE_CH_INT interrupt.
  */
@@ -3822,7 +3822,7 @@ extern "C" {
 /** H264_DMA_INFIFO_STATUS_CH0_REG register
  *  RX CH0 INFIFO status register
  */
-#define H264_DMA_INFIFO_STATUS_CH0_REG (DR_REG_H264_DMA_BASE + 0x514)
+#define H264_DMA_INFIFO_STATUS_CH0_REG (DR_REG_H264_DMA_2D_BASE + 0x514)
 /** H264_DMA_INFIFO_FULL_L2_CH0 : RO; bitpos: [0]; default: 0;
  *  Rx FIFO full signal for Rx channel.
  */
@@ -3890,7 +3890,7 @@ extern "C" {
 /** H264_DMA_IN_POP_CH0_REG register
  *  RX CH0 INFIFO pop register
  */
-#define H264_DMA_IN_POP_CH0_REG (DR_REG_H264_DMA_BASE + 0x518)
+#define H264_DMA_IN_POP_CH0_REG (DR_REG_H264_DMA_2D_BASE + 0x518)
 /** H264_DMA_INFIFO_RDATA_CH0 : RO; bitpos: [10:0]; default: 1024;
  *  This register stores the data popping from DMA Rx FIFO.
  */
@@ -3909,7 +3909,7 @@ extern "C" {
 /** H264_DMA_IN_LINK_CONF_CH0_REG register
  *  RX CH0 in_link dscr ctrl register
  */
-#define H264_DMA_IN_LINK_CONF_CH0_REG (DR_REG_H264_DMA_BASE + 0x51c)
+#define H264_DMA_IN_LINK_CONF_CH0_REG (DR_REG_H264_DMA_2D_BASE + 0x51c)
 /** H264_DMA_INLINK_AUTO_RET_CH0 : R/W; bitpos: [20]; default: 1;
  *  Set this bit to return to current inlink descriptor's address, when there are some
  *  errors in current receiving data.
@@ -3951,7 +3951,7 @@ extern "C" {
 /** H264_DMA_IN_LINK_ADDR_CH0_REG register
  *  RX CH0 in_link dscr addr register
  */
-#define H264_DMA_IN_LINK_ADDR_CH0_REG (DR_REG_H264_DMA_BASE + 0x520)
+#define H264_DMA_IN_LINK_ADDR_CH0_REG (DR_REG_H264_DMA_2D_BASE + 0x520)
 /** H264_DMA_INLINK_ADDR_CH0 : R/W; bitpos: [31:0]; default: 0;
  *  This register stores the first inlink descriptor's address.
  */
@@ -3963,7 +3963,7 @@ extern "C" {
 /** H264_DMA_IN_STATE_CH0_REG register
  *  RX CH0 state register
  */
-#define H264_DMA_IN_STATE_CH0_REG (DR_REG_H264_DMA_BASE + 0x524)
+#define H264_DMA_IN_STATE_CH0_REG (DR_REG_H264_DMA_2D_BASE + 0x524)
 /** H264_DMA_INLINK_DSCR_ADDR_CH0 : RO; bitpos: [17:0]; default: 0;
  *  This register stores the current inlink descriptor's address.
  */
@@ -3996,7 +3996,7 @@ extern "C" {
 /** H264_DMA_IN_SUC_EOF_DES_ADDR_CH0_REG register
  *  RX CH0 eof des addr register
  */
-#define H264_DMA_IN_SUC_EOF_DES_ADDR_CH0_REG (DR_REG_H264_DMA_BASE + 0x528)
+#define H264_DMA_IN_SUC_EOF_DES_ADDR_CH0_REG (DR_REG_H264_DMA_2D_BASE + 0x528)
 /** H264_DMA_IN_SUC_EOF_DES_ADDR_CH0 : RO; bitpos: [31:0]; default: 0;
  *  This register stores the address of the inlink descriptor when the EOF bit in this
  *  descriptor is 1.
@@ -4009,7 +4009,7 @@ extern "C" {
 /** H264_DMA_IN_ERR_EOF_DES_ADDR_CH0_REG register
  *  RX CH0 err eof des addr register
  */
-#define H264_DMA_IN_ERR_EOF_DES_ADDR_CH0_REG (DR_REG_H264_DMA_BASE + 0x52c)
+#define H264_DMA_IN_ERR_EOF_DES_ADDR_CH0_REG (DR_REG_H264_DMA_2D_BASE + 0x52c)
 /** H264_DMA_IN_ERR_EOF_DES_ADDR_CH0 : RO; bitpos: [31:0]; default: 0;
  *  This register stores the address of the inlink descriptor when there are some
  *  errors in current receiving data.
@@ -4022,7 +4022,7 @@ extern "C" {
 /** H264_DMA_IN_DSCR_CH0_REG register
  *  RX CH0 next dscr addr register
  */
-#define H264_DMA_IN_DSCR_CH0_REG (DR_REG_H264_DMA_BASE + 0x530)
+#define H264_DMA_IN_DSCR_CH0_REG (DR_REG_H264_DMA_2D_BASE + 0x530)
 /** H264_DMA_INLINK_DSCR_CH0 : RO; bitpos: [31:0]; default: 0;
  *  The address of the next inlink descriptor address x.
  */
@@ -4034,7 +4034,7 @@ extern "C" {
 /** H264_DMA_IN_DSCR_BF0_CH0_REG register
  *  RX CH0 last dscr addr register
  */
-#define H264_DMA_IN_DSCR_BF0_CH0_REG (DR_REG_H264_DMA_BASE + 0x534)
+#define H264_DMA_IN_DSCR_BF0_CH0_REG (DR_REG_H264_DMA_2D_BASE + 0x534)
 /** H264_DMA_INLINK_DSCR_BF0_CH0 : RO; bitpos: [31:0]; default: 0;
  *  The address of the last inlink descriptor's next address x-1.
  */
@@ -4046,7 +4046,7 @@ extern "C" {
 /** H264_DMA_IN_DSCR_BF1_CH0_REG register
  *  RX CH0 second-to-last dscr addr register
  */
-#define H264_DMA_IN_DSCR_BF1_CH0_REG (DR_REG_H264_DMA_BASE + 0x538)
+#define H264_DMA_IN_DSCR_BF1_CH0_REG (DR_REG_H264_DMA_2D_BASE + 0x538)
 /** H264_DMA_INLINK_DSCR_BF1_CH0 : RO; bitpos: [31:0]; default: 0;
  *  The address of the second-to-last inlink descriptor's next address x-2.
  */
@@ -4058,7 +4058,7 @@ extern "C" {
 /** H264_DMA_IN_ARB_CH0_REG register
  *  RX CH0 arb register
  */
-#define H264_DMA_IN_ARB_CH0_REG (DR_REG_H264_DMA_BASE + 0x540)
+#define H264_DMA_IN_ARB_CH0_REG (DR_REG_H264_DMA_2D_BASE + 0x540)
 /** H264_DMA_IN_ARB_TOKEN_NUM_CH0 : R/W; bitpos: [3:0]; default: 1;
  *  Set the max number of token count of arbiter
  */
@@ -4084,7 +4084,7 @@ extern "C" {
 /** H264_DMA_IN_RO_PD_CONF_CH0_REG register
  *  RX CH0 reorder power config register
  */
-#define H264_DMA_IN_RO_PD_CONF_CH0_REG (DR_REG_H264_DMA_BASE + 0x548)
+#define H264_DMA_IN_RO_PD_CONF_CH0_REG (DR_REG_H264_DMA_2D_BASE + 0x548)
 /** H264_DMA_IN_RO_RAM_CLK_FO_CH0 : R/W; bitpos: [6]; default: 0;
  *  1: Force to open the clock and bypass the gate-clock when accessing the RAM in DMA.
  *  0: A gate-clock will be used when accessing the RAM in DMA.
@@ -4097,7 +4097,7 @@ extern "C" {
 /** H264_DMA_IN_ETM_CONF_CH0_REG register
  *  RX CH0 ETM config register
  */
-#define H264_DMA_IN_ETM_CONF_CH0_REG (DR_REG_H264_DMA_BASE + 0x56c)
+#define H264_DMA_IN_ETM_CONF_CH0_REG (DR_REG_H264_DMA_2D_BASE + 0x56c)
 /** H264_DMA_IN_ETM_EN_CH0 : R/W; bitpos: [0]; default: 0;
  *  Set this bit to 1 to enable ETM task function
  */
@@ -4123,7 +4123,7 @@ extern "C" {
 /** H264_DMA_IN_FIFO_CNT_CH0_REG register
  *  rx CH0 fifo cnt register
  */
-#define H264_DMA_IN_FIFO_CNT_CH0_REG (DR_REG_H264_DMA_BASE + 0x580)
+#define H264_DMA_IN_FIFO_CNT_CH0_REG (DR_REG_H264_DMA_2D_BASE + 0x580)
 /** H264_DMA_IN_CMDFIFO_INFIFO_CNT_CH0 : RO; bitpos: [9:0]; default: 0;
  *  only for debug
  */
@@ -4135,7 +4135,7 @@ extern "C" {
 /** H264_DMA_IN_POP_DATA_CNT_CH0_REG register
  *  rx CH0 pop data cnt register
  */
-#define H264_DMA_IN_POP_DATA_CNT_CH0_REG (DR_REG_H264_DMA_BASE + 0x584)
+#define H264_DMA_IN_POP_DATA_CNT_CH0_REG (DR_REG_H264_DMA_2D_BASE + 0x584)
 /** H264_DMA_IN_CMDFIFO_POP_DATA_CNT_CH0 : RO; bitpos: [7:0]; default: 7;
  *  only for debug
  */
@@ -4147,7 +4147,7 @@ extern "C" {
 /** H264_DMA_IN_XADDR_CH0_REG register
  *  rx CH0 xaddr register
  */
-#define H264_DMA_IN_XADDR_CH0_REG (DR_REG_H264_DMA_BASE + 0x588)
+#define H264_DMA_IN_XADDR_CH0_REG (DR_REG_H264_DMA_2D_BASE + 0x588)
 /** H264_DMA_IN_CMDFIFO_XADDR_CH0 : RO; bitpos: [31:0]; default: 0;
  *  only for debug
  */
@@ -4159,7 +4159,7 @@ extern "C" {
 /** H264_DMA_IN_BUF_HB_RCV_CH0_REG register
  *  rx CH0 buf len hb rcv register
  */
-#define H264_DMA_IN_BUF_HB_RCV_CH0_REG (DR_REG_H264_DMA_BASE + 0x58c)
+#define H264_DMA_IN_BUF_HB_RCV_CH0_REG (DR_REG_H264_DMA_2D_BASE + 0x58c)
 /** H264_DMA_IN_CMDFIFO_BUF_HB_RCV_CH0 : RO; bitpos: [28:0]; default: 0;
  *  only for debug
  */
@@ -4171,7 +4171,7 @@ extern "C" {
 /** H264_DMA_IN_CONF0_CH1_REG register
  *  RX CH1 config0 register
  */
-#define H264_DMA_IN_CONF0_CH1_REG (DR_REG_H264_DMA_BASE + 0x600)
+#define H264_DMA_IN_CONF0_CH1_REG (DR_REG_H264_DMA_2D_BASE + 0x600)
 /** H264_DMA_INDSCR_BURST_EN_CH1 : R/W; bitpos: [2]; default: 0;
  *  Set this bit to 1 to enable INCR burst transfer for Rx transmitting link descriptor
  *  when accessing SRAM.
@@ -4237,7 +4237,7 @@ extern "C" {
 /** H264_DMA_IN_INT_RAW_CH1_REG register
  *  RX CH1  interrupt raw register
  */
-#define H264_DMA_IN_INT_RAW_CH1_REG (DR_REG_H264_DMA_BASE + 0x604)
+#define H264_DMA_IN_INT_RAW_CH1_REG (DR_REG_H264_DMA_2D_BASE + 0x604)
 /** H264_DMA_IN_DONE_CH1_INT_RAW : R/WTC/SS; bitpos: [0]; default: 0;
  *  The raw interrupt bit turns to high level when the last data pointed by one inlink
  *  descriptor has been transmitted to peripherals for Rx channel 1.
@@ -4318,7 +4318,7 @@ extern "C" {
 /** H264_DMA_IN_INT_ENA_CH1_REG register
  *  RX CH1  interrupt ena register
  */
-#define H264_DMA_IN_INT_ENA_CH1_REG (DR_REG_H264_DMA_BASE + 0x608)
+#define H264_DMA_IN_INT_ENA_CH1_REG (DR_REG_H264_DMA_2D_BASE + 0x608)
 /** H264_DMA_IN_DONE_CH1_INT_ENA : R/W; bitpos: [0]; default: 0;
  *  The interrupt enable bit for the IN_DONE_CH_INT interrupt.
  */
@@ -4393,7 +4393,7 @@ extern "C" {
 /** H264_DMA_IN_INT_ST_CH1_REG register
  *  RX CH1  interrupt st register
  */
-#define H264_DMA_IN_INT_ST_CH1_REG (DR_REG_H264_DMA_BASE + 0x60c)
+#define H264_DMA_IN_INT_ST_CH1_REG (DR_REG_H264_DMA_2D_BASE + 0x60c)
 /** H264_DMA_IN_DONE_CH1_INT_ST : RO; bitpos: [0]; default: 0;
  *  The raw interrupt status bit for the IN_DONE_CH_INT interrupt.
  */
@@ -4468,7 +4468,7 @@ extern "C" {
 /** H264_DMA_IN_INT_CLR_CH1_REG register
  *  RX CH1  interrupt clr register
  */
-#define H264_DMA_IN_INT_CLR_CH1_REG (DR_REG_H264_DMA_BASE + 0x610)
+#define H264_DMA_IN_INT_CLR_CH1_REG (DR_REG_H264_DMA_2D_BASE + 0x610)
 /** H264_DMA_IN_DONE_CH1_INT_CLR : WT; bitpos: [0]; default: 0;
  *  Set this bit to clear the IN_DONE_CH_INT interrupt.
  */
@@ -4543,7 +4543,7 @@ extern "C" {
 /** H264_DMA_INFIFO_STATUS_CH1_REG register
  *  RX CH1 INFIFO status register
  */
-#define H264_DMA_INFIFO_STATUS_CH1_REG (DR_REG_H264_DMA_BASE + 0x614)
+#define H264_DMA_INFIFO_STATUS_CH1_REG (DR_REG_H264_DMA_2D_BASE + 0x614)
 /** H264_DMA_INFIFO_FULL_L2_CH1 : RO; bitpos: [0]; default: 0;
  *  Rx FIFO full signal for Rx channel.
  */
@@ -4611,7 +4611,7 @@ extern "C" {
 /** H264_DMA_IN_POP_CH1_REG register
  *  RX CH1 INFIFO pop register
  */
-#define H264_DMA_IN_POP_CH1_REG (DR_REG_H264_DMA_BASE + 0x618)
+#define H264_DMA_IN_POP_CH1_REG (DR_REG_H264_DMA_2D_BASE + 0x618)
 /** H264_DMA_INFIFO_RDATA_CH1 : RO; bitpos: [10:0]; default: 1024;
  *  This register stores the data popping from DMA Rx FIFO.
  */
@@ -4630,7 +4630,7 @@ extern "C" {
 /** H264_DMA_IN_LINK_CONF_CH1_REG register
  *  RX CH1 in_link dscr ctrl register
  */
-#define H264_DMA_IN_LINK_CONF_CH1_REG (DR_REG_H264_DMA_BASE + 0x61c)
+#define H264_DMA_IN_LINK_CONF_CH1_REG (DR_REG_H264_DMA_2D_BASE + 0x61c)
 /** H264_DMA_INLINK_AUTO_RET_CH1 : R/W; bitpos: [20]; default: 1;
  *  Set this bit to return to current inlink descriptor's address, when there are some
  *  errors in current receiving data.
@@ -4672,7 +4672,7 @@ extern "C" {
 /** H264_DMA_IN_LINK_ADDR_CH1_REG register
  *  RX CH1 in_link dscr addr register
  */
-#define H264_DMA_IN_LINK_ADDR_CH1_REG (DR_REG_H264_DMA_BASE + 0x620)
+#define H264_DMA_IN_LINK_ADDR_CH1_REG (DR_REG_H264_DMA_2D_BASE + 0x620)
 /** H264_DMA_INLINK_ADDR_CH1 : R/W; bitpos: [31:0]; default: 0;
  *  This register stores the first inlink descriptor's address.
  */
@@ -4684,7 +4684,7 @@ extern "C" {
 /** H264_DMA_IN_STATE_CH1_REG register
  *  RX CH1 state register
  */
-#define H264_DMA_IN_STATE_CH1_REG (DR_REG_H264_DMA_BASE + 0x624)
+#define H264_DMA_IN_STATE_CH1_REG (DR_REG_H264_DMA_2D_BASE + 0x624)
 /** H264_DMA_INLINK_DSCR_ADDR_CH1 : RO; bitpos: [17:0]; default: 0;
  *  This register stores the current inlink descriptor's address.
  */
@@ -4717,7 +4717,7 @@ extern "C" {
 /** H264_DMA_IN_SUC_EOF_DES_ADDR_CH1_REG register
  *  RX CH1 eof des addr register
  */
-#define H264_DMA_IN_SUC_EOF_DES_ADDR_CH1_REG (DR_REG_H264_DMA_BASE + 0x628)
+#define H264_DMA_IN_SUC_EOF_DES_ADDR_CH1_REG (DR_REG_H264_DMA_2D_BASE + 0x628)
 /** H264_DMA_IN_SUC_EOF_DES_ADDR_CH1 : RO; bitpos: [31:0]; default: 0;
  *  This register stores the address of the inlink descriptor when the EOF bit in this
  *  descriptor is 1.
@@ -4730,7 +4730,7 @@ extern "C" {
 /** H264_DMA_IN_ERR_EOF_DES_ADDR_CH1_REG register
  *  RX CH1 err eof des addr register
  */
-#define H264_DMA_IN_ERR_EOF_DES_ADDR_CH1_REG (DR_REG_H264_DMA_BASE + 0x62c)
+#define H264_DMA_IN_ERR_EOF_DES_ADDR_CH1_REG (DR_REG_H264_DMA_2D_BASE + 0x62c)
 /** H264_DMA_IN_ERR_EOF_DES_ADDR_CH1 : RO; bitpos: [31:0]; default: 0;
  *  This register stores the address of the inlink descriptor when there are some
  *  errors in current receiving data.
@@ -4743,7 +4743,7 @@ extern "C" {
 /** H264_DMA_IN_DSCR_CH1_REG register
  *  RX CH1 next dscr addr register
  */
-#define H264_DMA_IN_DSCR_CH1_REG (DR_REG_H264_DMA_BASE + 0x630)
+#define H264_DMA_IN_DSCR_CH1_REG (DR_REG_H264_DMA_2D_BASE + 0x630)
 /** H264_DMA_INLINK_DSCR_CH1 : RO; bitpos: [31:0]; default: 0;
  *  The address of the next inlink descriptor address x.
  */
@@ -4755,7 +4755,7 @@ extern "C" {
 /** H264_DMA_IN_DSCR_BF0_CH1_REG register
  *  RX CH1 last dscr addr register
  */
-#define H264_DMA_IN_DSCR_BF0_CH1_REG (DR_REG_H264_DMA_BASE + 0x634)
+#define H264_DMA_IN_DSCR_BF0_CH1_REG (DR_REG_H264_DMA_2D_BASE + 0x634)
 /** H264_DMA_INLINK_DSCR_BF0_CH1 : RO; bitpos: [31:0]; default: 0;
  *  The address of the last inlink descriptor's next address x-1.
  */
@@ -4767,7 +4767,7 @@ extern "C" {
 /** H264_DMA_IN_DSCR_BF1_CH1_REG register
  *  RX CH1 second-to-last dscr addr register
  */
-#define H264_DMA_IN_DSCR_BF1_CH1_REG (DR_REG_H264_DMA_BASE + 0x638)
+#define H264_DMA_IN_DSCR_BF1_CH1_REG (DR_REG_H264_DMA_2D_BASE + 0x638)
 /** H264_DMA_INLINK_DSCR_BF1_CH1 : RO; bitpos: [31:0]; default: 0;
  *  The address of the second-to-last inlink descriptor's next address x-2.
  */
@@ -4779,7 +4779,7 @@ extern "C" {
 /** H264_DMA_IN_ARB_CH1_REG register
  *  RX CH1 arb register
  */
-#define H264_DMA_IN_ARB_CH1_REG (DR_REG_H264_DMA_BASE + 0x640)
+#define H264_DMA_IN_ARB_CH1_REG (DR_REG_H264_DMA_2D_BASE + 0x640)
 /** H264_DMA_IN_ARB_TOKEN_NUM_CH1 : R/W; bitpos: [3:0]; default: 1;
  *  Set the max number of token count of arbiter
  */
@@ -4805,7 +4805,7 @@ extern "C" {
 /** H264_DMA_IN_ETM_CONF_CH1_REG register
  *  RX CH1 ETM config register
  */
-#define H264_DMA_IN_ETM_CONF_CH1_REG (DR_REG_H264_DMA_BASE + 0x648)
+#define H264_DMA_IN_ETM_CONF_CH1_REG (DR_REG_H264_DMA_2D_BASE + 0x648)
 /** H264_DMA_IN_ETM_EN_CH1 : R/W; bitpos: [0]; default: 0;
  *  Set this bit to 1 to enable ETM task function
  */
@@ -4831,7 +4831,7 @@ extern "C" {
 /** H264_DMA_IN_FIFO_CNT_CH1_REG register
  *  rx CH1 fifo cnt register
  */
-#define H264_DMA_IN_FIFO_CNT_CH1_REG (DR_REG_H264_DMA_BASE + 0x680)
+#define H264_DMA_IN_FIFO_CNT_CH1_REG (DR_REG_H264_DMA_2D_BASE + 0x680)
 /** H264_DMA_IN_CMDFIFO_INFIFO_CNT_CH1 : RO; bitpos: [9:0]; default: 0;
  *  only for debug
  */
@@ -4843,7 +4843,7 @@ extern "C" {
 /** H264_DMA_IN_POP_DATA_CNT_CH1_REG register
  *  rx CH1 pop data cnt register
  */
-#define H264_DMA_IN_POP_DATA_CNT_CH1_REG (DR_REG_H264_DMA_BASE + 0x684)
+#define H264_DMA_IN_POP_DATA_CNT_CH1_REG (DR_REG_H264_DMA_2D_BASE + 0x684)
 /** H264_DMA_IN_CMDFIFO_POP_DATA_CNT_CH1 : RO; bitpos: [7:0]; default: 7;
  *  only for debug
  */
@@ -4855,7 +4855,7 @@ extern "C" {
 /** H264_DMA_IN_XADDR_CH1_REG register
  *  rx CH1 xaddr register
  */
-#define H264_DMA_IN_XADDR_CH1_REG (DR_REG_H264_DMA_BASE + 0x688)
+#define H264_DMA_IN_XADDR_CH1_REG (DR_REG_H264_DMA_2D_BASE + 0x688)
 /** H264_DMA_IN_CMDFIFO_XADDR_CH1 : RO; bitpos: [31:0]; default: 0;
  *  only for debug
  */
@@ -4867,7 +4867,7 @@ extern "C" {
 /** H264_DMA_IN_BUF_HB_RCV_CH1_REG register
  *  rx CH1 buf len hb rcv register
  */
-#define H264_DMA_IN_BUF_HB_RCV_CH1_REG (DR_REG_H264_DMA_BASE + 0x68c)
+#define H264_DMA_IN_BUF_HB_RCV_CH1_REG (DR_REG_H264_DMA_2D_BASE + 0x68c)
 /** H264_DMA_IN_CMDFIFO_BUF_HB_RCV_CH1 : RO; bitpos: [28:0]; default: 0;
  *  only for debug
  */
@@ -4879,7 +4879,7 @@ extern "C" {
 /** H264_DMA_IN_CONF0_CH2_REG register
  *  RX CH2 config0 register
  */
-#define H264_DMA_IN_CONF0_CH2_REG (DR_REG_H264_DMA_BASE + 0x700)
+#define H264_DMA_IN_CONF0_CH2_REG (DR_REG_H264_DMA_2D_BASE + 0x700)
 /** H264_DMA_INDSCR_BURST_EN_CH2 : R/W; bitpos: [2]; default: 0;
  *  Set this bit to 1 to enable INCR burst transfer for Rx transmitting link descriptor
  *  when accessing SRAM.
@@ -4945,7 +4945,7 @@ extern "C" {
 /** H264_DMA_IN_INT_RAW_CH2_REG register
  *  RX CH2  interrupt raw register
  */
-#define H264_DMA_IN_INT_RAW_CH2_REG (DR_REG_H264_DMA_BASE + 0x704)
+#define H264_DMA_IN_INT_RAW_CH2_REG (DR_REG_H264_DMA_2D_BASE + 0x704)
 /** H264_DMA_IN_DONE_CH2_INT_RAW : R/WTC/SS; bitpos: [0]; default: 0;
  *  The raw interrupt bit turns to high level when the last data pointed by one inlink
  *  descriptor has been transmitted to peripherals for Rx channel 1.
@@ -5026,7 +5026,7 @@ extern "C" {
 /** H264_DMA_IN_INT_ENA_CH2_REG register
  *  RX CH2  interrupt ena register
  */
-#define H264_DMA_IN_INT_ENA_CH2_REG (DR_REG_H264_DMA_BASE + 0x708)
+#define H264_DMA_IN_INT_ENA_CH2_REG (DR_REG_H264_DMA_2D_BASE + 0x708)
 /** H264_DMA_IN_DONE_CH2_INT_ENA : R/W; bitpos: [0]; default: 0;
  *  The interrupt enable bit for the IN_DONE_CH_INT interrupt.
  */
@@ -5101,7 +5101,7 @@ extern "C" {
 /** H264_DMA_IN_INT_ST_CH2_REG register
  *  RX CH2  interrupt st register
  */
-#define H264_DMA_IN_INT_ST_CH2_REG (DR_REG_H264_DMA_BASE + 0x70c)
+#define H264_DMA_IN_INT_ST_CH2_REG (DR_REG_H264_DMA_2D_BASE + 0x70c)
 /** H264_DMA_IN_DONE_CH2_INT_ST : RO; bitpos: [0]; default: 0;
  *  The raw interrupt status bit for the IN_DONE_CH_INT interrupt.
  */
@@ -5176,7 +5176,7 @@ extern "C" {
 /** H264_DMA_IN_INT_CLR_CH2_REG register
  *  RX CH2  interrupt clr register
  */
-#define H264_DMA_IN_INT_CLR_CH2_REG (DR_REG_H264_DMA_BASE + 0x710)
+#define H264_DMA_IN_INT_CLR_CH2_REG (DR_REG_H264_DMA_2D_BASE + 0x710)
 /** H264_DMA_IN_DONE_CH2_INT_CLR : WT; bitpos: [0]; default: 0;
  *  Set this bit to clear the IN_DONE_CH_INT interrupt.
  */
@@ -5251,7 +5251,7 @@ extern "C" {
 /** H264_DMA_INFIFO_STATUS_CH2_REG register
  *  RX CH2 INFIFO status register
  */
-#define H264_DMA_INFIFO_STATUS_CH2_REG (DR_REG_H264_DMA_BASE + 0x714)
+#define H264_DMA_INFIFO_STATUS_CH2_REG (DR_REG_H264_DMA_2D_BASE + 0x714)
 /** H264_DMA_INFIFO_FULL_L2_CH2 : RO; bitpos: [0]; default: 0;
  *  Rx FIFO full signal for Rx channel.
  */
@@ -5319,7 +5319,7 @@ extern "C" {
 /** H264_DMA_IN_POP_CH2_REG register
  *  RX CH2 INFIFO pop register
  */
-#define H264_DMA_IN_POP_CH2_REG (DR_REG_H264_DMA_BASE + 0x718)
+#define H264_DMA_IN_POP_CH2_REG (DR_REG_H264_DMA_2D_BASE + 0x718)
 /** H264_DMA_INFIFO_RDATA_CH2 : RO; bitpos: [10:0]; default: 1024;
  *  This register stores the data popping from DMA Rx FIFO.
  */
@@ -5338,7 +5338,7 @@ extern "C" {
 /** H264_DMA_IN_LINK_CONF_CH2_REG register
  *  RX CH2 in_link dscr ctrl register
  */
-#define H264_DMA_IN_LINK_CONF_CH2_REG (DR_REG_H264_DMA_BASE + 0x71c)
+#define H264_DMA_IN_LINK_CONF_CH2_REG (DR_REG_H264_DMA_2D_BASE + 0x71c)
 /** H264_DMA_INLINK_AUTO_RET_CH2 : R/W; bitpos: [20]; default: 1;
  *  Set this bit to return to current inlink descriptor's address, when there are some
  *  errors in current receiving data.
@@ -5380,7 +5380,7 @@ extern "C" {
 /** H264_DMA_IN_LINK_ADDR_CH2_REG register
  *  RX CH2 in_link dscr addr register
  */
-#define H264_DMA_IN_LINK_ADDR_CH2_REG (DR_REG_H264_DMA_BASE + 0x720)
+#define H264_DMA_IN_LINK_ADDR_CH2_REG (DR_REG_H264_DMA_2D_BASE + 0x720)
 /** H264_DMA_INLINK_ADDR_CH2 : R/W; bitpos: [31:0]; default: 0;
  *  This register stores the first inlink descriptor's address.
  */
@@ -5392,7 +5392,7 @@ extern "C" {
 /** H264_DMA_IN_STATE_CH2_REG register
  *  RX CH2 state register
  */
-#define H264_DMA_IN_STATE_CH2_REG (DR_REG_H264_DMA_BASE + 0x724)
+#define H264_DMA_IN_STATE_CH2_REG (DR_REG_H264_DMA_2D_BASE + 0x724)
 /** H264_DMA_INLINK_DSCR_ADDR_CH2 : RO; bitpos: [17:0]; default: 0;
  *  This register stores the current inlink descriptor's address.
  */
@@ -5425,7 +5425,7 @@ extern "C" {
 /** H264_DMA_IN_SUC_EOF_DES_ADDR_CH2_REG register
  *  RX CH2 eof des addr register
  */
-#define H264_DMA_IN_SUC_EOF_DES_ADDR_CH2_REG (DR_REG_H264_DMA_BASE + 0x728)
+#define H264_DMA_IN_SUC_EOF_DES_ADDR_CH2_REG (DR_REG_H264_DMA_2D_BASE + 0x728)
 /** H264_DMA_IN_SUC_EOF_DES_ADDR_CH2 : RO; bitpos: [31:0]; default: 0;
  *  This register stores the address of the inlink descriptor when the EOF bit in this
  *  descriptor is 1.
@@ -5438,7 +5438,7 @@ extern "C" {
 /** H264_DMA_IN_ERR_EOF_DES_ADDR_CH2_REG register
  *  RX CH2 err eof des addr register
  */
-#define H264_DMA_IN_ERR_EOF_DES_ADDR_CH2_REG (DR_REG_H264_DMA_BASE + 0x72c)
+#define H264_DMA_IN_ERR_EOF_DES_ADDR_CH2_REG (DR_REG_H264_DMA_2D_BASE + 0x72c)
 /** H264_DMA_IN_ERR_EOF_DES_ADDR_CH2 : RO; bitpos: [31:0]; default: 0;
  *  This register stores the address of the inlink descriptor when there are some
  *  errors in current receiving data.
@@ -5451,7 +5451,7 @@ extern "C" {
 /** H264_DMA_IN_DSCR_CH2_REG register
  *  RX CH2 next dscr addr register
  */
-#define H264_DMA_IN_DSCR_CH2_REG (DR_REG_H264_DMA_BASE + 0x730)
+#define H264_DMA_IN_DSCR_CH2_REG (DR_REG_H264_DMA_2D_BASE + 0x730)
 /** H264_DMA_INLINK_DSCR_CH2 : RO; bitpos: [31:0]; default: 0;
  *  The address of the next inlink descriptor address x.
  */
@@ -5463,7 +5463,7 @@ extern "C" {
 /** H264_DMA_IN_DSCR_BF0_CH2_REG register
  *  RX CH2 last dscr addr register
  */
-#define H264_DMA_IN_DSCR_BF0_CH2_REG (DR_REG_H264_DMA_BASE + 0x734)
+#define H264_DMA_IN_DSCR_BF0_CH2_REG (DR_REG_H264_DMA_2D_BASE + 0x734)
 /** H264_DMA_INLINK_DSCR_BF0_CH2 : RO; bitpos: [31:0]; default: 0;
  *  The address of the last inlink descriptor's next address x-1.
  */
@@ -5475,7 +5475,7 @@ extern "C" {
 /** H264_DMA_IN_DSCR_BF1_CH2_REG register
  *  RX CH2 second-to-last dscr addr register
  */
-#define H264_DMA_IN_DSCR_BF1_CH2_REG (DR_REG_H264_DMA_BASE + 0x738)
+#define H264_DMA_IN_DSCR_BF1_CH2_REG (DR_REG_H264_DMA_2D_BASE + 0x738)
 /** H264_DMA_INLINK_DSCR_BF1_CH2 : RO; bitpos: [31:0]; default: 0;
  *  The address of the second-to-last inlink descriptor's next address x-2.
  */
@@ -5487,7 +5487,7 @@ extern "C" {
 /** H264_DMA_IN_ARB_CH2_REG register
  *  RX CH2 arb register
  */
-#define H264_DMA_IN_ARB_CH2_REG (DR_REG_H264_DMA_BASE + 0x740)
+#define H264_DMA_IN_ARB_CH2_REG (DR_REG_H264_DMA_2D_BASE + 0x740)
 /** H264_DMA_IN_ARB_TOKEN_NUM_CH2 : R/W; bitpos: [3:0]; default: 1;
  *  Set the max number of token count of arbiter
  */
@@ -5506,7 +5506,7 @@ extern "C" {
 /** H264_DMA_IN_ETM_CONF_CH2_REG register
  *  RX CH2 ETM config register
  */
-#define H264_DMA_IN_ETM_CONF_CH2_REG (DR_REG_H264_DMA_BASE + 0x748)
+#define H264_DMA_IN_ETM_CONF_CH2_REG (DR_REG_H264_DMA_2D_BASE + 0x748)
 /** H264_DMA_IN_ETM_EN_CH2 : R/W; bitpos: [0]; default: 0;
  *  Set this bit to 1 to enable ETM task function
  */
@@ -5532,7 +5532,7 @@ extern "C" {
 /** H264_DMA_IN_FIFO_CNT_CH2_REG register
  *  rx CH2 fifo cnt register
  */
-#define H264_DMA_IN_FIFO_CNT_CH2_REG (DR_REG_H264_DMA_BASE + 0x780)
+#define H264_DMA_IN_FIFO_CNT_CH2_REG (DR_REG_H264_DMA_2D_BASE + 0x780)
 /** H264_DMA_IN_CMDFIFO_INFIFO_CNT_CH2 : RO; bitpos: [9:0]; default: 0;
  *  only for debug
  */
@@ -5544,7 +5544,7 @@ extern "C" {
 /** H264_DMA_IN_POP_DATA_CNT_CH2_REG register
  *  rx CH2 pop data cnt register
  */
-#define H264_DMA_IN_POP_DATA_CNT_CH2_REG (DR_REG_H264_DMA_BASE + 0x784)
+#define H264_DMA_IN_POP_DATA_CNT_CH2_REG (DR_REG_H264_DMA_2D_BASE + 0x784)
 /** H264_DMA_IN_CMDFIFO_POP_DATA_CNT_CH2 : RO; bitpos: [7:0]; default: 7;
  *  only for debug
  */
@@ -5556,7 +5556,7 @@ extern "C" {
 /** H264_DMA_IN_XADDR_CH2_REG register
  *  rx CH2 xaddr register
  */
-#define H264_DMA_IN_XADDR_CH2_REG (DR_REG_H264_DMA_BASE + 0x788)
+#define H264_DMA_IN_XADDR_CH2_REG (DR_REG_H264_DMA_2D_BASE + 0x788)
 /** H264_DMA_IN_CMDFIFO_XADDR_CH2 : RO; bitpos: [31:0]; default: 0;
  *  only for debug
  */
@@ -5568,7 +5568,7 @@ extern "C" {
 /** H264_DMA_IN_BUF_HB_RCV_CH2_REG register
  *  rx CH2 buf len hb rcv register
  */
-#define H264_DMA_IN_BUF_HB_RCV_CH2_REG (DR_REG_H264_DMA_BASE + 0x78c)
+#define H264_DMA_IN_BUF_HB_RCV_CH2_REG (DR_REG_H264_DMA_2D_BASE + 0x78c)
 /** H264_DMA_IN_CMDFIFO_BUF_HB_RCV_CH2 : RO; bitpos: [28:0]; default: 0;
  *  only for debug
  */
@@ -5580,7 +5580,7 @@ extern "C" {
 /** H264_DMA_IN_CONF0_CH3_REG register
  *  RX CH3 config0 register
  */
-#define H264_DMA_IN_CONF0_CH3_REG (DR_REG_H264_DMA_BASE + 0x800)
+#define H264_DMA_IN_CONF0_CH3_REG (DR_REG_H264_DMA_2D_BASE + 0x800)
 /** H264_DMA_INDSCR_BURST_EN_CH3 : R/W; bitpos: [2]; default: 0;
  *  Set this bit to 1 to enable INCR burst transfer for Rx transmitting link descriptor
  *  when accessing SRAM.
@@ -5646,7 +5646,7 @@ extern "C" {
 /** H264_DMA_IN_INT_RAW_CH3_REG register
  *  RX CH3  interrupt raw register
  */
-#define H264_DMA_IN_INT_RAW_CH3_REG (DR_REG_H264_DMA_BASE + 0x804)
+#define H264_DMA_IN_INT_RAW_CH3_REG (DR_REG_H264_DMA_2D_BASE + 0x804)
 /** H264_DMA_IN_DONE_CH3_INT_RAW : R/WTC/SS; bitpos: [0]; default: 0;
  *  The raw interrupt bit turns to high level when the last data pointed by one inlink
  *  descriptor has been transmitted to peripherals for Rx channel 1.
@@ -5727,7 +5727,7 @@ extern "C" {
 /** H264_DMA_IN_INT_ENA_CH3_REG register
  *  RX CH3  interrupt ena register
  */
-#define H264_DMA_IN_INT_ENA_CH3_REG (DR_REG_H264_DMA_BASE + 0x808)
+#define H264_DMA_IN_INT_ENA_CH3_REG (DR_REG_H264_DMA_2D_BASE + 0x808)
 /** H264_DMA_IN_DONE_CH3_INT_ENA : R/W; bitpos: [0]; default: 0;
  *  The interrupt enable bit for the IN_DONE_CH_INT interrupt.
  */
@@ -5802,7 +5802,7 @@ extern "C" {
 /** H264_DMA_IN_INT_ST_CH3_REG register
  *  RX CH3  interrupt st register
  */
-#define H264_DMA_IN_INT_ST_CH3_REG (DR_REG_H264_DMA_BASE + 0x80c)
+#define H264_DMA_IN_INT_ST_CH3_REG (DR_REG_H264_DMA_2D_BASE + 0x80c)
 /** H264_DMA_IN_DONE_CH3_INT_ST : RO; bitpos: [0]; default: 0;
  *  The raw interrupt status bit for the IN_DONE_CH_INT interrupt.
  */
@@ -5877,7 +5877,7 @@ extern "C" {
 /** H264_DMA_IN_INT_CLR_CH3_REG register
  *  RX CH3  interrupt clr register
  */
-#define H264_DMA_IN_INT_CLR_CH3_REG (DR_REG_H264_DMA_BASE + 0x810)
+#define H264_DMA_IN_INT_CLR_CH3_REG (DR_REG_H264_DMA_2D_BASE + 0x810)
 /** H264_DMA_IN_DONE_CH3_INT_CLR : WT; bitpos: [0]; default: 0;
  *  Set this bit to clear the IN_DONE_CH_INT interrupt.
  */
@@ -5952,7 +5952,7 @@ extern "C" {
 /** H264_DMA_INFIFO_STATUS_CH3_REG register
  *  RX CH3 INFIFO status register
  */
-#define H264_DMA_INFIFO_STATUS_CH3_REG (DR_REG_H264_DMA_BASE + 0x814)
+#define H264_DMA_INFIFO_STATUS_CH3_REG (DR_REG_H264_DMA_2D_BASE + 0x814)
 /** H264_DMA_INFIFO_FULL_L2_CH3 : RO; bitpos: [0]; default: 0;
  *  Rx FIFO full signal for Rx channel.
  */
@@ -6020,7 +6020,7 @@ extern "C" {
 /** H264_DMA_IN_POP_CH3_REG register
  *  RX CH3 INFIFO pop register
  */
-#define H264_DMA_IN_POP_CH3_REG (DR_REG_H264_DMA_BASE + 0x818)
+#define H264_DMA_IN_POP_CH3_REG (DR_REG_H264_DMA_2D_BASE + 0x818)
 /** H264_DMA_INFIFO_RDATA_CH3 : RO; bitpos: [10:0]; default: 1024;
  *  This register stores the data popping from DMA Rx FIFO.
  */
@@ -6039,7 +6039,7 @@ extern "C" {
 /** H264_DMA_IN_LINK_CONF_CH3_REG register
  *  RX CH3 in_link dscr ctrl register
  */
-#define H264_DMA_IN_LINK_CONF_CH3_REG (DR_REG_H264_DMA_BASE + 0x81c)
+#define H264_DMA_IN_LINK_CONF_CH3_REG (DR_REG_H264_DMA_2D_BASE + 0x81c)
 /** H264_DMA_INLINK_AUTO_RET_CH3 : R/W; bitpos: [20]; default: 1;
  *  Set this bit to return to current inlink descriptor's address, when there are some
  *  errors in current receiving data.
@@ -6081,7 +6081,7 @@ extern "C" {
 /** H264_DMA_IN_LINK_ADDR_CH3_REG register
  *  RX CH3 in_link dscr addr register
  */
-#define H264_DMA_IN_LINK_ADDR_CH3_REG (DR_REG_H264_DMA_BASE + 0x820)
+#define H264_DMA_IN_LINK_ADDR_CH3_REG (DR_REG_H264_DMA_2D_BASE + 0x820)
 /** H264_DMA_INLINK_ADDR_CH3 : R/W; bitpos: [31:0]; default: 0;
  *  This register stores the first inlink descriptor's address.
  */
@@ -6093,7 +6093,7 @@ extern "C" {
 /** H264_DMA_IN_STATE_CH3_REG register
  *  RX CH3 state register
  */
-#define H264_DMA_IN_STATE_CH3_REG (DR_REG_H264_DMA_BASE + 0x824)
+#define H264_DMA_IN_STATE_CH3_REG (DR_REG_H264_DMA_2D_BASE + 0x824)
 /** H264_DMA_INLINK_DSCR_ADDR_CH3 : RO; bitpos: [17:0]; default: 0;
  *  This register stores the current inlink descriptor's address.
  */
@@ -6126,7 +6126,7 @@ extern "C" {
 /** H264_DMA_IN_SUC_EOF_DES_ADDR_CH3_REG register
  *  RX CH3 eof des addr register
  */
-#define H264_DMA_IN_SUC_EOF_DES_ADDR_CH3_REG (DR_REG_H264_DMA_BASE + 0x828)
+#define H264_DMA_IN_SUC_EOF_DES_ADDR_CH3_REG (DR_REG_H264_DMA_2D_BASE + 0x828)
 /** H264_DMA_IN_SUC_EOF_DES_ADDR_CH3 : RO; bitpos: [31:0]; default: 0;
  *  This register stores the address of the inlink descriptor when the EOF bit in this
  *  descriptor is 1.
@@ -6139,7 +6139,7 @@ extern "C" {
 /** H264_DMA_IN_ERR_EOF_DES_ADDR_CH3_REG register
  *  RX CH3 err eof des addr register
  */
-#define H264_DMA_IN_ERR_EOF_DES_ADDR_CH3_REG (DR_REG_H264_DMA_BASE + 0x82c)
+#define H264_DMA_IN_ERR_EOF_DES_ADDR_CH3_REG (DR_REG_H264_DMA_2D_BASE + 0x82c)
 /** H264_DMA_IN_ERR_EOF_DES_ADDR_CH3 : RO; bitpos: [31:0]; default: 0;
  *  This register stores the address of the inlink descriptor when there are some
  *  errors in current receiving data.
@@ -6152,7 +6152,7 @@ extern "C" {
 /** H264_DMA_IN_DSCR_CH3_REG register
  *  RX CH3 next dscr addr register
  */
-#define H264_DMA_IN_DSCR_CH3_REG (DR_REG_H264_DMA_BASE + 0x830)
+#define H264_DMA_IN_DSCR_CH3_REG (DR_REG_H264_DMA_2D_BASE + 0x830)
 /** H264_DMA_INLINK_DSCR_CH3 : RO; bitpos: [31:0]; default: 0;
  *  The address of the next inlink descriptor address x.
  */
@@ -6164,7 +6164,7 @@ extern "C" {
 /** H264_DMA_IN_DSCR_BF0_CH3_REG register
  *  RX CH3 last dscr addr register
  */
-#define H264_DMA_IN_DSCR_BF0_CH3_REG (DR_REG_H264_DMA_BASE + 0x834)
+#define H264_DMA_IN_DSCR_BF0_CH3_REG (DR_REG_H264_DMA_2D_BASE + 0x834)
 /** H264_DMA_INLINK_DSCR_BF0_CH3 : RO; bitpos: [31:0]; default: 0;
  *  The address of the last inlink descriptor's next address x-1.
  */
@@ -6176,7 +6176,7 @@ extern "C" {
 /** H264_DMA_IN_DSCR_BF1_CH3_REG register
  *  RX CH3 second-to-last dscr addr register
  */
-#define H264_DMA_IN_DSCR_BF1_CH3_REG (DR_REG_H264_DMA_BASE + 0x838)
+#define H264_DMA_IN_DSCR_BF1_CH3_REG (DR_REG_H264_DMA_2D_BASE + 0x838)
 /** H264_DMA_INLINK_DSCR_BF1_CH3 : RO; bitpos: [31:0]; default: 0;
  *  The address of the second-to-last inlink descriptor's next address x-2.
  */
@@ -6188,7 +6188,7 @@ extern "C" {
 /** H264_DMA_IN_ARB_CH3_REG register
  *  RX CH3 arb register
  */
-#define H264_DMA_IN_ARB_CH3_REG (DR_REG_H264_DMA_BASE + 0x840)
+#define H264_DMA_IN_ARB_CH3_REG (DR_REG_H264_DMA_2D_BASE + 0x840)
 /** H264_DMA_IN_ARB_TOKEN_NUM_CH3 : R/W; bitpos: [3:0]; default: 1;
  *  Set the max number of token count of arbiter
  */
@@ -6207,7 +6207,7 @@ extern "C" {
 /** H264_DMA_IN_ETM_CONF_CH3_REG register
  *  RX CH3 ETM config register
  */
-#define H264_DMA_IN_ETM_CONF_CH3_REG (DR_REG_H264_DMA_BASE + 0x848)
+#define H264_DMA_IN_ETM_CONF_CH3_REG (DR_REG_H264_DMA_2D_BASE + 0x848)
 /** H264_DMA_IN_ETM_EN_CH3 : R/W; bitpos: [0]; default: 0;
  *  Set this bit to 1 to enable ETM task function
  */
@@ -6233,7 +6233,7 @@ extern "C" {
 /** H264_DMA_IN_FIFO_CNT_CH3_REG register
  *  rx CH3 fifo cnt register
  */
-#define H264_DMA_IN_FIFO_CNT_CH3_REG (DR_REG_H264_DMA_BASE + 0x880)
+#define H264_DMA_IN_FIFO_CNT_CH3_REG (DR_REG_H264_DMA_2D_BASE + 0x880)
 /** H264_DMA_IN_CMDFIFO_INFIFO_CNT_CH3 : RO; bitpos: [9:0]; default: 0;
  *  only for debug
  */
@@ -6245,7 +6245,7 @@ extern "C" {
 /** H264_DMA_IN_POP_DATA_CNT_CH3_REG register
  *  rx CH3 pop data cnt register
  */
-#define H264_DMA_IN_POP_DATA_CNT_CH3_REG (DR_REG_H264_DMA_BASE + 0x884)
+#define H264_DMA_IN_POP_DATA_CNT_CH3_REG (DR_REG_H264_DMA_2D_BASE + 0x884)
 /** H264_DMA_IN_CMDFIFO_POP_DATA_CNT_CH3 : RO; bitpos: [7:0]; default: 7;
  *  only for debug
  */
@@ -6257,7 +6257,7 @@ extern "C" {
 /** H264_DMA_IN_XADDR_CH3_REG register
  *  rx CH3 xaddr register
  */
-#define H264_DMA_IN_XADDR_CH3_REG (DR_REG_H264_DMA_BASE + 0x888)
+#define H264_DMA_IN_XADDR_CH3_REG (DR_REG_H264_DMA_2D_BASE + 0x888)
 /** H264_DMA_IN_CMDFIFO_XADDR_CH3 : RO; bitpos: [31:0]; default: 0;
  *  only for debug
  */
@@ -6269,7 +6269,7 @@ extern "C" {
 /** H264_DMA_IN_BUF_HB_RCV_CH3_REG register
  *  rx CH3 buf len hb rcv register
  */
-#define H264_DMA_IN_BUF_HB_RCV_CH3_REG (DR_REG_H264_DMA_BASE + 0x88c)
+#define H264_DMA_IN_BUF_HB_RCV_CH3_REG (DR_REG_H264_DMA_2D_BASE + 0x88c)
 /** H264_DMA_IN_CMDFIFO_BUF_HB_RCV_CH3 : RO; bitpos: [28:0]; default: 0;
  *  only for debug
  */
@@ -6281,7 +6281,7 @@ extern "C" {
 /** H264_DMA_IN_CONF0_CH4_REG register
  *  RX CH4 config0 register
  */
-#define H264_DMA_IN_CONF0_CH4_REG (DR_REG_H264_DMA_BASE + 0x900)
+#define H264_DMA_IN_CONF0_CH4_REG (DR_REG_H264_DMA_2D_BASE + 0x900)
 /** H264_DMA_INDSCR_BURST_EN_CH4 : R/W; bitpos: [2]; default: 0;
  *  Set this bit to 1 to enable INCR burst transfer for Rx transmitting link descriptor
  *  when accessing SRAM.
@@ -6347,7 +6347,7 @@ extern "C" {
 /** H264_DMA_IN_INT_RAW_CH4_REG register
  *  RX CH4  interrupt raw register
  */
-#define H264_DMA_IN_INT_RAW_CH4_REG (DR_REG_H264_DMA_BASE + 0x904)
+#define H264_DMA_IN_INT_RAW_CH4_REG (DR_REG_H264_DMA_2D_BASE + 0x904)
 /** H264_DMA_IN_DONE_CH4_INT_RAW : R/WTC/SS; bitpos: [0]; default: 0;
  *  The raw interrupt bit turns to high level when the last data pointed by one inlink
  *  descriptor has been transmitted to peripherals for Rx channel 1.
@@ -6428,7 +6428,7 @@ extern "C" {
 /** H264_DMA_IN_INT_ENA_CH4_REG register
  *  RX CH4  interrupt ena register
  */
-#define H264_DMA_IN_INT_ENA_CH4_REG (DR_REG_H264_DMA_BASE + 0x908)
+#define H264_DMA_IN_INT_ENA_CH4_REG (DR_REG_H264_DMA_2D_BASE + 0x908)
 /** H264_DMA_IN_DONE_CH4_INT_ENA : R/W; bitpos: [0]; default: 0;
  *  The interrupt enable bit for the IN_DONE_CH_INT interrupt.
  */
@@ -6503,7 +6503,7 @@ extern "C" {
 /** H264_DMA_IN_INT_ST_CH4_REG register
  *  RX CH4  interrupt st register
  */
-#define H264_DMA_IN_INT_ST_CH4_REG (DR_REG_H264_DMA_BASE + 0x90c)
+#define H264_DMA_IN_INT_ST_CH4_REG (DR_REG_H264_DMA_2D_BASE + 0x90c)
 /** H264_DMA_IN_DONE_CH4_INT_ST : RO; bitpos: [0]; default: 0;
  *  The raw interrupt status bit for the IN_DONE_CH_INT interrupt.
  */
@@ -6578,7 +6578,7 @@ extern "C" {
 /** H264_DMA_IN_INT_CLR_CH4_REG register
  *  RX CH4  interrupt clr register
  */
-#define H264_DMA_IN_INT_CLR_CH4_REG (DR_REG_H264_DMA_BASE + 0x910)
+#define H264_DMA_IN_INT_CLR_CH4_REG (DR_REG_H264_DMA_2D_BASE + 0x910)
 /** H264_DMA_IN_DONE_CH4_INT_CLR : WT; bitpos: [0]; default: 0;
  *  Set this bit to clear the IN_DONE_CH_INT interrupt.
  */
@@ -6653,7 +6653,7 @@ extern "C" {
 /** H264_DMA_INFIFO_STATUS_CH4_REG register
  *  RX CH4 INFIFO status register
  */
-#define H264_DMA_INFIFO_STATUS_CH4_REG (DR_REG_H264_DMA_BASE + 0x914)
+#define H264_DMA_INFIFO_STATUS_CH4_REG (DR_REG_H264_DMA_2D_BASE + 0x914)
 /** H264_DMA_INFIFO_FULL_L2_CH4 : RO; bitpos: [0]; default: 0;
  *  Rx FIFO full signal for Rx channel.
  */
@@ -6721,7 +6721,7 @@ extern "C" {
 /** H264_DMA_IN_POP_CH4_REG register
  *  RX CH4 INFIFO pop register
  */
-#define H264_DMA_IN_POP_CH4_REG (DR_REG_H264_DMA_BASE + 0x918)
+#define H264_DMA_IN_POP_CH4_REG (DR_REG_H264_DMA_2D_BASE + 0x918)
 /** H264_DMA_INFIFO_RDATA_CH4 : RO; bitpos: [10:0]; default: 1024;
  *  This register stores the data popping from DMA Rx FIFO.
  */
@@ -6740,7 +6740,7 @@ extern "C" {
 /** H264_DMA_IN_LINK_CONF_CH4_REG register
  *  RX CH4 in_link dscr ctrl register
  */
-#define H264_DMA_IN_LINK_CONF_CH4_REG (DR_REG_H264_DMA_BASE + 0x91c)
+#define H264_DMA_IN_LINK_CONF_CH4_REG (DR_REG_H264_DMA_2D_BASE + 0x91c)
 /** H264_DMA_INLINK_AUTO_RET_CH4 : R/W; bitpos: [20]; default: 1;
  *  Set this bit to return to current inlink descriptor's address, when there are some
  *  errors in current receiving data.
@@ -6782,7 +6782,7 @@ extern "C" {
 /** H264_DMA_IN_LINK_ADDR_CH4_REG register
  *  RX CH4 in_link dscr addr register
  */
-#define H264_DMA_IN_LINK_ADDR_CH4_REG (DR_REG_H264_DMA_BASE + 0x920)
+#define H264_DMA_IN_LINK_ADDR_CH4_REG (DR_REG_H264_DMA_2D_BASE + 0x920)
 /** H264_DMA_INLINK_ADDR_CH4 : R/W; bitpos: [31:0]; default: 0;
  *  This register stores the first inlink descriptor's address.
  */
@@ -6794,7 +6794,7 @@ extern "C" {
 /** H264_DMA_IN_STATE_CH4_REG register
  *  RX CH4 state register
  */
-#define H264_DMA_IN_STATE_CH4_REG (DR_REG_H264_DMA_BASE + 0x924)
+#define H264_DMA_IN_STATE_CH4_REG (DR_REG_H264_DMA_2D_BASE + 0x924)
 /** H264_DMA_INLINK_DSCR_ADDR_CH4 : RO; bitpos: [17:0]; default: 0;
  *  This register stores the current inlink descriptor's address.
  */
@@ -6827,7 +6827,7 @@ extern "C" {
 /** H264_DMA_IN_SUC_EOF_DES_ADDR_CH4_REG register
  *  RX CH4 eof des addr register
  */
-#define H264_DMA_IN_SUC_EOF_DES_ADDR_CH4_REG (DR_REG_H264_DMA_BASE + 0x928)
+#define H264_DMA_IN_SUC_EOF_DES_ADDR_CH4_REG (DR_REG_H264_DMA_2D_BASE + 0x928)
 /** H264_DMA_IN_SUC_EOF_DES_ADDR_CH4 : RO; bitpos: [31:0]; default: 0;
  *  This register stores the address of the inlink descriptor when the EOF bit in this
  *  descriptor is 1.
@@ -6840,7 +6840,7 @@ extern "C" {
 /** H264_DMA_IN_ERR_EOF_DES_ADDR_CH4_REG register
  *  RX CH4 err eof des addr register
  */
-#define H264_DMA_IN_ERR_EOF_DES_ADDR_CH4_REG (DR_REG_H264_DMA_BASE + 0x92c)
+#define H264_DMA_IN_ERR_EOF_DES_ADDR_CH4_REG (DR_REG_H264_DMA_2D_BASE + 0x92c)
 /** H264_DMA_IN_ERR_EOF_DES_ADDR_CH4 : RO; bitpos: [31:0]; default: 0;
  *  This register stores the address of the inlink descriptor when there are some
  *  errors in current receiving data.
@@ -6853,7 +6853,7 @@ extern "C" {
 /** H264_DMA_IN_DSCR_CH4_REG register
  *  RX CH4 next dscr addr register
  */
-#define H264_DMA_IN_DSCR_CH4_REG (DR_REG_H264_DMA_BASE + 0x930)
+#define H264_DMA_IN_DSCR_CH4_REG (DR_REG_H264_DMA_2D_BASE + 0x930)
 /** H264_DMA_INLINK_DSCR_CH4 : RO; bitpos: [31:0]; default: 0;
  *  The address of the next inlink descriptor address x.
  */
@@ -6865,7 +6865,7 @@ extern "C" {
 /** H264_DMA_IN_DSCR_BF0_CH4_REG register
  *  RX CH4 last dscr addr register
  */
-#define H264_DMA_IN_DSCR_BF0_CH4_REG (DR_REG_H264_DMA_BASE + 0x934)
+#define H264_DMA_IN_DSCR_BF0_CH4_REG (DR_REG_H264_DMA_2D_BASE + 0x934)
 /** H264_DMA_INLINK_DSCR_BF0_CH4 : RO; bitpos: [31:0]; default: 0;
  *  The address of the last inlink descriptor's next address x-1.
  */
@@ -6877,7 +6877,7 @@ extern "C" {
 /** H264_DMA_IN_DSCR_BF1_CH4_REG register
  *  RX CH4 second-to-last dscr addr register
  */
-#define H264_DMA_IN_DSCR_BF1_CH4_REG (DR_REG_H264_DMA_BASE + 0x938)
+#define H264_DMA_IN_DSCR_BF1_CH4_REG (DR_REG_H264_DMA_2D_BASE + 0x938)
 /** H264_DMA_INLINK_DSCR_BF1_CH4 : RO; bitpos: [31:0]; default: 0;
  *  The address of the second-to-last inlink descriptor's next address x-2.
  */
@@ -6889,7 +6889,7 @@ extern "C" {
 /** H264_DMA_IN_ARB_CH4_REG register
  *  RX CH4 arb register
  */
-#define H264_DMA_IN_ARB_CH4_REG (DR_REG_H264_DMA_BASE + 0x940)
+#define H264_DMA_IN_ARB_CH4_REG (DR_REG_H264_DMA_2D_BASE + 0x940)
 /** H264_DMA_IN_ARB_TOKEN_NUM_CH4 : R/W; bitpos: [3:0]; default: 1;
  *  Set the max number of token count of arbiter
  */
@@ -6915,7 +6915,7 @@ extern "C" {
 /** H264_DMA_IN_ETM_CONF_CH4_REG register
  *  RX CH4 ETM config register
  */
-#define H264_DMA_IN_ETM_CONF_CH4_REG (DR_REG_H264_DMA_BASE + 0x948)
+#define H264_DMA_IN_ETM_CONF_CH4_REG (DR_REG_H264_DMA_2D_BASE + 0x948)
 /** H264_DMA_IN_ETM_EN_CH4 : R/W; bitpos: [0]; default: 0;
  *  Set this bit to 1 to enable ETM task function
  */
@@ -6941,7 +6941,7 @@ extern "C" {
 /** H264_DMA_IN_FIFO_CNT_CH4_REG register
  *  rx CH4 fifo cnt register
  */
-#define H264_DMA_IN_FIFO_CNT_CH4_REG (DR_REG_H264_DMA_BASE + 0x980)
+#define H264_DMA_IN_FIFO_CNT_CH4_REG (DR_REG_H264_DMA_2D_BASE + 0x980)
 /** H264_DMA_IN_CMDFIFO_INFIFO_CNT_CH4 : RO; bitpos: [9:0]; default: 0;
  *  only for debug
  */
@@ -6953,7 +6953,7 @@ extern "C" {
 /** H264_DMA_IN_POP_DATA_CNT_CH4_REG register
  *  rx CH4 pop data cnt register
  */
-#define H264_DMA_IN_POP_DATA_CNT_CH4_REG (DR_REG_H264_DMA_BASE + 0x984)
+#define H264_DMA_IN_POP_DATA_CNT_CH4_REG (DR_REG_H264_DMA_2D_BASE + 0x984)
 /** H264_DMA_IN_CMDFIFO_POP_DATA_CNT_CH4 : RO; bitpos: [7:0]; default: 7;
  *  only for debug
  */
@@ -6965,7 +6965,7 @@ extern "C" {
 /** H264_DMA_IN_XADDR_CH4_REG register
  *  rx CH4 xaddr register
  */
-#define H264_DMA_IN_XADDR_CH4_REG (DR_REG_H264_DMA_BASE + 0x988)
+#define H264_DMA_IN_XADDR_CH4_REG (DR_REG_H264_DMA_2D_BASE + 0x988)
 /** H264_DMA_IN_CMDFIFO_XADDR_CH4 : RO; bitpos: [31:0]; default: 0;
  *  only for debug
  */
@@ -6977,7 +6977,7 @@ extern "C" {
 /** H264_DMA_IN_BUF_HB_RCV_CH4_REG register
  *  rx CH4 buf len hb rcv register
  */
-#define H264_DMA_IN_BUF_HB_RCV_CH4_REG (DR_REG_H264_DMA_BASE + 0x98c)
+#define H264_DMA_IN_BUF_HB_RCV_CH4_REG (DR_REG_H264_DMA_2D_BASE + 0x98c)
 /** H264_DMA_IN_CMDFIFO_BUF_HB_RCV_CH4 : RO; bitpos: [28:0]; default: 0;
  *  only for debug
  */
@@ -6989,7 +6989,7 @@ extern "C" {
 /** H264_DMA_IN_CONF0_CH5_REG register
  *  RX CH5 config0 register
  */
-#define H264_DMA_IN_CONF0_CH5_REG (DR_REG_H264_DMA_BASE + 0xa00)
+#define H264_DMA_IN_CONF0_CH5_REG (DR_REG_H264_DMA_2D_BASE + 0xa00)
 /** H264_DMA_IN_ECC_AES_EN_CH5 : R/W; bitpos: [3]; default: 0;
  *  When access address space is ecc/aes area, this bit should be set to 1. In this
  *  case, the start address of square should be 16-bit aligned. The width of square
@@ -7033,7 +7033,7 @@ extern "C" {
 /** H264_DMA_IN_CONF1_CH5_REG register
  *  RX CH5 config1 register
  */
-#define H264_DMA_IN_CONF1_CH5_REG (DR_REG_H264_DMA_BASE + 0xa04)
+#define H264_DMA_IN_CONF1_CH5_REG (DR_REG_H264_DMA_2D_BASE + 0xa04)
 /** H264_DMA_BLOCK_START_ADDR_CH5 : R/W; bitpos: [31:0]; default: 0;
  *  RX Channel 5 destination start address
  */
@@ -7045,7 +7045,7 @@ extern "C" {
 /** H264_DMA_IN_CONF2_CH5_REG register
  *  RX CH5 config2 register
  */
-#define H264_DMA_IN_CONF2_CH5_REG (DR_REG_H264_DMA_BASE + 0xa08)
+#define H264_DMA_IN_CONF2_CH5_REG (DR_REG_H264_DMA_2D_BASE + 0xa08)
 /** H264_DMA_BLOCK_ROW_LENGTH_12LINE_CH5 : R/W; bitpos: [15:0]; default: 30720;
  *  The number of bytes contained in a row block 12line in RX channel 5
  */
@@ -7064,7 +7064,7 @@ extern "C" {
 /** H264_DMA_IN_CONF3_CH5_REG register
  *  RX CH5 config3 register
  */
-#define H264_DMA_IN_CONF3_CH5_REG (DR_REG_H264_DMA_BASE + 0xa0c)
+#define H264_DMA_IN_CONF3_CH5_REG (DR_REG_H264_DMA_2D_BASE + 0xa0c)
 /** H264_DMA_BLOCK_LENGTH_12LINE_CH5 : R/W; bitpos: [13:0]; default: 256;
  *  The number of bytes contained in a block 12line
  */
@@ -7083,7 +7083,7 @@ extern "C" {
 /** H264_DMA_IN_INT_RAW_CH5_REG register
  *  RX CH5  interrupt raw register
  */
-#define H264_DMA_IN_INT_RAW_CH5_REG (DR_REG_H264_DMA_BASE + 0xa10)
+#define H264_DMA_IN_INT_RAW_CH5_REG (DR_REG_H264_DMA_2D_BASE + 0xa10)
 /** H264_DMA_IN_DONE_CH5_INT_RAW : R/WTC/SS; bitpos: [0]; default: 0;
  *  The raw interrupt bit turns to high level when the last data pointed by one inlink
  *  descriptor has been transmitted to peripherals for Rx channel 1.
@@ -7125,7 +7125,7 @@ extern "C" {
 /** H264_DMA_IN_INT_ENA_CH5_REG register
  *  RX CH5  interrupt ena register
  */
-#define H264_DMA_IN_INT_ENA_CH5_REG (DR_REG_H264_DMA_BASE + 0xa14)
+#define H264_DMA_IN_INT_ENA_CH5_REG (DR_REG_H264_DMA_2D_BASE + 0xa14)
 /** H264_DMA_IN_DONE_CH5_INT_ENA : R/W; bitpos: [0]; default: 0;
  *  The interrupt enable bit for the IN_DONE_CH_INT interrupt.
  */
@@ -7165,7 +7165,7 @@ extern "C" {
 /** H264_DMA_IN_INT_ST_CH5_REG register
  *  RX CH5  interrupt st register
  */
-#define H264_DMA_IN_INT_ST_CH5_REG (DR_REG_H264_DMA_BASE + 0xa18)
+#define H264_DMA_IN_INT_ST_CH5_REG (DR_REG_H264_DMA_2D_BASE + 0xa18)
 /** H264_DMA_IN_DONE_CH5_INT_ST : RO; bitpos: [0]; default: 0;
  *  The raw interrupt status bit for the IN_DONE_CH_INT interrupt.
  */
@@ -7205,7 +7205,7 @@ extern "C" {
 /** H264_DMA_IN_INT_CLR_CH5_REG register
  *  RX CH5  interrupt clr register
  */
-#define H264_DMA_IN_INT_CLR_CH5_REG (DR_REG_H264_DMA_BASE + 0xa1c)
+#define H264_DMA_IN_INT_CLR_CH5_REG (DR_REG_H264_DMA_2D_BASE + 0xa1c)
 /** H264_DMA_IN_DONE_CH5_INT_CLR : WT; bitpos: [0]; default: 0;
  *  Set this bit to clear the IN_DONE_CH_INT interrupt.
  */
@@ -7245,7 +7245,7 @@ extern "C" {
 /** H264_DMA_INFIFO_STATUS_CH5_REG register
  *  RX CH5 INFIFO status register
  */
-#define H264_DMA_INFIFO_STATUS_CH5_REG (DR_REG_H264_DMA_BASE + 0xa20)
+#define H264_DMA_INFIFO_STATUS_CH5_REG (DR_REG_H264_DMA_2D_BASE + 0xa20)
 /** H264_DMA_INFIFO_FULL_L1_CH5 : RO; bitpos: [0]; default: 0;
  *  Tx FIFO full signal for Tx channel 1.
  */
@@ -7271,7 +7271,7 @@ extern "C" {
 /** H264_DMA_IN_POP_CH5_REG register
  *  RX CH5 INFIFO pop register
  */
-#define H264_DMA_IN_POP_CH5_REG (DR_REG_H264_DMA_BASE + 0xa24)
+#define H264_DMA_IN_POP_CH5_REG (DR_REG_H264_DMA_2D_BASE + 0xa24)
 /** H264_DMA_INFIFO_RDATA_CH5 : RO; bitpos: [10:0]; default: 1024;
  *  This register stores the data popping from DMA Rx FIFO.
  */
@@ -7290,7 +7290,7 @@ extern "C" {
 /** H264_DMA_IN_STATE_CH5_REG register
  *  RX CH5 state register
  */
-#define H264_DMA_IN_STATE_CH5_REG (DR_REG_H264_DMA_BASE + 0xa28)
+#define H264_DMA_IN_STATE_CH5_REG (DR_REG_H264_DMA_2D_BASE + 0xa28)
 /** H264_DMA_IN_STATE_CH5 : RO; bitpos: [2:0]; default: 0;
  *  This register stores the current control module state machine state.
  */
@@ -7309,7 +7309,7 @@ extern "C" {
 /** H264_DMA_IN_ARB_CH5_REG register
  *  RX CH5 arb register
  */
-#define H264_DMA_IN_ARB_CH5_REG (DR_REG_H264_DMA_BASE + 0xa40)
+#define H264_DMA_IN_ARB_CH5_REG (DR_REG_H264_DMA_2D_BASE + 0xa40)
 /** H264_DMA_IN_ARB_TOKEN_NUM_CH5 : R/W; bitpos: [3:0]; default: 1;
  *  Set the max number of token count of arbiter
  */
@@ -7328,7 +7328,7 @@ extern "C" {
 /** H264_DMA_IN_FIFO_CNT_CH5_REG register
  *  rx CH5 fifo cnt register
  */
-#define H264_DMA_IN_FIFO_CNT_CH5_REG (DR_REG_H264_DMA_BASE + 0xa80)
+#define H264_DMA_IN_FIFO_CNT_CH5_REG (DR_REG_H264_DMA_2D_BASE + 0xa80)
 /** H264_DMA_IN_CMDFIFO_INFIFO_CNT_CH5 : RO; bitpos: [9:0]; default: 0;
  *  only for debug
  */
@@ -7340,7 +7340,7 @@ extern "C" {
 /** H264_DMA_IN_POP_DATA_CNT_CH5_REG register
  *  rx CH5 pop data cnt register
  */
-#define H264_DMA_IN_POP_DATA_CNT_CH5_REG (DR_REG_H264_DMA_BASE + 0xa84)
+#define H264_DMA_IN_POP_DATA_CNT_CH5_REG (DR_REG_H264_DMA_2D_BASE + 0xa84)
 /** H264_DMA_IN_CMDFIFO_POP_DATA_CNT_CH5 : RO; bitpos: [7:0]; default: 255;
  *  only for debug
  */
@@ -7352,7 +7352,7 @@ extern "C" {
 /** H264_DMA_IN_XADDR_CH5_REG register
  *  rx CH5 xaddr register
  */
-#define H264_DMA_IN_XADDR_CH5_REG (DR_REG_H264_DMA_BASE + 0xa88)
+#define H264_DMA_IN_XADDR_CH5_REG (DR_REG_H264_DMA_2D_BASE + 0xa88)
 /** H264_DMA_IN_CMDFIFO_XADDR_CH5 : RO; bitpos: [31:0]; default: 0;
  *  only for debug
  */
@@ -7364,7 +7364,7 @@ extern "C" {
 /** H264_DMA_IN_BUF_HB_RCV_CH5_REG register
  *  rx CH5 buf len hb rcv register
  */
-#define H264_DMA_IN_BUF_HB_RCV_CH5_REG (DR_REG_H264_DMA_BASE + 0xa8c)
+#define H264_DMA_IN_BUF_HB_RCV_CH5_REG (DR_REG_H264_DMA_2D_BASE + 0xa8c)
 /** H264_DMA_IN_CMDFIFO_BUF_HB_RCV_CH5 : RO; bitpos: [28:0]; default: 0;
  *  only for debug
  */
@@ -7376,7 +7376,7 @@ extern "C" {
 /** H264_DMA_INTER_AXI_ERR_REG register
  *  inter memory axi err register
  */
-#define H264_DMA_INTER_AXI_ERR_REG (DR_REG_H264_DMA_BASE + 0xb00)
+#define H264_DMA_INTER_AXI_ERR_REG (DR_REG_H264_DMA_2D_BASE + 0xb00)
 /** H264_DMA_INTER_RID_ERR_CNT : RO; bitpos: [3:0]; default: 0;
  *  AXI read id err cnt
  */
@@ -7430,7 +7430,7 @@ extern "C" {
 /** H264_DMA_EXTER_AXI_ERR_REG register
  *  exter memory axi err register
  */
-#define H264_DMA_EXTER_AXI_ERR_REG (DR_REG_H264_DMA_BASE + 0xb04)
+#define H264_DMA_EXTER_AXI_ERR_REG (DR_REG_H264_DMA_2D_BASE + 0xb04)
 /** H264_DMA_EXTER_RID_ERR_CNT : RO; bitpos: [3:0]; default: 0;
  *  AXI read id err cnt
  */
@@ -7484,7 +7484,7 @@ extern "C" {
 /** H264_DMA_RST_CONF_REG register
  *  axi reset config register
  */
-#define H264_DMA_RST_CONF_REG (DR_REG_H264_DMA_BASE + 0xb08)
+#define H264_DMA_RST_CONF_REG (DR_REG_H264_DMA_2D_BASE + 0xb08)
 /** H264_DMA_INTER_AXIM_RD_RST : R/W; bitpos: [0]; default: 0;
  *  Write 1 then write 0  to this bit to reset axi master read data FIFO.
  */
@@ -7525,7 +7525,7 @@ extern "C" {
 /** H264_DMA_INTER_MEM_START_ADDR0_REG register
  *  Start address of inter memory range0 register
  */
-#define H264_DMA_INTER_MEM_START_ADDR0_REG (DR_REG_H264_DMA_BASE + 0xb0c)
+#define H264_DMA_INTER_MEM_START_ADDR0_REG (DR_REG_H264_DMA_2D_BASE + 0xb0c)
 /** H264_DMA_ACCESS_INTER_MEM_START_ADDR0 : R/W; bitpos: [31:0]; default: 806354944;
  *  The start address of accessible address space.
  */
@@ -7537,7 +7537,7 @@ extern "C" {
 /** H264_DMA_INTER_MEM_END_ADDR0_REG register
  *  end address of inter memory range0 register
  */
-#define H264_DMA_INTER_MEM_END_ADDR0_REG (DR_REG_H264_DMA_BASE + 0xb10)
+#define H264_DMA_INTER_MEM_END_ADDR0_REG (DR_REG_H264_DMA_2D_BASE + 0xb10)
 /** H264_DMA_ACCESS_INTER_MEM_END_ADDR0 : R/W; bitpos: [31:0]; default: 2415919103;
  *  The end address of accessible address space. The access address beyond this range
  *  would lead to descriptor error.
@@ -7550,7 +7550,7 @@ extern "C" {
 /** H264_DMA_INTER_MEM_START_ADDR1_REG register
  *  Start address of inter memory range1 register
  */
-#define H264_DMA_INTER_MEM_START_ADDR1_REG (DR_REG_H264_DMA_BASE + 0xb14)
+#define H264_DMA_INTER_MEM_START_ADDR1_REG (DR_REG_H264_DMA_2D_BASE + 0xb14)
 /** H264_DMA_ACCESS_INTER_MEM_START_ADDR1 : R/W; bitpos: [31:0]; default: 806354944;
  *  The start address of accessible address space.
  */
@@ -7562,7 +7562,7 @@ extern "C" {
 /** H264_DMA_INTER_MEM_END_ADDR1_REG register
  *  end address of inter memory range1 register
  */
-#define H264_DMA_INTER_MEM_END_ADDR1_REG (DR_REG_H264_DMA_BASE + 0xb18)
+#define H264_DMA_INTER_MEM_END_ADDR1_REG (DR_REG_H264_DMA_2D_BASE + 0xb18)
 /** H264_DMA_ACCESS_INTER_MEM_END_ADDR1 : R/W; bitpos: [31:0]; default: 2415919103;
  *  The end address of accessible address space. The access address beyond this range
  *  would lead to descriptor error.
@@ -7575,7 +7575,7 @@ extern "C" {
 /** H264_DMA_EXTER_MEM_START_ADDR0_REG register
  *  Start address of exter memory range0 register
  */
-#define H264_DMA_EXTER_MEM_START_ADDR0_REG (DR_REG_H264_DMA_BASE + 0xb20)
+#define H264_DMA_EXTER_MEM_START_ADDR0_REG (DR_REG_H264_DMA_2D_BASE + 0xb20)
 /** H264_DMA_ACCESS_EXTER_MEM_START_ADDR0 : R/W; bitpos: [31:0]; default: 806354944;
  *  The start address of accessible address space.
  */
@@ -7587,7 +7587,7 @@ extern "C" {
 /** H264_DMA_EXTER_MEM_END_ADDR0_REG register
  *  end address of exter memory range0 register
  */
-#define H264_DMA_EXTER_MEM_END_ADDR0_REG (DR_REG_H264_DMA_BASE + 0xb24)
+#define H264_DMA_EXTER_MEM_END_ADDR0_REG (DR_REG_H264_DMA_2D_BASE + 0xb24)
 /** H264_DMA_ACCESS_EXTER_MEM_END_ADDR0 : R/W; bitpos: [31:0]; default: 2415919103;
  *  The end address of accessible address space. The access address beyond this range
  *  would lead to descriptor error.
@@ -7600,7 +7600,7 @@ extern "C" {
 /** H264_DMA_EXTER_MEM_START_ADDR1_REG register
  *  Start address of exter memory range1 register
  */
-#define H264_DMA_EXTER_MEM_START_ADDR1_REG (DR_REG_H264_DMA_BASE + 0xb28)
+#define H264_DMA_EXTER_MEM_START_ADDR1_REG (DR_REG_H264_DMA_2D_BASE + 0xb28)
 /** H264_DMA_ACCESS_EXTER_MEM_START_ADDR1 : R/W; bitpos: [31:0]; default: 806354944;
  *  The start address of accessible address space.
  */
@@ -7612,7 +7612,7 @@ extern "C" {
 /** H264_DMA_EXTER_MEM_END_ADDR1_REG register
  *  end address of exter memory range1 register
  */
-#define H264_DMA_EXTER_MEM_END_ADDR1_REG (DR_REG_H264_DMA_BASE + 0xb2c)
+#define H264_DMA_EXTER_MEM_END_ADDR1_REG (DR_REG_H264_DMA_2D_BASE + 0xb2c)
 /** H264_DMA_ACCESS_EXTER_MEM_END_ADDR1 : R/W; bitpos: [31:0]; default: 2415919103;
  *  The end address of accessible address space. The access address beyond this range
  *  would lead to descriptor error.
@@ -7625,7 +7625,7 @@ extern "C" {
 /** H264_DMA_OUT_ARB_CONFIG_REG register
  *  reserved
  */
-#define H264_DMA_OUT_ARB_CONFIG_REG (DR_REG_H264_DMA_BASE + 0xb30)
+#define H264_DMA_OUT_ARB_CONFIG_REG (DR_REG_H264_DMA_2D_BASE + 0xb30)
 /** H264_DMA_OUT_ARB_TIMEOUT_NUM : R/W; bitpos: [15:0]; default: 0;
  *  Set the max number of timeout count of arbiter
  */
@@ -7644,7 +7644,7 @@ extern "C" {
 /** H264_DMA_IN_ARB_CONFIG_REG register
  *  reserved
  */
-#define H264_DMA_IN_ARB_CONFIG_REG (DR_REG_H264_DMA_BASE + 0xb34)
+#define H264_DMA_IN_ARB_CONFIG_REG (DR_REG_H264_DMA_2D_BASE + 0xb34)
 /** H264_DMA_IN_ARB_TIMEOUT_NUM : R/W; bitpos: [15:0]; default: 0;
  *  Set the max number of timeout count of arbiter
  */
@@ -7663,7 +7663,7 @@ extern "C" {
 /** H264_DMA_DATE_REG register
  *  reserved
  */
-#define H264_DMA_DATE_REG (DR_REG_H264_DMA_BASE + 0xb3c)
+#define H264_DMA_DATE_REG (DR_REG_H264_DMA_2D_BASE + 0xb3c)
 /** H264_DMA_DATE : R/W; bitpos: [31:0]; default: 539165699;
  *  register version.
  */
@@ -7675,7 +7675,7 @@ extern "C" {
 /** H264_DMA_COUNTER_RST_REG register
  *  counter reset register
  */
-#define H264_DMA_COUNTER_RST_REG (DR_REG_H264_DMA_BASE + 0xb50)
+#define H264_DMA_COUNTER_RST_REG (DR_REG_H264_DMA_2D_BASE + 0xb50)
 /** H264_DMA_RX_CH0_EXTER_COUNTER_RST : R/W; bitpos: [0]; default: 0;
  *  Write 1 then write 0 to this bit to reset rx ch0 counter.
  */
@@ -7708,7 +7708,7 @@ extern "C" {
 /** H264_DMA_RX_CH0_COUNTER_REG register
  *  rx ch0 counter register
  */
-#define H264_DMA_RX_CH0_COUNTER_REG (DR_REG_H264_DMA_BASE + 0xb54)
+#define H264_DMA_RX_CH0_COUNTER_REG (DR_REG_H264_DMA_2D_BASE + 0xb54)
 /** H264_DMA_RX_CH0_CNT : RO; bitpos: [22:0]; default: 0;
  *  rx ch0 counter register
  */
@@ -7720,7 +7720,7 @@ extern "C" {
 /** H264_DMA_RX_CH1_COUNTER_REG register
  *  rx ch1 counter register
  */
-#define H264_DMA_RX_CH1_COUNTER_REG (DR_REG_H264_DMA_BASE + 0xb58)
+#define H264_DMA_RX_CH1_COUNTER_REG (DR_REG_H264_DMA_2D_BASE + 0xb58)
 /** H264_DMA_RX_CH1_CNT : RO; bitpos: [20:0]; default: 0;
  *  rx ch1 counter register
  */
@@ -7732,7 +7732,7 @@ extern "C" {
 /** H264_DMA_RX_CH2_COUNTER_REG register
  *  rx ch2 counter register
  */
-#define H264_DMA_RX_CH2_COUNTER_REG (DR_REG_H264_DMA_BASE + 0xb5c)
+#define H264_DMA_RX_CH2_COUNTER_REG (DR_REG_H264_DMA_2D_BASE + 0xb5c)
 /** H264_DMA_RX_CH2_CNT : RO; bitpos: [10:0]; default: 0;
  *  rx ch2 counter register
  */
@@ -7744,7 +7744,7 @@ extern "C" {
 /** H264_DMA_RX_CH5_COUNTER_REG register
  *  rx ch5 counter register
  */
-#define H264_DMA_RX_CH5_COUNTER_REG (DR_REG_H264_DMA_BASE + 0xb60)
+#define H264_DMA_RX_CH5_COUNTER_REG (DR_REG_H264_DMA_2D_BASE + 0xb60)
 /** H264_DMA_RX_CH5_CNT : RO; bitpos: [16:0]; default: 0;
  *  rx ch5 counter register
  */

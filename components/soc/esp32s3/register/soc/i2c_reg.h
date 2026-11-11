@@ -10,11 +10,13 @@
 extern "C" {
 #endif
 
+#define DR_REG_I2C_BASE(i)                      (DR_REG_I2C_EXT_BASE + (i) * 0x14000)
+
 /** I2C_SCL_LOW_PERIOD_REG register
  *  Configures the low level width of the SCL
  *  Clock
  */
-#define I2C_SCL_LOW_PERIOD_REG (DR_REG_I2C_BASE + 0x0)
+#define I2C_SCL_LOW_PERIOD_REG(i) (DR_REG_I2C_BASE(i) + 0x0)
 /** I2C_SCL_LOW_PERIOD : R/W; bitpos: [8:0]; default: 0;
  *  This register is used to configure for how long SCL remains low in master mode, in
  *  I2C module clock cycles.
@@ -27,7 +29,7 @@ extern "C" {
 /** I2C_CTR_REG register
  *  Transmission setting
  */
-#define I2C_CTR_REG (DR_REG_I2C_BASE + 0x4)
+#define I2C_CTR_REG(i) (DR_REG_I2C_BASE(i) + 0x4)
 /** I2C_SDA_FORCE_OUT : R/W; bitpos: [0]; default: 1;
  *  0: direct output; 1: open drain output.
  */
@@ -147,7 +149,7 @@ extern "C" {
 /** I2C_SR_REG register
  *  Describe I2C work status.
  */
-#define I2C_SR_REG (DR_REG_I2C_BASE + 0x8)
+#define I2C_SR_REG(i) (DR_REG_I2C_BASE(i) + 0x8)
 /** I2C_RESP_REC : RO; bitpos: [0]; default: 0;
  *  The received ACK value in master mode or slave mode. 0: ACK, 1: NACK.
  */
@@ -228,7 +230,7 @@ extern "C" {
 /** I2C_TO_REG register
  *  Setting time out control for receiving data.
  */
-#define I2C_TO_REG (DR_REG_I2C_BASE + 0xc)
+#define I2C_TO_REG(i) (DR_REG_I2C_BASE(i) + 0xc)
 /** I2C_TIME_OUT_VALUE : R/W; bitpos: [4:0]; default: 16;
  *  This register is used to configure the timeout for receiving a data bit in APB
  *  clock cycles.
@@ -248,7 +250,7 @@ extern "C" {
 /** I2C_SLAVE_ADDR_REG register
  *  Local slave address setting
  */
-#define I2C_SLAVE_ADDR_REG (DR_REG_I2C_BASE + 0x10)
+#define I2C_SLAVE_ADDR_REG(i) (DR_REG_I2C_BASE(i) + 0x10)
 /** I2C_SLAVE_ADDR : R/W; bitpos: [14:0]; default: 0;
  *  When configured as an I2C Slave, this field is used to configure the slave address.
  */
@@ -267,7 +269,7 @@ extern "C" {
 /** I2C_FIFO_ST_REG register
  *  FIFO status register.
  */
-#define I2C_FIFO_ST_REG (DR_REG_I2C_BASE + 0x14)
+#define I2C_FIFO_ST_REG(i) (DR_REG_I2C_BASE(i) + 0x14)
 /** I2C_RXFIFO_RADDR : RO; bitpos: [4:0]; default: 0;
  *  This is the offset address of the APB reading from rxfifo
  */
@@ -307,7 +309,7 @@ extern "C" {
 /** I2C_FIFO_CONF_REG register
  *  FIFO configuration register.
  */
-#define I2C_FIFO_CONF_REG (DR_REG_I2C_BASE + 0x18)
+#define I2C_FIFO_CONF_REG(i) (DR_REG_I2C_BASE(i) + 0x18)
 /** I2C_RXFIFO_WM_THRHD : R/W; bitpos: [4:0]; default: 11;
  *  The water mark threshold of rx FIFO in nonfifo access mode. When
  *  reg_reg_fifo_prt_en is 1 and rx FIFO counter is bigger than
@@ -367,7 +369,7 @@ extern "C" {
 /** I2C_DATA_REG register
  *  Rx FIFO read data.
  */
-#define I2C_DATA_REG (DR_REG_I2C_BASE + 0x1c)
+#define I2C_DATA_REG(i) (DR_REG_I2C_BASE(i) + 0x1c)
 /** I2C_FIFO_RDATA : RO; bitpos: [7:0]; default: 0;
  *  The value of rx FIFO read data.
  */
@@ -379,7 +381,7 @@ extern "C" {
 /** I2C_INT_RAW_REG register
  *  Raw interrupt status
  */
-#define I2C_INT_RAW_REG (DR_REG_I2C_BASE + 0x20)
+#define I2C_INT_RAW_REG(i) (DR_REG_I2C_BASE(i) + 0x20)
 /** I2C_RXFIFO_WM_INT_RAW : R/SS/WTC; bitpos: [0]; default: 0;
  *  The raw interrupt bit for I2C_RXFIFO_WM_INT interrupt.
  */
@@ -510,7 +512,7 @@ extern "C" {
 /** I2C_INT_CLR_REG register
  *  Interrupt clear bits
  */
-#define I2C_INT_CLR_REG (DR_REG_I2C_BASE + 0x24)
+#define I2C_INT_CLR_REG(i) (DR_REG_I2C_BASE(i) + 0x24)
 /** I2C_RXFIFO_WM_INT_CLR : WT; bitpos: [0]; default: 0;
  *  Set this bit to clear I2C_RXFIFO_WM_INT interrupt.
  */
@@ -641,7 +643,7 @@ extern "C" {
 /** I2C_INT_ENA_REG register
  *  Interrupt enable bits
  */
-#define I2C_INT_ENA_REG (DR_REG_I2C_BASE + 0x28)
+#define I2C_INT_ENA_REG(i) (DR_REG_I2C_BASE(i) + 0x28)
 /** I2C_RXFIFO_WM_INT_ENA : R/W; bitpos: [0]; default: 0;
  *  The interrupt enable bit for I2C_RXFIFO_WM_INT interrupt.
  */
@@ -772,7 +774,7 @@ extern "C" {
 /** I2C_INT_STATUS_REG register
  *  Status of captured I2C communication events
  */
-#define I2C_INT_STATUS_REG (DR_REG_I2C_BASE + 0x2c)
+#define I2C_INT_STATUS_REG(i) (DR_REG_I2C_BASE(i) + 0x2c)
 /** I2C_RXFIFO_WM_INT_ST : RO; bitpos: [0]; default: 0;
  *  The masked interrupt status bit for I2C_RXFIFO_WM_INT interrupt.
  */
@@ -903,7 +905,7 @@ extern "C" {
 /** I2C_SDA_HOLD_REG register
  *  Configures the hold time after a negative SCL edge.
  */
-#define I2C_SDA_HOLD_REG (DR_REG_I2C_BASE + 0x30)
+#define I2C_SDA_HOLD_REG(i) (DR_REG_I2C_BASE(i) + 0x30)
 /** I2C_SDA_HOLD_TIME : R/W; bitpos: [8:0]; default: 0;
  *  This register is used to configure the time to hold the data after the negative
  *  edge of SCL, in I2C module clock cycles.
@@ -916,7 +918,7 @@ extern "C" {
 /** I2C_SDA_SAMPLE_REG register
  *  Configures the sample time after a positive SCL edge.
  */
-#define I2C_SDA_SAMPLE_REG (DR_REG_I2C_BASE + 0x34)
+#define I2C_SDA_SAMPLE_REG(i) (DR_REG_I2C_BASE(i) + 0x34)
 /** I2C_SDA_SAMPLE_TIME : R/W; bitpos: [8:0]; default: 0;
  *  This register is used to configure for how long SDA is sampled, in I2C module clock
  *  cycles.
@@ -929,7 +931,7 @@ extern "C" {
 /** I2C_SCL_HIGH_PERIOD_REG register
  *  Configures the high level width of SCL
  */
-#define I2C_SCL_HIGH_PERIOD_REG (DR_REG_I2C_BASE + 0x38)
+#define I2C_SCL_HIGH_PERIOD_REG(i) (DR_REG_I2C_BASE(i) + 0x38)
 /** I2C_SCL_HIGH_PERIOD : R/W; bitpos: [8:0]; default: 0;
  *  This register is used to configure for how long SCL remains high in master mode, in
  *  I2C module clock cycles.
@@ -950,7 +952,7 @@ extern "C" {
 /** I2C_SCL_START_HOLD_REG register
  *  Configures the delay between the SDA and SCL negative edge for a start condition
  */
-#define I2C_SCL_START_HOLD_REG (DR_REG_I2C_BASE + 0x40)
+#define I2C_SCL_START_HOLD_REG(i) (DR_REG_I2C_BASE(i) + 0x40)
 /** I2C_SCL_START_HOLD_TIME : R/W; bitpos: [8:0]; default: 8;
  *  This register is used to configure the time between the negative edge
  *  of SDA and the negative edge of SCL for a START condition, in I2C module clock
@@ -965,7 +967,7 @@ extern "C" {
  *  Configures the delay between the positive
  *  edge of SCL and the negative edge of SDA
  */
-#define I2C_SCL_RSTART_SETUP_REG (DR_REG_I2C_BASE + 0x44)
+#define I2C_SCL_RSTART_SETUP_REG(i) (DR_REG_I2C_BASE(i) + 0x44)
 /** I2C_SCL_RSTART_SETUP_TIME : R/W; bitpos: [8:0]; default: 8;
  *  This register is used to configure the time between the positive
  *  edge of SCL and the negative edge of SDA for a RESTART condition, in I2C module
@@ -980,7 +982,7 @@ extern "C" {
  *  Configures the delay after the SCL clock
  *  edge for a stop condition
  */
-#define I2C_SCL_STOP_HOLD_REG (DR_REG_I2C_BASE + 0x48)
+#define I2C_SCL_STOP_HOLD_REG(i) (DR_REG_I2C_BASE(i) + 0x48)
 /** I2C_SCL_STOP_HOLD_TIME : R/W; bitpos: [8:0]; default: 8;
  *  This register is used to configure the delay after the STOP condition,
  *  in I2C module clock cycles.
@@ -994,7 +996,7 @@ extern "C" {
  *  Configures the delay between the SDA and
  *  SCL positive edge for a stop condition
  */
-#define I2C_SCL_STOP_SETUP_REG (DR_REG_I2C_BASE + 0x4c)
+#define I2C_SCL_STOP_SETUP_REG(i) (DR_REG_I2C_BASE(i) + 0x4c)
 /** I2C_SCL_STOP_SETUP_TIME : R/W; bitpos: [8:0]; default: 8;
  *  This register is used to configure the time between the positive edge
  *  of SCL and the positive edge of SDA, in I2C module clock cycles.
@@ -1007,7 +1009,7 @@ extern "C" {
 /** I2C_FILTER_CFG_REG register
  *  SCL and SDA filter configuration register
  */
-#define I2C_FILTER_CFG_REG (DR_REG_I2C_BASE + 0x50)
+#define I2C_FILTER_CFG_REG(i) (DR_REG_I2C_BASE(i) + 0x50)
 /** I2C_SCL_FILTER_THRES : R/W; bitpos: [3:0]; default: 0;
  *  When a pulse on the SCL input has smaller width than this register value
  *  in I2C module clock cycles, the I2C controller will ignore that pulse.
@@ -1042,7 +1044,7 @@ extern "C" {
 /** I2C_CLK_CONF_REG register
  *  I2C CLK configuration register
  */
-#define I2C_CLK_CONF_REG (DR_REG_I2C_BASE + 0x54)
+#define I2C_CLK_CONF_REG(i) (DR_REG_I2C_BASE(i) + 0x54)
 /** I2C_SCLK_DIV_NUM : R/W; bitpos: [7:0]; default: 0;
  *  the integral part of the fractional divisor for i2c module
  */
@@ -1082,7 +1084,7 @@ extern "C" {
 /** I2C_COMD0_REG register
  *  I2C command register 0
  */
-#define I2C_COMD0_REG (DR_REG_I2C_BASE + 0x58)
+#define I2C_COMD0_REG(i) (DR_REG_I2C_BASE(i) + 0x58)
 /** I2C_COMMAND0 : R/W; bitpos: [13:0]; default: 0;
  *  This is the content of command 0. It consists of three parts:
  *  op_code is the command, 6: RSTART; 1: WRITE; 3: READ; 2: STOP; 4: END.
@@ -1107,7 +1109,7 @@ extern "C" {
 /** I2C_COMD1_REG register
  *  I2C command register 1
  */
-#define I2C_COMD1_REG (DR_REG_I2C_BASE + 0x5c)
+#define I2C_COMD1_REG(i) (DR_REG_I2C_BASE(i) + 0x5c)
 /** I2C_COMMAND1 : R/W; bitpos: [13:0]; default: 0;
  *  This is the content of command 1. It consists of three parts:
  *  op_code is the command, 6: RSTART; 1: WRITE; 3: READ; 2: STOP; 4: END.
@@ -1132,7 +1134,7 @@ extern "C" {
 /** I2C_COMD2_REG register
  *  I2C command register 2
  */
-#define I2C_COMD2_REG (DR_REG_I2C_BASE + 0x60)
+#define I2C_COMD2_REG(i) (DR_REG_I2C_BASE(i) + 0x60)
 /** I2C_COMMAND2 : R/W; bitpos: [13:0]; default: 0;
  *  This is the content of command 2. It consists of three parts:
  *  op_code is the command, 6: RSTART; 1: WRITE; 3: READ; 2: STOP; 4: END.
@@ -1157,7 +1159,7 @@ extern "C" {
 /** I2C_COMD3_REG register
  *  I2C command register 3
  */
-#define I2C_COMD3_REG (DR_REG_I2C_BASE + 0x64)
+#define I2C_COMD3_REG(i) (DR_REG_I2C_BASE(i) + 0x64)
 /** I2C_COMMAND3 : R/W; bitpos: [13:0]; default: 0;
  *  This is the content of command 3. It consists of three parts:
  *  op_code is the command, 6: RSTART; 1: WRITE; 3: READ; 2: STOP; 4: END.
@@ -1182,7 +1184,7 @@ extern "C" {
 /** I2C_COMD4_REG register
  *  I2C command register 4
  */
-#define I2C_COMD4_REG (DR_REG_I2C_BASE + 0x68)
+#define I2C_COMD4_REG(i) (DR_REG_I2C_BASE(i) + 0x68)
 /** I2C_COMMAND4 : R/W; bitpos: [13:0]; default: 0;
  *  This is the content of command 4. It consists of three parts:
  *  op_code is the command, 6: RSTART; 1: WRITE; 3: READ; 2: STOP; 4: END.
@@ -1207,7 +1209,7 @@ extern "C" {
 /** I2C_COMD5_REG register
  *  I2C command register 5
  */
-#define I2C_COMD5_REG (DR_REG_I2C_BASE + 0x6c)
+#define I2C_COMD5_REG(i) (DR_REG_I2C_BASE(i) + 0x6c)
 /** I2C_COMMAND5 : R/W; bitpos: [13:0]; default: 0;
  *  This is the content of command 5. It consists of three parts:
  *  op_code is the command, 6: RSTART; 1: WRITE; 3: READ; 2: STOP; 4: END.
@@ -1231,7 +1233,7 @@ extern "C" {
 /** I2C_COMD6_REG register
  *  I2C command register 6
  */
-#define I2C_COMD6_REG (DR_REG_I2C_BASE + 0x70)
+#define I2C_COMD6_REG(i) (DR_REG_I2C_BASE(i) + 0x70)
 /** I2C_COMMAND6 : R/W; bitpos: [13:0]; default: 0;
  *  This is the content of command 6. It consists of three parts:
  *  op_code is the command, 6: RSTART; 1: WRITE; 3: READ; 2: STOP; 4: END.
@@ -1255,7 +1257,7 @@ extern "C" {
 /** I2C_COMD7_REG register
  *  I2C command register 7
  */
-#define I2C_COMD7_REG (DR_REG_I2C_BASE + 0x74)
+#define I2C_COMD7_REG(i) (DR_REG_I2C_BASE(i) + 0x74)
 /** I2C_COMMAND7 : R/W; bitpos: [13:0]; default: 0;
  *  This is the content of command 7. It consists of three parts:
  *  op_code is the command, 6: RSTART; 1: WRITE; 3: READ; 2: STOP; 4: END.
@@ -1279,7 +1281,7 @@ extern "C" {
 /** I2C_SCL_ST_TIME_OUT_REG register
  *  SCL status time out register
  */
-#define I2C_SCL_ST_TIME_OUT_REG (DR_REG_I2C_BASE + 0x78)
+#define I2C_SCL_ST_TIME_OUT_REG(i) (DR_REG_I2C_BASE(i) + 0x78)
 /** I2C_SCL_ST_TO_I2C : R/W; bitpos: [4:0]; default: 16;
  *  The threshold value of SCL_FSM state unchanged period. It should be o more than 23
  */
@@ -1291,7 +1293,7 @@ extern "C" {
 /** I2C_SCL_MAIN_ST_TIME_OUT_REG register
  *  SCL main status time out register
  */
-#define I2C_SCL_MAIN_ST_TIME_OUT_REG (DR_REG_I2C_BASE + 0x7c)
+#define I2C_SCL_MAIN_ST_TIME_OUT_REG(i) (DR_REG_I2C_BASE(i) + 0x7c)
 /** I2C_SCL_MAIN_ST_TO_I2C : R/W; bitpos: [4:0]; default: 16;
  *  The threshold value of SCL_MAIN_FSM state unchanged period.nIt should be o more
  *  than 23
@@ -1304,7 +1306,7 @@ extern "C" {
 /** I2C_SCL_SP_CONF_REG register
  *  Power configuration register
  */
-#define I2C_SCL_SP_CONF_REG (DR_REG_I2C_BASE + 0x80)
+#define I2C_SCL_SP_CONF_REG(i) (DR_REG_I2C_BASE(i) + 0x80)
 /** I2C_SCL_RST_SLV_EN : R/W/SC; bitpos: [0]; default: 0;
  *  When I2C master is IDLE, set this bit to send out SCL pulses. The number of pulses
  *  equals to reg_scl_rst_slv_num[4:0].
@@ -1341,7 +1343,7 @@ extern "C" {
 /** I2C_SCL_STRETCH_CONF_REG register
  *  Set SCL stretch of I2C slave
  */
-#define I2C_SCL_STRETCH_CONF_REG (DR_REG_I2C_BASE + 0x84)
+#define I2C_SCL_STRETCH_CONF_REG(i) (DR_REG_I2C_BASE(i) + 0x84)
 /** I2C_STRETCH_PROTECT_NUM : R/W; bitpos: [9:0]; default: 0;
  *  Configure the period of I2C slave stretching SCL line.
  */
@@ -1383,7 +1385,7 @@ extern "C" {
 /** I2C_DATE_REG register
  *  Version register
  */
-#define I2C_DATE_REG (DR_REG_I2C_BASE + 0xf8)
+#define I2C_DATE_REG(i) (DR_REG_I2C_BASE(i) + 0xf8)
 /** I2C_DATE : R/W; bitpos: [31:0]; default: 537330177;
  *  This is the the version register.
  */
@@ -1395,7 +1397,7 @@ extern "C" {
 /** I2C_TXFIFO_START_ADDR_REG register
  *  I2C TXFIFO base address register
  */
-#define I2C_TXFIFO_START_ADDR_REG (DR_REG_I2C_BASE + 0x100)
+#define I2C_TXFIFO_START_ADDR_REG(i) (DR_REG_I2C_BASE(i) + 0x100)
 /** I2C_TXFIFO_START_ADDR : RO; bitpos: [31:0]; default: 0;
  *  This is the I2C txfifo first address.
  */
@@ -1407,7 +1409,7 @@ extern "C" {
 /** I2C_RXFIFO_START_ADDR_REG register
  *  I2C RXFIFO base address register
  */
-#define I2C_RXFIFO_START_ADDR_REG (DR_REG_I2C_BASE + 0x180)
+#define I2C_RXFIFO_START_ADDR_REG(i) (DR_REG_I2C_BASE(i) + 0x180)
 /** I2C_RXFIFO_START_ADDR : RO; bitpos: [31:0]; default: 0;
  *  This is the I2C rxfifo first address.
  */

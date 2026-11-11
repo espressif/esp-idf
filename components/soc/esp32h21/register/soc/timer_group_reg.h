@@ -10,6 +10,8 @@
 extern "C" {
 #endif
 
+#define DR_REG_TIMG_BASE(i)                        (DR_REG_TIMERG0_BASE + (i)*0x1000)
+
 /** TIMG_T0CONFIG_REG register
  *  Timer 0 configuration register
  */

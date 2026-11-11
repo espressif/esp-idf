@@ -13,7 +13,7 @@ extern "C" {
 /** LPINTR_SW_INT_RAW_REG register
  *  need_des
  */
-#define LPINTR_SW_INT_RAW_REG (DR_REG_LPINTR_BASE + 0x0)
+#define LPINTR_SW_INT_RAW_REG (DR_REG_LP_INTR_BASE + 0x0)
 /** LPINTR_LP_SW_INT_RAW : R/W/WTC; bitpos: [31]; default: 0;
  *  need_des
  */
@@ -25,7 +25,7 @@ extern "C" {
 /** LPINTR_SW_INT_ST_REG register
  *  need_des
  */
-#define LPINTR_SW_INT_ST_REG (DR_REG_LPINTR_BASE + 0x4)
+#define LPINTR_SW_INT_ST_REG (DR_REG_LP_INTR_BASE + 0x4)
 /** LPINTR_LP_SW_INT_ST : RO; bitpos: [31]; default: 0;
  *  need_des
  */
@@ -37,7 +37,7 @@ extern "C" {
 /** LPINTR_SW_INT_ENA_REG register
  *  need_des
  */
-#define LPINTR_SW_INT_ENA_REG (DR_REG_LPINTR_BASE + 0x8)
+#define LPINTR_SW_INT_ENA_REG (DR_REG_LP_INTR_BASE + 0x8)
 /** LPINTR_LP_SW_INT_ENA : R/W; bitpos: [31]; default: 0;
  *  need_des
  */
@@ -49,7 +49,7 @@ extern "C" {
 /** LPINTR_SW_INT_CLR_REG register
  *  need_des
  */
-#define LPINTR_SW_INT_CLR_REG (DR_REG_LPINTR_BASE + 0xc)
+#define LPINTR_SW_INT_CLR_REG (DR_REG_LP_INTR_BASE + 0xc)
 /** LPINTR_LP_SW_INT_CLR : WT; bitpos: [31]; default: 0;
  *  need_des
  */
@@ -61,7 +61,7 @@ extern "C" {
 /** LPINTR_STATUS_REG register
  *  need_des
  */
-#define LPINTR_STATUS_REG (DR_REG_LPINTR_BASE + 0x10)
+#define LPINTR_STATUS_REG (DR_REG_LP_INTR_BASE + 0x10)
 /** LPINTR_LP_DAC_INTR_ST : RO; bitpos: [2]; default: 0;
  *  Represents the interrupt of lp cpu interrupt number 6
  */
@@ -276,7 +276,7 @@ extern "C" {
 /** LPINTR_ENABLE_REG register
  *  need_des
  */
-#define LPINTR_ENABLE_REG (DR_REG_LPINTR_BASE + 0x14)
+#define LPINTR_ENABLE_REG (DR_REG_LP_INTR_BASE + 0x14)
 /** LPINTR_LP_DAC_INTR_EN : R/W; bitpos: [2]; default: 1;
  *  Represents the interrupt of lp cpu interrupt number 6
  */
@@ -491,7 +491,7 @@ extern "C" {
 /** LPINTR_DATE_REG register
  *  need_des
  */
-#define LPINTR_DATE_REG (DR_REG_LPINTR_BASE + 0x3fc)
+#define LPINTR_DATE_REG (DR_REG_LP_INTR_BASE + 0x3fc)
 /** LPINTR_DATE : R/W; bitpos: [30:0]; default: 38813744;
  *  need_des
  */

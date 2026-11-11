@@ -13,7 +13,7 @@ extern "C" {
 /** ZERO_DET_CONF_REG register
  *  zero det cfg reg
  */
-#define ZERO_DET_CONF_REG (DR_REG_ZERO_BASE + 0x0)
+#define ZERO_DET_CONF_REG (DR_REG_ZERO_DET_BASE + 0x0)
 /** ZERO_DET_VREF_CHANNEL_SEL : R/W; bitpos: [3:0]; default: 8;
  *  vref pad sel,one hot code and cannot set the same bit with other channels
  */
@@ -99,7 +99,7 @@ extern "C" {
 /** ZERO_DET_FILTER_CNT_REG register
  *  protect time reg
  */
-#define ZERO_DET_FILTER_CNT_REG (DR_REG_ZERO_BASE + 0x4)
+#define ZERO_DET_FILTER_CNT_REG (DR_REG_ZERO_DET_BASE + 0x4)
 /** ZERO_DET_FILTER_CNT : R/W; bitpos: [31:0]; default: 255;
  *  protect time after det the first zero det int
  */
@@ -111,7 +111,7 @@ extern "C" {
 /** ZERO_DET_POLL_PERIOD_REG register
  *  poll period time reg
  */
-#define ZERO_DET_POLL_PERIOD_REG (DR_REG_ZERO_BASE + 0x8)
+#define ZERO_DET_POLL_PERIOD_REG (DR_REG_ZERO_DET_BASE + 0x8)
 /** ZERO_DET_COMP_POLL_PERIOD : R/W; bitpos: [15:0]; default: 15;
  *  poll period time for each channel
  */
@@ -123,7 +123,7 @@ extern "C" {
 /** ZERO_DET_DELAY_EVENT_TIME_REG register
  *  delay time reg
  */
-#define ZERO_DET_DELAY_EVENT_TIME_REG (DR_REG_ZERO_BASE + 0xc)
+#define ZERO_DET_DELAY_EVENT_TIME_REG (DR_REG_ZERO_DET_BASE + 0xc)
 /** ZERO_DET_DELAY_EVENT_TIME : R/W; bitpos: [15:0]; default: 15;
  *  delay time after zero det int to trigger event  for each channel
  */
@@ -135,7 +135,7 @@ extern "C" {
 /** ZERO_DET_INT_ENA_REG register
  *  zero det int ena
  */
-#define ZERO_DET_INT_ENA_REG (DR_REG_ZERO_BASE + 0x10)
+#define ZERO_DET_INT_ENA_REG (DR_REG_ZERO_DET_BASE + 0x10)
 /** ZERO_DET_PAD_COMP_CHANNEL_3_NEG_INT_ENA : R/W; bitpos: [0]; default: 0;
  *  reserved
  */
@@ -224,7 +224,7 @@ extern "C" {
 /** ZERO_DET_INT_RAW_REG register
  *  zero det int raw
  */
-#define ZERO_DET_INT_RAW_REG (DR_REG_ZERO_BASE + 0x14)
+#define ZERO_DET_INT_RAW_REG (DR_REG_ZERO_DET_BASE + 0x14)
 /** ZERO_DET_PAD_COMP_CHANNEL_3_NEG_INT_RAW : R/WTC/SS; bitpos: [0]; default: 0;
  *  reserved
  */
@@ -313,7 +313,7 @@ extern "C" {
 /** ZERO_DET_INT_CLR_REG register
  *  zero det int clr
  */
-#define ZERO_DET_INT_CLR_REG (DR_REG_ZERO_BASE + 0x18)
+#define ZERO_DET_INT_CLR_REG (DR_REG_ZERO_DET_BASE + 0x18)
 /** ZERO_DET_PAD_COMP_CHANNEL_3_NEG_INT_CLR : WT; bitpos: [0]; default: 0;
  *  reserved
  */
@@ -402,7 +402,7 @@ extern "C" {
 /** ZERO_DET_INT_ST_REG register
  *  zero det int st
  */
-#define ZERO_DET_INT_ST_REG (DR_REG_ZERO_BASE + 0x1c)
+#define ZERO_DET_INT_ST_REG (DR_REG_ZERO_DET_BASE + 0x1c)
 /** ZERO_DET_PAD_COMP_CHANNEL_3_NEG_INT_ST : RO; bitpos: [0]; default: 0;
  *  reserved
  */
@@ -491,7 +491,7 @@ extern "C" {
 /** ZERO_DET_CHANNEL_1_TIMER0_REG register
  *  record timer reg
  */
-#define ZERO_DET_CHANNEL_1_TIMER0_REG (DR_REG_ZERO_BASE + 0x20)
+#define ZERO_DET_CHANNEL_1_TIMER0_REG (DR_REG_ZERO_DET_BASE + 0x20)
 /** ZERO_DET_CHANNEL_1_TIMER0 : RO; bitpos: [31:0]; default: 0;
  *  record the time while detect the first zero det int  in channel 1
  */
@@ -503,7 +503,7 @@ extern "C" {
 /** ZERO_DET_CHANNEL_1_TIMER1_REG register
  *  record timer reg
  */
-#define ZERO_DET_CHANNEL_1_TIMER1_REG (DR_REG_ZERO_BASE + 0x24)
+#define ZERO_DET_CHANNEL_1_TIMER1_REG (DR_REG_ZERO_DET_BASE + 0x24)
 /** ZERO_DET_CHANNEL_1_TIMER1 : RO; bitpos: [31:0]; default: 0;
  *  record the time while detect the second zero det int  in channel 1
  */
@@ -515,7 +515,7 @@ extern "C" {
 /** ZERO_DET_CHANNEL_2_TIMER0_REG register
  *  record timer reg
  */
-#define ZERO_DET_CHANNEL_2_TIMER0_REG (DR_REG_ZERO_BASE + 0x28)
+#define ZERO_DET_CHANNEL_2_TIMER0_REG (DR_REG_ZERO_DET_BASE + 0x28)
 /** ZERO_DET_CHANNEL_2_TIMER0 : RO; bitpos: [31:0]; default: 0;
  *  record the time while detect the first zero det int  in channel 2
  */
@@ -527,7 +527,7 @@ extern "C" {
 /** ZERO_DET_CHANNEL_2_TIMER1_REG register
  *  record timer reg
  */
-#define ZERO_DET_CHANNEL_2_TIMER1_REG (DR_REG_ZERO_BASE + 0x2c)
+#define ZERO_DET_CHANNEL_2_TIMER1_REG (DR_REG_ZERO_DET_BASE + 0x2c)
 /** ZERO_DET_CHANNEL_2_TIMER1 : RO; bitpos: [31:0]; default: 0;
  *  record the time while detect the second zero det int  in channel 2
  */
@@ -539,7 +539,7 @@ extern "C" {
 /** ZERO_DET_CHANNEL_3_TIMER0_REG register
  *  record timer reg
  */
-#define ZERO_DET_CHANNEL_3_TIMER0_REG (DR_REG_ZERO_BASE + 0x30)
+#define ZERO_DET_CHANNEL_3_TIMER0_REG (DR_REG_ZERO_DET_BASE + 0x30)
 /** ZERO_DET_CHANNEL_3_TIMER0 : RO; bitpos: [31:0]; default: 0;
  *  record the time while detect the first zero det int  in channel 3
  */
@@ -551,7 +551,7 @@ extern "C" {
 /** ZERO_DET_CHANNEL_3_TIMER1_REG register
  *  record timer reg
  */
-#define ZERO_DET_CHANNEL_3_TIMER1_REG (DR_REG_ZERO_BASE + 0x34)
+#define ZERO_DET_CHANNEL_3_TIMER1_REG (DR_REG_ZERO_DET_BASE + 0x34)
 /** ZERO_DET_CHANNEL_3_TIMER1 : RO; bitpos: [31:0]; default: 0;
  *  record the time while detect the second zero det int  in channel 3
  */
@@ -563,7 +563,7 @@ extern "C" {
 /** ZERO_DET_CHANNEL_STATUS_REG register
  *  pad comp status reg
  */
-#define ZERO_DET_CHANNEL_STATUS_REG (DR_REG_ZERO_BASE + 0x38)
+#define ZERO_DET_CHANNEL_STATUS_REG (DR_REG_ZERO_DET_BASE + 0x38)
 /** ZERO_DET_CHANNEL_3_PAD_COMP_STATUS : RO; bitpos: [0]; default: 0;
  *  record the pad comp status for channel 3, 0 means now is neg int , 1 means now is
  *  pos int
@@ -592,7 +592,7 @@ extern "C" {
 /** ZERO_DET_PAD_COMP_CFG_REG register
  *  pad comp cfg reg
  */
-#define ZERO_DET_PAD_COMP_CFG_REG (DR_REG_ZERO_BASE + 0x3c)
+#define ZERO_DET_PAD_COMP_CFG_REG (DR_REG_ZERO_DET_BASE + 0x3c)
 /** ZERO_DET_PAD_COMP_HYS : R/W; bitpos: [2:0]; default: 0;
  *  hys cfg signal
  */
@@ -632,7 +632,7 @@ extern "C" {
 /** ZERO_DET_DATE_REG register
  *  date reg
  */
-#define ZERO_DET_DATE_REG (DR_REG_ZERO_BASE + 0x40)
+#define ZERO_DET_DATE_REG (DR_REG_ZERO_DET_BASE + 0x40)
 /** ZERO_DET_DATE : R/W; bitpos: [27:0]; default: 37773696;
  *  zero det reg change date
  */

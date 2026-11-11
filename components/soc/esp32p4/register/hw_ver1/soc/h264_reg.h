@@ -13,7 +13,7 @@ extern "C" {
 /** H264_SYS_CTRL_REG register
  *  H264 system level control register.
  */
-#define H264_SYS_CTRL_REG (DR_REG_H264_BASE + 0x0)
+#define H264_SYS_CTRL_REG (DR_REG_H264_CORE_BASE + 0x0)
 /** H264_FRAME_START : WT; bitpos: [0]; default: 0;
  *  Configures whether or not to start encoding one frame.\\0: Invalid. No effect\\1:
  *  Start encoding one frame
@@ -52,7 +52,7 @@ extern "C" {
 /** H264_GOP_CONF_REG register
  *  GOP related configuration register.
  */
-#define H264_GOP_CONF_REG (DR_REG_H264_BASE + 0x4)
+#define H264_GOP_CONF_REG (DR_REG_H264_CORE_BASE + 0x4)
 /** H264_DUAL_STREAM_MODE : R/W; bitpos: [0]; default: 0;
  *  Configures whether or not to enable dual stream mode. When this field is set to 1,
  *  H264_FRAME_MODE field must be set to 1 too.\\0: Normal mode\\1: Dual stream mode
@@ -73,7 +73,7 @@ extern "C" {
 /** H264_A_SYS_MB_RES_REG register
  *  Video A horizontal and vertical MB resolution register.
  */
-#define H264_A_SYS_MB_RES_REG (DR_REG_H264_BASE + 0x8)
+#define H264_A_SYS_MB_RES_REG (DR_REG_H264_CORE_BASE + 0x8)
 /** H264_A_SYS_TOTAL_MB_Y : R/W; bitpos: [6:0]; default: 0;
  *  Configures video A vertical MB resolution.
  */
@@ -92,7 +92,7 @@ extern "C" {
 /** H264_A_SYS_CONF_REG register
  *  Video A system level configuration register.
  */
-#define H264_A_SYS_CONF_REG (DR_REG_H264_BASE + 0xc)
+#define H264_A_SYS_CONF_REG (DR_REG_H264_CORE_BASE + 0xc)
 /** H264_A_DB_TMP_READY_TRIGGER_MB_NUM : R/W; bitpos: [6:0]; default: 3;
  *  Configures when to trigger  video A H264_DB_TMP_READY_INT. When the (MB number of
  *  written db temp+1) is greater than this filed in first MB line, trigger
@@ -122,7 +122,7 @@ extern "C" {
 /** H264_A_DECI_SCORE_REG register
  *  Video A luma and chroma MB decimate score Register.
  */
-#define H264_A_DECI_SCORE_REG (DR_REG_H264_BASE + 0x10)
+#define H264_A_DECI_SCORE_REG (DR_REG_H264_CORE_BASE + 0x10)
 /** H264_A_C_DECI_SCORE : R/W; bitpos: [9:0]; default: 0;
  *  Configures video A chroma MB decimate score. When chroma score is smaller than it,
  *  chroma decimate will be enable.
@@ -143,7 +143,7 @@ extern "C" {
 /** H264_A_DECI_SCORE_OFFSET_REG register
  *  Video A luma and chroma MB decimate score offset Register.
  */
-#define H264_A_DECI_SCORE_OFFSET_REG (DR_REG_H264_BASE + 0x14)
+#define H264_A_DECI_SCORE_OFFSET_REG (DR_REG_H264_CORE_BASE + 0x14)
 /** H264_A_I16X16_DECI_SCORE_OFFSET : R/W; bitpos: [5:0]; default: 0;
  *  Configures video A i16x16 MB decimate score offset. This offset will be added to
  *  i16x16 MB score.
@@ -180,7 +180,7 @@ extern "C" {
 /** H264_A_RC_CONF0_REG register
  *  Video A rate control configuration register0.
  */
-#define H264_A_RC_CONF0_REG (DR_REG_H264_BASE + 0x18)
+#define H264_A_RC_CONF0_REG (DR_REG_H264_CORE_BASE + 0x18)
 /** H264_A_QP : R/W; bitpos: [5:0]; default: 0;
  *  Configures video A frame level initial luma QP value.
  */
@@ -207,7 +207,7 @@ extern "C" {
 /** H264_A_RC_CONF1_REG register
  *  Video A rate control configuration register1.
  */
-#define H264_A_RC_CONF1_REG (DR_REG_H264_BASE + 0x1c)
+#define H264_A_RC_CONF1_REG (DR_REG_H264_CORE_BASE + 0x1c)
 /** H264_A_CHROMA_DC_QP_DELTA : R/W; bitpos: [2:0]; default: 0;
  *  Configures video A chroma DC QP offset based on Chroma QP. Chroma DC QP = Chroma
  *  QP(after map) + reg_chroma_dc_qp_delta.
@@ -249,7 +249,7 @@ extern "C" {
 /** H264_A_DB_BYPASS_REG register
  *  Video A Deblocking bypass register
  */
-#define H264_A_DB_BYPASS_REG (DR_REG_H264_BASE + 0x20)
+#define H264_A_DB_BYPASS_REG (DR_REG_H264_CORE_BASE + 0x20)
 /** H264_A_BYPASS_DB_FILTER : R/W; bitpos: [0]; default: 0;
  *  Configures whether or not to bypass video A deblcoking filter. \\0: Open the
  *  deblock filter\\1: Close the deblock filter
@@ -262,7 +262,7 @@ extern "C" {
 /** H264_A_ROI_REGION0_REG register
  *  Video A H264 ROI region0 range configure register.
  */
-#define H264_A_ROI_REGION0_REG (DR_REG_H264_BASE + 0x24)
+#define H264_A_ROI_REGION0_REG (DR_REG_H264_CORE_BASE + 0x24)
 /** H264_A_ROI_REGION0_X : R/W; bitpos: [6:0]; default: 0;
  *  Configures the horizontal start macroblocks of region 0 in Video A.
  */
@@ -305,7 +305,7 @@ extern "C" {
 /** H264_A_ROI_REGION1_REG register
  *  Video A H264 ROI region1 range configure register.
  */
-#define H264_A_ROI_REGION1_REG (DR_REG_H264_BASE + 0x28)
+#define H264_A_ROI_REGION1_REG (DR_REG_H264_CORE_BASE + 0x28)
 /** H264_A_ROI_REGION1_X : R/W; bitpos: [6:0]; default: 0;
  *  Configures the horizontal start macroblocks of region 1 in Video A.
  */
@@ -348,7 +348,7 @@ extern "C" {
 /** H264_A_ROI_REGION2_REG register
  *  Video A H264 ROI region2 range configure register.
  */
-#define H264_A_ROI_REGION2_REG (DR_REG_H264_BASE + 0x2c)
+#define H264_A_ROI_REGION2_REG (DR_REG_H264_CORE_BASE + 0x2c)
 /** H264_A_ROI_REGION2_X : R/W; bitpos: [6:0]; default: 0;
  *  Configures the horizontal start macroblocks of region 2 in Video A.
  */
@@ -391,7 +391,7 @@ extern "C" {
 /** H264_A_ROI_REGION3_REG register
  *  Video A H264 ROI region3 range configure register.
  */
-#define H264_A_ROI_REGION3_REG (DR_REG_H264_BASE + 0x30)
+#define H264_A_ROI_REGION3_REG (DR_REG_H264_CORE_BASE + 0x30)
 /** H264_A_ROI_REGION3_X : R/W; bitpos: [6:0]; default: 0;
  *  Configures the horizontal start macroblocks of region 3 in Video A.
  */
@@ -434,7 +434,7 @@ extern "C" {
 /** H264_A_ROI_REGION4_REG register
  *  Video A H264 ROI region4 range configure register.
  */
-#define H264_A_ROI_REGION4_REG (DR_REG_H264_BASE + 0x34)
+#define H264_A_ROI_REGION4_REG (DR_REG_H264_CORE_BASE + 0x34)
 /** H264_A_ROI_REGION4_X : R/W; bitpos: [6:0]; default: 0;
  *  Configures the horizontal start macroblocks of region 4 in Video A.
  */
@@ -477,7 +477,7 @@ extern "C" {
 /** H264_A_ROI_REGION5_REG register
  *  Video A H264 ROI region5 range configure register.
  */
-#define H264_A_ROI_REGION5_REG (DR_REG_H264_BASE + 0x38)
+#define H264_A_ROI_REGION5_REG (DR_REG_H264_CORE_BASE + 0x38)
 /** H264_A_ROI_REGION5_X : R/W; bitpos: [6:0]; default: 0;
  *  Configures the horizontial start macroblocks of region 5 video A.
  */
@@ -520,7 +520,7 @@ extern "C" {
 /** H264_A_ROI_REGION6_REG register
  *  Video A H264 ROI region6 range configure register.
  */
-#define H264_A_ROI_REGION6_REG (DR_REG_H264_BASE + 0x3c)
+#define H264_A_ROI_REGION6_REG (DR_REG_H264_CORE_BASE + 0x3c)
 /** H264_A_ROI_REGION6_X : R/W; bitpos: [6:0]; default: 0;
  *  Configures the horizontial start macroblocks of region 6 video A.
  */
@@ -563,7 +563,7 @@ extern "C" {
 /** H264_A_ROI_REGION7_REG register
  *  Video A H264 ROI region7 range configure register.
  */
-#define H264_A_ROI_REGION7_REG (DR_REG_H264_BASE + 0x40)
+#define H264_A_ROI_REGION7_REG (DR_REG_H264_CORE_BASE + 0x40)
 /** H264_A_ROI_REGION7_X : R/W; bitpos: [6:0]; default: 0;
  *  Configures the horizontal start macroblocks of region 7 in video A.
  */
@@ -606,7 +606,7 @@ extern "C" {
 /** H264_A_ROI_REGION0_3_QP_REG register
  *  Video A H264 ROI region0, region1,region2,region3 QP register.
  */
-#define H264_A_ROI_REGION0_3_QP_REG (DR_REG_H264_BASE + 0x44)
+#define H264_A_ROI_REGION0_3_QP_REG (DR_REG_H264_CORE_BASE + 0x44)
 /** H264_A_ROI_REGION0_QP : R/W; bitpos: [6:0]; default: 0;
  *  Configure H264 ROI region0 qp in video A,fixed qp or delta qp.
  */
@@ -639,7 +639,7 @@ extern "C" {
 /** H264_A_ROI_REGION4_7_QP_REG register
  *  Video A H264 ROI region4, region5,region6,region7 QP register.
  */
-#define H264_A_ROI_REGION4_7_QP_REG (DR_REG_H264_BASE + 0x48)
+#define H264_A_ROI_REGION4_7_QP_REG (DR_REG_H264_CORE_BASE + 0x48)
 /** H264_A_ROI_REGION4_QP : R/W; bitpos: [6:0]; default: 0;
  *  Configure H264 ROI region4 qp in video A,fixed qp or delta qp.
  */
@@ -672,7 +672,7 @@ extern "C" {
 /** H264_A_NO_ROI_REGION_QP_OFFSET_REG register
  *  Video A H264 no roi region QP register.
  */
-#define H264_A_NO_ROI_REGION_QP_OFFSET_REG (DR_REG_H264_BASE + 0x4c)
+#define H264_A_NO_ROI_REGION_QP_OFFSET_REG (DR_REG_H264_CORE_BASE + 0x4c)
 /** H264_A_NO_ROI_REGION_QP : R/W; bitpos: [6:0]; default: 0;
  *  Configure H264 no region qp in video A, delta qp.
  */
@@ -684,7 +684,7 @@ extern "C" {
 /** H264_A_ROI_CONFIG_REG register
  *  Video A H264 ROI configure register.
  */
-#define H264_A_ROI_CONFIG_REG (DR_REG_H264_BASE + 0x50)
+#define H264_A_ROI_CONFIG_REG (DR_REG_H264_CORE_BASE + 0x50)
 /** H264_A_ROI_EN : R/W; bitpos: [0]; default: 0;
  *  Configure whether or not to enable ROI in video A.\\0:not enable ROI\\1:enable ROI.
  */
@@ -703,7 +703,7 @@ extern "C" {
 /** H264_B_SYS_MB_RES_REG register
  *  Video B horizontal and vertical MB resolution register.
  */
-#define H264_B_SYS_MB_RES_REG (DR_REG_H264_BASE + 0x54)
+#define H264_B_SYS_MB_RES_REG (DR_REG_H264_CORE_BASE + 0x54)
 /** H264_B_SYS_TOTAL_MB_Y : R/W; bitpos: [6:0]; default: 0;
  *  Configures video B vertical MB resolution.
  */
@@ -722,7 +722,7 @@ extern "C" {
 /** H264_B_SYS_CONF_REG register
  *  Video B system level configuration register.
  */
-#define H264_B_SYS_CONF_REG (DR_REG_H264_BASE + 0x58)
+#define H264_B_SYS_CONF_REG (DR_REG_H264_CORE_BASE + 0x58)
 /** H264_B_DB_TMP_READY_TRIGGER_MB_NUM : R/W; bitpos: [6:0]; default: 3;
  *  Configures when to trigger  video B H264_DB_TMP_READY_INT. When the (MB number of
  *  written db temp+1) is greater than this filed in first MB line, trigger
@@ -752,7 +752,7 @@ extern "C" {
 /** H264_B_DECI_SCORE_REG register
  *  Video B luma and chroma MB decimate score Register.
  */
-#define H264_B_DECI_SCORE_REG (DR_REG_H264_BASE + 0x5c)
+#define H264_B_DECI_SCORE_REG (DR_REG_H264_CORE_BASE + 0x5c)
 /** H264_B_C_DECI_SCORE : R/W; bitpos: [9:0]; default: 0;
  *  Configures video B chroma MB decimate score. When chroma score is smaller than it,
  *  chroma decimate will be enable.
@@ -773,7 +773,7 @@ extern "C" {
 /** H264_B_DECI_SCORE_OFFSET_REG register
  *  Video B luma and chroma MB decimate score offset Register.
  */
-#define H264_B_DECI_SCORE_OFFSET_REG (DR_REG_H264_BASE + 0x60)
+#define H264_B_DECI_SCORE_OFFSET_REG (DR_REG_H264_CORE_BASE + 0x60)
 /** H264_B_I16X16_DECI_SCORE_OFFSET : R/W; bitpos: [5:0]; default: 0;
  *  Configures video B i16x16 MB decimate score offset. This offset will be added to
  *  i16x16 MB score.
@@ -810,7 +810,7 @@ extern "C" {
 /** H264_B_RC_CONF0_REG register
  *  Video B rate control configuration register0.
  */
-#define H264_B_RC_CONF0_REG (DR_REG_H264_BASE + 0x64)
+#define H264_B_RC_CONF0_REG (DR_REG_H264_CORE_BASE + 0x64)
 /** H264_B_QP : R/W; bitpos: [5:0]; default: 0;
  *  Configures video B frame level initial luma QP value.
  */
@@ -837,7 +837,7 @@ extern "C" {
 /** H264_B_RC_CONF1_REG register
  *  Video B rate control configuration register1.
  */
-#define H264_B_RC_CONF1_REG (DR_REG_H264_BASE + 0x68)
+#define H264_B_RC_CONF1_REG (DR_REG_H264_CORE_BASE + 0x68)
 /** H264_B_CHROMA_DC_QP_DELTA : R/W; bitpos: [2:0]; default: 0;
  *  Configures video B chroma DC QP offset based on Chroma QP. Chroma DC QP = Chroma
  *  QP(after map) + reg_chroma_dc_qp_delta.
@@ -879,7 +879,7 @@ extern "C" {
 /** H264_B_DB_BYPASS_REG register
  *  Video B Deblocking bypass register
  */
-#define H264_B_DB_BYPASS_REG (DR_REG_H264_BASE + 0x6c)
+#define H264_B_DB_BYPASS_REG (DR_REG_H264_CORE_BASE + 0x6c)
 /** H264_B_BYPASS_DB_FILTER : R/W; bitpos: [0]; default: 0;
  *  Configures whether or not to bypass video B deblcoking filter. \\0: Open the
  *  deblock filter\\1: Close the deblock filter
@@ -892,7 +892,7 @@ extern "C" {
 /** H264_B_ROI_REGION0_REG register
  *  Video B H264 ROI region0 range configure register.
  */
-#define H264_B_ROI_REGION0_REG (DR_REG_H264_BASE + 0x70)
+#define H264_B_ROI_REGION0_REG (DR_REG_H264_CORE_BASE + 0x70)
 /** H264_B_ROI_REGION0_X : R/W; bitpos: [6:0]; default: 0;
  *  Configures the horizontal start macroblocks of region 0 in Video B.
  */
@@ -935,7 +935,7 @@ extern "C" {
 /** H264_B_ROI_REGION1_REG register
  *  Video B H264 ROI region1 range configure register.
  */
-#define H264_B_ROI_REGION1_REG (DR_REG_H264_BASE + 0x74)
+#define H264_B_ROI_REGION1_REG (DR_REG_H264_CORE_BASE + 0x74)
 /** H264_B_ROI_REGION1_X : R/W; bitpos: [6:0]; default: 0;
  *  Configures the horizontal start macroblocks of region 1 in Video B.
  */
@@ -978,7 +978,7 @@ extern "C" {
 /** H264_B_ROI_REGION2_REG register
  *  Video B H264 ROI region2 range configure register.
  */
-#define H264_B_ROI_REGION2_REG (DR_REG_H264_BASE + 0x78)
+#define H264_B_ROI_REGION2_REG (DR_REG_H264_CORE_BASE + 0x78)
 /** H264_B_ROI_REGION2_X : R/W; bitpos: [6:0]; default: 0;
  *  Configures the horizontal start macroblocks of region 2 in Video B.
  */
@@ -1021,7 +1021,7 @@ extern "C" {
 /** H264_B_ROI_REGION3_REG register
  *  Video B H264 ROI region3 range configure register.
  */
-#define H264_B_ROI_REGION3_REG (DR_REG_H264_BASE + 0x7c)
+#define H264_B_ROI_REGION3_REG (DR_REG_H264_CORE_BASE + 0x7c)
 /** H264_B_ROI_REGION3_X : R/W; bitpos: [6:0]; default: 0;
  *  Configures the horizontal start macroblocks of region 3 in Video B.
  */
@@ -1064,7 +1064,7 @@ extern "C" {
 /** H264_B_ROI_REGION4_REG register
  *  Video B H264 ROI region4 range configure register.
  */
-#define H264_B_ROI_REGION4_REG (DR_REG_H264_BASE + 0x80)
+#define H264_B_ROI_REGION4_REG (DR_REG_H264_CORE_BASE + 0x80)
 /** H264_B_ROI_REGION4_X : R/W; bitpos: [6:0]; default: 0;
  *  Configures the horizontal start macroblocks of region 4 in Video B.
  */
@@ -1107,7 +1107,7 @@ extern "C" {
 /** H264_B_ROI_REGION5_REG register
  *  Video B H264 ROI region5 range configure register.
  */
-#define H264_B_ROI_REGION5_REG (DR_REG_H264_BASE + 0x84)
+#define H264_B_ROI_REGION5_REG (DR_REG_H264_CORE_BASE + 0x84)
 /** H264_B_ROI_REGION5_X : R/W; bitpos: [6:0]; default: 0;
  *  Configures the horizontial start macroblocks of region 5 video B.
  */
@@ -1150,7 +1150,7 @@ extern "C" {
 /** H264_B_ROI_REGION6_REG register
  *  Video B H264 ROI region6 range configure register.
  */
-#define H264_B_ROI_REGION6_REG (DR_REG_H264_BASE + 0x88)
+#define H264_B_ROI_REGION6_REG (DR_REG_H264_CORE_BASE + 0x88)
 /** H264_B_ROI_REGION6_X : R/W; bitpos: [6:0]; default: 0;
  *  Configures the horizontial start macroblocks of region 6 video B.
  */
@@ -1193,7 +1193,7 @@ extern "C" {
 /** H264_B_ROI_REGION7_REG register
  *  Video B H264 ROI region7 range configure register.
  */
-#define H264_B_ROI_REGION7_REG (DR_REG_H264_BASE + 0x8c)
+#define H264_B_ROI_REGION7_REG (DR_REG_H264_CORE_BASE + 0x8c)
 /** H264_B_ROI_REGION7_X : R/W; bitpos: [6:0]; default: 0;
  *  Configures the horizontal start macroblocks of region 7 in video B.
  */
@@ -1236,7 +1236,7 @@ extern "C" {
 /** H264_B_ROI_REGION0_3_QP_REG register
  *  Video B H264 ROI region0, region1,region2,region3 QP register.
  */
-#define H264_B_ROI_REGION0_3_QP_REG (DR_REG_H264_BASE + 0x90)
+#define H264_B_ROI_REGION0_3_QP_REG (DR_REG_H264_CORE_BASE + 0x90)
 /** H264_B_ROI_REGION0_QP : R/W; bitpos: [6:0]; default: 0;
  *  Configure H264 ROI region0 qp in video B,fixed qp or delta qp.
  */
@@ -1269,7 +1269,7 @@ extern "C" {
 /** H264_B_ROI_REGION4_7_QP_REG register
  *  Video B H264 ROI region4, region5,region6,region7 QP register.
  */
-#define H264_B_ROI_REGION4_7_QP_REG (DR_REG_H264_BASE + 0x94)
+#define H264_B_ROI_REGION4_7_QP_REG (DR_REG_H264_CORE_BASE + 0x94)
 /** H264_B_ROI_REGION4_QP : R/W; bitpos: [6:0]; default: 0;
  *  Configure H264 ROI region4 qp in video B,fixed qp or delta qp.
  */
@@ -1302,7 +1302,7 @@ extern "C" {
 /** H264_B_NO_ROI_REGION_QP_OFFSET_REG register
  *  Video B H264 no roi region QP register.
  */
-#define H264_B_NO_ROI_REGION_QP_OFFSET_REG (DR_REG_H264_BASE + 0x98)
+#define H264_B_NO_ROI_REGION_QP_OFFSET_REG (DR_REG_H264_CORE_BASE + 0x98)
 /** H264_B_NO_ROI_REGION_QP : R/W; bitpos: [6:0]; default: 0;
  *  Configure H264 no region qp in video B, delta qp.
  */
@@ -1314,7 +1314,7 @@ extern "C" {
 /** H264_B_ROI_CONFIG_REG register
  *  Video B H264 ROI configure register.
  */
-#define H264_B_ROI_CONFIG_REG (DR_REG_H264_BASE + 0x9c)
+#define H264_B_ROI_CONFIG_REG (DR_REG_H264_CORE_BASE + 0x9c)
 /** H264_B_ROI_EN : R/W; bitpos: [0]; default: 0;
  *  Configure whether or not to enable ROI in video B.\\0:not enable ROI\\1:enable ROI.
  */
@@ -1333,7 +1333,7 @@ extern "C" {
 /** H264_RC_STATUS0_REG register
  *  Rate control status register0.
  */
-#define H264_RC_STATUS0_REG (DR_REG_H264_BASE + 0xa0)
+#define H264_RC_STATUS0_REG (DR_REG_H264_CORE_BASE + 0xa0)
 /** H264_FRAME_MAD_SUM : RO; bitpos: [20:0]; default: 0;
  *  Represents all MB actual MAD sum value of one frame.
  */
@@ -1345,7 +1345,7 @@ extern "C" {
 /** H264_RC_STATUS1_REG register
  *  Rate control status register1.
  */
-#define H264_RC_STATUS1_REG (DR_REG_H264_BASE + 0xa4)
+#define H264_RC_STATUS1_REG (DR_REG_H264_CORE_BASE + 0xa4)
 /** H264_FRAME_ENC_BITS : RO; bitpos: [26:0]; default: 0;
  *  Represents all MB actual encoding bits sum value of one frame.
  */
@@ -1357,7 +1357,7 @@ extern "C" {
 /** H264_RC_STATUS2_REG register
  *  Rate control status register2.
  */
-#define H264_RC_STATUS2_REG (DR_REG_H264_BASE + 0xa8)
+#define H264_RC_STATUS2_REG (DR_REG_H264_CORE_BASE + 0xa8)
 /** H264_FRAME_QP_SUM : RO; bitpos: [18:0]; default: 0;
  *  Represents all MB actual luma QP sum value of one frame.
  */
@@ -1369,7 +1369,7 @@ extern "C" {
 /** H264_SLICE_HEADER_REMAIN_REG register
  *  Frame Slice Header remain bit register.
  */
-#define H264_SLICE_HEADER_REMAIN_REG (DR_REG_H264_BASE + 0xac)
+#define H264_SLICE_HEADER_REMAIN_REG (DR_REG_H264_CORE_BASE + 0xac)
 /** H264_SLICE_REMAIN_BITLENGTH : R/W; bitpos: [2:0]; default: 0;
  *  Configures Slice Header remain bit number
  */
@@ -1388,7 +1388,7 @@ extern "C" {
 /** H264_SLICE_HEADER_BYTE_LENGTH_REG register
  *  Frame Slice Header byte length register.
  */
-#define H264_SLICE_HEADER_BYTE_LENGTH_REG (DR_REG_H264_BASE + 0xb0)
+#define H264_SLICE_HEADER_BYTE_LENGTH_REG (DR_REG_H264_CORE_BASE + 0xb0)
 /** H264_SLICE_BYTE_LENGTH : R/W; bitpos: [3:0]; default: 0;
  *  Configures Slice Header byte number
  */
@@ -1400,7 +1400,7 @@ extern "C" {
 /** H264_BS_THRESHOLD_REG register
  *  Bitstream buffer overflow threshold register
  */
-#define H264_BS_THRESHOLD_REG (DR_REG_H264_BASE + 0xb4)
+#define H264_BS_THRESHOLD_REG (DR_REG_H264_CORE_BASE + 0xb4)
 /** H264_BS_BUFFER_THRESHOLD : R/W; bitpos: [6:0]; default: 48;
  *  Configures bitstream buffer overflow threshold. This value should be bigger than
  *  the encode bytes of one 4x4 submb.
@@ -1413,7 +1413,7 @@ extern "C" {
 /** H264_SLICE_HEADER_BYTE0_REG register
  *  Frame Slice Header byte low 32 bit  register.
  */
-#define H264_SLICE_HEADER_BYTE0_REG (DR_REG_H264_BASE + 0xb8)
+#define H264_SLICE_HEADER_BYTE0_REG (DR_REG_H264_CORE_BASE + 0xb8)
 /** H264_SLICE_BYTE_LSB : R/W; bitpos: [31:0]; default: 0;
  *  Configures Slice Header low 32 bit
  */
@@ -1425,7 +1425,7 @@ extern "C" {
 /** H264_SLICE_HEADER_BYTE1_REG register
  *  Frame Slice Header byte high 32 bit  register.
  */
-#define H264_SLICE_HEADER_BYTE1_REG (DR_REG_H264_BASE + 0xbc)
+#define H264_SLICE_HEADER_BYTE1_REG (DR_REG_H264_CORE_BASE + 0xbc)
 /** H264_SLICE_BYTE_MSB : R/W; bitpos: [31:0]; default: 0;
  *  Configures Slice Header high 32 bit
  */
@@ -1437,7 +1437,7 @@ extern "C" {
 /** H264_INT_RAW_REG register
  *  Interrupt raw status register
  */
-#define H264_INT_RAW_REG (DR_REG_H264_BASE + 0xc0)
+#define H264_INT_RAW_REG (DR_REG_H264_CORE_BASE + 0xc0)
 /** H264_DB_TMP_READY_INT_RAW : R/WTC/SS; bitpos: [0]; default: 0;
  *  Raw status bit: The raw interrupt status of  H264_DB_TMP_READY_INT. Triggered when
  *  H264 written enough db tmp pixel.
@@ -1475,7 +1475,7 @@ extern "C" {
 /** H264_INT_ST_REG register
  *  Interrupt masked status register
  */
-#define H264_INT_ST_REG (DR_REG_H264_BASE + 0xc4)
+#define H264_INT_ST_REG (DR_REG_H264_CORE_BASE + 0xc4)
 /** H264_DB_TMP_READY_INT_ST : RO; bitpos: [0]; default: 0;
  *  The masked interrupt status of H264_DB_TMP_READY_INT. Valid only when the
  *  H264_DB_TMP_READY_INT_ENA is set to 1.
@@ -1512,7 +1512,7 @@ extern "C" {
 /** H264_INT_ENA_REG register
  *  Interrupt enable register
  */
-#define H264_INT_ENA_REG (DR_REG_H264_BASE + 0xc8)
+#define H264_INT_ENA_REG (DR_REG_H264_CORE_BASE + 0xc8)
 /** H264_DB_TMP_READY_INT_ENA : R/W; bitpos: [0]; default: 0;
  *  Write 1 to enable H264_DB_TMP_READY_INT.
  */
@@ -1545,7 +1545,7 @@ extern "C" {
 /** H264_INT_CLR_REG register
  *  Interrupt clear register
  */
-#define H264_INT_CLR_REG (DR_REG_H264_BASE + 0xcc)
+#define H264_INT_CLR_REG (DR_REG_H264_CORE_BASE + 0xcc)
 /** H264_DB_TMP_READY_INT_CLR : WT; bitpos: [0]; default: 0;
  *  Write 1 to clear H264_DB_TMP_READY_INT.
  */
@@ -1578,7 +1578,7 @@ extern "C" {
 /** H264_CONF_REG register
  *  General configuration register.
  */
-#define H264_CONF_REG (DR_REG_H264_BASE + 0xd0)
+#define H264_CONF_REG (DR_REG_H264_CORE_BASE + 0xd0)
 /** H264_CLK_EN : R/W; bitpos: [0]; default: 0;
  *  Configures whether or not to open register clock gate.\\0: Open the clock gate only
  *  when application writes registers\\1: Force open the clock gate for register
@@ -1808,7 +1808,7 @@ extern "C" {
 /** H264_MV_MERGE_CONFIG_REG register
  *  Mv merge configuration register.
  */
-#define H264_MV_MERGE_CONFIG_REG (DR_REG_H264_BASE + 0xd4)
+#define H264_MV_MERGE_CONFIG_REG (DR_REG_H264_CORE_BASE + 0xd4)
 /** H264_MV_MERGE_TYPE : R/W; bitpos: [1:0]; default: 0;
  *  Configure mv merge type.\\0: merge p16x16 mv\\1: merge min mv\\2: merge max mv\\3:
  *  not valid.
@@ -1850,7 +1850,7 @@ extern "C" {
 /** H264_DEBUG_DMA_SEL_REG register
  *  Debug H264 DMA select register
  */
-#define H264_DEBUG_DMA_SEL_REG (DR_REG_H264_BASE + 0xd8)
+#define H264_DEBUG_DMA_SEL_REG (DR_REG_H264_CORE_BASE + 0xd8)
 /** H264_DBG_DMA_SEL : R/W; bitpos: [7:0]; default: 0;
  *  Every bit represents a dma in h264
  */
@@ -1862,7 +1862,7 @@ extern "C" {
 /** H264_SYS_STATUS_REG register
  *  System status register.
  */
-#define H264_SYS_STATUS_REG (DR_REG_H264_BASE + 0xdc)
+#define H264_SYS_STATUS_REG (DR_REG_H264_CORE_BASE + 0xdc)
 /** H264_FRAME_NUM : RO; bitpos: [8:0]; default: 0;
  *  Represents current frame number.
  */
@@ -1889,7 +1889,7 @@ extern "C" {
 /** H264_FRAME_CODE_LENGTH_REG register
  *  Frame code byte length register.
  */
-#define H264_FRAME_CODE_LENGTH_REG (DR_REG_H264_BASE + 0xe0)
+#define H264_FRAME_CODE_LENGTH_REG (DR_REG_H264_CORE_BASE + 0xe0)
 /** H264_FRAME_CODE_LENGTH : RO; bitpos: [23:0]; default: 0;
  *  Represents current frame code byte length.
  */
@@ -1901,7 +1901,7 @@ extern "C" {
 /** H264_DEBUG_INFO0_REG register
  *  Debug information register0.
  */
-#define H264_DEBUG_INFO0_REG (DR_REG_H264_BASE + 0xe4)
+#define H264_DEBUG_INFO0_REG (DR_REG_H264_CORE_BASE + 0xe4)
 /** H264_TOP_CTRL_INTER_DEBUG_STATE : RO; bitpos: [3:0]; default: 0;
  *  Represents top_ctrl_inter module FSM info.
  */
@@ -1969,7 +1969,7 @@ extern "C" {
 /** H264_DEBUG_INFO1_REG register
  *  Debug information register1.
  */
-#define H264_DEBUG_INFO1_REG (DR_REG_H264_BASE + 0xe8)
+#define H264_DEBUG_INFO1_REG (DR_REG_H264_CORE_BASE + 0xe8)
 /** H264_FME_CTRL_DEBUG_STATE : RO; bitpos: [2:0]; default: 0;
  *  Represents fme_ctrl module FSM info.
  */
@@ -2023,7 +2023,7 @@ extern "C" {
 /** H264_DEBUG_INFO2_REG register
  *  Debug information register2.
  */
-#define H264_DEBUG_INFO2_REG (DR_REG_H264_BASE + 0xec)
+#define H264_DEBUG_INFO2_REG (DR_REG_H264_CORE_BASE + 0xec)
 /** H264_P_RC_DONE_DEBUG_FLAG : RO; bitpos: [0]; default: 0;
  *  Represents p rate ctrl done status.\\0: not done\\1: done.
  */
@@ -2154,7 +2154,7 @@ extern "C" {
 /** H264_DATE_REG register
  *  Version control register
  */
-#define H264_DATE_REG (DR_REG_H264_BASE + 0xf0)
+#define H264_DATE_REG (DR_REG_H264_CORE_BASE + 0xf0)
 /** H264_LEDC_DATE : R/W; bitpos: [27:0]; default: 36717120;
  *  Configures the version.
  */

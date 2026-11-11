@@ -105,8 +105,23 @@ check_chip_support_components:
     expire_in: 1 week
   script:
     - python tools/ci/check_soc_headers_leak.py
-    - find ${IDF_PATH}/components/soc \( -path "*/include/soc/*_struct.h" -o -path "*/register/soc/*_struct.h" -o -path "*/register/*/soc/*_struct.h" \) -print0 | xargs -0 -n1 ./tools/ci/check_soc_struct_headers.py
     - tools/ci/check_esp_memory_utils_headers.sh
+
+check_soc_headers:
+  extends:
+    - .pre_check_template
+    - .rules:soc_component
+  needs:
+    - pipeline_variables
+  script:
+    - |
+      if [ -n "${CI_MERGE_REQUEST_IID:-}" ]; then
+        python tools/ci/soc_header_check/check_soc_headers.py all --jobs 4 \
+          --modified-files "${MR_MODIFIED_FILES}"
+      else
+        python tools/ci/soc_header_check/check_soc_headers.py all --jobs 4
+      fi
+    - python -m unittest discover -s tools/ci/soc_header_check/test -p 'test_check_soc_headers.py' -v
 
 check_esp_err_codes:
   extends:

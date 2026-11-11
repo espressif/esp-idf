@@ -10,10 +10,12 @@
 extern "C" {
 #endif
 
+#define DR_REG_RTCLOCKCALI_BASE(i)                  (DR_REG_RTCLOCKCALI0_BASE + (i) * 0x1000)
+
 /** RTCLOCKCALI_CFG0_REG register
  *  need_des
  */
-#define RTCLOCKCALI_CFG0_REG (DR_REG_RTCLOCKCALI_BASE + 0x38)
+#define RTCLOCKCALI_CFG0_REG(i) (DR_REG_RTCLOCKCALI_BASE(i) + 0x38)
 /** RTCLOCKCALI_DIV_CYCLE : R/W; bitpos: [7:0]; default: 1;
  *  need_des
  */
@@ -53,7 +55,7 @@ extern "C" {
 /** RTCLOCKCALI_CFG1_REG register
  *  need_des
  */
-#define RTCLOCKCALI_CFG1_REG (DR_REG_RTCLOCKCALI_BASE + 0x3c)
+#define RTCLOCKCALI_CFG1_REG(i) (DR_REG_RTCLOCKCALI_BASE(i) + 0x3c)
 /** RTCLOCKCALI_DIV_NUMERATOR : RO; bitpos: [15:0]; default: 0;
  *  need_des
  */
@@ -72,7 +74,7 @@ extern "C" {
 /** RTCLOCKCALI_CFG2_REG register
  *  need_des
  */
-#define RTCLOCKCALI_CFG2_REG (DR_REG_RTCLOCKCALI_BASE + 0x40)
+#define RTCLOCKCALI_CFG2_REG(i) (DR_REG_RTCLOCKCALI_BASE(i) + 0x40)
 /** RTCLOCKCALI_DIV_WAIT_PWR_GOOD : R/W; bitpos: [8:0]; default: 255;
  *  need_des
  */
@@ -98,7 +100,7 @@ extern "C" {
 /** RTCLOCKCALI_DATE_REG register
  *  Configure register.
  */
-#define RTCLOCKCALI_DATE_REG (DR_REG_RTCLOCKCALI_BASE + 0x3fc)
+#define RTCLOCKCALI_DATE_REG(i) (DR_REG_RTCLOCKCALI_BASE(i) + 0x3fc)
 /** RTCLOCKCALI_RTCLOCKCALI_DATE : R/W; bitpos: [30:0]; default: 38805584;
  *  need_des
  */

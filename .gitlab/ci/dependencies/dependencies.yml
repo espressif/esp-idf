@@ -47,6 +47,13 @@
   included_in:
     - build:check
 
+# check_soc_headers: only run when the soc component or the checker changes.
+"soc_component":
+  labels:
+    - build
+  patterns:
+    - soc_component
+
 "test:host_test":
   labels:
     - host_test

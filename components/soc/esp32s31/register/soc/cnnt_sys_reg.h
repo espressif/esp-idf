@@ -13,7 +13,7 @@ extern "C" {
 /** CNNT_SYS_VER_DATE_REG register
  *  NA
  */
-#define CNNT_SYS_VER_DATE_REG (DR_REG_CNNT_BASE + 0x0)
+#define CNNT_SYS_VER_DATE_REG (DR_REG_CNNT_SYS_REG_BASE + 0x0)
 /** CNNT_SYS_VER_DATE : R/W; bitpos: [31:0]; default: 539298086;
  *  NA
  */
@@ -25,7 +25,7 @@ extern "C" {
 /** CNNT_CLK_EN_REG register
  *  NA
  */
-#define CNNT_CLK_EN_REG (DR_REG_CNNT_BASE + 0x4)
+#define CNNT_CLK_EN_REG (DR_REG_CNNT_SYS_REG_BASE + 0x4)
 /** CNNT_SYS_DATE : R/W; bitpos: [30:0]; default: 38826240;
  *  need_des
  */
@@ -44,7 +44,7 @@ extern "C" {
 /** CNNT_SYS_SDMMC_MEM_LP_CTRL_REG register
  *  HP CORE0 & HP CORE1 memory power control register
  */
-#define CNNT_SYS_SDMMC_MEM_LP_CTRL_REG (DR_REG_CNNT_BASE + 0x10)
+#define CNNT_SYS_SDMMC_MEM_LP_CTRL_REG (DR_REG_CNNT_SYS_REG_BASE + 0x10)
 /** CNNT_SYS_SDMMC_MEM_LP_MODE : R/W; bitpos: [1:0]; default: 2;
  *  Configures sdmmc memory low power mode in low power stage.
  *  0: deep sleep
@@ -74,7 +74,7 @@ extern "C" {
 /** CNNT_SYS_USB_OTGHS_MEM_LP_CTRL_REG register
  *  HP CORE0 & HP CORE1 memory power control register
  */
-#define CNNT_SYS_USB_OTGHS_MEM_LP_CTRL_REG (DR_REG_CNNT_BASE + 0x14)
+#define CNNT_SYS_USB_OTGHS_MEM_LP_CTRL_REG (DR_REG_CNNT_SYS_REG_BASE + 0x14)
 /** CNNT_SYS_USB_OTGHS_MEM_LP_MODE : R/W; bitpos: [1:0]; default: 2;
  *  Configures usb_otghs memory low power mode in low power stage.
  *  0: deep sleep
@@ -104,7 +104,7 @@ extern "C" {
 /** CNNT_SYS_USB_DEVICE_MEM_LP_CTRL_REG register
  *  HP CORE0 & HP CORE1 memory power control register
  */
-#define CNNT_SYS_USB_DEVICE_MEM_LP_CTRL_REG (DR_REG_CNNT_BASE + 0x18)
+#define CNNT_SYS_USB_DEVICE_MEM_LP_CTRL_REG (DR_REG_CNNT_SYS_REG_BASE + 0x18)
 /** CNNT_SYS_USB_DEVICE_MEM_LP_MODE : R/W; bitpos: [1:0]; default: 2;
  *  Configures usb_device memory low power mode in low power stage.
  *  0: deep sleep
@@ -135,7 +135,7 @@ extern "C" {
 /** CNNT_SYS_GMAC_MEM_LP_CTRL_REG register
  *  HP CORE0 & HP CORE1 memory power control register
  */
-#define CNNT_SYS_GMAC_MEM_LP_CTRL_REG (DR_REG_CNNT_BASE + 0x1c)
+#define CNNT_SYS_GMAC_MEM_LP_CTRL_REG (DR_REG_CNNT_SYS_REG_BASE + 0x1c)
 /** CNNT_SYS_GMAC_MEM_LP_MODE : R/W; bitpos: [1:0]; default: 2;
  *  Configures gmac memory low power mode in low power stage.
  *  0: deep sleep
@@ -165,7 +165,7 @@ extern "C" {
 /** CNNT_SYS_SPRF_MEM_AUX_CTRL_REG register
  *  need_des
  */
-#define CNNT_SYS_SPRF_MEM_AUX_CTRL_REG (DR_REG_CNNT_BASE + 0x20)
+#define CNNT_SYS_SPRF_MEM_AUX_CTRL_REG (DR_REG_CNNT_SYS_REG_BASE + 0x20)
 /** CNNT_SYS_SPRF_MEM_AUX_CTRL : R/W; bitpos: [31:0]; default: 8304;
  *  need_des
  */
@@ -177,7 +177,7 @@ extern "C" {
 /** CNNT_SYS_SDPRF_MEM_AUX_CTRL_REG register
  *  need_des
  */
-#define CNNT_SYS_SDPRF_MEM_AUX_CTRL_REG (DR_REG_CNNT_BASE + 0x24)
+#define CNNT_SYS_SDPRF_MEM_AUX_CTRL_REG (DR_REG_CNNT_SYS_REG_BASE + 0x24)
 /** CNNT_SYS_SDPRF_MEM_AUX_CTRL : R/W; bitpos: [31:0]; default: 8304;
  *  need_des
  */
@@ -189,7 +189,7 @@ extern "C" {
 /** CNNT_SYS_HP_PAD_ULPI_CTRL_REG register
  *  HP Clock Control Register.
  */
-#define CNNT_SYS_HP_PAD_ULPI_CTRL_REG (DR_REG_CNNT_BASE + 0x28)
+#define CNNT_SYS_HP_PAD_ULPI_CTRL_REG (DR_REG_CNNT_SYS_REG_BASE + 0x28)
 /** CNNT_SYS_HP_PAD_ULPI_CLK_OUT_INV_EN : R/W; bitpos: [30]; default: 0;
  *  PAD ULPI Clock output inv Enable, valid only when CNNT_SYS_HP_PAD_ULPI_CLK_OUT_EN
  *  is 1.
@@ -210,7 +210,7 @@ extern "C" {
 /** CNNT_SYS_USB_CLK_CTRL_REG register
  *  HP USB Clock Reset Control Register.
  */
-#define CNNT_SYS_USB_CLK_CTRL_REG (DR_REG_CNNT_BASE + 0x2c)
+#define CNNT_SYS_USB_CLK_CTRL_REG (DR_REG_CNNT_SYS_REG_BASE + 0x2c)
 /** CNNT_SYS_USB_48M_DIV_NUM : R/W; bitpos: [15:8]; default: 9;
  *  usb 480m to 25m divide number.
  */
@@ -236,7 +236,7 @@ extern "C" {
 /** CNNT_SYS_USB_OTG20_CTRL_REG register
  *  HP USB Clock Reset Control Register.
  */
-#define CNNT_SYS_USB_OTG20_CTRL_REG (DR_REG_CNNT_BASE + 0x30)
+#define CNNT_SYS_USB_OTG20_CTRL_REG (DR_REG_CNNT_SYS_REG_BASE + 0x30)
 /** CNNT_SYS_USB_OTG20_UTMIFS_CLK_EN : R/W; bitpos: [23]; default: 1;
  *  usb otg20 utmifs clk enable.
  */
@@ -290,7 +290,7 @@ extern "C" {
 /** CNNT_SYS_HP_USB_DEVICE_CTRL_REG register
  *  HP USB Clock Reset Control Register.
  */
-#define CNNT_SYS_HP_USB_DEVICE_CTRL_REG (DR_REG_CNNT_BASE + 0x34)
+#define CNNT_SYS_HP_USB_DEVICE_CTRL_REG (DR_REG_CNNT_SYS_REG_BASE + 0x34)
 /** CNNT_SYS_USB_DEVICE_48M_CLK_EN : R/W; bitpos: [30]; default: 1;
  *  usb device fs phy clock enable.
  */
@@ -309,7 +309,7 @@ extern "C" {
 /** CNNT_SYS_HP_SDMMC_CTRL_REG register
  *  need_des
  */
-#define CNNT_SYS_HP_SDMMC_CTRL_REG (DR_REG_CNNT_BASE + 0x38)
+#define CNNT_SYS_HP_SDMMC_CTRL_REG (DR_REG_CNNT_SYS_REG_BASE + 0x38)
 /** CNNT_SYS_SDMMC_AHB2AXI_POST_WRITE_EN : R/W; bitpos: [29]; default: 0;
  *  this reg is used to enable the post_write function of the ahb2axi bridge for sdmmc
  */
@@ -335,7 +335,7 @@ extern "C" {
 /** CNNT_SYS_HP_EMAC_CTRL_REG register
  *  need_des
  */
-#define CNNT_SYS_HP_EMAC_CTRL_REG (DR_REG_CNNT_BASE + 0x3c)
+#define CNNT_SYS_HP_EMAC_CTRL_REG (DR_REG_CNNT_SYS_REG_BASE + 0x3c)
 /** CNNT_SYS_EMAC_USELESS_CLK_EN : R/W; bitpos: [0]; default: 0;
  *  need_des
  */
@@ -361,7 +361,7 @@ extern "C" {
 /** CNNT_SYS_HP_EMAC_REF_CTRL_REG register
  *  need_des
  */
-#define CNNT_SYS_HP_EMAC_REF_CTRL_REG (DR_REG_CNNT_BASE + 0x40)
+#define CNNT_SYS_HP_EMAC_REF_CTRL_REG (DR_REG_CNNT_SYS_REG_BASE + 0x40)
 /** CNNT_SYS_EMAC_REF_CLK_SEL : R/W; bitpos: [1:0]; default: 0;
  *  select emac reference clock source. 0: mpll 500MHz, 1: cpll 300MHz.
  */
@@ -394,7 +394,7 @@ extern "C" {
 /** CNNT_SYS_HP_EMAC_RMII_PAD_CTRL_REG register
  *  need_des
  */
-#define CNNT_SYS_HP_EMAC_RMII_PAD_CTRL_REG (DR_REG_CNNT_BASE + 0x44)
+#define CNNT_SYS_HP_EMAC_RMII_PAD_CTRL_REG (DR_REG_CNNT_SYS_REG_BASE + 0x44)
 /** CNNT_SYS_EMAC_RMII_PAD_CLK_EN : R/W; bitpos: [1]; default: 0;
  *  need_des
  */
@@ -413,7 +413,7 @@ extern "C" {
 /** CNNT_SYS_HP_EMAC_RMII_CTRL_REG register
  *  need_des
  */
-#define CNNT_SYS_HP_EMAC_RMII_CTRL_REG (DR_REG_CNNT_BASE + 0x48)
+#define CNNT_SYS_HP_EMAC_RMII_CTRL_REG (DR_REG_CNNT_SYS_REG_BASE + 0x48)
 /** CNNT_SYS_EMAC_RMII_CLK_SEL : R/W; bitpos: [0]; default: 0;
  *  need_des
  */
@@ -446,7 +446,7 @@ extern "C" {
 /** CNNT_SYS_HP_EMAC_RX_CTRL_REG register
  *  need_des
  */
-#define CNNT_SYS_HP_EMAC_RX_CTRL_REG (DR_REG_CNNT_BASE + 0x4c)
+#define CNNT_SYS_HP_EMAC_RX_CTRL_REG (DR_REG_CNNT_SYS_REG_BASE + 0x4c)
 /** CNNT_SYS_EMAC_RX_PAD_CLK_EN : R/W; bitpos: [0]; default: 0;
  *  need_des
  */
@@ -479,7 +479,7 @@ extern "C" {
 /** CNNT_SYS_HP_EMAC_TX_CTRL_REG register
  *  need_des
  */
-#define CNNT_SYS_HP_EMAC_TX_CTRL_REG (DR_REG_CNNT_BASE + 0x50)
+#define CNNT_SYS_HP_EMAC_TX_CTRL_REG (DR_REG_CNNT_SYS_REG_BASE + 0x50)
 /** CNNT_SYS_EMAC_TX_PAD_CLK_EN : R/W; bitpos: [0]; default: 0;
  *  need_des
  */
@@ -512,7 +512,7 @@ extern "C" {
 /** CNNT_SYS_HP_EMAC_PTP_CTRL_REG register
  *  need_des
  */
-#define CNNT_SYS_HP_EMAC_PTP_CTRL_REG (DR_REG_CNNT_BASE + 0x54)
+#define CNNT_SYS_HP_EMAC_PTP_CTRL_REG (DR_REG_CNNT_SYS_REG_BASE + 0x54)
 /** CNNT_SYS_EMAC_PTP_REF_CLK_EN : R/W; bitpos: [0]; default: 0;
  *  Set as 1 to enable emac PTP clock source selection.
  */
@@ -531,7 +531,7 @@ extern "C" {
 /** CNNT_SYS_CNNT_IOMUX_CTRL0_REG register
  *  need_des
  */
-#define CNNT_SYS_CNNT_IOMUX_CTRL0_REG (DR_REG_CNNT_BASE + 0x58)
+#define CNNT_SYS_CNNT_IOMUX_CTRL0_REG (DR_REG_CNNT_SYS_REG_BASE + 0x58)
 /** CNNT_SYS_REG_CNNT_IOMUX_APB_RST_EN : R/W; bitpos: [0]; default: 0;
  *  cnnt_iomux rst en
  */
@@ -543,7 +543,7 @@ extern "C" {
 /** CNNT_SYS_SPRAM_MEM_AUX_CTRL_REG register
  *  need_des
  */
-#define CNNT_SYS_SPRAM_MEM_AUX_CTRL_REG (DR_REG_CNNT_BASE + 0x5c)
+#define CNNT_SYS_SPRAM_MEM_AUX_CTRL_REG (DR_REG_CNNT_SYS_REG_BASE + 0x5c)
 /** CNNT_SYS_SPRAM_MEM_AUX_CTRL : R/W; bitpos: [31:0]; default: 8304;
  *  need_des
  */
@@ -555,7 +555,7 @@ extern "C" {
 /** CNNT_SYS_GMAC_CTRL0_REG register
  *  N/A
  */
-#define CNNT_SYS_GMAC_CTRL0_REG (DR_REG_CNNT_BASE + 0x60)
+#define CNNT_SYS_GMAC_CTRL0_REG (DR_REG_CNNT_SYS_REG_BASE + 0x60)
 /** CNNT_SYS_PTP_PPS : RO; bitpos: [0]; default: 0;
  *  N/A
  */
@@ -640,7 +640,7 @@ extern "C" {
 /** CNNT_SYS_GMAC_CTRL1_REG register
  *  N/A
  */
-#define CNNT_SYS_GMAC_CTRL1_REG (DR_REG_CNNT_BASE + 0x64)
+#define CNNT_SYS_GMAC_CTRL1_REG (DR_REG_CNNT_SYS_REG_BASE + 0x64)
 /** CNNT_SYS_PTP_TIMESTAMP_L : RO; bitpos: [31:0]; default: 0;
  *  N/A
  */
@@ -652,7 +652,7 @@ extern "C" {
 /** CNNT_SYS_GMAC_CTRL2_REG register
  *  N/A
  */
-#define CNNT_SYS_GMAC_CTRL2_REG (DR_REG_CNNT_BASE + 0x68)
+#define CNNT_SYS_GMAC_CTRL2_REG (DR_REG_CNNT_SYS_REG_BASE + 0x68)
 /** CNNT_SYS_PTP_TIMESTAMP_H : RO; bitpos: [31:0]; default: 0;
  *  N/A
  */

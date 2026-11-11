@@ -65,7 +65,6 @@ tools/ci/check_readme_links.py
 tools/ci/check_requirement_files.py
 tools/ci/check_rules_components_patterns.py
 tools/ci/check_soc_headers_leak.py
-tools/ci/check_soc_struct_headers.py
 tools/ci/check_tools_files_patterns.py
 tools/ci/check_type_comments.py
 tools/ci/checkout_project_ref.py
@@ -82,6 +81,7 @@ tools/ci/metrics/size_metrics/generate_metrics.py
 tools/ci/mirror-submodule-update.sh
 tools/ci/multirun_with_pyenv.sh
 tools/ci/push_to_github.sh
+tools/ci/soc_header_check/check_soc_headers.py
 tools/ci/sort_yaml.py
 tools/ci/test_autocomplete/test_autocomplete.py
 tools/ci/test_configure_ci_environment.sh

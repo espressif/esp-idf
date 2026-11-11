@@ -39,7 +39,7 @@
 #define DR_REG_USB2_BASE              (DR_REG_HPPERIPH0_BASE + 0x0)
 #define DR_REG_USB11_BASE             (DR_REG_HPPERIPH0_BASE + 0x40000)
 #define DR_REG_USB_WRAP_BASE          (DR_REG_HPPERIPH0_BASE + 0x80000)
-#define DR_REG_GDMA_BASE              (DR_REG_HPPERIPH0_BASE + 0x81000)
+#define DR_REG_DMAC_BASE              (DR_REG_HPPERIPH0_BASE + 0x81000)
 #define DR_REG_REGDMA_BASE            (DR_REG_HPPERIPH0_BASE + 0x82000)
 #define DR_REG_SDMMC_BASE             (DR_REG_HPPERIPH0_BASE + 0x83000)
 #define DR_REG_H264_CORE_BASE         (DR_REG_HPPERIPH0_BASE + 0x84000)
@@ -135,7 +135,7 @@
 #define DR_REG_PMU_BASE               (DR_REG_LPAON_BASE + 0x5000)
 #define DR_REG_LP_WDT_BASE            (DR_REG_LPAON_BASE + 0x6000)
 #define DR_REG_LP_MB_BASE             (DR_REG_LPAON_BASE + 0x8000)
-#define DR_REG_RTC_BASE               (DR_REG_LPAON_BASE + 0x9000)
+#define DR_REG_RTCLOCKCALI_BASE       (DR_REG_LPAON_BASE + 0x9000)
 
 /*
  * @module: LP PERI

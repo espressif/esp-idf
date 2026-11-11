@@ -7,6 +7,7 @@
 #pragma once
 
 #include "soc.h"
+#include "soc/rng_reg.h"
 #include "soc/lpperi_reg.h"
 
 /* Hardware random number generator register */
