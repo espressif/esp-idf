@@ -11,12 +11,17 @@ include(ExternalProject)
 
     .. code-block:: cmake
 
-        idf_subproject_add(<name> [CONFIG_OPTIONS <option>...]
+        idf_subproject_add(<name> [SHARED_CONFIG | CONFIG_OPTIONS <option>...]
                            EXTERNALPROJECT_OPTIONS <externalproject_add options>...)
 
     *name[in]*
 
         Name of the target that builds the subproject.
+
+    *SHARED_CONFIG[in,opt]*
+
+        The subproject reads the main project's ``sdkconfig`` instead of keeping
+        a configuration of its own. It cannot be given with ``CONFIG_OPTIONS``.
 
     *CONFIG_OPTIONS[in,opt]*
 
@@ -29,10 +34,18 @@ include(ExternalProject)
         keyword is passed to ``externalproject_add`` as given, so it must come
         last.
 
-    Build an ESP-IDF subproject with ``externalproject_add``, with a
-    configuration of its own. The subproject resolves its config options from
-    the components it discovers and stores them in an ``sdkconfig`` in its own
-    project directory, instead of reading the main project's.
+    Build an ESP-IDF subproject with ``externalproject_add``. By default the
+    subproject has a configuration of its own. It resolves its config options
+    from the components it discovers and stores them in an ``sdkconfig`` in its
+    own project directory, instead of reading the main project's.
+
+    With ``SHARED_CONFIG``, the subproject reads the main project's
+    ``sdkconfig`` and does not write it. It is passed ``SDKCONFIG`` set to the
+    main project's ``sdkconfig``, an empty ``SDKCONFIG_DEFAULTS``, because the
+    main project has already applied its defaults files, and
+    ``GENERATE_SDKCONFIG`` set to 0. Its components are built with the main
+    project's config option values, and a config option that only the
+    subproject declares gets its default value.
 
     The subproject is passed ``IDF_PATH``, ``IDF_TARGET``, ``PYTHON`` and
     ``IDF_BUILD_V2`` from the project that builds it, in addition to the
@@ -76,7 +89,7 @@ function(idf_subproject_add name)
     # PARSE_ARGV keeps an empty value, such as the one in 'INSTALL_COMMAND ""',
     # and externalproject_add keeps it too when the options are passed as one
     # quoted list.
-    cmake_parse_arguments(PARSE_ARGV 1 ARG "" "" "CONFIG_OPTIONS;EXTERNALPROJECT_OPTIONS")
+    cmake_parse_arguments(PARSE_ARGV 1 ARG "SHARED_CONFIG" "" "CONFIG_OPTIONS;EXTERNALPROJECT_OPTIONS")
     if(ARG_UNPARSED_ARGUMENTS)
         list(GET ARG_UNPARSED_ARGUMENTS 0 unexpected)
         idf_die("idf_subproject_add: unexpected argument '${unexpected}'. The options of "
@@ -85,6 +98,11 @@ function(idf_subproject_add name)
     if(NOT ARG_EXTERNALPROJECT_OPTIONS)
         idf_die("idf_subproject_add: the options of externalproject_add are required, after "
                 "EXTERNALPROJECT_OPTIONS")
+    endif()
+    if(ARG_SHARED_CONFIG AND ARG_CONFIG_OPTIONS)
+        idf_die("idf_subproject_add: CONFIG_OPTIONS cannot be given with SHARED_CONFIG. A "
+                "subproject that shares the main project's configuration already reads every "
+                "config option from the main project's sdkconfig.")
     endif()
 
     idf_build_get_property(idf_path IDF_PATH)
@@ -128,10 +146,30 @@ function(idf_subproject_add name)
                         -DPYTHON=${python}
                         -DPYTHON_DEPS_CHECKED=1
                         -DIDF_BUILD_V2=1
-                        -DIDF_SUBPROJECT=1
-                        -DIDF_SUBPROJECT_OWN_CONFIG=1
-                        -DIDF_SUBPROJECT_IMPORTED_CONFIG=${config_options}
-                        -DIDF_SUBPROJECT_MAIN_SDKCONFIG=${main_sdkconfig})
+                        -DIDF_SUBPROJECT=1)
+    # The subproject's CMake cache keeps the values of an earlier configure, so
+    # each kind of subproject is passed every variable the other kind sets. A
+    # subproject that keeps a configuration of its own has the three
+    # configuration variables removed before the caller's CMAKE_ARGS, so that
+    # the caller can still set them.
+    if(ARG_SHARED_CONFIG)
+        list(APPEND options CMAKE_ARGS
+                            -DSDKCONFIG=${main_sdkconfig}
+                            -DSDKCONFIG_DEFAULTS=
+                            -DGENERATE_SDKCONFIG=0
+                            -DIDF_SUBPROJECT_OWN_CONFIG=0
+                            -DIDF_SUBPROJECT_IMPORTED_CONFIG=
+                            -DIDF_SUBPROJECT_MAIN_SDKCONFIG=)
+    else()
+        list(PREPEND options CMAKE_ARGS
+                             -USDKCONFIG
+                             -USDKCONFIG_DEFAULTS
+                             -UGENERATE_SDKCONFIG)
+        list(APPEND options CMAKE_ARGS
+                            -DIDF_SUBPROJECT_OWN_CONFIG=1
+                            -DIDF_SUBPROJECT_IMPORTED_CONFIG=${config_options}
+                            -DIDF_SUBPROJECT_MAIN_SDKCONFIG=${main_sdkconfig})
+    endif()
     externalproject_add(${name} "${options}")
 endfunction()
 

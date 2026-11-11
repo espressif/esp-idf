@@ -44,9 +44,11 @@ function(__init_kconfig)
     # the command line. In the main project's environment, SDKCONFIG is the
     # main project's sdkconfig path, SDKCONFIG_DEFAULTS lists the main
     # project's defaults files and GENERATE_SDKCONFIG says whether to write an
-    # sdkconfig. A subproject that kept the three variables would use the main
-    # project's sdkconfig and overwrite it.
-    if(IDF_SUBPROJECT_OWN_CONFIG)
+    # sdkconfig. A subproject that kept the three variables would read the main
+    # project's sdkconfig with the main project's defaults files and could
+    # overwrite it. A subproject that shares the main project's configuration is
+    # passed the values it needs on the command line instead.
+    if(IDF_SUBPROJECT)
         unset(ENV{SDKCONFIG})
         unset(ENV{SDKCONFIG_DEFAULTS})
         unset(ENV{GENERATE_SDKCONFIG})
