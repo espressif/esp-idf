@@ -21,6 +21,7 @@
 #include "soc/rtc.h"
 #include "soc/rtc_periph.h"
 #include "soc/i2s_reg.h"
+#include "soc/usb_wrap_struct.h"
 #if SOC_WDT_SUPPORTED || SOC_RTC_WDT_SUPPORTED
 #include "hal/wdt_hal.h"
 #endif
@@ -295,6 +296,14 @@ __attribute__((weak)) void esp_perip_clk_init(void)
     REG_SET_FIELD(I2S_CLKM_CONF_REG(0), I2S_CLK_SEL, I2S_CLK_AUDIO_PLL);
     REG_SET_FIELD(I2S_CLKM_CONF_REG(1), I2S_CLK_SEL, I2S_CLK_AUDIO_PLL);
 #endif // CONFIG_IDF_ENV_FPGA
+
+#ifndef CONFIG_ESP32S2_KEEP_USB_ALIVE
+    /* The USB PHY holds GPIO19 and GPIO20 until its pads are disabled, which
+     * needs the USB clock.
+     */
+    DPORT_SET_PERI_REG_MASK(DPORT_PERIP_CLK_EN_REG, DPORT_USB_CLK_EN);
+    USB_WRAP.otg_conf.pad_enable = 0;
+#endif
 
     /* Disable some peripheral clocks. */
     DPORT_CLEAR_PERI_REG_MASK(DPORT_PERIP_CLK_EN_REG, common_perip_clk);
