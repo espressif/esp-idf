@@ -145,9 +145,23 @@ static void bta_pan_conn_state_cback(UINT16 handle, BD_ADDR bd_addr,
             p_buf->hdr.event = BTA_PAN_CONN_CLOSE_EVT;
         }
     } else {
-        /* Role change: no BTA event is posted, drop the unused buffer. */
-        osi_free(p_buf);
-        return;
+        /* Role change keeps the same handle. Report the result on that SCB. */
+        p_scb = bta_pan_scb_by_handle(handle);
+        if (p_scb == NULL) {
+            osi_free(p_buf);
+            return;
+        }
+        p_buf->hdr.event = BTA_PAN_CONN_OPEN_EVT;
+        if (state == PAN_SUCCESS) {
+            p_buf->local_role = src_role;
+            p_buf->peer_role = dst_role;
+        } else if (p_scb->pending_local_role != 0 || p_scb->pending_peer_role != 0) {
+            p_buf->local_role = p_scb->pending_local_role;
+            p_buf->peer_role = p_scb->pending_peer_role;
+        } else {
+            p_buf->local_role = p_scb->local_role;
+            p_buf->peer_role = p_scb->peer_role;
+        }
     }
 
     p_buf->result = state;
@@ -485,20 +499,37 @@ void bta_pan_disable(void)
  * Returns          void
  *
  ******************************************************************************/
-void bta_pan_open(tBTA_PAN_SCB *p_scb, tBTA_PAN_DATA *p_data)
+void bta_pan_open(tBTA_PAN_SCB *p_scb, tBTA_PAN_DATA *p_data, BOOLEAN existing)
 {
     tPAN_RESULT status;
     tBTA_PAN bta_pan;
+    UINT16 handle = p_scb->handle;
 
+    /* PAN_Connect clears *handle before it can fail. Keep the caller's copy
+     * so a rejected renegotiation does not erase the live connection handle. */
     status = PAN_Connect(p_data->api_open.bd_addr, p_data->api_open.local_role,
-                         p_data->api_open.peer_role, &p_scb->handle);
+                         p_data->api_open.peer_role, &handle);
     APPL_TRACE_DEBUG("%s pan connect status: %d", __func__, status);
 
     if (status == PAN_SUCCESS) {
-        bdcpy(p_scb->bd_addr, p_data->api_open.bd_addr);
-        p_scb->local_role = p_data->api_open.local_role;
-        p_scb->peer_role = p_data->api_open.peer_role;
+        p_scb->handle = handle;
+        if (existing) {
+            /* Keep the roles already reported until renegotiation finishes. */
+            p_scb->pending_local_role = p_data->api_open.local_role;
+            p_scb->pending_peer_role = p_data->api_open.peer_role;
+        } else {
+            bdcpy(p_scb->bd_addr, p_data->api_open.bd_addr);
+            p_scb->local_role = p_data->api_open.local_role;
+            p_scb->peer_role = p_data->api_open.peer_role;
+        }
 
+    } else if (existing) {
+        bdcpy(bta_pan.open.bd_addr, p_scb->bd_addr);
+        bta_pan.open.handle = p_scb->handle;
+        bta_pan.open.status = BTA_PAN_FAIL;
+        bta_pan.open.local_role = p_data->api_open.local_role;
+        bta_pan.open.peer_role = p_data->api_open.peer_role;
+        bta_pan_cb.p_cback(BTA_PAN_OPEN_EVT, &bta_pan);
     } else {
         bta_pan_scb_dealloc(p_scb);
         bdcpy(bta_pan.open.bd_addr, p_data->api_open.bd_addr);
@@ -579,6 +610,57 @@ void bta_pan_conn_open(tBTA_PAN_SCB *p_scb, tBTA_PAN_DATA *p_data)
     } else {
         bta_pan_scb_dealloc(p_scb);
         bta_pan.open.status = BTA_PAN_FAIL;
+    }
+
+    bta_pan_cb.p_cback(BTA_PAN_OPEN_EVT, &bta_pan);
+}
+
+/*******************************************************************************
+ *
+ * Function         bta_pan_role_chg_cmpl
+ *
+ * Description      Role renegotiation finished on an already open link.
+ *                  The BNEP handle is unchanged. Success replaces the roles
+ *                  stored for that connection and reports OPEN_EVT.
+ *
+ ******************************************************************************/
+void bta_pan_role_chg_cmpl(tBTA_PAN_SCB *p_scb, tBTA_PAN_DATA *p_data)
+{
+    tBTA_PAN bta_pan;
+    UINT8 old_app_id;
+
+    bdcpy(bta_pan.open.bd_addr, p_scb->bd_addr);
+    bta_pan.open.handle = p_scb->handle;
+    p_scb->pending_local_role = 0;
+    p_scb->pending_peer_role = 0;
+
+    if (p_data->conn.result == PAN_SUCCESS) {
+        old_app_id = p_scb->app_id;
+        p_scb->local_role = p_data->conn.local_role;
+        p_scb->peer_role = p_data->conn.peer_role;
+        if (p_scb->local_role == PAN_ROLE_CLIENT) {
+            p_scb->app_id = bta_pan_cb.app_id[0];
+        } else if (p_scb->local_role == PAN_ROLE_GN_SERVER) {
+            p_scb->app_id = bta_pan_cb.app_id[1];
+        } else if (p_scb->local_role == PAN_ROLE_NAP_SERVER) {
+            p_scb->app_id = bta_pan_cb.app_id[2];
+        }
+        if ((p_scb->app_id == bta_pan_cb.app_id[1] ||
+                p_scb->app_id == bta_pan_cb.app_id[2]) &&
+                bta_pan_has_multiple_connections(p_scb->app_id)) {
+            p_scb->app_id = BTA_APP_ID_PAN_MULTI;
+        }
+        if (old_app_id != p_scb->app_id) {
+            bta_sys_conn_close(BTA_ID_PAN, old_app_id, p_scb->bd_addr);
+            bta_sys_conn_open(BTA_ID_PAN, p_scb->app_id, p_scb->bd_addr);
+        }
+        bta_pan.open.status = BTA_PAN_SUCCESS;
+        bta_pan.open.local_role = p_scb->local_role;
+        bta_pan.open.peer_role = p_scb->peer_role;
+    } else {
+        bta_pan.open.status = BTA_PAN_FAIL;
+        bta_pan.open.local_role = p_data->conn.local_role;
+        bta_pan.open.peer_role = p_data->conn.peer_role;
     }
 
     bta_pan_cb.p_cback(BTA_PAN_OPEN_EVT, &bta_pan);

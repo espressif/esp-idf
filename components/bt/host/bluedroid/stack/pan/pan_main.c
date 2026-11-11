@@ -327,6 +327,39 @@ void pan_conn_ind_cb(UINT16 handle, BD_ADDR p_bda,
     return;
 }
 
+/* active_role caches the role of a port that is up: PAN_WriteBuf routes every
+ * unicast write with it, and PAN_Connect plus pan_conn_ind_cb reject new
+ * connections with it. Recompute it from the live ports whenever one goes away
+ * (here and in PAN_Disconnect) so it never names a role no connection has. */
+void pan_active_role_from_live(void)
+{
+    UINT16 i;
+    UINT8 fallback = PAN_ROLE_INACTIVE;
+
+    for (i = 0; i < MAX_PAN_CONNS; i++) {
+        UINT8 role;
+
+        if (pan_cb.pcb[i].con_state == PAN_STATE_IDLE) {
+            continue;
+        }
+        if (pan_cb.pcb[i].src_uuid == UUID_SERVCLASS_PANU) {
+            role = PAN_ROLE_CLIENT;
+        } else if (pan_cb.pcb[i].src_uuid == UUID_SERVCLASS_GN) {
+            role = PAN_ROLE_GN_SERVER;
+        } else {
+            role = PAN_ROLE_NAP_SERVER;
+        }
+        if (role == pan_cb.prv_active_role) {
+            pan_cb.active_role = role;
+            return;
+        }
+        if (fallback == PAN_ROLE_INACTIVE) {
+            fallback = role;
+        }
+    }
+    pan_cb.active_role = fallback;
+}
+
 /*******************************************************************************
  *
  * Function         pan_connect_state_cb
@@ -368,8 +401,11 @@ void pan_connect_state_cb(UINT16 handle, BD_ADDR rem_bda,
                                         is_role_change, PAN_ROLE_INACTIVE,
                                         PAN_ROLE_INACTIVE);
 
-        /* Check if this failure is for role change only */
-        if (pcb->con_state != PAN_STATE_CONNECTED &&
+        /* Peer reject and security failure keep the BNEP link and set
+         * is_role_change. Timeout and link loss free the BCB and report a
+         * plain failure. */
+        if (is_role_change &&
+                pcb->con_state != PAN_STATE_CONNECTED &&
                 (pcb->con_flags & PAN_FLAGS_CONN_COMPLETED)) {
             /* restore the original values */
             PAN_TRACE_EVENT("restoring the connection state to active");
@@ -392,10 +428,19 @@ void pan_connect_state_cb(UINT16 handle, BD_ADDR rem_bda,
             if ((pcb->src_uuid == UUID_SERVCLASS_NAP) && pan_cb.pan_bridge_req_cb) {
                 (*pan_cb.pan_bridge_req_cb)(pcb->rem_bda, FALSE);
             }
+        } else if (pcb->con_flags & PAN_FLAGS_CONN_COMPLETED) {
+            /* The link died during renegotiation. src_uuid is already the
+             * requested role; the bridge belongs to the role that was up. */
+            PAN_TRACE_EVENT("PAN renegotiation failed with the link down");
+            if (pcb->prv_src_uuid == UUID_SERVCLASS_NAP && pan_cb.pan_bridge_req_cb) {
+                (*pan_cb.pan_bridge_req_cb)(pcb->rem_bda, FALSE);
+            }
         }
 
         pan_cb.num_conns--;
         pan_release_pcb(pcb);
+        /* The port that owned active_role is gone. */
+        pan_active_role_from_live();
         return;
     }
 
@@ -417,6 +462,14 @@ void pan_connect_state_cb(UINT16 handle, BD_ADDR rem_bda,
     }
 
     pcb->con_state = PAN_STATE_CONNECTED;
+
+    /* This port no longer bridges. Entries learned while it was GN or NAP
+     * would still match the handle and be discarded only on a role mismatch. */
+    if (is_role_change && pcb->src_uuid == UUID_SERVCLASS_PANU &&
+            (pcb->prv_src_uuid == UUID_SERVCLASS_GN ||
+             pcb->prv_src_uuid == UUID_SERVCLASS_NAP)) {
+        pan_fdb_remove_by_handle(pcb->handle);
+    }
 
     /* Inform the application that connection is down */
     if (pan_cb.pan_conn_state_cb)

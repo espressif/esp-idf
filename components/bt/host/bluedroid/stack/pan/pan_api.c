@@ -384,9 +384,8 @@ tPAN_RESULT PAN_Connect(BD_ADDR rem_bda, UINT8 src_role,
     }
 
     /* Same peer and the same roles are already up. A BNEP setup with unchanged
-     * UUIDs completes inside BNEP and BTA posts no open result, so the
-     * application would see OPENING and then nothing. Reject it here and leave
-     * the existing link alone.
+     * UUIDs completes inside BNEP and posts no open result, so the application
+     * would not see a failure. Reject it here and leave the existing link alone.
      */
     if (pcb != NULL && pcb->con_state == PAN_STATE_CONNECTED &&
             pcb->src_uuid == src_uuid.uu.uuid16 &&
@@ -432,7 +431,7 @@ tPAN_RESULT PAN_Connect(BD_ADDR rem_bda, UINT8 src_role,
     if (result != BNEP_SUCCESS) {
         if (pcb->con_flags & PAN_FLAGS_CONN_COMPLETED) {
             /* Role renegotiation failed synchronously; BNEP/L2CAP are still up.
-             * Restore the PCB like pan_connect_state_cb does for async failures. */
+             * Restore the PCB, as pan_connect_state_cb does when the link stays up. */
             PAN_TRACE_EVENT("PAN_Connect: restore active connection after renegotiation failure");
             pcb->con_state = PAN_STATE_CONNECTED;
             pcb->con_flags &= (~PAN_FLAGS_CONN_COMPLETED);
@@ -490,6 +489,7 @@ tPAN_RESULT PAN_Disconnect(UINT16 handle)
     }
 
     pan_release_pcb(pcb);
+    pan_active_role_from_live();
 
     if (result != BNEP_SUCCESS) {
         PAN_TRACE_EVENT("Error in closing PAN connection");

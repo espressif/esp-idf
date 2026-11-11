@@ -363,7 +363,8 @@ tPAN_CONN *pan_fdb_lookup(BD_ADDR addr)
  *
  * Function         pan_fdb_remove_by_handle
  *
- * Description      Drop filtering entries that point at a closed connection.
+ * Description      Drop filtering entries for a closed connection, or for a
+ *                  port that left GN or NAP and no longer bridges.
  *
  ******************************************************************************/
 void pan_fdb_remove_by_handle(UINT16 handle)

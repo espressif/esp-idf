@@ -148,6 +148,7 @@ extern void pan_fdb_remove_by_handle(UINT16 handle);
 extern void pan_fdb_clear(void);
 extern void pan_close_all_connections(void);
 extern void pan_release_pcb(tPAN_CONN *p_pcb);
+extern void pan_active_role_from_live(void);
 extern void pan_dump_status(void);
 
 /******************************************************************************/

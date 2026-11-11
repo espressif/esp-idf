@@ -123,6 +123,8 @@ typedef struct {
 typedef struct {
     BT_HDR hdr; /* Event header */
     tPAN_RESULT result;
+    tBTA_PAN_ROLE local_role; /* Role to report. Applied to the SCB on success. */
+    tBTA_PAN_ROLE peer_role;
 
 } tBTA_PAN_CONN;
 
@@ -152,6 +154,8 @@ typedef struct {
     tBTA_PAN_ROLE local_role; /* local role */
     tBTA_PAN_ROLE peer_role;  /* peer role */
     UINT8 app_id;             /* application id for the connection */
+    tBTA_PAN_ROLE pending_local_role; /* Roles requested by a renegotiation. */
+    tBTA_PAN_ROLE pending_peer_role;
 
 } tBTA_PAN_SCB;
 
@@ -201,7 +205,9 @@ extern BOOLEAN bta_pan_hdl_event(BT_HDR *p_msg);
 extern void bta_pan_enable(tBTA_PAN_DATA *p_data);
 extern void bta_pan_disable(void);
 extern void bta_pan_set_role(tBTA_PAN_DATA *p_data);
-extern void bta_pan_open(tBTA_PAN_SCB *p_scb, tBTA_PAN_DATA *p_data);
+extern void bta_pan_open(tBTA_PAN_SCB *p_scb, tBTA_PAN_DATA *p_data,
+                         BOOLEAN existing);
+extern void bta_pan_role_chg_cmpl(tBTA_PAN_SCB *p_scb, tBTA_PAN_DATA *p_data);
 extern void bta_pan_api_close(tBTA_PAN_SCB *p_scb, tBTA_PAN_DATA *p_data);
 extern void bta_pan_set_shutdown(tBTA_PAN_SCB *p_scb, tBTA_PAN_DATA *p_data);
 extern void bta_pan_rx_path(tBTA_PAN_SCB *p_scb, tBTA_PAN_DATA *p_data);

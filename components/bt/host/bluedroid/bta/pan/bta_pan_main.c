@@ -52,6 +52,7 @@ enum {
     BTA_PAN_CONN_OPEN,
     BTA_PAN_CONN_CLOSE,
     BTA_PAN_FREE_BUF,
+    BTA_PAN_ROLE_CHG_CMPL,
     BTA_PAN_IGNORE
 };
 
@@ -68,6 +69,7 @@ const tBTA_PAN_ACTION bta_pan_action[] = {
     bta_pan_conn_open,
     bta_pan_conn_close,
     bta_pan_free_buf,
+    bta_pan_role_chg_cmpl,
 };
 
 /* state table information */
@@ -97,7 +99,7 @@ const UINT8 bta_pan_st_open[][BTA_PAN_NUM_COLS] = {
     /* CI_TX_FLOW */ {BTA_PAN_TX_FLOW, BTA_PAN_OPEN_ST},
     /* CI_RX_WRITE */ {BTA_PAN_IGNORE, BTA_PAN_OPEN_ST},
     /* CI_RX_WRITEBUF */ {BTA_PAN_WRITE_BUF, BTA_PAN_OPEN_ST},
-    /* PAN_CONN_OPEN */ {BTA_PAN_IGNORE, BTA_PAN_OPEN_ST},
+    /* PAN_CONN_OPEN */ {BTA_PAN_ROLE_CHG_CMPL, BTA_PAN_OPEN_ST},
     /* PAN_CONN_CLOSE */ {BTA_PAN_CONN_CLOSE, BTA_PAN_IDLE_ST},
     /* FLOW_ENABLE */ {BTA_PAN_RX_PATH, BTA_PAN_OPEN_ST},
     /* BNEP_DATA */ {BTA_PAN_TX_PATH, BTA_PAN_OPEN_ST}
@@ -241,6 +243,20 @@ static void bta_pan_api_disable(UNUSED_ATTR tBTA_PAN_DATA *p_data)
     bta_pan_disable();
 }
 
+/* Any in-use SCB for this peer. The caller renegotiates only in OPEN_ST. */
+static tBTA_PAN_SCB *bta_pan_scb_by_bdaddr(BD_ADDR bd_addr)
+{
+    tBTA_PAN_SCB *p_scb = &bta_pan_cb.scb[0];
+    UINT8 i;
+
+    for (i = 0; i < BTA_PAN_NUM_CONN; i++, p_scb++) {
+        if (p_scb->in_use && !bdcmp(p_scb->bd_addr, bd_addr)) {
+            return p_scb;
+        }
+    }
+    return NULL;
+}
+
 /*******************************************************************************
  *
  * Function         bta_pan_api_open
@@ -255,11 +271,27 @@ static void bta_pan_api_open(tBTA_PAN_DATA *p_data)
 {
     tBTA_PAN_SCB *p_scb;
     tBTA_PAN bta_pan;
+    BOOLEAN existing = FALSE;
 
-    /* allocate an scb */
-    p_scb = bta_pan_scb_alloc();
+    /* Role renegotiation reuses only an open SCB. A setup still in progress
+     * or a close still queued must not be reported as a failed open of that
+     * same handle; the original attempt can still finish. */
+    p_scb = bta_pan_scb_by_bdaddr(p_data->api_open.bd_addr);
+    if (p_scb != NULL && p_scb->state == BTA_PAN_OPEN_ST) {
+        existing = TRUE;
+    } else if (p_scb != NULL) {
+        bdcpy(bta_pan.open.bd_addr, p_data->api_open.bd_addr);
+        bta_pan.open.handle = PAN_INVALID_HANDLE;
+        bta_pan.open.status = BTA_PAN_FAIL;
+        bta_pan.open.local_role = p_data->api_open.local_role;
+        bta_pan.open.peer_role = p_data->api_open.peer_role;
+        bta_pan_cb.p_cback(BTA_PAN_OPEN_EVT, &bta_pan);
+        return;
+    } else {
+        p_scb = bta_pan_scb_alloc();
+    }
     if (p_scb != NULL) {
-        bta_pan_open(p_scb, p_data);
+        bta_pan_open(p_scb, p_data, existing);
     } else {
         bdcpy(bta_pan.open.bd_addr, p_data->api_open.bd_addr);
         bta_pan.open.handle = PAN_INVALID_HANDLE;
@@ -323,6 +355,29 @@ tBTA_PAN_SCB *bta_pan_scb_by_handle(UINT16 handle)
     }
 
     return NULL;
+}
+
+/* CONN_CLOSE is matched by handle. A reconnect can be given that same handle
+ * on a new SCB before the close runs. Prefer the SCB that is already closing
+ * so the new connection is not freed in its place. */
+static tBTA_PAN_SCB *bta_pan_scb_for_close(UINT16 handle)
+{
+    tBTA_PAN_SCB *p_scb = &bta_pan_cb.scb[0];
+    tBTA_PAN_SCB *p_any = NULL;
+    UINT8 i;
+
+    for (i = 0; i < BTA_PAN_NUM_CONN; i++, p_scb++) {
+        if (!p_scb->in_use || p_scb->handle != handle) {
+            continue;
+        }
+        if (p_scb->state == BTA_PAN_CLOSING_ST) {
+            return p_scb;
+        }
+        if (p_any == NULL) {
+            p_any = p_scb;
+        }
+    }
+    return p_any;
 }
 
 /*******************************************************************************
@@ -390,7 +445,11 @@ BOOLEAN bta_pan_hdl_event(BT_HDR *p_msg)
 
     /* all other events */
     default:
-        p_scb = bta_pan_scb_by_handle(p_msg->layer_specific);
+        if (p_msg->event == BTA_PAN_CONN_CLOSE_EVT) {
+            p_scb = bta_pan_scb_for_close(p_msg->layer_specific);
+        } else {
+            p_scb = bta_pan_scb_by_handle(p_msg->layer_specific);
+        }
         if (p_scb != NULL) {
             bta_pan_sm_execute(p_scb, p_msg->event, (tBTA_PAN_DATA *)p_msg);
         }
