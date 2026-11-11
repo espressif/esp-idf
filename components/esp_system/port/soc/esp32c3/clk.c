@@ -36,6 +36,8 @@
  */
 #define SLOW_CLK_CAL_CYCLES     CONFIG_RTC_CLK_CAL_CYCLES
 
+#define RTC_XTAL_CAL_RETRY 3
+
 #define MHZ (1000000)
 
 /* Indicates that this 32k oscillator gets input from external oscillator, rather
@@ -146,7 +148,7 @@ static void select_rtc_slow_clk(slow_clk_sel_t slow_clk)
     /* number of times to repeat 32k XTAL calibration
      * before giving up and switching to the internal RC
      */
-    int retry_32k_xtal = 3;
+    int retry_32k_xtal = RTC_XTAL_CAL_RETRY;
 
     soc_rtc_slow_clk_src_t old_rtc_slow_clk_src = rtc_clk_slow_src_get();
     do {
@@ -161,6 +163,13 @@ static void select_rtc_slow_clk(slow_clk_sel_t slow_clk)
              */
             ESP_EARLY_LOGD(TAG, "waiting for 32k oscillator to start up");
             if (slow_clk == SLOW_CLK_32K_XTAL) {
+                /* 1、The bootloader should already have it enabled.
+                 * 2、Because 32kHz crystal oscillators have a slow startup time, if they are not enabled beforehand,
+                 *  there is a high probability that they will not be detected if enabled here.
+                 */
+                if (!rtc_clk_32k_enabled()) {
+                    ESP_EARLY_LOGW(TAG, "32 kHz XTAL not enabled in advance");
+                }
                 rtc_clk_32k_enable(true);
             } else if (slow_clk == SLOW_CLK_32K_EXT_OSC) {
                 rtc_clk_32k_enable_external();

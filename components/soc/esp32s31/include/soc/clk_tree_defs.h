@@ -47,6 +47,10 @@ extern "C" {
  * 4) APLL (configurable), AUDIO_PLL, can be the clock source for peripherals (I2S, GPSPI, LCD, CAM, etc.)
  */
 
+/* The pin number to connect the external 32kHz crystal clock (XTAL32K_CLK) */
+#define SOC_XTAL32K_P_GPIO_NUM              0
+#define SOC_XTAL32K_N_GPIO_NUM              1
+
 /* With the default value of FOSC_DFREQ = 100, RC_FAST clock frequency is 17.5 MHz +/- 7% */
 #define SOC_CLK_RC_FAST_FREQ_APPROX         17500000                            /*!< Approximate RC_FAST_CLK frequency in Hz */
 #define SOC_CLK_RC_SLOW_FREQ_APPROX         136000                              /*!< Approximate RC_SLOW_CLK frequency in Hz */

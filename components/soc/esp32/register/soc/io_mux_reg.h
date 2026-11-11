@@ -84,9 +84,6 @@
 
 #define PIN_FUNC_GPIO                               2
 
-#define XTAL32K_P_GPIO_NUM                          32
-#define XTAL32K_N_GPIO_NUM                          33
-
 #define PIN_CTRL                          (DR_REG_IO_MUX_BASE +0x00)
 #define CLK_OUT3                                    0xf
 #define CLK_OUT3_V                                  CLK_OUT3
