@@ -570,6 +570,9 @@ void mspi_timing_change_speed_mode_cache_safe(bool switch_down)
     esp_cache_freeze_ext_mem_cache();
 #else
     /* NOTE: [ESP-TEE] Check implementation when SoCs with 2-level cache are supported */
+#if SOC_BRANCH_PREDICTOR_SUPPORTED
+    esp_cpu_branch_prediction_disable();
+#endif
     cache_hal_freeze(CACHE_LL_LEVEL_EXT_MEM, CACHE_TYPE_ALL);
 #endif
 #endif  //#if SOC_CACHE_FREEZE_SUPPORTED
@@ -601,6 +604,9 @@ void mspi_timing_change_speed_mode_cache_safe(bool switch_down)
     esp_cache_unfreeze_ext_mem_cache();
 #else
     cache_hal_unfreeze(CACHE_LL_LEVEL_EXT_MEM, CACHE_TYPE_ALL);
+#if SOC_BRANCH_PREDICTOR_SUPPORTED
+    esp_cpu_branch_prediction_enable();
+#endif
 #endif
 #endif  //#if SOC_CACHE_FREEZE_SUPPORTED
 
