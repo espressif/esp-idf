@@ -61,6 +61,7 @@ function(__init_kconfig)
     __get_absolute_paths(PATHS "${sdkconfig}" OUTPUT sdkconfig)
     idf_build_set_property(SDKCONFIG "${sdkconfig}")
     idf_build_set_property(__SDKCONFIG_ORIG "${sdkconfig}")
+    __subproject_check_sdkconfig()
 
     # Initialize the SDKCONFIG_DEFAULTS build property. __init_idf_target()
     # reads this property to detect the target from the defaults files, so it
@@ -248,6 +249,9 @@ function(__generate_sdkconfig)
     # the SDKCONFIG_DEFAULTS variable (or environment variable) is set, and
     # otherwise leaves a value accumulated on the build property untouched.
     __resolve_sdkconfig_defaults()
+
+    # The SDKCONFIG build property can be set after idf.cmake is included.
+    __subproject_check_sdkconfig()
 
     # Collect Kconfig files from discovered components
     __consolidate_component_kconfig_files()

@@ -12,6 +12,7 @@ include(ExternalProject)
     .. code-block:: cmake
 
         idf_subproject_add(<name> [SHARED_CONFIG | CONFIG_OPTIONS <option>...]
+                           [SDKCONFIG <path>]
                            EXTERNALPROJECT_OPTIONS <externalproject_add options>...)
 
     *name[in]*
@@ -28,6 +29,12 @@ include(ExternalProject)
         Config options that the subproject takes from the main project, named
         as in the main project's ``sdkconfig``, with the ``CONFIG_`` prefix.
 
+    *SDKCONFIG[in,opt]*
+
+        Path of the subproject's ``sdkconfig``. A relative path is relative to
+        the subproject's directory. By default it is ``sdkconfig`` in that
+        directory. It cannot be given with ``SHARED_CONFIG``.
+
     *EXTERNALPROJECT_OPTIONS[in]*
 
         The options of ``externalproject_add``. Every argument after this
@@ -37,7 +44,16 @@ include(ExternalProject)
     Build an ESP-IDF subproject with ``externalproject_add``. By default the
     subproject has a configuration of its own. It resolves its config options
     from the components it discovers and stores them in an ``sdkconfig`` in its
-    own project directory, instead of reading the main project's.
+    own project directory, or in the file given with ``SDKCONFIG``, instead of
+    reading the main project's. The path is passed to the subproject on every
+    configure, and the subproject stops with an error if it resolves another
+    one, for example because its CMakeLists.txt sets ``SDKCONFIG``. A
+    ``-DSDKCONFIG`` in the options of ``externalproject_add`` stops with an
+    error too, and so does the main project's ``sdkconfig`` given as the path.
+
+    Subprojects built from one directory use the same ``sdkconfig``, as the
+    executables of one application do. They are configured and built one after
+    another, so that only one of them writes the file at a time.
 
     With ``SHARED_CONFIG``, the subproject reads the main project's
     ``sdkconfig`` and does not write it. It is passed ``SDKCONFIG`` set to the
@@ -53,7 +69,8 @@ include(ExternalProject)
     them, the subproject is built in ``subprojects/<name>`` in the main
     project's build directory, it has no install step, ``INSTALL_COMMAND ""``,
     and it is built on every build of the main project, ``BUILD_ALWAYS 1``, so
-    that a change in the main project's configuration reaches it.
+    that it is configured again after the main project's configuration
+    changes.
 
     Each config option in ``CONFIG_OPTIONS``, and only these, gets the main
     project's value in the subproject. Every other config option keeps the value
@@ -89,7 +106,7 @@ function(idf_subproject_add name)
     # PARSE_ARGV keeps an empty value, such as the one in 'INSTALL_COMMAND ""',
     # and externalproject_add keeps it too when the options are passed as one
     # quoted list.
-    cmake_parse_arguments(PARSE_ARGV 1 ARG "SHARED_CONFIG" "" "CONFIG_OPTIONS;EXTERNALPROJECT_OPTIONS")
+    cmake_parse_arguments(PARSE_ARGV 1 ARG "SHARED_CONFIG" "SDKCONFIG" "CONFIG_OPTIONS;EXTERNALPROJECT_OPTIONS")
     if(ARG_UNPARSED_ARGUMENTS)
         list(GET ARG_UNPARSED_ARGUMENTS 0 unexpected)
         idf_die("idf_subproject_add: unexpected argument '${unexpected}'. The options of "
@@ -104,6 +121,30 @@ function(idf_subproject_add name)
                 "subproject that shares the main project's configuration already reads every "
                 "config option from the main project's sdkconfig.")
     endif()
+    if(ARG_SHARED_CONFIG AND NOT "${ARG_SDKCONFIG}" STREQUAL "")
+        idf_die("idf_subproject_add: SDKCONFIG cannot be given with SHARED_CONFIG. A subproject "
+                "that shares the main project's configuration uses the main project's sdkconfig.")
+    endif()
+    if("${ARG_SDKCONFIG}" MATCHES "\\$<")
+        idf_die("idf_subproject_add: SDKCONFIG '${ARG_SDKCONFIG}' contains a generator "
+                "expression, which is not evaluated before the subproject is configured.")
+    endif()
+    # The path passed below replaces a SDKCONFIG given here, so it is refused.
+    set(previous "")
+    foreach(option IN LISTS ARG_EXTERNALPROJECT_OPTIONS)
+        set(sets_sdkconfig FALSE)
+        if(option MATCHES "^-D *SDKCONFIG(:[A-Za-z]+)?=")
+            set(sets_sdkconfig TRUE)
+        elseif(previous STREQUAL "-D" AND option MATCHES "^SDKCONFIG(:[A-Za-z]+)?=")
+            set(sets_sdkconfig TRUE)
+        endif()
+        if(sets_sdkconfig)
+            idf_die("idf_subproject_add: '${option}' sets the subproject's sdkconfig in the "
+                    "options of externalproject_add. Give the path with the SDKCONFIG option of "
+                    "idf_subproject_add instead.")
+        endif()
+        set(previous "${option}")
+    endforeach()
 
     idf_build_get_property(idf_path IDF_PATH)
     idf_build_get_property(idf_target IDF_TARGET)
@@ -134,6 +175,22 @@ function(idf_subproject_add name)
     # A list in CMAKE_ARGS would be split into separate arguments.
     list(JOIN config_options "," config_options)
 
+    # externalproject_add replaces <SOURCE_DIR> and <SOURCE_SUBDIR> in CMAKE_ARGS
+    # with the directory the subproject is configured in, which is the directory
+    # the subproject resolves a relative SDKCONFIG against.
+    set(sdkconfig "<SOURCE_DIR><SOURCE_SUBDIR>/sdkconfig")
+    if(NOT "${ARG_SDKCONFIG}" STREQUAL "")
+        if(IS_ABSOLUTE "${ARG_SDKCONFIG}")
+            set(sdkconfig "${ARG_SDKCONFIG}")
+        else()
+            set(sdkconfig "<SOURCE_DIR><SOURCE_SUBDIR>/${ARG_SDKCONFIG}")
+        endif()
+    endif()
+
+    # The configure step is a target of its own, <name>-configure, so that
+    # subprojects that use one sdkconfig can be configured one after another.
+    list(APPEND options STEP_TARGETS configure)
+
     # externalproject_add joins repeated CMAKE_ARGS. These come after the
     # caller's, so that the caller cannot set them to other values. Every
     # subproject is passed the same variables, and a subproject may not read
@@ -149,12 +206,14 @@ function(idf_subproject_add name)
                         -DIDF_SUBPROJECT=1)
     # The subproject's CMake cache keeps the values of an earlier configure, so
     # each kind of subproject is passed every variable the other kind sets. A
-    # subproject that keeps a configuration of its own has the three
-    # configuration variables removed before the caller's CMAKE_ARGS, so that
-    # the caller can still set them.
+    # subproject that keeps a configuration of its own has the defaults files
+    # and GENERATE_SDKCONFIG removed before the caller's CMAKE_ARGS, so that
+    # the caller can still set them. IDF_SUBPROJECT_SDKCONFIG is the path the
+    # subproject must resolve.
     if(ARG_SHARED_CONFIG)
         list(APPEND options CMAKE_ARGS
                             -DSDKCONFIG=${main_sdkconfig}
+                            -DIDF_SUBPROJECT_SDKCONFIG=${main_sdkconfig}
                             -DSDKCONFIG_DEFAULTS=
                             -DGENERATE_SDKCONFIG=0
                             -DIDF_SUBPROJECT_OWN_CONFIG=0
@@ -162,15 +221,94 @@ function(idf_subproject_add name)
                             -DIDF_SUBPROJECT_MAIN_SDKCONFIG=)
     else()
         list(PREPEND options CMAKE_ARGS
-                             -USDKCONFIG
                              -USDKCONFIG_DEFAULTS
                              -UGENERATE_SDKCONFIG)
         list(APPEND options CMAKE_ARGS
+                            -DSDKCONFIG=${sdkconfig}
+                            -DIDF_SUBPROJECT_SDKCONFIG=${sdkconfig}
                             -DIDF_SUBPROJECT_OWN_CONFIG=1
                             -DIDF_SUBPROJECT_IMPORTED_CONFIG=${config_options}
                             -DIDF_SUBPROJECT_MAIN_SDKCONFIG=${main_sdkconfig})
     endif()
     externalproject_add(${name} "${options}")
+
+    if(NOT ARG_SHARED_CONFIG)
+        __subproject_use_sdkconfig(${name} "${sdkconfig}")
+    endif()
+endfunction()
+
+#[[
+    __subproject_use_sdkconfig(<name> <sdkconfig>)
+
+    Record the sdkconfig of the subproject <name>, which keeps a configuration
+    of its own. <sdkconfig> is the path passed to the subproject, which may
+    start with <SOURCE_DIR><SOURCE_SUBDIR>. Stop if it is the main project's
+    sdkconfig, which the subproject would overwrite. Configure and build the
+    subproject after each subproject added before it that uses the same
+    sdkconfig, so that two kconfgen runs never write the file at the same time.
+    The build step runs kconfgen too, when the sdkconfig or a Kconfig file has
+    changed since the subproject was configured.
+#]]
+function(__subproject_use_sdkconfig name sdkconfig)
+    externalproject_get_property(${name} SOURCE_DIR SOURCE_SUBDIR)
+    string(REPLACE "<SOURCE_DIR>" "${SOURCE_DIR}" sdkconfig "${sdkconfig}")
+    string(REPLACE "<SOURCE_SUBDIR>" "${SOURCE_SUBDIR}" sdkconfig "${sdkconfig}")
+    get_filename_component(sdkconfig "${sdkconfig}" ABSOLUTE)
+
+    idf_build_get_property(main_sdkconfig SDKCONFIG)
+    set(compared "${sdkconfig}")
+    if(CMAKE_HOST_WIN32)
+        string(TOLOWER "${compared}" compared)
+        string(TOLOWER "${main_sdkconfig}" main_sdkconfig)
+    endif()
+    if("${compared}" STREQUAL "${main_sdkconfig}")
+        idf_die("idf_subproject_add: the subproject '${name}' would keep its configuration in the "
+                "main project's sdkconfig '${sdkconfig}'. Give it another path with SDKCONFIG, "
+                "or give SHARED_CONFIG to share the main project's configuration.")
+    endif()
+
+    idf_build_get_property(subprojects __SUBPROJECTS)
+    foreach(other IN LISTS subprojects)
+        idf_build_get_property(other_sdkconfig __SUBPROJECT_SDKCONFIG_COMPARED_${other})
+        if("${other_sdkconfig}" STREQUAL "${compared}")
+            externalproject_add_stepdependencies(${name} configure ${other}-configure)
+            # The whole target of the other one ends after its build step.
+            externalproject_add_stepdependencies(${name} build ${other})
+        endif()
+    endforeach()
+
+    idf_build_set_property(__SUBPROJECT_SDKCONFIG_${name} "${sdkconfig}")
+    idf_build_set_property(__SUBPROJECT_SDKCONFIG_COMPARED_${name} "${compared}")
+    idf_build_set_property(__SUBPROJECTS "${name}" APPEND)
+endfunction()
+
+#[[
+    __subproject_check_sdkconfig()
+
+    In a subproject added with idf_subproject_add(), stop if the sdkconfig the
+    subproject resolves is not the one the project that builds it passed down,
+    for example because the subproject's CMakeLists.txt sets SDKCONFIG. The
+    project that builds it records the path and uses it for the subproject.
+#]]
+function(__subproject_check_sdkconfig)
+    # A subproject last configured by a version of ESP-IDF that did not pass the
+    # path has no value until the project that builds it configures it again.
+    if(NOT IDF_SUBPROJECT OR NOT DEFINED IDF_SUBPROJECT_SDKCONFIG)
+        return()
+    endif()
+    idf_build_get_property(sdkconfig SDKCONFIG)
+    __get_absolute_paths(PATHS "${IDF_SUBPROJECT_SDKCONFIG}" OUTPUT expected)
+    if("${sdkconfig}" STREQUAL "${expected}")
+        return()
+    endif()
+    if(IDF_SUBPROJECT_OWN_CONFIG)
+        idf_die("This subproject uses the sdkconfig '${sdkconfig}', but the project that builds "
+                "it uses '${expected}' for it. Give the path with the SDKCONFIG option of "
+                "idf_subproject_add() in that project.")
+    else()
+        idf_die("This subproject shares the configuration of the project that builds it, so it "
+                "uses that project's sdkconfig '${expected}', not '${sdkconfig}'.")
+    endif()
 endfunction()
 
 #[[
