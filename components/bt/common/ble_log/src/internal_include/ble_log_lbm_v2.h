@@ -236,6 +236,10 @@ bool ble_log_lbm_init(void);
 void ble_log_lbm_begin_deinit(void);
 void ble_log_lbm_deinit(void);
 bool ble_log_lbm_is_enabled(void);
+/* Task context, after closing admission. Lifecycle calls must be serialized.
+ * caller_refs excludes references held by this caller (flush holds one).
+ * False: a writer still owns resources; do not delete its task or the pool. */
+bool ble_log_lbm_wait_writers(uint32_t caller_refs);
 /* Best-effort system flush, gated by LBM lifetime rather than producers. */
 void ble_log_lbm_flush_open_trans(void);
 /* Deinit drain: seal every OPEN transport and dispatch it to the runtime

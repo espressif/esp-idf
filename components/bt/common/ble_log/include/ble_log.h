@@ -69,7 +69,23 @@ void ble_log_deinit(void);
  * periodic snapshots, task-binding broadcasts, or configured external sync output.
  * Clock samples and diagnostic statistics remain available until deinit. */
 bool ble_log_enable(bool enable);
-/* Blocking; call only from a caller-owned task, not an ISR or system callback. */
+/* Blocking lifecycle operation in a caller-owned, yieldable task; serialize
+ * with init/deinit/enable/flush. Do not call from ISR, critical sections,
+ * a suspended scheduler or shared system callbacks (including ESP Timer).
+ * The caller must commit its own outstanding claims before pausing.
+ * Closes admission and waits up to 1 second for writers to exit, without waiting
+ * for transport output. An uninitialized module is a no-op.
+ * Drain timeout asserts with admission closed; with assertions disabled,
+ * keeps waiting rather than allowing deletion of unfinished writers.
+ * Once paused, controller disable keeps admission closed until log deinit,
+ * including when the controller's own disable operation fails. */
+void ble_log_pause(void);
+/* Blocking; the only production caller in the IDF build is the BLE Log
+ * shutdown handler. Normal logging uses periodic draining, not this function.
+ * Shutdown handlers run sequentially, so flush and controller pause do not overlap.
+ * Tests may call directly from a caller-owned task. Serialize with BLE Log
+ * init/deinit/enable/pause and the complete controller lifecycle operation;
+ * concurrent lifecycle calls, ISR and shared system callback calls are unsupported. */
 void ble_log_flush(void);
 /* Waits for a shared transport in ordinary yieldable tasks; in builds
  * with a finite CONFIG_BLE_LOG_POOL_WAIT_TIMEOUT_MS the wait is bounded
