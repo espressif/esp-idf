@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -201,12 +201,20 @@ void ble_store_config_init(void);
 static void blufi_on_reset(int reason)
 {
     MODLOG_DFLT(ERROR, "Resetting state; reason=%d\n", reason);
+#if !SOC_MPI_SUPPORTED
+    blufi_example_on_reset();
+#endif
 }
 
 static void
 blufi_on_sync(void)
 {
-  esp_blufi_profile_init();
+    esp_blufi_profile_init();
+#if !SOC_MPI_SUPPORTED
+    /* Host is synced here, including after ble_hs_reset(). Profile init does
+     * not emit INIT_FINISH again once the profile is enabled. */
+    blufi_example_on_sync();
+#endif
 }
 
 void bleprph_host_task(void *param)
@@ -255,18 +263,33 @@ esp_err_t esp_blufi_host_init(void)
 
     int rc;
     rc = esp_blufi_gatt_svr_init();
-    assert(rc == 0);
+    if (rc != 0) {
+        BLUFI_ERROR("%s gatt svr init failed: %d\n", __func__, rc);
+        if (rc == BLE_HS_ENOMEM || rc == BLE_ATT_ERR_INSUFFICIENT_RES) {
+            return ESP_ERR_NO_MEM;
+        }
+        return ESP_FAIL;
+    }
 
 #if CONFIG_BT_NIMBLE_GAP_SERVICE
     /* Set the default device name. */
     rc = ble_svc_gap_device_name_set(BLUFI_DEVICE_NAME);
-    assert(rc == 0);
+    if (rc != 0) {
+        BLUFI_ERROR("%s device name set failed: %d\n", __func__, rc);
+        esp_blufi_gatt_svr_deinit();
+        return (rc == BLE_HS_ENOMEM) ? ESP_ERR_NO_MEM : ESP_FAIL;
+    }
 #endif
 
     /* XXX Need to have template for store */
     ble_store_config_init();
 
-    esp_blufi_btc_init();
+    err = esp_blufi_btc_init();
+    if (err != ESP_OK) {
+        BLUFI_ERROR("%s btc init failed: %s\n", __func__, esp_err_to_name(err));
+        esp_blufi_gatt_svr_deinit();
+        return err;
+    }
 
     err = esp_nimble_enable(bleprph_host_task);
     if (err) {

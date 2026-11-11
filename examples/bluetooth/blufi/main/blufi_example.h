@@ -24,6 +24,11 @@ void blufi_security_deinit(void);
 void blufi_dh_pregen_start(void);
 void blufi_dh_pregen_start_with_cb(void (*done_cb)(void));
 void blufi_dh_pregen_wait(void);
+#ifdef CONFIG_BT_NIMBLE_ENABLED
+void blufi_example_on_sync(void);
+void blufi_example_on_init_finish(void);
+void blufi_example_on_reset(void);
+#endif
 #endif
 int esp_blufi_gap_register_callback(void);
 esp_err_t esp_blufi_host_init(void);

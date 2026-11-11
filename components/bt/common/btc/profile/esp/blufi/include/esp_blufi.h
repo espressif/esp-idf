@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -46,7 +46,20 @@ void esp_blufi_gatt_svr_register_cb(struct ble_gatt_register_ctxt *ctxt, void *a
 /* Initialise gatt server */
 int esp_blufi_gatt_svr_init(void);
 int esp_blufi_gatt_svr_deinit(void);
-void esp_blufi_btc_init(void);
+
+/**
+ * @brief Initialize the BTC task used by NimBLE BluFi.
+ *
+ * On failure the BTC task is not left running. The caller can retry or
+ * report the error.
+ *
+ * @return
+ *     - ESP_OK on success
+ *     - ESP_ERR_NO_MEM if BTC could not allocate its task or memory
+ *     - ESP_FAIL if btc_init() returns a future status other than
+ *       BT_STATUS_NOMEM. btc_init() has no such status today.
+ */
+esp_err_t esp_blufi_btc_init(void);
 void esp_blufi_btc_deinit(void);
 #endif
 

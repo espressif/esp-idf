@@ -61,6 +61,78 @@
 
 static void example_event_callback(esp_blufi_cb_event_t event, esp_blufi_cb_param_t *param);
 
+#if !SOC_MPI_SUPPORTED && defined(CONFIG_BT_NIMBLE_ENABLED)
+/* esp_blufi_adv_start() sends HCI. Before NimBLE sync that fails from
+ * app_main, and the void function cannot retry. Start only after DH
+ * pre-generation and host sync. INIT_FINISH is emitted once per profile
+ * init, so a later host reset must reopen the gate from sync_cb. */
+static bool s_blufi_host_synced;
+static bool s_blufi_adv_needed;
+static bool s_blufi_adv_requested;
+static portMUX_TYPE s_blufi_adv_lock = portMUX_INITIALIZER_UNLOCKED;
+
+static void blufi_example_mark_synced(void)
+{
+    bool start = false;
+
+    portENTER_CRITICAL(&s_blufi_adv_lock);
+    s_blufi_host_synced = true;
+    if (s_blufi_adv_requested) {
+        s_blufi_adv_requested = false;
+        start = true;
+    }
+    portEXIT_CRITICAL(&s_blufi_adv_lock);
+
+    if (start) {
+        esp_blufi_adv_start();
+    }
+}
+
+static void blufi_example_request_adv(void)
+{
+    bool start = false;
+
+    portENTER_CRITICAL(&s_blufi_adv_lock);
+    /* Sticky: a later host reset must restart advertising, but a reset
+     * before the first request must not advertise ahead of DH pregen. */
+    s_blufi_adv_needed = true;
+    s_blufi_adv_requested = true;
+    if (s_blufi_host_synced) {
+        s_blufi_adv_requested = false;
+        start = true;
+    }
+    portEXIT_CRITICAL(&s_blufi_adv_lock);
+
+    if (start) {
+        esp_blufi_adv_start();
+    }
+}
+
+void blufi_example_on_sync(void)
+{
+    blufi_example_mark_synced();
+}
+
+void blufi_example_on_init_finish(void)
+{
+    blufi_example_mark_synced();
+}
+
+void blufi_example_on_reset(void)
+{
+    portENTER_CRITICAL(&s_blufi_adv_lock);
+    /* request_adv() clears the one-shot request before esp_blufi_adv_start(),
+     * which runs outside this lock. Re-arm only if advertising was already
+     * asked for. The next host sync, not INIT_FINISH, consumes it: profile
+     * init does not emit INIT_FINISH again while the profile stays enabled. */
+    if (s_blufi_adv_needed) {
+        s_blufi_adv_requested = true;
+    }
+    s_blufi_host_synced = false;
+    portEXIT_CRITICAL(&s_blufi_adv_lock);
+}
+#endif
+
 #define WIFI_LIST_NUM   10
 
 static wifi_config_t sta_config;
@@ -312,7 +384,9 @@ static void example_event_callback(esp_blufi_cb_event_t event, esp_blufi_cb_para
     switch (event) {
     case ESP_BLUFI_EVENT_INIT_FINISH:
         BLUFI_INFO("BLUFI init finish\n");
-#if SOC_MPI_SUPPORTED
+#if !SOC_MPI_SUPPORTED && defined(CONFIG_BT_NIMBLE_ENABLED)
+        blufi_example_on_init_finish();
+#elif SOC_MPI_SUPPORTED
         esp_blufi_adv_start();
 #endif
         break;
@@ -337,7 +411,9 @@ static void example_event_callback(esp_blufi_cb_event_t event, esp_blufi_cb_para
         BLUFI_INFO("BLUFI ble disconnect\n");
         ble_is_connected = false;
         blufi_security_deinit();
-#if !SOC_MPI_SUPPORTED
+#if !SOC_MPI_SUPPORTED && defined(CONFIG_BT_NIMBLE_ENABLED)
+        blufi_dh_pregen_start_with_cb(blufi_example_request_adv);
+#elif !SOC_MPI_SUPPORTED
         blufi_dh_pregen_start_with_cb(esp_blufi_adv_start);
 #else
         esp_blufi_adv_start();
@@ -521,9 +597,9 @@ void app_main(void)
     ESP_ERROR_CHECK( ret );
 
 #if !SOC_MPI_SUPPORTED
-    /* Software 3072-bit modular exponentiation needs ~4.2 kB of contiguous
-     * internal heap.  Start it before Wi-Fi and the BLE host claim their pools,
-     * otherwise the allocation fails with PSA_ERROR_INSUFFICIENT_MEMORY. */
+    /* Pregen runs above app_main, so G^X takes its ~4.2 kB block before
+     * Wi-Fi and the BLE host fragment the heap. The exponent is drawn
+     * while the SAR ADC entropy source is enabled. */
     blufi_dh_pregen_start();
 #endif
 
@@ -545,7 +621,11 @@ void app_main(void)
 
 #if !SOC_MPI_SUPPORTED
     blufi_dh_pregen_wait();
+#ifdef CONFIG_BT_NIMBLE_ENABLED
+    blufi_example_request_adv();
+#else
     esp_blufi_adv_start();
+#endif
 #endif
 
     BLUFI_INFO("BLUFI VERSION %04x\n", esp_blufi_get_version());
