@@ -12,6 +12,8 @@
 #include "freertos/semphr.h"
 #include <string.h>
 #include "esp_heap_caps.h"
+#include "esp_memory_utils.h"
+#include "sdkconfig.h"
 #include "privilege_test_fixture.h"
 #include "umode_elf.h"
 #include "user/app_basic.h"
@@ -265,3 +267,43 @@ TEST_CASE("the loader refuses a truncated or damaged file", "[privilege][privile
     TEST_ASSERT_EQUAL(0, image.count);
     TEST_ESP_OK(esp_privilege_umode_domain_destroy(domain));
 }
+
+/* A page of read-only data in flash, which the cache maps */
+#define FLASH_VA 0x30000000u
+static const uint32_t s_flash_page[ESP_PRIVILEGE_UMODE_DOMAIN_PAGE_SIZE / sizeof(uint32_t)]
+__attribute__((aligned(ESP_PRIVILEGE_UMODE_DOMAIN_PAGE_SIZE))) = {
+    [0] = 0xf1a5f1a5, [512] = 0x0badc0de, [1023] = 0x13572468,
+};
+
+TEST_CASE("U-mode code reads flash mapped into its domain", "[privilege][privilege_umode]")
+{
+    TEST_ASSERT_TRUE(esp_ptr_in_drom(s_flash_page));
+    esp_privilege_umode_domain_handle_t domain = NULL;
+    /* Flash cannot be writable */
+    const test_region_t writable = { FLASH_VA, (void *)s_flash_page, sizeof(s_flash_page),
+                                     ESP_PRIVILEGE_UMODE_DOMAIN_READ | ESP_PRIVILEGE_UMODE_DOMAIN_WRITE
+                                   };
+    TEST_ASSERT_EQUAL(ESP_ERR_INVALID_ARG, test_domain_load_app_with(app_basic_elf_start, APP_BASIC_SIZE, 0, &writable, 1,
+                                                                     &domain));
+    const test_region_t flash = { FLASH_VA, (void *)s_flash_page, sizeof(s_flash_page), ESP_PRIVILEGE_UMODE_DOMAIN_READ };
+    TEST_ESP_OK(test_domain_load_app_with(app_basic_elf_start, APP_BASIC_SIZE, 0, &flash, 1, &domain));
+    TEST_ASSERT_EQUAL_HEX32(0xf1a5f1a5, run_app(domain, APP_BASIC_LOAD, FLASH_VA));
+    TEST_ASSERT_EQUAL_HEX32(0x0badc0de, run_app(domain, APP_BASIC_LOAD, FLASH_VA + 512 * 4));
+    TEST_ASSERT_EQUAL_HEX32(0x13572468, run_app(domain, APP_BASIC_LOAD, FLASH_VA + 1023 * 4));
+    TEST_ESP_OK(test_domain_destroy(domain));
+}
+
+#if CONFIG_SPIRAM
+TEST_CASE("a program loaded into PSRAM runs with its code, data and stack there", "[privilege][privilege_umode]")
+{
+    esp_privilege_umode_domain_handle_t domain = NULL;
+    TEST_ESP_OK(test_domain_load_app_caps(app_basic_elf_start, APP_BASIC_SIZE, MALLOC_CAP_SPIRAM, &domain));
+    TEST_ASSERT_EQUAL(16, run_app(domain, APP_BASIC_RETURN, 5));
+    TEST_ASSERT_EQUAL(0, run_app(domain, APP_BASIC_CHECK_DATA, 100));
+    TEST_ASSERT_EQUAL(100 + 110, run_app(domain, APP_BASIC_READ_DATA, 10));
+    TEST_ASSERT_EQUAL(13 * 100 + 3, run_app(domain, APP_BASIC_CALL_TABLE, 0));
+    TEST_ASSERT_EQUAL(42 * 100 + 8, run_app(domain, APP_BASIC_CALL_TABLE, 1));
+    TEST_ASSERT_EQUAL(42 + 7, run_app(domain, APP_BASIC_EXIT_NESTED, 42));
+    TEST_ESP_OK(test_domain_destroy(domain));
+}
+#endif /* CONFIG_SPIRAM */

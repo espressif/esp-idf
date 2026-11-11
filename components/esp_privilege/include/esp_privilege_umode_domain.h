@@ -99,12 +99,17 @@ esp_err_t esp_privilege_umode_domain_create(esp_privilege_umode_domain_handle_t 
  * The caller does four things with the memory it provides.
  *
  * - Allocates the memory page-aligned, for example with heap_caps_aligned_calloc(), which also clears it.
- * - Writes the code and data into it before esp_privilege_umode_domain_finalize().
+ * - Writes the code and data into it before esp_privilege_umode_domain_finalize(). Code in external RAM is
+ *   written before this call.
  * - Uses each page for one region of one domain.
  * - Frees the memory after esp_privilege_umode_domain_destroy() returns ESP_OK.
  *
- * @note The memory is in internal RAM. Memory mapped with ESP_PRIVILEGE_UMODE_DOMAIN_EXECUTE is in internal RAM
- *       that the CPU can execute from.
+ * @note The memory is internal RAM, external RAM or flash, and a region does not span two of them. Flash is
+ *       mapped without ESP_PRIVILEGE_UMODE_DOMAIN_WRITE. Memory mapped with ESP_PRIVILEGE_UMODE_DOMAIN_EXECUTE is
+ *       memory that the CPU can execute from.
+ * @note For a region in external RAM mapped with ESP_PRIVILEGE_UMODE_DOMAIN_EXECUTE, this function writes the
+ *       code back from the cache and invalidates the instruction cache, so the caller does not sync the cache.
+ *       Code written into such a region after this call may not be seen by the domain.
  * @note Virtual address, memory and size are multiples of ESP_PRIVILEGE_UMODE_DOMAIN_PAGE_SIZE, and a region is at most
  *       4 MiB. The region ends at or below ESP_PRIVILEGE_UMODE_DOMAIN_ADDRESS_LIMIT and is separate from the other regions
  *       of the domain. If the mapping fails, the domain is unchanged.
@@ -144,6 +149,7 @@ esp_err_t esp_privilege_umode_domain_map(esp_privilege_umode_domain_handle_t dom
  *      - ESP_OK. The domain is ready to run
  *      - ESP_ERR_INVALID_ARG. The entry point, the stack, a mapping, a pointer or the calling context is invalid
  *      - ESP_ERR_INVALID_STATE. The domain is already finalized
+ *      - Other errors from signalling the other cores. The domain is not finalized.
  */
 esp_err_t esp_privilege_umode_domain_finalize(esp_privilege_umode_domain_handle_t domain, const esp_privilege_umode_domain_entry_t *start);
 

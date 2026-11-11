@@ -23,6 +23,8 @@
 #define APP_BASIC_CALL_TABLE  4
 /* Increments a .bss counter and returns it */
 #define APP_BASIC_COUNT       5
+/* Returns the word at the virtual address arg */
+#define APP_BASIC_LOAD        6
 
 /* Initial .data value */
 #define APP_BASIC_DATA_INITIAL 0x12345678u

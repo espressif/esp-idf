@@ -8,6 +8,7 @@
  * checks the entry point and the stack, runs the domain code on the calling task and destroys domains. */
 
 #include <assert.h>
+#include "esp_cache.h"
 #include "esp_heap_caps.h"
 #include "esp_memory_utils.h"
 #include "freertos/FreeRTOS.h"
@@ -38,14 +39,46 @@ static bool domain_in_task_context(void)
            RV_READ_CSR(medeleg) == 0 && RV_READ_CSR(mideleg) == 0;
 }
 
-/* The domain code can use the memory with the permissions */
+/* The address is in memory that the cache maps from flash, which the domain code can only read and execute */
+static bool in_flash(const void *p)
+{
+    return (intptr_t)p >= SOC_DROM_LOW && (intptr_t)p < SOC_DROM_HIGH;
+}
+
+/* The domain code can use the memory with the permissions. The memory is internal RAM, external RAM through
+ * the cache, or flash through the cache, and does not span two of them. */
 static bool usable_memory(const void *memory, size_t size, uint32_t permissions)
 {
     const void *last = (const uint8_t *)memory + (size - 1);
-    if (!esp_ptr_internal(memory) || !esp_ptr_internal(last)) {
+    const bool internal = esp_ptr_internal(memory) && esp_ptr_internal(last);
+    const bool external_ram = esp_ptr_external_ram(memory) && esp_ptr_external_ram(last);
+    const bool flash = in_flash(memory) && in_flash(last);
+    if (!internal && !external_ram && !(flash && !(permissions & ESP_PRIVILEGE_UMODE_DOMAIN_WRITE))) {
         return false;
     }
     return !(permissions & ESP_PRIVILEGE_UMODE_DOMAIN_EXECUTE) || (esp_ptr_executable(memory) && esp_ptr_executable(last));
+}
+
+/* Syncs the caches so that the domain code sees what the CPU wrote into memory that it maps. Call this
+ * whenever memory is mapped or changes permissions, after the caller wrote it.
+ *
+ * External RAM: instruction fetch bypasses the data cache, which all cores share, so code is written back
+ * from the data cache, and stale instructions of earlier users of the memory are dropped from the
+ * instruction cache of every core. Data needs nothing: U-mode reads it through the same data cache.
+ * Internal RAM is not cached, and flash is read-only.
+ *
+ * valid_region() checked that the memory is page-aligned and does not wrap, so esp_cache_msync() cannot fail
+ * for memory in external RAM. */
+static void cache_sync(void *memory, size_t size, uint32_t permissions)
+{
+    if (!(permissions & ESP_PRIVILEGE_UMODE_DOMAIN_EXECUTE) || !esp_ptr_external_ram(memory)) {
+        return;
+    }
+    esp_err_t err = esp_cache_msync(memory, size, ESP_CACHE_MSYNC_FLAG_DIR_C2M);
+    assert(err == ESP_OK);
+    err = esp_cache_msync(memory, size, ESP_CACHE_MSYNC_FLAG_DIR_M2C | ESP_CACHE_MSYNC_FLAG_TYPE_INST);
+    assert(err == ESP_OK);
+    (void)err;
 }
 
 /* Checks the region of esp_privilege_umode_domain_map() */
@@ -113,6 +146,7 @@ esp_err_t esp_privilege_umode_domain_map(esp_privilege_umode_domain_handle_t dom
     if (domain->finalized) {
         return ESP_ERR_INVALID_STATE;
     }
+    cache_sync(memory, size, permissions);
     esp_err_t err = privilege_domain_address_space_map(domain->space, virtual_address, size, (uintptr_t)memory, permissions);
     /* The page tables refuse a range that overlaps a region of the domain */
     return err == ESP_ERR_INVALID_STATE ? ESP_ERR_INVALID_ARG : err;
