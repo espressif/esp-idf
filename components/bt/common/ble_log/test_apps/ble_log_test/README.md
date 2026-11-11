@@ -36,3 +36,32 @@ It compiles the bounded-wait tests (recycle-within-budget and
 fail-after-budget) on top of the default suite; the default build keeps
 the historical infinite wait (`CONFIG_BLE_LOG_POOL_WAIT_TIMEOUT_MS=-1`)
 and compiles none of them.
+
+## Lifecycle regression
+
+Run `python3 host/test_log_stop.py` from this app directory for the shared BLE Log
+tests. They extract production log functions without reading controller or BTDM
+sources. Coverage includes blocking/recycle, cancellation, ref/waiter handoff,
+admission locking, pause/deinit draining, and shutdown flushing of queued frames.
+The production timeout is checked at 100 Hz and 1000 Hz, including continued
+waiting when assertions are disabled and flush timeout/state restoration.
+
+Controller test entry points are included with their corresponding controller
+fixes. Run the entries present in the branch:
+
+```sh
+for test in host/test_*.py; do
+    python3 "$test" || exit 1
+done
+```
+
+For backports, take the shared implementation/tests and the required controller
+commits. Each controller entry reads only its group's production sources; a
+missing required source or function fails the test instead of silently skipping
+coverage. The shared tests run even when no controller integration is present.
+The optional first argument selects another IDF source root for isolated checks.
+
+These host models do not simulate actual multicore scheduling or DMA. The target
+suite also checks that pausing a full pool releases a parked LL writer while
+leaving queued logs available to the peripheral. The separate lifecycle app is a
+manual integration test and requires the selected target's controller fix.
