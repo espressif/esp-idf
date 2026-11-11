@@ -1,11 +1,12 @@
 #!/usr/bin/env python
-# SPDX-FileCopyrightText: 2016-2024 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2016-2026 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
 #
 # esp32ulp_mapgen utility converts a symbol list provided by nm into an export script
 # for the linker and a header file.
 import argparse
 import os
+import sys
 import textwrap
 import typing
 
@@ -56,6 +57,21 @@ def gen_ld_h_from_sym(f_sym: typing.TextIO, f_ld: typing.TextIO, f_h: typing.Tex
     )
 
 
+def _file_type(mode: str):  # type: ignore
+    """Open files for argparse arguments (argparse's own file factory is deprecated in Python 3.15)."""
+
+    def _open(path: str):  # type: ignore
+        if path == '-':
+            stream = sys.stdin if 'r' in mode else sys.stdout
+            return stream.buffer if 'b' in mode else stream
+        try:
+            return open(path, mode, encoding=None if 'b' in mode else 'utf-8')
+        except OSError as e:
+            raise argparse.ArgumentTypeError(f"can't open '{path}': {e}")
+
+    return _open
+
+
 def main() -> None:
     description = (
         'This application generates .h and .ld files for symbols defined in input file. '
@@ -65,7 +81,7 @@ def main() -> None:
 
     parser = argparse.ArgumentParser(description=description)
     parser.add_argument(
-        '-s', '--symfile', required=True, help='symbols file name', metavar='SYMFILE', type=argparse.FileType('r')
+        '-s', '--symfile', required=True, help='symbols file name', metavar='SYMFILE', type=_file_type('r')
     )
     parser.add_argument(
         '-o', '--outputfile', required=True, help='destination .h and .ld files name prefix', metavar='OUTFILE'

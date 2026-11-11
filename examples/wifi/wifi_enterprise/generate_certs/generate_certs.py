@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2023-2026 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Unlicense OR CC0-1.0
 
 import argparse
@@ -49,8 +49,8 @@ class GenCerts:
             .issuer_name(issuer)
             .public_key(public_key)
             .serial_number(x509.random_serial_number())
-            .not_valid_before(datetime.datetime.utcnow())
-            .not_valid_after(datetime.datetime.utcnow() + datetime.timedelta(days=CERT_EXPIRY_DAYS))
+            .not_valid_before(datetime.datetime.now(datetime.timezone.utc))
+            .not_valid_after(datetime.datetime.now(datetime.timezone.utc) + datetime.timedelta(days=CERT_EXPIRY_DAYS))
             .add_extension(x509.BasicConstraints(ca=True, path_length=None), critical=True)
             .add_extension(x509.SubjectKeyIdentifier.from_public_key(public_key), critical=False)
         )
@@ -102,8 +102,8 @@ class GenCerts:
             .issuer_name(ca_cert.subject)
             .public_key(user_csr.public_key())
             .serial_number(x509.random_serial_number())
-            .not_valid_before(datetime.datetime.utcnow())
-            .not_valid_after(datetime.datetime.utcnow() + datetime.timedelta(days=CERT_EXPIRY_DAYS))
+            .not_valid_before(datetime.datetime.now(datetime.timezone.utc))
+            .not_valid_after(datetime.datetime.now(datetime.timezone.utc) + datetime.timedelta(days=CERT_EXPIRY_DAYS))
             .add_extension(x509.BasicConstraints(ca=False, path_length=None), critical=False)
             .add_extension(x509.ExtendedKeyUsage(key_usage), critical=False)
             .add_extension(x509.SubjectKeyIdentifier.from_public_key(user_csr.public_key()), critical=False)

@@ -1,15 +1,16 @@
 #!/usr/bin/env python
 #
-# SPDX-FileCopyrightText: 2019-2021 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2019-2026 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
 
 
 import argparse
 import json
 import sys
+from typing import Dict
 
 
-def _prepare_source_files(env_dict, list_separator):
+def _prepare_source_files(env_dict: Dict[str, str], list_separator: str) -> None:
     """
     Prepares source files which are sourced from the main Kconfig because upstream kconfiglib doesn't support sourcing
     a file list. The inputs are the same environment variables which are used by kconfiglib:
@@ -34,10 +35,10 @@ def _prepare_source_files(env_dict, list_separator):
     Space separated lists are currently only used by the documentation build system (esp-docs).
     """
 
-    def _dequote(var):
+    def _dequote(var: str) -> str:
         return var[1:-1] if len(var) > 0 and (var[0], var[-1]) == ('"',) * 2 else var
 
-    def _write_source_file(config_var, config_file):
+    def _write_source_file(config_var: str, config_file: str) -> None:
         dequoted_var = _dequote(config_var)
         if dequoted_var:
             new_content = '\n'.join([f'source "{path}"' for path in dequoted_var.split(list_separator)])
@@ -68,14 +69,13 @@ def _prepare_source_files(env_dict, list_separator):
         sys.exit(1)
 
 
-def main():
+def main() -> None:
     parser = argparse.ArgumentParser(description='Kconfig Source File Generator')
 
     parser.add_argument('--env', action='append', default=[], help='Environment value', metavar='NAME=VAL')
 
     parser.add_argument(
         '--env-file',
-        type=argparse.FileType('r'),
         help='Optional file to load environment variables from. Contents '
         'should be a JSON object where each key/value pair is a variable.',
     )
@@ -96,7 +96,12 @@ def main():
         sys.exit(1)
 
     if args.env_file is not None:
-        env.update(json.load(args.env_file))
+        try:
+            with open(args.env_file, encoding='utf-8') as f:
+                env.update(json.load(f))
+        except (OSError, json.JSONDecodeError) as e:
+            print(f'Cannot read --env-file {args.env_file}: {e}')
+            sys.exit(1)
 
     list_separator = ';' if args.list_separator == 'semicolon' else ' '
 

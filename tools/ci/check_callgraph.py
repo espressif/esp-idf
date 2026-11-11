@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 #
 # Based on cally.py (https://github.com/chaudron/cally/), Copyright 2018, Eelco Chaudron
-# SPDX-FileCopyrightText: 2020-2024 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2020-2026 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
 
 import argparse
@@ -9,6 +9,7 @@ import fnmatch
 import os
 import re
 from functools import partial
+from pathlib import Path
 from typing import BinaryIO
 from typing import Callable
 from typing import Dict
@@ -353,13 +354,21 @@ def find_files_recursive(root_path: str, ext: str) -> Generator[str, None, None]
                 yield filename
 
 
+def path(value: str) -> Path:
+    """argparse type: path of an existing file."""
+    file_path = Path(value)
+    if not file_path.is_file():
+        raise argparse.ArgumentTypeError(f'{value} is not an existing file')
+    return file_path
+
+
 def main() -> None:
     parser = argparse.ArgumentParser()
 
     parser.add_argument(
         '--rtl-list',
         help='File with the list of RTL files',
-        type=argparse.FileType('r'),
+        type=path,
     )
     parser.add_argument(
         '--rtl-dirs', help='comma-separated list of directories where to look for RTL files, recursively'
@@ -368,7 +377,7 @@ def main() -> None:
         '--elf-file',
         required=True,
         help='Program ELF file',
-        type=argparse.FileType('rb'),
+        type=path,
     )
     action_sub = parser.add_subparsers(dest='action')
     find_refs_parser = action_sub.add_parser(
@@ -414,7 +423,8 @@ def main() -> None:
     else:
         ignore_pairs = []
 
-    _, refs = get_symbols_and_refs(rtl_list, args.elf_file, ignore_pairs)
+    with open(args.elf_file, 'rb') as elf_file:
+        _, refs = get_symbols_and_refs(rtl_list, elf_file, ignore_pairs)
 
     if args.action == 'find-refs':
         from_sections = args.from_sections.split(',') if args.from_sections else []

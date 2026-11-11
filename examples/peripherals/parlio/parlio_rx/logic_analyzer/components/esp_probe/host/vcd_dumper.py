@@ -1,20 +1,22 @@
-# SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2023-2026 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
 
 # This dumper script run on the host after get the probed raw data on the host
 # Usage: python vcd_dumper.py -n <probe_channel_number> -f <path_to_raw_data_file>
 
 import argparse
+import sys
 import time
 from io import FileIO
 from io import TextIOWrapper
+from typing import Optional
 
 
 class VCDDumper:
     def __init__(self) -> None:
         pass
 
-    def open_new_vcd_file(self, chan_num: int, vcd_out_io: TextIOWrapper) -> None:
+    def open_new_vcd_file(self, chan_num: int, vcd_out_io: Optional[TextIOWrapper]) -> None:
         self.ts = 0
         self.odd_samples = 0
         self.prev = 0
@@ -88,7 +90,7 @@ class VCDDumper:
         self.dump_samples(data_bytes)
 
 
-def dump_binary_raw_data_to_vcd(chan_num: int, raw_in_io: FileIO, vcd_out_io: TextIOWrapper) -> None:
+def dump_binary_raw_data_to_vcd(chan_num: int, raw_in_io: FileIO, vcd_out_io: Optional[TextIOWrapper]) -> None:
     vcd = VCDDumper()
     vcd.open_new_vcd_file(chan_num, vcd_out_io)
     vcd.dump_samples_from_file(raw_in_io)
@@ -96,13 +98,28 @@ def dump_binary_raw_data_to_vcd(chan_num: int, raw_in_io: FileIO, vcd_out_io: Te
     print('Converted successfully!')
 
 
+def _file_type(mode: str):  # type: ignore
+    """Open files for argparse arguments (argparse's own file factory is deprecated in Python 3.15)."""
+
+    def _open(path: str):  # type: ignore
+        if path == '-':
+            stream = sys.stdin if 'r' in mode else sys.stdout
+            return stream.buffer if 'b' in mode else stream
+        try:
+            return open(path, mode, encoding=None if 'b' in mode else 'utf-8')
+        except OSError as e:
+            raise argparse.ArgumentTypeError(f"can't open '{path}': {e}")
+
+    return _open
+
+
 def dump_vcd_main() -> None:
     # Args parser
     parser = argparse.ArgumentParser(description='Dump raw data to VCD format')
     parser.add_argument('-n', '--chan-num', type=int, help='The channel number that probed')
-    parser.add_argument('-i', '--input-file', type=argparse.FileType('rb'), help='The the input raw data file')
+    parser.add_argument('-i', '--input-file', type=_file_type('rb'), help='The the input raw data file')
     parser.add_argument(
-        '-o', '--output-file', type=argparse.FileType('w'), help='The output vcd file name (optional)', default=None
+        '-o', '--output-file', type=_file_type('w'), help='The output vcd file name (optional)', default=None
     )
 
     # Parse args

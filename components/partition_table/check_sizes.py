@@ -7,7 +7,7 @@
 #
 # (Can also check if the bootloader binary fits before the partition table.)
 #
-# SPDX-FileCopyrightText: 2020-2022 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2020-2026 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
 
 
@@ -111,6 +111,21 @@ def check_partition(ptype, subtype, partition_table_file, bin_file):  # type: (s
         print('Warning: ' + msg)
 
 
+def _file_type(mode: str):  # type: ignore
+    """Open files for argparse arguments (argparse's own file factory is deprecated in Python 3.15)."""
+
+    def _open(path: str):  # type: ignore
+        if path == '-':
+            stream = sys.stdin if 'r' in mode else sys.stdout
+            return stream.buffer if 'b' in mode else stream
+        try:
+            return open(path, mode, encoding=None if 'b' in mode else 'utf-8')
+        except OSError as e:
+            raise argparse.ArgumentTypeError(f"can't open '{path}': {e}")
+
+    return _open
+
+
 def main():  # type: () -> None
     global allow_failures  # pylint: disable=global-statement
 
@@ -127,7 +142,7 @@ def main():  # type: () -> None
     sp_bootloader = subparsers.add_parser('bootloader')
     sp_bootloader.add_argument('bootloader_offset', help='Hex offset of bootloader in flash')
     sp_bootloader.add_argument(
-        'bootloader_binary', type=argparse.FileType('rb'), help='Bootloader binary (.bin) file from build output'
+        'bootloader_binary', type=_file_type('rb'), help='Bootloader binary (.bin) file from build output'
     )
 
     sp_part = subparsers.add_parser('partition')
@@ -137,8 +152,8 @@ def main():  # type: () -> None
     sp_part.add_argument(
         '--subtype', type=str, help='Optional, only check the file size against all partitions of this subtype.'
     )
-    sp_part.add_argument('partition_table', type=argparse.FileType('rb'), help='Partition table file')
-    sp_part.add_argument('binary', type=argparse.FileType('rb'), help='Binary file which will have the size checked')
+    sp_part.add_argument('partition_table', type=_file_type('rb'), help='Partition table file')
+    sp_part.add_argument('binary', type=_file_type('rb'), help='Binary file which will have the size checked')
 
     args = parser.parse_args()
 

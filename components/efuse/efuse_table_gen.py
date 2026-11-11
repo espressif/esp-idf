@@ -4,7 +4,7 @@
 #
 # Converts efuse table to header file efuse_table.h.
 #
-# SPDX-FileCopyrightText: 2017-2024 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2017-2026 Espressif Systems (Shanghai) CO LTD
 #
 # SPDX-License-Identifier: Apache-2.0
 # ruff: noqa: UP031  # legacy file, kept as is in the backport
@@ -520,6 +520,21 @@ def create_output_files(name, output_table, debug):
         print('Source files do not require updating correspond to csv file.')
 
 
+def _file_type(mode: str):  # type: ignore
+    """Open files for argparse arguments (argparse's own file factory is deprecated in Python 3.15)."""
+
+    def _open(path: str):  # type: ignore
+        if path == '-':
+            stream = sys.stdin if 'r' in mode else sys.stdout
+            return stream.buffer if 'b' in mode else stream
+        try:
+            return open(path, mode, encoding=None if 'b' in mode else 'utf-8')
+        except OSError as e:
+            raise argparse.ArgumentTypeError(f"can't open '{path}': {e}")
+
+    return _open
+
+
 def main():
     global quiet
     global max_blk_len
@@ -548,9 +563,9 @@ def main():
     parser.add_argument('--debug', help='Create header file with debug info', default=False, action='store_false')
     parser.add_argument('--info', help='Print info about range of used bits', default=False, action='store_true')
     parser.add_argument('--max_blk_len', help='Max number of bits in BLOCKs', type=int, default=256)
-    parser.add_argument('common_input', help='Path to common CSV file to parse.', type=argparse.FileType('r'))
+    parser.add_argument('common_input', help='Path to common CSV file to parse.', type=_file_type('r'))
     parser.add_argument(
-        'custom_input', help='Path to custom CSV file to parse.', type=argparse.FileType('r'), nargs='?', default=None
+        'custom_input', help='Path to custom CSV file to parse.', type=_file_type('r'), nargs='?', default=None
     )
 
     args = parser.parse_args()
