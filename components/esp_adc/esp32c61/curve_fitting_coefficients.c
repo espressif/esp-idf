@@ -1,12 +1,12 @@
 /*
- * SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2025-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
 #include <stdio.h>
 #include <stdint.h>
-#include "esp_efuse_rtc_calib.h"
+#include "hal/adc_efuse_hal.h"
 #include "../curve_fitting_coefficients.h"
 
 #define COEFF_VERSION_NUM  1 // Currently C5 has one versions of curve calibration schemes
@@ -50,11 +50,11 @@ const static int32_t adc1_error_sign[COEFF_VERSION_NUM][COEFF_GROUP_NUM][TERM_MA
 
 void curve_fitting_get_second_step_coeff(const adc_cali_curve_fitting_config_t *config, cali_chars_second_step_t *ctx)
 {
-    uint32_t adc_calib_ver = esp_efuse_rtc_calib_get_ver();
-    assert((adc_calib_ver >= ESP_EFUSE_ADC_CALIB_VER_MIN) &&
-           (adc_calib_ver <= ESP_EFUSE_ADC_CALIB_VER_MAX));
+    uint32_t adc_calib_ver = adc_hal_efuse_get_version();
+    assert((adc_calib_ver >= ADC_HAL_EFUSE_CALIB_VER_MIN) &&
+           (adc_calib_ver <= ADC_HAL_EFUSE_CALIB_VER_MAX));
 
     ctx->term_num = 3;
-    ctx->coeff = adc1_error_coef_atten[VER2IDX(adc_calib_ver)][config->atten];
-    ctx->sign = adc1_error_sign[VER2IDX(adc_calib_ver)][config->atten];
+    ctx->coeff = adc1_error_coef_atten[ADC_HAL_EFUSE_VERSION_TO_INDEX(adc_calib_ver)][config->atten];
+    ctx->sign = adc1_error_sign[ADC_HAL_EFUSE_VERSION_TO_INDEX(adc_calib_ver)][config->atten];
 }

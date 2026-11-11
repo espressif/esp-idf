@@ -3,6 +3,11 @@ Peripherals
 
 :link_to_translation:`zh_CN:[中文]`
 
+ADC
+---
+
+ADC eFuse calibration internals have moved to the ``esp_hal_ana_conv`` component. The internal headers ``esp_efuse_rtc_calib.h`` and ``esp_efuse_rtc_table.h`` have been removed. Applications should use the public :doc:`ADC calibration APIs </api-reference/peripherals/adc/adc_calibration>` and must not depend on internal HAL interfaces.
+
 DMA
 ---
 

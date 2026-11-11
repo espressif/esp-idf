@@ -11,9 +11,11 @@
 
 #include "soc/adc_struct.h"
 #include "soc/clk_tree_defs.h"
+#include "soc/efuse_reg.h"
 #include "soc/hp_sys_clkrst_struct.h"
 #include "soc/lpperi_struct.h"
 #include "soc/regi2c_saradc.h"
+#include "soc/soc.h"
 #include "hal/misc.h"
 #include "hal/assert.h"
 #include "hal/adc_types.h"
@@ -1098,6 +1100,73 @@ static inline adc_atten_t adc_ll_get_atten(adc_unit_t adc_n, adc_channel_t chann
     } else {
         return (adc_atten_t)((LP_ADC.atten2.sar2_atten >> ((channel + 2) * 2)) & 0x3);
     }
+}
+
+__attribute__((always_inline)) static inline uint32_t adc_ll_get_efuse_init_code(uint32_t unit, uint32_t atten)
+{
+    if (unit == 0) {
+        switch (atten) {
+        case 0:
+            return REG_GET_FIELD(EFUSE_RD_SYS_PART1_DATA4_REG, EFUSE_ADC1_AVE_INITCODE_ATTEN0);
+        case 1:
+            return REG_GET_FIELD(EFUSE_RD_SYS_PART1_DATA4_REG, EFUSE_ADC1_AVE_INITCODE_ATTEN1);
+        case 2:
+            return REG_GET_FIELD(EFUSE_RD_SYS_PART1_DATA4_REG, EFUSE_ADC1_AVE_INITCODE_ATTEN2);
+        default:
+            return REG_GET_FIELD(EFUSE_RD_SYS_PART1_DATA4_REG, EFUSE_ADC1_AVE_INITCODE_ATTEN3)
+                   | (REG_GET_FIELD(EFUSE_RD_SYS_PART1_DATA5_REG, EFUSE_ADC1_AVE_INITCODE_ATTEN3_1) << 2);
+        }
+    }
+    switch (atten) {
+    case 0:
+        return REG_GET_FIELD(EFUSE_RD_SYS_PART1_DATA5_REG, EFUSE_ADC2_AVE_INITCODE_ATTEN0);
+    case 1:
+        return REG_GET_FIELD(EFUSE_RD_SYS_PART1_DATA5_REG, EFUSE_ADC2_AVE_INITCODE_ATTEN1);
+    case 2:
+        return REG_GET_FIELD(EFUSE_RD_SYS_PART1_DATA5_REG, EFUSE_ADC2_AVE_INITCODE_ATTEN2)
+               | (REG_GET_FIELD(EFUSE_RD_SYS_PART1_DATA6_REG, EFUSE_ADC2_AVE_INITCODE_ATTEN2_1) << 4);
+    default:
+        return REG_GET_FIELD(EFUSE_RD_SYS_PART1_DATA6_REG, EFUSE_ADC2_AVE_INITCODE_ATTEN3);
+    }
+}
+
+__attribute__((always_inline)) static inline uint32_t adc_ll_get_efuse_cal_voltage(uint32_t unit, uint32_t atten)
+{
+    if (unit == 0) {
+        switch (atten) {
+        case 0:
+            return REG_GET_FIELD(EFUSE_RD_SYS_PART1_DATA6_REG, EFUSE_ADC1_HI_DOUT_ATTEN0);
+        case 1:
+            return REG_GET_FIELD(EFUSE_RD_SYS_PART1_DATA6_REG, EFUSE_ADC1_HI_DOUT_ATTEN1)
+                   | (REG_GET_FIELD(EFUSE_RD_SYS_PART1_DATA7_REG, EFUSE_ADC1_HI_DOUT_ATTEN1_1) << 6);
+        case 2:
+            return REG_GET_FIELD(EFUSE_RD_SYS_PART1_DATA7_REG, EFUSE_ADC1_HI_DOUT_ATTEN2);
+        default:
+            return REG_GET_FIELD(EFUSE_RD_SYS_PART1_DATA7_REG, EFUSE_ADC1_HI_DOUT_ATTEN3);
+        }
+    }
+    switch (atten) {
+    case 0:
+        return REG_GET_FIELD(EFUSE_RD_SYS_PART2_DATA0_REG, EFUSE_ADC2_HI_DOUT_ATTEN0);
+    case 1:
+        return REG_GET_FIELD(EFUSE_RD_SYS_PART2_DATA0_REG, EFUSE_ADC2_HI_DOUT_ATTEN1);
+    case 2:
+        return REG_GET_FIELD(EFUSE_RD_SYS_PART2_DATA0_REG, EFUSE_ADC2_HI_DOUT_ATTEN2);
+    default:
+        return REG_GET_FIELD(EFUSE_RD_SYS_PART2_DATA0_REG, EFUSE_ADC2_HI_DOUT_ATTEN3)
+               | (REG_GET_FIELD(EFUSE_RD_SYS_PART2_DATA1_REG, EFUSE_ADC2_HI_DOUT_ATTEN3_1) << 2);
+    }
+}
+
+__attribute__((always_inline)) static inline uint32_t adc_ll_get_efuse_chan_compens(uint32_t unit, uint32_t channel)
+{
+    if (unit == 0) {
+        if (channel < 6) {
+            return (REG_READ(EFUSE_RD_SYS_PART2_DATA1_REG) >> (8 + channel * 4)) & 0xf;
+        }
+        return (REG_READ(EFUSE_RD_SYS_PART2_DATA2_REG) >> ((channel - 6) * 4)) & 0xf;
+    }
+    return (REG_READ(EFUSE_RD_SYS_PART2_DATA2_REG) >> (8 + channel * 4)) & 0xf;
 }
 
 #ifdef __cplusplus

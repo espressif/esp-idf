@@ -43,7 +43,7 @@ endif()
 # and sleep APIs (esp_sleep.h etc.) used to be provided by esp_hw_support
 set(requires esp_sleep
              esp_hal_gpio esp_hal_usb esp_hal_pmu esp_hal_regi2c esp_hal_uart esp_hal_debug_assist esp_hal_cache)
-set(priv_requires efuse                 # only esp_hw_support/adc_share_hw_ctrl.c requires efuse component
+set(priv_requires efuse                 # used by MAC address and other hardware support code
                   esp_mspi
                   bootloader_support
                   esp_hal_wdt
