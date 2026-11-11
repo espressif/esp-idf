@@ -107,9 +107,33 @@ bt_status_t GAP_Init(void)
 void GAP_Deinit(void)
 {
 #if GAP_DYNAMIC_MEMORY == TRUE
-    if (gap_cb_ptr) {
-        osi_free(gap_cb_ptr);
-        gap_cb_ptr = NULL;
+    if (!gap_cb_ptr) {
+        return;
     }
+#endif
+
+#if (BLE_INCLUDED == TRUE && GATTS_INCLUDED == TRUE)
+    {
+        UINT8       i_clcb;
+        tGAP_CLCB   *p_clcb;
+
+        /* A CLCB that is still in use owns a pending request queue. Free the
+         * queue and the requests in it here, without reporting them to their
+         * callbacks: bte_deinit() has already released BTA at this point, so
+         * the owners of those requests no longer exist. */
+        for (i_clcb = 0, p_clcb = gap_cb.clcb; i_clcb < GAP_MAX_CL; i_clcb++, p_clcb++) {
+            /* pending_req_q stays NULL when the CLCB was never allocated or
+             * when gap_clcb_alloc() failed to create the queue. */
+            if (p_clcb->pending_req_q != NULL) {
+                fixed_queue_free(p_clcb->pending_req_q, osi_free_func);
+                p_clcb->pending_req_q = NULL;
+            }
+        }
+    }
+#endif
+
+#if GAP_DYNAMIC_MEMORY == TRUE
+    osi_free(gap_cb_ptr);
+    gap_cb_ptr = NULL;
 #endif
 }

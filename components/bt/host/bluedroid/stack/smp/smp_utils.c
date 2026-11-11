@@ -423,10 +423,16 @@ BT_HDR *smp_build_pairing_cmd(UINT8 cmd_code, tSMP_CB *p_cb)
     if ((p_buf = (BT_HDR *)osi_malloc(sizeof(BT_HDR) + SMP_PAIRING_REQ_SIZE + L2CAP_MIN_OFFSET)) != NULL) {
         p = (UINT8 *)(p_buf + 1) + L2CAP_MIN_OFFSET;
 
+        /* Core Spec Vol 3 Part H 3.5.2: over BR/EDR every AuthReq bit except
+         * CT2 is reserved and shall be zero. loc_auth_req keeps SMP_AUTH_BOND
+         * for the internal "save the derived keys" check. */
+        UINT8 auth_req = p_cb->smp_over_br ?
+                         (p_cb->loc_auth_req & SMP_CT2_SUPPORT_BIT) : p_cb->loc_auth_req;
+
         UINT8_TO_STREAM (p, cmd_code);
         UINT8_TO_STREAM (p, p_cb->local_io_capability);
         UINT8_TO_STREAM (p, p_cb->loc_oob_flag);
-        UINT8_TO_STREAM (p, p_cb->loc_auth_req);
+        UINT8_TO_STREAM (p, auth_req);
         UINT8_TO_STREAM (p, p_cb->loc_enc_size);
         UINT8_TO_STREAM (p, p_cb->local_i_key);
         UINT8_TO_STREAM (p, p_cb->local_r_key);
