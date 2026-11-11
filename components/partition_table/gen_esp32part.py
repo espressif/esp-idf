@@ -7,7 +7,7 @@
 # See https://docs.espressif.com/projects/esp-idf/en/latest/api-guides/partition-tables.html
 # for explanation of partition table structure and uses.
 #
-# SPDX-FileCopyrightText: 2016-2025 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2016-2026 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
 # ruff: noqa: UP031  # legacy file, kept as is in the backport
 
@@ -688,6 +688,21 @@ def parse_int(v, keywords={}):
             raise InputError("Value '{}' is not valid. Known keywords: {}".format(v, ', '.join(keywords)))
 
 
+def _file_type(mode: str):  # type: ignore
+    """Open files for argparse arguments (argparse's own file factory is deprecated in Python 3.15)."""
+
+    def _open(path: str):  # type: ignore
+        if path == '-':
+            stream = sys.stdin if 'r' in mode else sys.stdout
+            return stream.buffer if 'b' in mode else stream
+        try:
+            return open(path, mode, encoding=None if 'b' in mode else 'utf-8')
+        except OSError as e:
+            raise argparse.ArgumentTypeError(f"can't open '{path}': {e}")
+
+    return _open
+
+
 def main():
     global quiet
     global md5sum
@@ -726,7 +741,7 @@ def main():
         choices=[SECURE_V1, SECURE_V2],
     )
     parser.add_argument('--extra-partition-subtypes', help='Extra partition subtype entries', nargs='*')
-    parser.add_argument('input', help='Path to CSV or binary file to parse.', type=argparse.FileType('rb'))
+    parser.add_argument('input', help='Path to CSV or binary file to parse.', type=_file_type('rb'))
     parser.add_argument(
         'output',
         help='Path to output converted binary or CSV file. Will use stdout if omitted.',

@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2015-2026 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
 
 """
@@ -7,7 +7,7 @@ Internal use only.
 This file implements controlling  APC PDU via telnet.
 """
 
-import telnetlib
+from pytest_embedded_jtag._telnetlib.telnetlib import Telnet  # python 3.13 removed telnetlib
 
 
 class Control:
@@ -41,7 +41,7 @@ class Control:
 
         # telnet
         # set timeout as 2s so that it won't waste time even can't access APC
-        tn = telnetlib.Telnet(host=apc_ip, timeout=5)
+        tn = Telnet(host=apc_ip, timeout=5)
         # log on
         cls.apc_telnet_common_action(tn, 'User Name :', 'apc')
         cls.apc_telnet_common_action(tn, 'Password  :', 'apc')

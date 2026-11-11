@@ -7,6 +7,7 @@
 import argparse
 import os
 import re
+import sys
 import textwrap
 import typing
 
@@ -133,6 +134,21 @@ def gen_ld_h_from_sym(
         )
 
 
+def _file_type(mode: str):  # type: ignore
+    """Open files for argparse arguments (argparse's own file factory is deprecated in Python 3.15)."""
+
+    def _open(path: str):  # type: ignore
+        if path == '-':
+            stream = sys.stdin if 'r' in mode else sys.stdout
+            return stream.buffer if 'b' in mode else stream
+        try:
+            return open(path, mode, encoding=None if 'b' in mode else 'utf-8')
+        except OSError as e:
+            raise argparse.ArgumentTypeError(f"can't open '{path}': {e}")
+
+    return _open
+
+
 def main() -> None:
     description = (
         'This application generates .h and .ld files for symbols defined in input file. '
@@ -142,7 +158,7 @@ def main() -> None:
 
     parser = argparse.ArgumentParser(description=description)
     parser.add_argument(
-        '-s', '--symfile', required=True, help='symbols file name', metavar='SYMFILE', type=argparse.FileType('r')
+        '-s', '--symfile', required=True, help='symbols file name', metavar='SYMFILE', type=_file_type('r')
     )
     parser.add_argument(
         '-o', '--outputfile', required=True, help='destination .h and .ld files name prefix', metavar='OUTFILE'

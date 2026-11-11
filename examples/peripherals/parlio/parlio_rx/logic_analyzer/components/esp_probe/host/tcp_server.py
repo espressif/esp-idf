@@ -1,7 +1,8 @@
-# SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2023-2026 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
 import argparse
 import socket
+import sys
 from io import TextIOWrapper
 from typing import Any
 
@@ -14,7 +15,7 @@ def _get_local_host_ip() -> Any:
     return s.getsockname()[0]
 
 
-def _tcp_server(port: int, chan_num: int, vcd_out_io: TextIOWrapper) -> None:
+def _tcp_server(port: int, chan_num: int, vcd_out_io: TextIOWrapper | None) -> None:
     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
     host = _get_local_host_ip()
@@ -48,13 +49,28 @@ def _tcp_server(port: int, chan_num: int, vcd_out_io: TextIOWrapper) -> None:
     print('TCP server closed')
 
 
+def _file_type(mode: str):  # type: ignore
+    """Open files for argparse arguments (argparse's own file factory is deprecated in Python 3.15)."""
+
+    def _open(path: str):  # type: ignore
+        if path == '-':
+            stream = sys.stdin if 'r' in mode else sys.stdout
+            return stream.buffer if 'b' in mode else stream
+        try:
+            return open(path, mode, encoding=None if 'b' in mode else 'utf-8')
+        except OSError as e:
+            raise argparse.ArgumentTypeError(f"can't open '{path}': {e}")
+
+    return _open
+
+
 def tcp_server_main() -> None:
     # Args parser
     parser = argparse.ArgumentParser(description='Dump raw data to VCD format')
     parser.add_argument('-n', '--chan-num', type=int, help='The channel number that probed')
     parser.add_argument('-p', '--port', type=int, help='The TCP port', default=8888)
     parser.add_argument(
-        '-o', '--output-file', type=argparse.FileType('w'), help='The output vcd file name (optional)', default=None
+        '-o', '--output-file', type=_file_type('w'), help='The output vcd file name (optional)', default=None
     )
 
     # Parse args
