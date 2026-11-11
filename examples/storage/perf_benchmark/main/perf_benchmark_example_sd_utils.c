@@ -149,7 +149,7 @@ esp_err_t init_sd_card(sdmmc_card_t **out_card)
 #ifdef CONFIG_EXAMPLE_USE_SDMMC
     ret = sdmmc_host_init();
     ESP_ERROR_CHECK(ret);
-    ret = sdmmc_host_init_slot(SDMMC_HOST_SLOT_1, &slot_config_g);
+    ret = sdmmc_host_init_slot(host_g.slot, &slot_config_g);
     ESP_ERROR_CHECK(ret);
 #elif CONFIG_EXAMPLE_USE_SDSPI // CONFIG_EXAMPLE_USE_SDMMC
     int card_handle = -1;
