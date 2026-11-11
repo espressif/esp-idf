@@ -99,12 +99,16 @@ void example_sensor_init(example_sensor_config_t *sensor_config, example_sensor_
         ESP_LOGE(TAG, "Start stream fail");
     }
     ESP_ERROR_CHECK(ret);
+    out_sensor_handle->sensor_device = cam;
     out_sensor_handle->i2c_bus_handle = i2c_bus_handle;
     out_sensor_handle->sccb_handle = cam_config.sccb_handle;
 }
 
 void example_sensor_deinit(example_sensor_handle_t sensor_handle)
 {
+    int enable_flag = 0;
+    ESP_ERROR_CHECK(esp_cam_sensor_ioctl(sensor_handle.sensor_device, ESP_CAM_SENSOR_IOC_S_STREAM, &enable_flag));
+    ESP_ERROR_CHECK(esp_cam_sensor_del_dev(sensor_handle.sensor_device));
     ESP_ERROR_CHECK(esp_sccb_del_i2c_io(sensor_handle.sccb_handle));
     ESP_ERROR_CHECK(i2c_del_master_bus(sensor_handle.i2c_bus_handle));
 }

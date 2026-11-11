@@ -17,6 +17,7 @@ extern "C" {
  * @brief Handle of SCCB interface and sensor
  */
 typedef struct {
+    esp_cam_sensor_device_t *sensor_device;      /*!< Camera sensor device */
     esp_sccb_io_handle_t sccb_handle;            /*!< SCCB io handle that created by `sccb_new_i2c_io` */
     i2c_master_bus_handle_t i2c_bus_handle;      /*!< I2C bus handle that created by `i2c_new_master_bus` */
 } example_sensor_handle_t;
