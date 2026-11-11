@@ -50,7 +50,6 @@ static const char *TAG = "transport_ws";
 typedef struct {
     uint8_t opcode;
     bool fin;                           /*!< Frame fin flag, for continuations */
-    char mask_key[4];                   /*!< Mask key for this payload */
     int payload_len;                    /*!< Total length of the payload */
     int bytes_remaining;                /*!< Bytes left to read of the payload  */
     bool header_received;               /*!< Flag to indicate that a new message header was received */
@@ -541,10 +540,6 @@ static int ws_read_payload(esp_transport_handle_t t, char *buffer, int len, int 
         return rlen;
     }
     ws->frame_state.bytes_remaining -= rlen;
-
-    for (int i = 0; i < bytes_to_read; i++) {
-        buffer[i] = (buffer[i] ^ ws->frame_state.mask_key[i % 4]);
-    }
     return rlen;
 }
 
@@ -668,7 +663,7 @@ static int ws_read_header(esp_transport_handle_t t, char *buffer, int len, int t
     int payload_len;
 
     char ws_header[MAX_WEBSOCKET_HEADER_SIZE];
-    char *data_ptr = ws_header, mask;
+    char *data_ptr = ws_header;
     int rlen;
     ws->frame_state.header_received = false;
     if (ws->buffer_len == 0) {
@@ -680,7 +675,6 @@ static int ws_read_header(esp_transport_handle_t t, char *buffer, int len, int t
 
     // Receive and process header first (based on header size)
     int header = 2;
-    int mask_len = 4;
     if ((rlen = esp_transport_read_exact_size(ws, data_ptr, header, timeout_ms)) <= 0) {
         ESP_LOGE(TAG, "Error read data(%d)", rlen);
         return rlen;
@@ -690,7 +684,7 @@ static int ws_read_header(esp_transport_handle_t t, char *buffer, int len, int t
     ws->frame_state.opcode = (*data_ptr & 0x0F);
     uint8_t rsv = (*data_ptr & 0x70);
     data_ptr ++;
-    mask = ((*data_ptr >> 7) & 0x01);
+    bool mask = (*data_ptr & 0x80) != 0;
     payload_len = (*data_ptr & 0x7F);
     data_ptr++;
     ESP_LOGD(TAG, "Opcode: %d, mask: %d, len: %d, rsv: 0x%02X", ws->frame_state.opcode, mask, payload_len, rsv);
@@ -699,6 +693,12 @@ static int ws_read_header(esp_transport_handle_t t, char *buffer, int len, int t
     if (rsv != 0) {
         ESP_LOGE(TAG, "Non-zero RSV bits detected (rsv=0x%02X) - protocol violation, no extensions negotiated", rsv);
         return -1;
+    }
+
+    // RFC 6455 Section 5.1: a client MUST close the connection if it detects a masked frame
+    if (mask) {
+        ESP_LOGE(TAG, "Masked frame from server detected - protocol violation");
+        return ws_fail_connection(ws);
     }
 
     // RFC 6455 Section 5.2: Validate opcode (only 0x0-0x2 for data, 0x8-0xA for control are defined)
@@ -776,20 +776,6 @@ static int ws_read_header(esp_transport_handle_t t, char *buffer, int len, int t
         }
         return -1;
     }
-    if (mask) {
-        // Read the 4-byte masking key directly into the frame state. The caller's
-        // buffer must never be used as scratch here: it may be smaller than
-        // mask_len (4) and the MASK bit is attacker-controlled (servers must not
-        // mask per RFC 6455 5.1), which would otherwise cause an out-of-bounds write.
-        if (payload_len != 0 &&
-                (rlen = esp_transport_read_exact_size(ws, ws->frame_state.mask_key, mask_len, timeout_ms)) <= 0) {
-            ESP_LOGE(TAG, "Error read data(%d)", rlen);
-            return rlen;
-        }
-    } else {
-        memset(ws->frame_state.mask_key, 0, mask_len);
-    }
-
     ws->frame_state.payload_len = payload_len;
     ws->frame_state.bytes_remaining = payload_len;
 
