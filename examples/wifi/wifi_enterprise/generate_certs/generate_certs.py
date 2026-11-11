@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2023-2026 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Unlicense OR CC0-1.0
 
 import argparse
@@ -7,9 +7,13 @@ import os
 
 from cryptography import x509
 from cryptography.hazmat.backends import default_backend
-from cryptography.hazmat.primitives import hashes, serialization
-from cryptography.hazmat.primitives.asymmetric import ec, rsa
-from cryptography.hazmat.primitives.serialization import Encoding, NoEncryption, PrivateFormat
+from cryptography.hazmat.primitives import hashes
+from cryptography.hazmat.primitives import serialization
+from cryptography.hazmat.primitives.asymmetric import ec
+from cryptography.hazmat.primitives.asymmetric import rsa
+from cryptography.hazmat.primitives.serialization import Encoding
+from cryptography.hazmat.primitives.serialization import NoEncryption
+from cryptography.hazmat.primitives.serialization import PrivateFormat
 from cryptography.x509.oid import ExtendedKeyUsageOID
 
 CERT_KEYS = ['2048', '4096', '3072', 'p384']
@@ -25,37 +29,28 @@ class GenCerts:
         self.init_param()
 
     def init_param(self) -> None:
-
         if self.message_digest == 'sha256':
             self.digest = hashes.SHA256()
         else:
             self.digest = hashes.SHA384()
 
     def generate_ca_certificate(self) -> None:
-
         if self.cert_type == 'p384':
-            private_key = ec.generate_private_key(
-                ec.SECP384R1(),
-                default_backend()
-            )
+            private_key = ec.generate_private_key(ec.SECP384R1(), default_backend())
         else:
-            private_key = rsa.generate_private_key(
-                public_exponent=65537,
-                key_size=int(self.cert_type)
-            )
+            private_key = rsa.generate_private_key(public_exponent=65537, key_size=int(self.cert_type))
 
         public_key = private_key.public_key()
-        subject = issuer = x509.Name([
-            x509.NameAttribute(x509.NameOID.COMMON_NAME, 'example root CA')
-        ])
+        subject = issuer = x509.Name([x509.NameAttribute(x509.NameOID.COMMON_NAME, 'example root CA')])
 
         ca_crt_builder = (
             x509.CertificateBuilder()
             .subject_name(subject)
-            .issuer_name(issuer).public_key(public_key)
+            .issuer_name(issuer)
+            .public_key(public_key)
             .serial_number(x509.random_serial_number())
-            .not_valid_before(datetime.datetime.utcnow())
-            .not_valid_after(datetime.datetime.utcnow() + datetime.timedelta(days=CERT_EXPIRY_DAYS))
+            .not_valid_before(datetime.datetime.now(datetime.UTC))
+            .not_valid_after(datetime.datetime.now(datetime.UTC) + datetime.timedelta(days=CERT_EXPIRY_DAYS))
             .add_extension(x509.BasicConstraints(ca=True, path_length=None), critical=True)
             .add_extension(x509.SubjectKeyIdentifier.from_public_key(public_key), critical=False)
         )
@@ -67,14 +62,13 @@ class GenCerts:
         with open(self.ca_pem, 'wb') as f:
             f.write(self.certificate.public_bytes(Encoding.PEM))
         with open(self.ca_key, 'wb') as f:
-            f.write(private_key.private_bytes(
-                encoding=Encoding.PEM,
-                format=PrivateFormat.TraditionalOpenSSL,
-                encryption_algorithm=NoEncryption()
-            ))
+            f.write(
+                private_key.private_bytes(
+                    encoding=Encoding.PEM, format=PrivateFormat.TraditionalOpenSSL, encryption_algorithm=NoEncryption()
+                )
+            )
 
     def generate_user_certificate(self, role: str) -> None:
-
         if role == 'server':
             key_usage = [ExtendedKeyUsageOID.SERVER_AUTH]
         elif role == 'client':
@@ -86,31 +80,21 @@ class GenCerts:
             ca_cert = x509.load_pem_x509_certificate(f.read())
 
         if self.cert_type == 'p384':
-            user_private_key = ec.generate_private_key(
-                ec.SECP384R1(),
-                default_backend()
-            )
+            user_private_key = ec.generate_private_key(ec.SECP384R1(), default_backend())
         else:
-            user_private_key = rsa.generate_private_key(
-                public_exponent=65537,
-                key_size=int(self.cert_type)
-            )
+            user_private_key = rsa.generate_private_key(public_exponent=65537, key_size=int(self.cert_type))
 
         user_key = os.path.join(self.file_path, f'{role}.key')
         with open(user_key, 'wb') as f:
-            f.write(user_private_key.private_bytes(
-                encoding=Encoding.PEM,
-                format=PrivateFormat.TraditionalOpenSSL,
-                encryption_algorithm=NoEncryption()
-            ))
+            f.write(
+                user_private_key.private_bytes(
+                    encoding=Encoding.PEM, format=PrivateFormat.TraditionalOpenSSL, encryption_algorithm=NoEncryption()
+                )
+            )
 
-        subject = x509.Name([
-            x509.NameAttribute(x509.NameOID.COMMON_NAME, role)
-        ])
+        subject = x509.Name([x509.NameAttribute(x509.NameOID.COMMON_NAME, role)])
 
-        user_csr = x509.CertificateSigningRequestBuilder().subject_name(
-            subject
-        ).sign(user_private_key, self.digest)
+        user_csr = x509.CertificateSigningRequestBuilder().subject_name(subject).sign(user_private_key, self.digest)
 
         user_crt_builder = (
             x509.CertificateBuilder()
@@ -118,8 +102,8 @@ class GenCerts:
             .issuer_name(ca_cert.subject)
             .public_key(user_csr.public_key())
             .serial_number(x509.random_serial_number())
-            .not_valid_before(datetime.datetime.utcnow())
-            .not_valid_after(datetime.datetime.utcnow() + datetime.timedelta(days=CERT_EXPIRY_DAYS))
+            .not_valid_before(datetime.datetime.now(datetime.UTC))
+            .not_valid_after(datetime.datetime.now(datetime.UTC) + datetime.timedelta(days=CERT_EXPIRY_DAYS))
             .add_extension(x509.BasicConstraints(ca=False, path_length=None), critical=False)
             .add_extension(x509.ExtendedKeyUsage(key_usage), critical=False)
             .add_extension(x509.SubjectKeyIdentifier.from_public_key(user_csr.public_key()), critical=False)
@@ -135,10 +119,11 @@ class GenCerts:
 
 
 def main() -> None:
-
     parser = argparse.ArgumentParser()
     parser.add_argument('cert_type', choices=['2048', '3072', '4096', 'p384'], help='select cert type')
-    parser.add_argument('message_digest', choices=['sha256', 'sha384'], help='select message digest, suiteB should be sha384')
+    parser.add_argument(
+        'message_digest', choices=['sha256', 'sha384'], help='select message digest, suiteB should be sha384'
+    )
     file_path = os.path.dirname(__file__)
     parser.add_argument('--output', '-o', default=file_path, help='path to store certificates')
     args = parser.parse_args()
