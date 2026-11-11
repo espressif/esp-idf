@@ -383,6 +383,18 @@ tPAN_RESULT PAN_Connect(BD_ADDR rem_bda, UINT8 src_role,
         return PAN_FAILURE;
     }
 
+    /* Same peer and the same roles are already up. A BNEP setup with unchanged
+     * UUIDs completes inside BNEP and BTA posts no open result, so the
+     * application would see OPENING and then nothing. Reject it here and leave
+     * the existing link alone.
+     */
+    if (pcb != NULL && pcb->con_state == PAN_STATE_CONNECTED &&
+            pcb->src_uuid == src_uuid.uu.uuid16 &&
+            pcb->dst_uuid == dst_uuid.uu.uuid16) {
+        PAN_TRACE_ERROR("PAN connection already exists for the same roles");
+        return PAN_FAILURE;
+    }
+
     /* Allocate control block and initiate connection */
     if (!pcb) {
         pcb = pan_allocate_pcb(rem_bda, BNEP_INVALID_HANDLE);
