@@ -903,6 +903,20 @@ bool osi_thread_post_event(struct osi_event *event, uint32_t timeout)
     return ret;
 }
 
+bool osi_event_is_queued(struct osi_event *event)
+{
+    bool queued;
+
+    if (event == NULL) {
+        return false;
+    }
+
+    osi_mutex_lock(&event->core.lock, OSI_MUTEX_MAX_TIMEOUT);
+    queued = OSI_EVENT_HAS_FLAG(&event->core, OSI_EVENT_FLAG_QUEUED);
+    osi_mutex_unlock(&event->core.lock);
+    return queued;
+}
+
 bool osi_dynamic_event_post(struct osi_dynamic_event *event, uint32_t timeout)
 {
     struct osi_event_core *core;

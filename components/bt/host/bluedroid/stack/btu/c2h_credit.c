@@ -9,6 +9,7 @@
 
 #if (C2H_FLOW_CONTROL_INCLUDED == TRUE)
 
+#include <stdint.h>
 #include <string.h>
 
 #include "common/bt_trace.h"
@@ -20,14 +21,18 @@
 #include "stack/btu.h"
 #include "stack/c2h_credit.h"
 #include "stack/hcimsgs.h"
+#if defined(BT_BLUEDROID_UNIT_TEST)
+#include "btc/btc_task.h"
+#endif
 
-#define C2H_CREDIT_FLAG_ENABLED  0x01
-#define C2H_CREDIT_FLAG_CLOSING  0x02
-#define C2H_CREDIT_FLAG_PAUSED   0x04
+#define C2H_CREDIT_FLAG_ENABLED     0x01
+#define C2H_CREDIT_FLAG_CLOSING     0x02
+#define C2H_CREDIT_FLAG_PAUSED      0x04
+#define C2H_CREDIT_FLAG_RATE_VALID  0x08
 
-#define C2H_CREDIT_FLUSH_MIN       (4)
-#define C2H_CREDIT_DEFER_DELAY_MS  (10)
-#define C2H_CREDIT_RETRY_DELAY_MS  (100)
+#define C2H_CREDIT_FLUSH_MIN        (4)
+#define C2H_CREDIT_RATE_IDLE_MS     (1000)
+#define C2H_CREDIT_EWMA_SHIFT       (3) /* retain 7/8; stored in 1/8 ms */
 
 typedef struct tC2H_DYNAMIC_ENTRY {
     UINT16 handle;
@@ -47,6 +52,8 @@ typedef struct {
     tC2H_CREDIT_TAB tab;
     UINT8 flags;
     struct osi_event *drain_ready; /* alarm → BTU: handoff host then kick HCI */
+    UINT32 interval_ewma; /* 1/8 ms, so a step under 8 ms can accumulate */
+    UINT32 last_account_ms;
 } tC2H_CREDIT_HOST;
 
 typedef struct {
@@ -55,7 +62,8 @@ typedef struct {
     osi_mutex_t lock; /* pending + mail + force_send + closing */
     BOOLEAN closing;
     BOOLEAN force_send;
-    osi_alarm_t *send_alarm; /* defer 10ms or retry 100ms */
+    BOOLEAN alarm_outstanding; /* active timer or callback pending on HCI thread */
+    osi_alarm_t *send_alarm; /* adaptive defer or retry */
     struct osi_event *flush_ready;
 } tC2H_CREDIT_HCI;
 
@@ -65,11 +73,26 @@ static tC2H_CREDIT_HCI *s_hci = NULL;
 #if defined(BT_BLUEDROID_UNIT_TEST)
 /* Default true: unit harness has no HCI command_queue. */
 static bool s_force_btsnd_fail = true;
+static void (*s_flush_ready_hook)(void);
+static void (*s_send_alarm_hook)(void);
+
+static void c2h_run_test_hook(void (*hook)(void))
+{
+    if (hook != NULL) {
+        hook();
+    }
+}
 #endif
 
 static void hci_c2h_credit_flush_now(BOOLEAN force);
 static void hci_c2h_credit_kick(BOOLEAN force);
 static void host_drain_and_kick(void);
+
+/* Already QUEUED: the pending handler sees state written before this post. */
+static bool c2h_post_event(struct osi_event *event)
+{
+    return osi_thread_post_event(event, 0) || osi_event_is_queued(event);
+}
 
 #if defined(BT_BLUEDROID_UNIT_TEST)
 static bool c2h_btsnd_host_num_xmitted_pkts(UINT8 num_ents, UINT16 *handles, UINT16 *num_pkts)
@@ -423,42 +446,52 @@ static UINT32 host_handoff_to_mail(void)
 
 static void hci_cancel_send_alarm(void)
 {
-    if (s_hci != NULL && s_hci->send_alarm != NULL &&
-            osi_alarm_is_active(s_hci->send_alarm)) {
-        osi_alarm_cancel(s_hci->send_alarm);
-    }
-}
+    osi_alarm_t *alarm;
 
-static void hci_schedule_send(UINT32 delay_ms)
-{
-    BOOLEAN closing;
-
-    if (s_hci == NULL || s_hci->send_alarm == NULL) {
+    if (s_hci == NULL) {
         return;
     }
 
     hci_lock();
-    closing = s_hci->closing;
+    alarm = s_hci->send_alarm;
+    if (alarm != NULL && osi_alarm_cancel_active(alarm, NULL) == OSI_ALARM_ERR_PASS) {
+        s_hci->alarm_outstanding = FALSE;
+    }
     hci_unlock();
+}
 
-    if (closing) {
+static void hci_schedule_send(UINT32 delay_ms)
+{
+    osi_alarm_t *alarm;
+    period_ms_t sooner_than;
+
+    if (s_hci == NULL) {
+        return;
+    }
+
+    hci_lock();
+    alarm = s_hci->send_alarm;
+    if (s_hci->closing || alarm == NULL) {
+        hci_unlock();
         return;
     }
 
     /*
-     * Prefer the earlier deadline: keep the current one if it fires sooner,
-     * otherwise cancel and re-arm (e.g. 100 ms retry → 10 ms defer).
+     * outstanding remains set after expiry until the callback starts.
+     * While active, keep the earlier deadline (e.g. retry → defer).
      */
-    if (osi_alarm_is_active(s_hci->send_alarm)) {
-        UINT32 remaining = (UINT32)osi_alarm_get_remaining_ms(s_hci->send_alarm);
-
-        if (remaining <= delay_ms) {
-            return;
-        }
-        osi_alarm_cancel(s_hci->send_alarm);
+    sooner_than = delay_ms;
+    if (s_hci->alarm_outstanding &&
+            osi_alarm_cancel_active(alarm, &sooner_than) != OSI_ALARM_ERR_PASS) {
+        hci_unlock();
+        return;
     }
 
-    osi_alarm_set(s_hci->send_alarm, delay_ms);
+    s_hci->alarm_outstanding = TRUE;
+    if (osi_alarm_set(alarm, delay_ms) != OSI_ALARM_ERR_PASS) {
+        s_hci->alarm_outstanding = FALSE;
+    }
+    hci_unlock();
 }
 
 static void hci_c2h_credit_kick(BOOLEAN force)
@@ -485,7 +518,7 @@ static void hci_c2h_credit_kick(BOOLEAN force)
     }
 
     if (s_hci->flush_ready != NULL && hci_get_current_thread() != NULL) {
-        if (!osi_thread_post_event(s_hci->flush_ready, 0)) {
+        if (!c2h_post_event(s_hci->flush_ready)) {
             hci_schedule_send(C2H_CREDIT_RETRY_DELAY_MS);
         }
         return;
@@ -531,13 +564,12 @@ static void hci_c2h_credit_flush_now(BOOLEAN force)
 
     if (!force && pending_pkts < C2H_CREDIT_FLUSH_MIN) {
         if (!alarm_active) {
-            hci_schedule_send(C2H_CREDIT_DEFER_DELAY_MS);
+            hci_schedule_send(C2H_CREDIT_HCI_DEFER_MS);
         }
         return;
     }
 
-    hci_cancel_send_alarm();
-
+    /* An armed alarm still covers host-tab credits. An empty HCI tab only spins. */
     for (;;) {
         hci_lock();
         if (!tab_extract_cmd(&s_hci->pending, &num_ents, handles, num_pkts)) {
@@ -547,11 +579,19 @@ static void hci_c2h_credit_flush_now(BOOLEAN force)
         hci_unlock();
 
         if (!c2h_btsnd_host_num_xmitted_pkts(num_ents, handles, num_pkts)) {
+            BOOLEAN closing;
+
             hci_lock();
-            tab_restore(&s_hci->pending, num_ents, handles, num_pkts);
+            closing = s_hci->closing;
+            if (!closing) {
+                /* btsnd failed: keep the batch and arm a retry. */
+                tab_restore(&s_hci->pending, num_ents, handles, num_pkts);
+            }
             hci_unlock();
 
-            hci_schedule_send(C2H_CREDIT_RETRY_DELAY_MS);
+            if (!closing) {
+                hci_schedule_send(C2H_CREDIT_RETRY_DELAY_MS);
+            }
             return;
         }
 
@@ -561,7 +601,7 @@ static void hci_c2h_credit_flush_now(BOOLEAN force)
             hci_unlock();
 
             if (pending_pkts != 0) {
-                hci_schedule_send(C2H_CREDIT_DEFER_DELAY_MS);
+                hci_schedule_send(C2H_CREDIT_HCI_DEFER_MS);
             }
             return;
         }
@@ -573,6 +613,10 @@ static void hci_flush_ready_handler(void *param)
     BOOLEAN force = FALSE;
 
     UNUSED(param);
+
+#if defined(BT_BLUEDROID_UNIT_TEST)
+    c2h_run_test_hook(s_flush_ready_hook);
+#endif
 
     if (s_hci != NULL) {
         hci_lock();
@@ -627,12 +671,17 @@ static void hci_send_alarm_cb(void *param)
 
     UNUSED(param);
 
+#if defined(BT_BLUEDROID_UNIT_TEST)
+    c2h_run_test_hook(s_send_alarm_hook);
+#endif
+
     if (s_hci == NULL) {
         return;
     }
 
     hci_lock();
     closing = s_hci->closing;
+    s_hci->alarm_outstanding = FALSE;
     hci_unlock();
 
     if (closing) {
@@ -641,10 +690,12 @@ static void hci_send_alarm_cb(void *param)
 
     /* Host tab is BTU-owned: never drain it on the alarm thread. */
     if (s_host != NULL && s_host->drain_ready != NULL && btu_get_current_thread() != NULL) {
-        if (osi_thread_post_event(s_host->drain_ready, 0)) {
+        if (c2h_post_event(s_host->drain_ready)) {
             return;
         }
+
         hci_schedule_send(C2H_CREDIT_RETRY_DELAY_MS);
+        return;
     }
 
     hci_c2h_credit_kick(TRUE);
@@ -659,9 +710,8 @@ static bool hci_bind_flush_ready(void)
     }
 
 #if defined(BT_BLUEDROID_UNIT_TEST)
-    /* Harness never starts hciT; bind to the test worker so init cannot
-     * succeed with a NULL flush_ready. Kick still inlines when
-     * hci_get_current_thread() is NULL. */
+    /* No HCI thread in this case: bind the test worker so init can succeed.
+     * Kick still inlines while hci_get_current_thread() is NULL. */
     if (thread == NULL) {
         thread = btu_get_current_thread();
     }
@@ -708,12 +758,21 @@ bool hci_c2h_credit_init(void)
     hci_lock();
     s_hci->closing = FALSE;
     s_hci->force_send = FALSE;
+    s_hci->alarm_outstanding = FALSE;
     tab_clear(&s_hci->pending);
     tab_clear(&s_hci->mail);
     hci_unlock();
 
     if (s_hci->send_alarm == NULL) {
-        s_hci->send_alarm = osi_alarm_new("c2h_send", hci_send_alarm_cb, NULL, hci_get_current_thread());
+        osi_thread_t *post_thread = hci_get_current_thread();
+
+#if defined(BT_BLUEDROID_UNIT_TEST)
+        /* Harness has no HCI thread and no BTC thread. Run the callback on its BTU worker. */
+        if (post_thread == NULL && btc_get_current_thread() == NULL) {
+            post_thread = btu_get_current_thread();
+        }
+#endif
+        s_hci->send_alarm = osi_alarm_new("c2h_send", hci_send_alarm_cb, NULL, post_thread);
         if (s_hci->send_alarm == NULL) {
             HCI_TRACE_ERROR("c2h credit send_alarm create failed");
             hci_c2h_credit_deinit();
@@ -739,28 +798,26 @@ void hci_c2h_credit_close(void)
         return;
     }
 
-    hci_cancel_send_alarm();
-
-    /* Send mail + pending before refusing new credits. */
-    hci_c2h_credit_flush_now(TRUE);
-
     hci_lock();
     s_hci->closing = TRUE;
     s_hci->force_send = FALSE;
     hci_unlock();
 
-    /* Catch account/handoff that raced in before closing was set. */
+    hci_cancel_send_alarm();
+
+    /* BTU close handed off first; reject new credits while flushing them. */
     hci_c2h_credit_flush_now(TRUE);
 
     hci_lock();
     tab_clear(&s_hci->mail);
     tab_clear(&s_hci->pending);
-    hci_unlock();
-
+    /* Cancel leaves this set once the timer has already expired. */
+    s_hci->alarm_outstanding = FALSE;
     send_alarm = s_hci->send_alarm;
     s_hci->send_alarm = NULL;
     flush_ready = s_hci->flush_ready;
     s_hci->flush_ready = NULL;
+    hci_unlock();
 
     if (send_alarm != NULL) {
         osi_alarm_free(send_alarm);
@@ -881,7 +938,7 @@ void hci_c2h_credit_flush(void)
         return;
     }
 
-    hci_schedule_send(C2H_CREDIT_DEFER_DELAY_MS);
+    hci_schedule_send(C2H_CREDIT_HCI_DEFER_MS);
 }
 
 bool btu_c2h_credit_init(void)
@@ -898,6 +955,8 @@ bool btu_c2h_credit_init(void)
 
     s_host->flags = C2H_CREDIT_FLAG_ENABLED;
     tab_clear(&s_host->tab);
+    s_host->interval_ewma = 0;
+    s_host->last_account_ms = 0;
 
     btu_thread = btu_get_current_thread();
     if (btu_thread == NULL) {
@@ -967,6 +1026,101 @@ void btu_c2h_credit_add(UINT16 handle, UINT16 num)
     btu_c2h_credit_add_n(1, &handle, &num);
 }
 
+static UINT32 host_interval_ms(void)
+{
+    return s_host->interval_ewma >> C2H_CREDIT_EWMA_SHIFT;
+}
+
+/* 7/8 history + sample, kept in 1/8 ms so a step under 8 ms still accumulates. */
+static void host_note_sample(UINT32 sample_ms)
+{
+    if (!(s_host->flags & C2H_CREDIT_FLAG_RATE_VALID)) {
+        s_host->interval_ewma = sample_ms << C2H_CREDIT_EWMA_SHIFT;
+        s_host->flags |= C2H_CREDIT_FLAG_RATE_VALID;
+        return;
+    }
+
+    s_host->interval_ewma -= s_host->interval_ewma >> C2H_CREDIT_EWMA_SHIFT;
+    s_host->interval_ewma += sample_ms;
+}
+
+static void host_update_rate(UINT32 batch_pkts)
+{
+    UINT32 now_ms;
+    UINT32 elapsed_ms;
+    UINT32 sample_ms;
+
+    if (s_host == NULL || batch_pkts == 0) {
+        return;
+    }
+
+    now_ms = osi_time_get_os_boottime_ms();
+    if (s_host->last_account_ms == 0) {
+        s_host->last_account_ms = now_ms;
+        s_host->flags &= ~C2H_CREDIT_FLAG_RATE_VALID;
+        return;
+    }
+
+    elapsed_ms = now_ms - s_host->last_account_ms;
+    s_host->last_account_ms = now_ms;
+    /* Do not carry a stale high-rate estimate across a traffic idle gap. */
+    if (elapsed_ms > C2H_CREDIT_RATE_IDLE_MS) {
+        s_host->interval_ewma = 0;
+        s_host->flags &= ~C2H_CREDIT_FLAG_RATE_VALID;
+        return;
+    }
+
+    /* A BTU batch represents packets accumulated since the previous account. */
+    sample_ms = elapsed_ms / batch_pkts;
+    if (sample_ms == 0) {
+        /* Multiple batches may be accounted in the same millisecond. */
+        sample_ms = 1;
+    } else if (sample_ms > C2H_CREDIT_RATE_IDLE_MS) {
+        sample_ms = C2H_CREDIT_RATE_IDLE_MS;
+    }
+
+    host_note_sample(sample_ms);
+}
+
+static UINT32 calc_defer_delay_ms(UINT32 interval_ms, BOOLEAN rate_valid,
+                                  UINT32 pending_pkts)
+{
+    uint64_t wait_ms;
+    UINT32 delay_ms;
+
+    if (pending_pkts >= C2H_CREDIT_FLUSH_MIN) {
+        return 0;
+    }
+
+    if (!rate_valid) {
+        return C2H_CREDIT_DEFER_COLD_MS;
+    }
+
+    /* Estimate how long the missing credits need to complete one batch. */
+    wait_ms = (uint64_t)interval_ms *
+              (C2H_CREDIT_FLUSH_MIN - pending_pkts);
+    delay_ms = (UINT32)wait_ms;
+    if (delay_ms < C2H_CREDIT_DEFER_MIN_MS) {
+        return C2H_CREDIT_DEFER_MIN_MS;
+    }
+    if (delay_ms > C2H_CREDIT_DEFER_MAX_MS) {
+        return C2H_CREDIT_DEFER_MAX_MS;
+    }
+
+    return delay_ms;
+}
+
+static UINT32 host_defer_delay_ms(UINT32 pending_pkts)
+{
+    if (s_host == NULL) {
+        return C2H_CREDIT_DEFER_COLD_MS;
+    }
+
+    return calc_defer_delay_ms(host_interval_ms(),
+                               (s_host->flags & C2H_CREDIT_FLAG_RATE_VALID) != 0,
+                               pending_pkts);
+}
+
 static void host_make_room(UINT16 handle)
 {
     if (host_blocked()) {
@@ -984,6 +1138,7 @@ static void host_make_room(UINT16 handle)
 void btu_c2h_credit_add_n(UINT8 num_ents, const UINT16 *handles, const UINT16 *num_pkts)
 {
     UINT8 i;
+    UINT32 batch_pkts = 0;
 
     if (num_ents == 0 || handles == NULL || num_pkts == NULL || s_host == NULL) {
         return;
@@ -993,6 +1148,11 @@ void btu_c2h_credit_add_n(UINT8 num_ents, const UINT16 *handles, const UINT16 *n
             C2H_CREDIT_FLAG_ENABLED) {
         return;
     }
+
+    for (i = 0; i < num_ents; i++) {
+        batch_pkts += num_pkts[i];
+    }
+    host_update_rate(batch_pkts);
 
     for (i = 0; i < num_ents; i++) {
         if (num_pkts[i] == 0) {
@@ -1029,21 +1189,21 @@ void btu_c2h_credit_post(UINT16 handle, UINT16 num)
 
 void btu_c2h_credit_flush(void)
 {
+    UINT32 delay_ms;
+
     if (s_host == NULL || host_blocked() || s_host->tab.pending_pkts == 0) {
         return;
     }
 
-    /*
-     * Coalesce on the BTU host tab below FLUSH_MIN to avoid per-packet lock.
-     * Arm 10 ms so a slow trickle still drains via BTU→mail→hciT.
-     */
+    /* Coalesce below FLUSH_MIN; slow traffic gets a longer bounded window. */
     if (s_host->tab.pending_pkts < C2H_CREDIT_FLUSH_MIN) {
-        hci_schedule_send(C2H_CREDIT_DEFER_DELAY_MS);
+        delay_ms = host_defer_delay_ms(s_host->tab.pending_pkts);
+        hci_schedule_send(delay_ms);
         return;
     }
 
     if (host_handoff_to_mail() != 0) {
-        hci_schedule_send(C2H_CREDIT_DEFER_DELAY_MS);
+        hci_c2h_credit_kick(TRUE);
     }
 }
 
@@ -1083,6 +1243,8 @@ void btu_c2h_credit_flush_and_purge(UINT16 handle)
     }
 
     if (!closing) {
+        /* kick cancels the shared alarm. Move any other deferred handle first. */
+        (void)host_handoff_to_mail();
         hci_c2h_credit_kick(TRUE);
     }
 }
@@ -1091,7 +1253,9 @@ void btu_c2h_credit_reset(void)
 {
     if (s_host != NULL) {
         tab_clear(&s_host->tab);
-        s_host->flags &= ~C2H_CREDIT_FLAG_PAUSED;
+        s_host->flags &= ~(C2H_CREDIT_FLAG_PAUSED | C2H_CREDIT_FLAG_RATE_VALID);
+        s_host->interval_ewma = 0;
+        s_host->last_account_ms = 0;
     }
 
     if (s_hci != NULL) {
@@ -1213,6 +1377,16 @@ void hci_c2h_credit_test_set_btsnd_fail(bool fail)
     s_force_btsnd_fail = fail;
 }
 
+void hci_c2h_credit_test_set_flush_ready_hook(void (*hook)(void))
+{
+    s_flush_ready_hook = hook;
+}
+
+void hci_c2h_credit_test_set_send_alarm_hook(void (*hook)(void))
+{
+    s_send_alarm_hook = hook;
+}
+
 UINT32 hci_c2h_credit_pending_pkts(void)
 {
     UINT32 pending;
@@ -1225,6 +1399,47 @@ UINT32 hci_c2h_credit_pending_pkts(void)
     pending = s_hci->mail.pending_pkts + s_hci->pending.pending_pkts;
     hci_unlock();
     return pending;
+}
+
+bool hci_c2h_credit_flush_alarm_is_outstanding(void)
+{
+    BOOLEAN outstanding;
+
+    if (s_hci == NULL) {
+        return false;
+    }
+
+    hci_lock();
+    outstanding = s_hci->alarm_outstanding;
+    hci_unlock();
+    return outstanding;
+}
+
+UINT32 btu_c2h_credit_interval_ewma_ms(void)
+{
+    if (s_host == NULL || !(s_host->flags & C2H_CREDIT_FLAG_RATE_VALID)) {
+        return 0;
+    }
+
+    return host_interval_ms();
+}
+
+void btu_c2h_credit_test_sample_ms(UINT32 sample_ms)
+{
+    if (s_host == NULL || sample_ms == 0) {
+        return;
+    }
+
+    if (sample_ms > C2H_CREDIT_RATE_IDLE_MS) {
+        sample_ms = C2H_CREDIT_RATE_IDLE_MS;
+    }
+
+    host_note_sample(sample_ms);
+}
+
+UINT32 btu_c2h_credit_test_defer_delay_ms(UINT32 interval_ms, UINT32 pending_pkts)
+{
+    return calc_defer_delay_ms(interval_ms, interval_ms != 0, pending_pkts);
 }
 #endif /* defined(BT_BLUEDROID_UNIT_TEST) */
 
