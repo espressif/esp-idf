@@ -36,6 +36,7 @@ Guides
    idf-as-library
    multiple-binaries
    multiple-configurations
+   subprojects
    build-event-callbacks
 
 Reference
