@@ -134,7 +134,7 @@ SECONDARY: 151: nvs_sec_provider_register_hmac_scheme in components/nvs_sec_prov
 SECONDARY: 160: esp_riscv_trace_early_init in components/esp_riscv_trace/src/esp_riscv_trace.c on ESP_SYSTEM_INIT_ALL_CORES
 
 # esp_privilege doesn't have init dependencies, U-mode code runs only once the scheduler runs
-SECONDARY: 170: init_privilege_user_traps in components/esp_privilege/port/riscv/user_mode_init.c on BIT(0)
+SECONDARY: 170: init_privilege_user_traps in components/esp_privilege/port/riscv/privilege_user_mode.c on BIT(0)
 
 # the rest of the components which are initialized from startup_funcs.c
 # [refactor-todo]: move init calls into respective components

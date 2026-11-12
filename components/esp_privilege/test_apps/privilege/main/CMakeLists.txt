@@ -2,8 +2,7 @@ idf_component_register(SRCS "test_app_main.c"
                             "test_privilege.c"
                             "privilege_test_fixture.c"
                             "privilege_code.c"
-                       PRIV_INCLUDE_DIRS "../../../private_include"
-                       PRIV_REQUIRES esp_privilege unity esp_system
+                       PRIV_REQUIRES esp_privilege unity
                        WHOLE_ARCHIVE)
 
 # The code running in U-mode must not use the HWLP/PIE extensions, their state CSRs are only accessible

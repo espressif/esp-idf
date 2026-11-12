@@ -9,7 +9,6 @@
 #include "unity.h"
 #include "unity_test_runner.h"
 #include "unity_test_utils_memory.h"
-#include "privilege_code.h"
 
 #define TEST_MEMORY_LEAK_THRESHOLD (-300)
 
@@ -28,7 +27,5 @@ void tearDown(void)
 
 void app_main(void)
 {
-    // The tests rely on preempting the tasks they create
-    vTaskPrioritySet(NULL, TEST_MAIN_TASK_PRIO);
     unity_run_menu();
 }
