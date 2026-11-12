@@ -45,6 +45,7 @@ tools/ci/sg_rules/*
 tools/ci/sort_yaml.py
 tools/ci/test/test_doc_auto_translate.py
 tools/ci/utils.sh
+tools/clangd-config.yaml
 tools/docs/gen_version_specific_includes.py
 tools/eclipse-code-style.xml
 tools/format.sh

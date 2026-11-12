@@ -261,19 +261,7 @@
       "license": "Apache-2.0",
       "name": "esp-clang",
       "supported_targets": [
-        "esp32",
-        "esp32s2",
-        "esp32s3",
-        "esp32c3",
-        "esp32c2",
-        "esp32c6",
-        "esp32c5",
-        "esp32h2",
-        "esp32p4",
-        "esp32c61",
-        "esp32h21",
-        "esp32h4",
-        "esp32s31"
+        "all"
       ],
       "version_cmd": [
         "clang",
@@ -283,36 +271,36 @@
       "versions": [
         {
           "linux-amd64": {
-            "sha256": "6e62bf1973b57b5388aad281ce1463e953e70b3d8df74ef4668c70f31fbeda63",
-            "size": 416927952,
-            "url": "https://github.com/espressif/llvm-project/releases/download/esp-21.1.3_20260408/clang-esp-21.1.3_20260408-x86_64-linux-gnu.tar.xz"
+            "sha256": "4700ed4eb331d70d2e8b0846a233b299f43f958d2ab824ce886764d8bd6eb0a1",
+            "size": 430529640,
+            "url": "https://github.com/espressif/llvm-project/releases/download/esp-22.1.4_20260825/clang-esp-22.1.4_20260825-x86_64-linux-gnu.tar.xz"
           },
           "linux-arm64": {
-            "sha256": "a25e5446ba3aa4bccfafa4328cec240c5b1ae7638978d868c26777c4ceca241b",
-            "size": 371652712,
-            "url": "https://github.com/espressif/llvm-project/releases/download/esp-21.1.3_20260408/clang-esp-21.1.3_20260408-aarch64-linux-gnu.tar.xz"
+            "sha256": "f194646d7bda2ddcdb2e016421a34177bf0eb115b5379256f4f3aa01f623cdf7",
+            "size": 418223344,
+            "url": "https://github.com/espressif/llvm-project/releases/download/esp-22.1.4_20260825/clang-esp-22.1.4_20260825-aarch64-linux-gnu.tar.xz"
           },
           "linux-armhf": {
-            "sha256": "dea30c6e3548aea856e047727054b8d9fe91dcf19dbb76ae426951a8bc7d960e",
-            "size": 383104848,
-            "url": "https://github.com/espressif/llvm-project/releases/download/esp-21.1.3_20260408/clang-esp-21.1.3_20260408-arm-linux-gnueabihf.tar.xz"
+            "sha256": "259b214a26aecc3a5ccb7fcb44010005c3f8bde5935f2882cc074b5990dfc488",
+            "size": 424614728,
+            "url": "https://github.com/espressif/llvm-project/releases/download/esp-22.1.4_20260825/clang-esp-22.1.4_20260825-arm-linux-gnueabihf.tar.xz"
           },
           "macos": {
-            "sha256": "0096cbd1713b226bb403b19547003918943ec3294481d2a69c1596c9597f1ba5",
-            "size": 362965152,
-            "url": "https://github.com/espressif/llvm-project/releases/download/esp-21.1.3_20260408/clang-esp-21.1.3_20260408-x86_64-apple-darwin.tar.xz"
+            "sha256": "1fc6fc8a2e4024dab9c08d9ad6a86bc1595e517d8a51574cccf5208749698cf1",
+            "size": 394691564,
+            "url": "https://github.com/espressif/llvm-project/releases/download/esp-22.1.4_20260825/clang-esp-22.1.4_20260825-x86_64-apple-darwin.tar.xz"
           },
           "macos-arm64": {
-            "sha256": "b04a345c7b4125400e4de78734cece01147e0cc43b57aeef846ef3b8ff57ef7d",
-            "size": 340183960,
-            "url": "https://github.com/espressif/llvm-project/releases/download/esp-21.1.3_20260408/clang-esp-21.1.3_20260408-aarch64-apple-darwin.tar.xz"
+            "sha256": "2644010ec3da4a2db653dda99260c2a39d93625452e3bfb9e9b26c035b23e43c",
+            "size": 365987172,
+            "url": "https://github.com/espressif/llvm-project/releases/download/esp-22.1.4_20260825/clang-esp-22.1.4_20260825-aarch64-apple-darwin.tar.xz"
           },
-          "name": "esp-21.1.3_20260408",
+          "name": "esp-22.1.4_20260825",
           "status": "recommended",
           "win64": {
-            "sha256": "415566ace6f47a9abc302b4ba79776d27668fd3f4e9c0d26861ec4f970323618",
-            "size": 426383328,
-            "url": "https://github.com/espressif/llvm-project/releases/download/esp-21.1.3_20260408/clang-esp-21.1.3_20260408-x86_64-w64-mingw32.tar.xz"
+            "sha256": "c0f6ac1109273f6634ba5d067c993ab4589e94efe2e080b40f60662afa7bf9f9",
+            "size": 455828696,
+            "url": "https://github.com/espressif/llvm-project/releases/download/esp-22.1.4_20260825/clang-esp-22.1.4_20260825-x86_64-w64-mingw32.tar.xz"
           }
         }
       ]
@@ -328,18 +316,7 @@
       "license": "Apache-2.0",
       "name": "esp-clang-libs",
       "supported_targets": [
-        "esp32",
-        "esp32s2",
-        "esp32s3",
-        "esp32c3",
-        "esp32c2",
-        "esp32c6",
-        "esp32c5",
-        "esp32h2",
-        "esp32p4",
-        "esp32c61",
-        "esp32h21",
-        "esp32s31"
+        "all"
       ],
       "tool_info_file": "esp-clang/esp-clang-libs.info",
       "version_cmd": [],
@@ -347,36 +324,36 @@
       "versions": [
         {
           "linux-amd64": {
-            "sha256": "c75406f5f0a1fe9692cdf6e6628cbbdf3f25e5721bb58d5e5540ea756d1197f3",
-            "size": 83267264,
-            "url": "https://github.com/espressif/llvm-project/releases/download/esp-21.1.3_20260408/libs-clang-esp-21.1.3_20260408-x86_64-linux-gnu.tar.xz"
+            "sha256": "34fa17a12ccdfc4b23c36928aed81ef6bd52af305a5246edf3712cc59129197b",
+            "size": 81024152,
+            "url": "https://github.com/espressif/llvm-project/releases/download/esp-22.1.4_20260825/libs-clang-esp-22.1.4_20260825-x86_64-linux-gnu.tar.xz"
           },
           "linux-arm64": {
-            "sha256": "a3d89fcb12b59b7b96a20c05e32a4c7ffe3400f965c153310137ffa02e27ec38",
-            "size": 72333960,
-            "url": "https://github.com/espressif/llvm-project/releases/download/esp-21.1.3_20260408/libs-clang-esp-21.1.3_20260408-aarch64-linux-gnu.tar.xz"
+            "sha256": "2156745a7939d8c985400faa0d12eacc83edbe69108958dbbe8002559145dccc",
+            "size": 73866304,
+            "url": "https://github.com/espressif/llvm-project/releases/download/esp-22.1.4_20260825/libs-clang-esp-22.1.4_20260825-aarch64-linux-gnu.tar.xz"
           },
           "linux-armhf": {
-            "sha256": "79995c0ce185aad89b3f96d097e6ca6c0273cccf47961c5e6c89d6cd494ea0d0",
-            "size": 75211944,
-            "url": "https://github.com/espressif/llvm-project/releases/download/esp-21.1.3_20260408/libs-clang-esp-21.1.3_20260408-arm-linux-gnueabihf.tar.xz"
+            "sha256": "2eb4ae6edf57460629ffa999411b5b8d42751230ada09af2855a5bc4062eb12d",
+            "size": 77172044,
+            "url": "https://github.com/espressif/llvm-project/releases/download/esp-22.1.4_20260825/libs-clang-esp-22.1.4_20260825-arm-linux-gnueabihf.tar.xz"
           },
           "macos": {
-            "sha256": "2e3c51ffa570f7f3ea562686b3fef1a1c07a541096ac291b9bb8bfbac7b82f9c",
-            "size": 59725364,
-            "url": "https://github.com/espressif/llvm-project/releases/download/esp-21.1.3_20260408/libs-clang-esp-21.1.3_20260408-x86_64-apple-darwin.tar.xz"
+            "sha256": "cb4ddf0bec9f87bcf0cdf353890ec6f75e9932d79a1b93f15b0e96cf5c073bfa",
+            "size": 61897376,
+            "url": "https://github.com/espressif/llvm-project/releases/download/esp-22.1.4_20260825/libs-clang-esp-22.1.4_20260825-x86_64-apple-darwin.tar.xz"
           },
           "macos-arm64": {
-            "sha256": "b524f0f36c6b8897b5dc2a85f66102cc44a2d1dcfdde15fa96796b7c1778b8d3",
-            "size": 50260232,
-            "url": "https://github.com/espressif/llvm-project/releases/download/esp-21.1.3_20260408/libs-clang-esp-21.1.3_20260408-aarch64-apple-darwin.tar.xz"
+            "sha256": "4452dd5f3b7ac01893b642ea9a89d22d8b70a3574e186faaae4e4ac7c8ae280b",
+            "size": 52145528,
+            "url": "https://github.com/espressif/llvm-project/releases/download/esp-22.1.4_20260825/libs-clang-esp-22.1.4_20260825-aarch64-apple-darwin.tar.xz"
           },
-          "name": "esp-21.1.3_20260408",
+          "name": "esp-22.1.4_20260825",
           "status": "recommended",
           "win64": {
-            "sha256": "00cc2ba925b6d807d722635516a1c44ce3e82cb9f01a2ea9385f19e6cb88c7c5",
-            "size": 43058104,
-            "url": "https://github.com/espressif/llvm-project/releases/download/esp-21.1.3_20260408/libs-clang-esp-21.1.3_20260408-x86_64-w64-mingw32.tar.xz"
+            "sha256": "195176e704b7035ed21ccb653bdd1651abf5d3346c5ed50c8591646100ea59ef",
+            "size": 44456856,
+            "url": "https://github.com/espressif/llvm-project/releases/download/esp-22.1.4_20260825/libs-clang-esp-22.1.4_20260825-x86_64-w64-mingw32.tar.xz"
           }
         }
       ]
@@ -1110,19 +1087,7 @@
       "license": "Apache-2.0",
       "name": "esp-clangd",
       "supported_targets": [
-        "esp32",
-        "esp32s2",
-        "esp32s3",
-        "esp32c3",
-        "esp32c2",
-        "esp32c6",
-        "esp32c5",
-        "esp32h2",
-        "esp32p4",
-        "esp32c61",
-        "esp32h21",
-        "esp32h4",
-        "esp32s31"
+        "all"
       ],
       "version_cmd": [
         "clangd",
@@ -1132,36 +1097,36 @@
       "versions": [
         {
           "linux-amd64": {
-            "sha256": "7133e67db271ca96b30ec9f5c34c903eaf5fe10120cfe44f85eb88db7ddbe230",
-            "size": 17077740,
-            "url": "https://github.com/espressif/llvm-project/releases/download/esp-21.1.3_20260408/clangd-esp-21.1.3_20260408-x86_64-linux-gnu.tar.xz"
+            "sha256": "b467908e16c367d6ea7da824a539cb3d5b3edafb94b15a26e7fb1246e3f9dca5",
+            "size": 17181620,
+            "url": "https://github.com/espressif/llvm-project/releases/download/esp-22.1.4_20260825/clangd-esp-22.1.4_20260825-x86_64-linux-gnu.tar.xz"
           },
           "linux-arm64": {
-            "sha256": "468e6fa03def6bcf0c0469d25b8d8b86212e5a94716d0b3db149f21b77791c54",
-            "size": 14706612,
-            "url": "https://github.com/espressif/llvm-project/releases/download/esp-21.1.3_20260408/clangd-esp-21.1.3_20260408-aarch64-linux-gnu.tar.xz"
+            "sha256": "1b859fb02713a455ee1f914d930dfa11022a7e4909be768cc9081104c3203e55",
+            "size": 15920868,
+            "url": "https://github.com/espressif/llvm-project/releases/download/esp-22.1.4_20260825/clangd-esp-22.1.4_20260825-aarch64-linux-gnu.tar.xz"
           },
           "linux-armhf": {
-            "sha256": "401a3b08011de2a52af6ed729ddf49f970072047886423b148a3cae980e1ef2d",
-            "size": 15367384,
-            "url": "https://github.com/espressif/llvm-project/releases/download/esp-21.1.3_20260408/clangd-esp-21.1.3_20260408-arm-linux-gnueabihf.tar.xz"
+            "sha256": "34521ff00bb618cafd5f4550a9973056be015d6048a9803eb0525c5d6e80123c",
+            "size": 16560032,
+            "url": "https://github.com/espressif/llvm-project/releases/download/esp-22.1.4_20260825/clangd-esp-22.1.4_20260825-arm-linux-gnueabihf.tar.xz"
           },
           "macos": {
-            "sha256": "cb8ac31ea7f8e20da69cea9e1720500571c8f2bae335eb1721b676f7ef3950fe",
-            "size": 12662520,
-            "url": "https://github.com/espressif/llvm-project/releases/download/esp-21.1.3_20260408/clangd-esp-21.1.3_20260408-x86_64-apple-darwin.tar.xz"
+            "sha256": "a486f23b3ab5f39c86287f8a76c252ae397a306f42a31f95c04632a65b454d20",
+            "size": 13808748,
+            "url": "https://github.com/espressif/llvm-project/releases/download/esp-22.1.4_20260825/clangd-esp-22.1.4_20260825-x86_64-apple-darwin.tar.xz"
           },
           "macos-arm64": {
-            "sha256": "6dccab9acc9766c90383e9b2585fa1cfabad6125bdc32987a86a02cea598970d",
-            "size": 10995644,
-            "url": "https://github.com/espressif/llvm-project/releases/download/esp-21.1.3_20260408/clangd-esp-21.1.3_20260408-aarch64-apple-darwin.tar.xz"
+            "sha256": "71c8cb58f3937784802c4f88d5c3dbc944932db7cf3988f1648ddad6c2077aa0",
+            "size": 12103048,
+            "url": "https://github.com/espressif/llvm-project/releases/download/esp-22.1.4_20260825/clangd-esp-22.1.4_20260825-aarch64-apple-darwin.tar.xz"
           },
-          "name": "esp-21.1.3_20260408",
+          "name": "esp-22.1.4_20260825",
           "status": "recommended",
           "win64": {
-            "sha256": "1a91c04bb570e0740eede529b20c98c2dd0be6750eb7d91a7226e19f3d88d490",
-            "size": 14144936,
-            "url": "https://github.com/espressif/llvm-project/releases/download/esp-21.1.3_20260408/clangd-esp-21.1.3_20260408-x86_64-w64-mingw32.tar.xz"
+            "sha256": "b97a556c4c9db48bfa12c3822df97f3ebab1a595eaeb074e58b05b74e6d1a691",
+            "size": 15254640,
+            "url": "https://github.com/espressif/llvm-project/releases/download/esp-22.1.4_20260825/clangd-esp-22.1.4_20260825-x86_64-w64-mingw32.tar.xz"
           }
         }
       ]
@@ -1235,6 +1200,64 @@
             "sha256": "993335dafa6af3aa55a058eaff439b0454612b9bec0ae7bada4fb3cb0a8d1f14",
             "size": 118222,
             "url": "https://github.com/espressif/esp-idf-configdep/releases/download/v0.2.3/esp-idf-configdep-0.2.3-win-x86_64.zip"
+          }
+        }
+      ]
+    },
+    {
+      "description": "LLD linker for all Espressif chips",
+      "export_paths": [
+        [
+          "esp-lld",
+          "bin"
+        ]
+      ],
+      "export_vars": {},
+      "info_url": "https://github.com/espressif/llvm-project",
+      "install": "on_request",
+      "license": "Apache-2.0",
+      "name": "esp-lld",
+      "supported_targets": [
+        "all"
+      ],
+      "version_cmd": [
+        "ld.lld",
+        "--version"
+      ],
+      "version_regex": "Espressif\\s+LLD\\s+([0-9.]+)",
+      "versions": [
+        {
+          "linux-amd64": {
+            "sha256": "62b6b572a0e9c930da0dcb17b642737feafbe1fbbfc207d02d07213d0969b681",
+            "size": 21489940,
+            "url": "https://github.com/espressif/llvm-project/releases/download/esp-22.1.4_20260825/lld-esp-22.1.4_20260825-x86_64-linux-gnu.tar.xz"
+          },
+          "linux-arm64": {
+            "sha256": "cc5d925d55fb040f01438c64ad91be1019e0e027ea14d9fd99201f458d6627cf",
+            "size": 19581708,
+            "url": "https://github.com/espressif/llvm-project/releases/download/esp-22.1.4_20260825/lld-esp-22.1.4_20260825-aarch64-linux-gnu.tar.xz"
+          },
+          "linux-armhf": {
+            "sha256": "57dfa95dad9018264f694d487362b785b31aa54200523289a201dc46e09b62f8",
+            "size": 20665652,
+            "url": "https://github.com/espressif/llvm-project/releases/download/esp-22.1.4_20260825/lld-esp-22.1.4_20260825-arm-linux-gnueabihf.tar.xz"
+          },
+          "macos": {
+            "sha256": "4ab28c2f54a5b04236f905f8d9a81eff1ae45b1348bedfa80564db95e78e3c3c",
+            "size": 16356652,
+            "url": "https://github.com/espressif/llvm-project/releases/download/esp-22.1.4_20260825/lld-esp-22.1.4_20260825-x86_64-apple-darwin.tar.xz"
+          },
+          "macos-arm64": {
+            "sha256": "71ca1793b486c7832db5f0a42a18c77ec1851205e0db9168e987c0a8e8232e2f",
+            "size": 13603364,
+            "url": "https://github.com/espressif/llvm-project/releases/download/esp-22.1.4_20260825/lld-esp-22.1.4_20260825-aarch64-apple-darwin.tar.xz"
+          },
+          "name": "22.1.4",
+          "status": "recommended",
+          "win64": {
+            "sha256": "413ec3015e7fc038cb8222e9fe95c93f18a701812e0760320808eff07f88c114",
+            "size": 34058504,
+            "url": "https://github.com/espressif/llvm-project/releases/download/esp-22.1.4_20260825/lld-esp-22.1.4_20260825-x86_64-w64-mingw32.tar.xz"
           }
         }
       ]

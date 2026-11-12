@@ -359,10 +359,10 @@ SECTIONS
 #if CONFIG_IDF_TOOLCHAIN_CLANG
     KEEP (*(SORT_BY_INIT_PRIORITY(EXCLUDE_FILE (*crtend.* *crtbegin.*) .init_array.*)))
     KEEP (*(EXCLUDE_FILE (*crtend.* *crtbegin.*) .init_array))
-#else
+    /* Clang emits .init_array for app code, but Xtensa libstdc++ still uses .ctors. */
+#endif
     KEEP (*(SORT_BY_INIT_PRIORITY(EXCLUDE_FILE (*crtend.* *crtbegin.*) .ctors.*)))
     KEEP (*(EXCLUDE_FILE (*crtend.* *crtbegin.*) .ctors))
-#endif
     __init_array_end = ABSOLUTE(.);
     __bothinit_array_end = ABSOLUTE(.);
 
