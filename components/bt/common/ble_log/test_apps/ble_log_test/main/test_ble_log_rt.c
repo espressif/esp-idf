@@ -2307,6 +2307,7 @@ TEST_CASE("BLE Log periodic snapshot ignores producer gate and fails fast when b
 typedef struct {
     SemaphoreHandle_t started;
     SemaphoreHandle_t done;
+    bool suspend_on_done;
 } waiter_ctx_t;
 
 typedef struct {
@@ -2326,7 +2327,12 @@ static void blocked_ll_writer_task(void *arg)
     xSemaphoreGive(ctx->started);
     ble_log_write_hex_ll(sizeof(marker), &marker, 0, NULL,
                          BIT(BLE_LOG_LL_FLAG_TASK));
+    bool suspend_on_done = ctx->suspend_on_done;
     xSemaphoreGive(ctx->done);
+    if (suspend_on_done) {
+        /* Keep the handle valid for the pause case's state checks and cleanup. */
+        vTaskSuspend(NULL);
+    }
     vTaskDelete(NULL);
 }
 
@@ -2353,6 +2359,132 @@ static void lifecycle_deinit_task(void *arg)
     ble_log_deinit();
     xSemaphoreGive(ctx->done);
     vTaskDelete(NULL);
+}
+
+typedef struct {
+    bool seen[BLE_LOG_POOL_SHARED_CNT];
+    size_t count;
+} pause_capture_t;
+
+static void capture_pause_frame(const test_ble_log_frame_t *frame, void *ctx)
+{
+    pause_capture_t *capture = ctx;
+    if (frame->src == BLE_LOG_SRC_LL_TASK) {
+        TEST_FAIL_MESSAGE("cancelled LL writer emitted a frame");
+    }
+    if (frame->src != BLE_LOG_SRC_CUSTOM) {
+        return;
+    }
+    TEST_ASSERT_EQUAL_size_t(BLE_LOG_MAX_PAYLOAD_LEN, frame->payload_len);
+    const uint8_t *payload = frame->payload + sizeof(uint32_t);
+    size_t index = payload[0];
+    TEST_ASSERT_LESS_THAN_size_t(BLE_LOG_POOL_SHARED_CNT, index);
+    TEST_ASSERT_FALSE(capture->seen[index]);
+    for (size_t i = 0; i < frame->payload_len - sizeof(uint32_t); i++) {
+        TEST_ASSERT_EQUAL_UINT8(index, payload[i]);
+    }
+    capture->seen[index] = true;
+    capture->count++;
+}
+
+TEST_CASE("BLE Log pause after deinit succeeds without restoring logging",
+          "[ble_log][lbm]")
+{
+    ble_log_deinit();
+    ble_log_pause();
+    bool enabled = ble_log_lbm_is_enabled();
+    /* Restore the module before reporting a failure to keep later cases usable. */
+    TEST_ASSERT_TRUE(ble_log_init());
+    TEST_ASSERT_FALSE(enabled);
+}
+
+TEST_CASE("BLE Log pause cancels a parked writer without draining queued logs",
+          "[ble_log][lbm]")
+{
+    static uint8_t payload[BLE_LOG_MAX_PAYLOAD_LEN - sizeof(uint32_t)];
+    TEST_ASSERT_TRUE(ble_log_enable(true));
+    ble_log_lbm_flush_open_trans();
+    TEST_ASSERT_TRUE(ble_log_rt_drain());
+    while (ble_log_prph_test_read(s_read_buf, sizeof(s_read_buf), 0, 0, NULL) > 0) {
+    }
+    for (int i = 0; i < BLE_LOG_POOL_SHARED_CNT; i++) {
+        memset(payload, i, sizeof(payload));
+        TEST_ASSERT_TRUE(ble_log_write_hex(BLE_LOG_SRC_CUSTOM, payload, sizeof(payload)));
+    }
+    TEST_ASSERT_TRUE(ble_log_rt_drain());
+
+    waiter_ctx_t waiter = {
+        .started = xSemaphoreCreateBinary(),
+        .done = xSemaphoreCreateBinary(),
+        .suspend_on_done = true,
+    };
+    TaskHandle_t writer = NULL;
+    if (!waiter.started || !waiter.done ||
+            xTaskCreate(blocked_ll_writer_task, "ble_log_stop",
+                        TEST_LIFECYCLE_STACK_SIZE, &waiter,
+                        TEST_LIFECYCLE_PRIO, &writer) != pdPASS) {
+        if (waiter.started) {
+            vSemaphoreDelete(waiter.started);
+        }
+        if (waiter.done) {
+            vSemaphoreDelete(waiter.done);
+        }
+        TEST_FAIL_MESSAGE("could not create pause-test writer");
+    }
+
+    /* No Unity assertions while the writer owns our stack context: a failed
+     * assertion longjmps out of the case before its local cleanup can run. */
+    bool started = xSemaphoreTake(waiter.started, pdMS_TO_TICKS(1000)) == pdTRUE;
+    TickType_t start = xTaskGetTickCount();
+    eTaskState state;
+    do {
+        state = eTaskGetState(writer);
+        if (state == eBlocked || state == eSuspended) {
+            break;
+        }
+        vTaskDelay(1);
+    } while (xTaskGetTickCount() - start < pdMS_TO_TICKS(1000));
+    bool parked = state == eBlocked;
+    ble_log_pause();
+    bool cancelled = xSemaphoreTake(waiter.done, pdMS_TO_TICKS(1000)) == pdTRUE;
+    bool gate_closed = !ble_log_lbm_is_enabled();
+
+    if (!cancelled) {
+        /* Even if cancellation regresses, recycling lets the writer return. */
+        (void)ble_log_enable(false);
+        while (ble_log_prph_test_read(s_read_buf, sizeof(s_read_buf), 0, 0, NULL) > 0) {
+        }
+        /* An unrecoverable writer must stop the run, not outlive this stack. */
+        ESP_ERROR_CHECK(xSemaphoreTake(waiter.done, pdMS_TO_TICKS(1000)) == pdTRUE ?
+                        ESP_OK : ESP_ERR_TIMEOUT);
+    }
+    start = xTaskGetTickCount();
+    while (eTaskGetState(writer) != eSuspended &&
+            xTaskGetTickCount() - start < pdMS_TO_TICKS(1000)) {
+        vTaskDelay(1);
+    }
+    ESP_ERROR_CHECK(eTaskGetState(writer) == eSuspended ? ESP_OK : ESP_ERR_TIMEOUT);
+    vTaskDelete(writer);
+    vSemaphoreDelete(waiter.started);
+    vSemaphoreDelete(waiter.done);
+    bool restored = ble_log_enable(true);
+
+    TEST_ASSERT_TRUE(started);
+    TEST_ASSERT_TRUE(parked);
+    TEST_ASSERT_TRUE(cancelled);
+    TEST_ASSERT_TRUE(gate_closed);
+    TEST_ASSERT_TRUE(restored);
+
+    ble_log_lbm_flush_open_trans();
+    TEST_ASSERT_TRUE(ble_log_rt_drain());
+    pause_capture_t capture = {0};
+    size_t len;
+    while ((len = ble_log_prph_test_read(s_read_buf, sizeof(s_read_buf), 0, 0, NULL)) > 0) {
+        TEST_ASSERT_TRUE(test_ble_log_walk_frames(s_read_buf, len, capture_pause_frame, &capture));
+    }
+    TEST_ASSERT_EQUAL_size_t(BLE_LOG_POOL_SHARED_CNT, capture.count);
+    static const uint8_t marker = 0x57;
+    TEST_ASSERT_TRUE(ble_log_write_hex(BLE_LOG_SRC_CUSTOM, &marker, sizeof(marker)));
 }
 
 TEST_CASE("BLE Log deinit closes a parked LL writer before racing enable",

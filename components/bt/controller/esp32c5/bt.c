@@ -1223,6 +1223,11 @@ esp_err_t esp_bt_controller_disable(void)
         ESP_LOGW(NIMBLE_PORT_LOG_TAG, "invalid controller state");
         return ESP_FAIL;
     }
+#if CONFIG_BT_LE_CONTROLLER_LOG_MODE_BLE_LOG_V2
+    if (log_is_inited) {
+        ble_log_pause();
+    }
+#endif
     if (r_ble_controller_disable() != 0) {
         return ESP_FAIL;
     }
@@ -1239,6 +1244,7 @@ esp_err_t esp_bt_controller_disable(void)
         s_ble_active = false;
     }
     ble_controller_status = ESP_BT_CONTROLLER_STATUS_INITED;
+    /* Keep log admission closed until log deinit. */
     return ESP_OK;
 }
 
