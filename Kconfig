@@ -486,6 +486,8 @@ mainmenu "Espressif IoT Development Framework Configuration"
                 the ZCMP extension for source files that contain functions which may
                 execute while mstatus.mie = 0.
 
+                With ESP-TEE enabled, the TEE image is always built without ZCMP.
+
         menu "LLVM optimizations"
             depends on IDF_TOOLCHAIN_CLANG && IDF_TARGET_ESP32P4
 

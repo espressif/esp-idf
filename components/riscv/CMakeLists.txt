@@ -60,11 +60,10 @@ idf_component_register(SRCS "${srcs}"
 
 target_linker_script(${COMPONENT_LIB} INTERFACE "ld/rom.api.ld")
 
-# TODO: IDF-14145
+# NOTE: Skipped with TEE: the TEE has no Zcmp and the REE runs in U-mode (no mstatus.mie)
 if(CONFIG_COMPILER_ENABLE_RISCV_ZCMP AND
    NOT CONFIG_ESP32P4_SELECTS_REV_LESS_V3 AND
-   NOT CONFIG_SECURE_ENABLE_TEE AND
-   NOT ESP_TEE_BUILD)
+   NOT CONFIG_SECURE_ENABLE_TEE)
     if(IDF_BUILD_V2)
         function(riscv_check_zcmp_workaround target)
             add_custom_command(TARGET ${target} POST_BUILD
