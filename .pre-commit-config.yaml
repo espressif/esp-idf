@@ -142,7 +142,7 @@ repos:
         pass_filenames: false
         additional_dependencies:
           - pyparsing
-          - 'esp-pylib>=1.1.0'
+          - 'esp-pylib[cli]>=1.1.0'
       - id: check-all-apps-readmes
         name: Check if all apps readme files match given .build-test-rules.yml files. Modify the supported target tables
         entry: tools/ci/check_build_test_rules.py check-readmes
@@ -202,6 +202,8 @@ repos:
         language: python
         files: 'components/.+\.h$|components/.+CMakeLists\.txt$'
         pass_filenames: false
+        additional_dependencies:
+          - 'esp-pylib>=1.1.0'
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v4.0.1
     hooks:
