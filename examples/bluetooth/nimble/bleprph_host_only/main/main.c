@@ -12,7 +12,6 @@
 #include "host/util/util.h"
 #include "services/gap/ble_svc_gap.h"
 #include "bleprph.h"
-#include "uart_driver.h"
 
 #if CONFIG_EXAMPLE_EXTENDED_ADV
 static uint8_t ext_adv_pattern_1[] = {
@@ -507,11 +506,9 @@ app_main(void)
     }
     ESP_ERROR_CHECK(ret);
 
-    hci_uart_open();
     ret = nimble_port_init();
     if (ret != ESP_OK) {
         ESP_LOGE(tag, "Failed to init nimble %d ", ret);
-        hci_uart_close();
         return;
     }
     /* Initialize the NimBLE host configuration. */
