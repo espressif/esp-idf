@@ -74,6 +74,7 @@ def test_wifi_power_save_pd_top(dut: Dut) -> None:
     'config',
     [
         'pd_modem',
+        'pd_modem_phy_init_partition',
     ],
     indirect=True,
 )
