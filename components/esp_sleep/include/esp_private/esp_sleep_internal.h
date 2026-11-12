@@ -33,6 +33,13 @@ void esp_sleep_set_sleep_context(esp_sleep_context_t *sleep_ctx);
 #endif
 
 /**
+ * @brief Enter light sleep with a deadline for the interrupt watchdog transition.
+ * @param iwdt_deadline_us Absolute esp_timer deadline in microseconds, or 0 for no sleep deadline.
+ * @return ESP_ERR_SLEEP_REJECT if the transition misses the deadline, otherwise the light sleep result.
+ */
+esp_err_t esp_light_sleep_start_with_iwdt_deadline(int64_t iwdt_deadline_us);
+
+/**
  * @brief Sleep internal runtime arguments
  */
 typedef struct {

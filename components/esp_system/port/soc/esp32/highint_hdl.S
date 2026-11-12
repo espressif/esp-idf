@@ -149,10 +149,13 @@ _lx_intr_livelock_counter:
     .word   0
 _lx_intr_livelock_max:
     .word   0
+.global _lx_intr_livelock_sync
 _lx_intr_livelock_sync:
     .word   0, 0
+.global _lx_intr_livelock_app
 _lx_intr_livelock_app:
     .word   0
+.global _lx_intr_livelock_pro
 _lx_intr_livelock_pro:
     .word   0
 #endif
