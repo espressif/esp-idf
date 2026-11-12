@@ -836,7 +836,7 @@ esp_err_t Page::mLoadEntryTable(bool allowRepair)
             size_t findItemIndex = 0;
             Item dupItem;
             if (findItem(item.nsIndex, item.datatype, item.key, findItemIndex, dupItem,
-                    CHUNK_ANY, VerOffset::VER_ANY, allowRepair) == ESP_OK) {
+                    item.chunkIndex, VerOffset::VER_ANY, allowRepair) == ESP_OK) {
                 if (findItemIndex < lastItemIndex) {
                     auto err = eraseEntryAndSpan(findItemIndex, DEFAULT_PURGE_AFTER_ERASE, allowRepair);
                     if (err != ESP_OK) {
