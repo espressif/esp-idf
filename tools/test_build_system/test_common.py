@@ -599,3 +599,19 @@ def test_sbom_create_cmd(idf_py: IdfPyFunc, test_app_copy: Path) -> None:
     logging.info('Test if sbom-create command works correctly')
     idf_py('sbom-create', '--spdx-file', 'test_app.spdx')
     assert (test_app_copy / 'test_app.spdx').is_file()
+
+
+def test_size_after_failed_build(idf_py: IdfPyFunc, test_app_copy: Path) -> None:
+    logging.info('idf.py size runs on the map file written by a link that fails on a memory region overflow')
+    main_c = test_app_copy / 'main' / 'build_test_app.c'
+    replace_in_file(main_c, '// placeholder_before_main', 'static char big_buf[1024 * 1024];')
+    replace_in_file(main_c, '// placeholder_inside_main', 'printf("%p %d\\n", big_buf, big_buf[0]);')
+    ret = idf_py('size')
+    assert 'overflowed' in ret.stdout
+    assert 'Memory Type Usage Summary' in ret.stdout
+
+    logging.info('idf.py size fails when the build fails before the link')
+    replace_in_file(main_c, 'static char big_buf[1024 * 1024];', 'this is not C;')
+    ret = idf_py('size', check=False)
+    assert ret.returncode != 0
+    assert 'Memory Type Usage Summary' not in ret.stdout
