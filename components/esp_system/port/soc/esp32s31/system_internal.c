@@ -43,8 +43,6 @@ extern int _bss_end;
 #include "soc/hp_system_reg.h"
 #include "soc/cnnt_sys_struct.h"
 
-// TODO: [ESP32S31] IDF-14841
-
 void esp_system_reset_modules_on_exit(void)
 {
     // A software reset leaves the trace encoders running, and they would write into RAM after restart
