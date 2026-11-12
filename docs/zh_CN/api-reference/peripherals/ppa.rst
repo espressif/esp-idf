@@ -121,7 +121,7 @@ PPA 操作包括：
 
     - 执行叠加操作时，:cpp:member:`ppa_out_pic_blk_config_t::buffer` 与输入的 :cpp:member:`ppa_in_pic_blk_config_t::buffer` 之一可以是指向相同图片 buffer 的指针。
     - FG 和 BG 的块宽度/高度应相同，输出块的宽度/高度值应与之一致。
-    - 如果输入图片的色彩模式为 ``PPA_BLEND_COLOR_MODE_A4``，那么其 ``block_w`` 和 ``block_offset_x`` 字段必须为偶数。
+    - 如果输入图片的色彩模式为 ``PPA_BLEND_COLOR_MODE_A4`` 或 ``PPA_BLEND_COLOR_MODE_L4``，那么其 ``block_w`` 和 ``block_offset_x`` 字段必须为偶数。
 
 填充
 ~~~~
@@ -129,6 +129,13 @@ PPA 操作包括：
 调用 :cpp:func:`ppa_do_fill` 填充图片内部的目标块。
 
 :cpp:type:`ppa_trans_mode_t` 为可配置字段，适用于所有 PPA 操作 API。可以配置该字段，在调用 PPA 操作 API 时等待操作完成后再返回，或者在事务推送到内部队列后立即返回。
+
+颜色查找表 (CLUT)
+~~~~~~~~~~~~~~~~~
+
+PPA 支持索引图片（也叫调色板图片），即其像素存储的是颜色查找表 (CLUT) 的索引，而非颜色值。调用 :cpp:func:`ppa_set_color_lookup_table` 填充 CLUT，并通过 :cpp:type:`ppa_clut_id_t` 选择目标 CLUT。
+
+使用索引图片时，需在该操作的配置中选择索引色彩模式：L8 表示每个像素为一个 8 位索引，L4 表示每个像素为一个 4 位索引。索引图片只能作为输入图片。
 
 .. _ppa-buffer-alignment:
 
@@ -176,6 +183,7 @@ PPA 操作作用于输入图片的目标块。因此，完成一次 PPA 事务�
 ^^^^^^^^^
 
 * :example:`peripherals/ppa/ppa_dsi` - 使用 DSI 显示屏的 PPA 示例。首先，该示例所使用的图像会被放大、逆时针旋转后复原、镜像后复原、缩小。其次，该图像将与一个透明度较低的全红图像叠加，`ESP32` 字样将被色键移除。最后，会在 `ESP32` 周围填充一个框。
+* :example:`peripherals/ppa/ppa_palette` - PPA 颜色查找表示例。示例将一个仪表盘界面绘制为 L8 索引图片，其像素存储的是界面元素的角色而非颜色，随后仅在每次 blend 前重新填充 CLUT，即可将整个界面切换为白天、夜间和高对比度三种主题。三张结果都会以 base64 输出，供主机端重建为 PPM 并与 golden 图像比对。
 
 API 参考
 --------

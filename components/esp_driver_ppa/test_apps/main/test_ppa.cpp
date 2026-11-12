@@ -664,6 +664,229 @@ TEST_CASE("ppa_blend_basic_data_correctness_check", "[PPA]")
 #endif
 }
 
+TEST_CASE("ppa_blend_clut_data_correctness_check", "[PPA]")
+{
+    const uint32_t w = 8;
+    const uint32_t h = 2;
+    const uint32_t num_pixels = w * h; // 16
+
+    // All palette entries are fully opaque. A blend where one layer is fully transparent then
+    // outputs exactly the color that the other layer's index expanded to, which lets the test
+    // compare against the palette byte-for-byte.
+    color_pixel_argb8888_data_t bg_palette[4] = {};
+    bg_palette[0].a = 0xFF; bg_palette[0].r = 0x12; bg_palette[0].g = 0x34; bg_palette[0].b = 0x56;
+    bg_palette[1].a = 0xFF; bg_palette[1].r = 0x78; bg_palette[1].g = 0x9A; bg_palette[1].b = 0xBC;
+    bg_palette[2].a = 0xFF; bg_palette[2].r = 0xDE; bg_palette[2].g = 0xF0; bg_palette[2].b = 0x11;
+    bg_palette[3].a = 0xFF; bg_palette[3].r = 0x22; bg_palette[3].g = 0x33; bg_palette[3].b = 0x44;
+    // A different palette for the foreground CLUT, to prove the two CLUTs are independent
+    color_pixel_argb8888_data_t fg_palette[4] = {};
+    fg_palette[0].a = 0xFF; fg_palette[0].r = 0xA1; fg_palette[0].g = 0xB2; fg_palette[0].b = 0xC3;
+    fg_palette[1].a = 0xFF; fg_palette[1].r = 0xD4; fg_palette[1].g = 0xE5; fg_palette[1].b = 0xF6;
+    fg_palette[2].a = 0xFF; fg_palette[2].r = 0x07; fg_palette[2].g = 0x18; fg_palette[2].b = 0x29;
+    fg_palette[3].a = 0xFF; fg_palette[3].r = 0x3A; fg_palette[3].g = 0x4B; fg_palette[3].b = 0x5C;
+
+    // The CLUT belongs to the blending engine, so it is not reachable before a client acquires it
+    TEST_ESP_ERR(ESP_ERR_INVALID_STATE, ppa_set_color_lookup_table(PPA_CLUT_BLEND_BG, bg_palette, 4));
+
+    ppa_client_handle_t ppa_client_handle;
+    ppa_client_config_t ppa_client_config = {};
+    ppa_client_config.oper_type = PPA_OPERATION_BLEND;
+    ppa_client_config.max_pending_trans_num = 1;
+    TEST_ESP_OK(ppa_register_client(&ppa_client_config, &ppa_client_handle));
+
+    TEST_ESP_ERR(ESP_ERR_INVALID_ARG, ppa_set_color_lookup_table(PPA_CLUT_BLEND_BG, NULL, 4));
+    TEST_ESP_ERR(ESP_ERR_INVALID_ARG, ppa_set_color_lookup_table(PPA_CLUT_BLEND_BG, bg_palette, 0));
+    TEST_ESP_ERR(ESP_ERR_INVALID_ARG, ppa_set_color_lookup_table(PPA_CLUT_BLEND_BG, bg_palette, 257));
+    TEST_ESP_ERR(ESP_ERR_INVALID_ARG, ppa_set_color_lookup_table(PPA_CLUT_BLEND_BG, NULL, 0xFF));
+    TEST_ESP_ERR(ESP_ERR_INVALID_ARG, ppa_set_color_lookup_table((ppa_clut_id_t)0xFF, bg_palette, 4));
+
+    // DMA output requires cache line alignment, and the index buffers are reused as DMA input
+    uint8_t l8_buf[64] __attribute__((aligned(64))) = {};
+    uint8_t l4_buf[64] __attribute__((aligned(64))) = {};
+    uint8_t argb_buf[64] __attribute__((aligned(64)));
+    uint8_t rgb_buf[64] __attribute__((aligned(64)));
+    uint8_t out_buf[64] __attribute__((aligned(64)));
+    uint8_t out_buf_expected[48]; // 16 RGB888 pixels
+    memset(argb_buf, 0xFF, sizeof(argb_buf)); // opaque white
+    memset(rgb_buf, 0x5A, sizeof(rgb_buf));
+    memset(out_buf, 0xCC, sizeof(out_buf));
+    esp_cache_msync((void *)out_buf, sizeof(out_buf), ESP_CACHE_MSYNC_FLAG_DIR_C2M);
+
+    ppa_blend_oper_config_t oper_config = {};
+    oper_config.in_bg.pic_w = w;
+    oper_config.in_bg.pic_h = h;
+    oper_config.in_bg.block_w = w;
+    oper_config.in_bg.block_h = h;
+    oper_config.in_fg.pic_w = w;
+    oper_config.in_fg.pic_h = h;
+    oper_config.in_fg.block_w = w;
+    oper_config.in_fg.block_h = h;
+    oper_config.out.buffer = out_buf;
+    oper_config.out.buffer_size = sizeof(out_buf);
+    oper_config.out.pic_w = w;
+    oper_config.out.pic_h = h;
+    oper_config.out.blend_cm = PPA_BLEND_COLOR_MODE_RGB888;
+    oper_config.bg_alpha_update_mode = PPA_ALPHA_NO_CHANGE;
+    oper_config.mode = PPA_TRANS_MODE_BLOCKING;
+
+    // Background index expanded by the CLUT, foreground alpha inverted to 0 so it contributes
+    // nothing, hence the output equals the background color
+    oper_config.in_bg.buffer = l8_buf;
+    oper_config.in_bg.blend_cm = PPA_BLEND_COLOR_MODE_L8;
+    oper_config.in_fg.buffer = argb_buf;
+    oper_config.in_fg.blend_cm = PPA_BLEND_COLOR_MODE_ARGB8888;
+    oper_config.fg_alpha_update_mode = PPA_ALPHA_INVERT;
+
+    // CLUT not set yet
+    TEST_ESP_ERR(ESP_ERR_INVALID_STATE, ppa_do_blend(ppa_client_handle, &oper_config));
+
+    TEST_ESP_OK(ppa_set_color_lookup_table(PPA_CLUT_BLEND_BG, bg_palette, 4));
+
+    // L8: one index per byte
+    for (uint32_t p = 0; p < num_pixels; p++) {
+        l8_buf[p] = (uint8_t)(p % 4);
+    }
+    for (uint32_t p = 0; p < num_pixels; p++) {
+        out_buf_expected[p * 3 + 0] = bg_palette[p % 4].b; // RGB888 is stored B, G, R
+        out_buf_expected[p * 3 + 1] = bg_palette[p % 4].g;
+        out_buf_expected[p * 3 + 2] = bg_palette[p % 4].r;
+    }
+    TEST_ESP_OK(ppa_do_blend(ppa_client_handle, &oper_config));
+    TEST_ASSERT_EQUAL_UINT8_ARRAY((void *)out_buf_expected, (void *)out_buf, sizeof(out_buf_expected));
+
+    // Clear output buffer
+    memset(out_buf, 0xCC, sizeof(out_buf));
+    esp_cache_msync((void *)out_buf, sizeof(out_buf), ESP_CACHE_MSYNC_FLAG_DIR_C2M);
+
+    // L4: two indices per byte. Both nibbles hold the same index, so the expected result does
+    // not depend on which nibble the hardware treats as the first pixel.
+    for (uint32_t i = 0; i < num_pixels / 2; i++) {
+        uint8_t idx = (uint8_t)(i % 4);
+        l4_buf[i] = (uint8_t)((idx << 4) | idx);
+    }
+    for (uint32_t p = 0; p < num_pixels; p++) {
+        uint32_t idx = (p / 2) % 4;
+        out_buf_expected[p * 3 + 0] = bg_palette[idx].b;
+        out_buf_expected[p * 3 + 1] = bg_palette[idx].g;
+        out_buf_expected[p * 3 + 2] = bg_palette[idx].r;
+    }
+    oper_config.in_bg.buffer = l4_buf;
+    oper_config.in_bg.blend_cm = PPA_BLEND_COLOR_MODE_L4;
+    TEST_ESP_OK(ppa_do_blend(ppa_client_handle, &oper_config));
+    TEST_ASSERT_EQUAL_UINT8_ARRAY((void *)out_buf_expected, (void *)out_buf, sizeof(out_buf_expected));
+
+    // Clear output buffer
+    memset(out_buf, 0xCC, sizeof(out_buf));
+    esp_cache_msync((void *)out_buf, sizeof(out_buf), ESP_CACHE_MSYNC_FLAG_DIR_C2M);
+
+    // Now put the indexed picture on the foreground instead. Its palette is fully opaque, so the
+    // alpha blending formula collapses to the foreground color and the background is fully covered.
+    oper_config.in_bg.buffer = rgb_buf;
+    oper_config.in_bg.blend_cm = PPA_BLEND_COLOR_MODE_RGB888;
+    oper_config.in_fg.buffer = l8_buf;
+    oper_config.in_fg.blend_cm = PPA_BLEND_COLOR_MODE_L8;
+    oper_config.fg_alpha_update_mode = PPA_ALPHA_NO_CHANGE;
+
+    TEST_ESP_ERR(ESP_ERR_INVALID_STATE, ppa_do_blend(ppa_client_handle, &oper_config));
+
+    TEST_ESP_OK(ppa_set_color_lookup_table(PPA_CLUT_BLEND_FG, fg_palette, 4));
+
+    for (uint32_t p = 0; p < num_pixels; p++) {
+        out_buf_expected[p * 3 + 0] = fg_palette[p % 4].b;
+        out_buf_expected[p * 3 + 1] = fg_palette[p % 4].g;
+        out_buf_expected[p * 3 + 2] = fg_palette[p % 4].r;
+    }
+    TEST_ESP_OK(ppa_do_blend(ppa_client_handle, &oper_config));
+    TEST_ASSERT_EQUAL_UINT8_ARRAY((void *)out_buf_expected, (void *)out_buf, sizeof(out_buf_expected));
+
+    // Clear output buffer
+    memset(out_buf, 0xCC, sizeof(out_buf));
+    esp_cache_msync((void *)out_buf, sizeof(out_buf), ESP_CACHE_MSYNC_FLAG_DIR_C2M);
+
+    // Overwriting a CLUT that is already in use takes effect on the following transaction
+    color_pixel_argb8888_data_t fg_palette_new[4] = {};
+    for (int i = 0; i < 4; i++) {
+        fg_palette_new[i].a = 0xFF;
+        fg_palette_new[i].r = (uint8_t)(0x10 + i);
+        fg_palette_new[i].g = (uint8_t)(0x20 + i);
+        fg_palette_new[i].b = (uint8_t)(0x30 + i);
+    }
+    TEST_ESP_OK(ppa_set_color_lookup_table(PPA_CLUT_BLEND_FG, fg_palette_new, 4));
+    for (uint32_t p = 0; p < num_pixels; p++) {
+        out_buf_expected[p * 3 + 0] = fg_palette_new[p % 4].b;
+        out_buf_expected[p * 3 + 1] = fg_palette_new[p % 4].g;
+        out_buf_expected[p * 3 + 2] = fg_palette_new[p % 4].r;
+    }
+    TEST_ESP_OK(ppa_do_blend(ppa_client_handle, &oper_config));
+    TEST_ASSERT_EQUAL_UINT8_ARRAY((void *)out_buf_expected, (void *)out_buf, sizeof(out_buf_expected));
+
+    // Clear output buffer
+    memset(out_buf, 0xCC, sizeof(out_buf));
+    esp_cache_msync((void *)out_buf, sizeof(out_buf), ESP_CACHE_MSYNC_FLAG_DIR_C2M);
+
+    // A call replaces the whole table, so the entries a longer table wrote earlier do not survive a
+    // shorter one. Index 200 is only covered by the long palette, and reads back as zero afterwards.
+    static color_pixel_argb8888_data_t long_palette[256] = {};
+    for (int i = 0; i < 256; i++) {
+        long_palette[i].a = 0xFF; long_palette[i].r = 0x11; long_palette[i].g = 0x22; long_palette[i].b = 0x33;
+    }
+    TEST_ESP_OK(ppa_set_color_lookup_table(PPA_CLUT_BLEND_BG, long_palette, 256));
+    TEST_ESP_OK(ppa_set_color_lookup_table(PPA_CLUT_BLEND_BG, bg_palette, 4));
+    memset(l8_buf, 200, sizeof(l8_buf));
+    esp_cache_msync((void *)l8_buf, sizeof(l8_buf), ESP_CACHE_MSYNC_FLAG_DIR_C2M);
+    oper_config.in_bg.buffer = l8_buf;
+    oper_config.in_bg.blend_cm = PPA_BLEND_COLOR_MODE_L8;
+    oper_config.in_fg.buffer = argb_buf;
+    oper_config.in_fg.blend_cm = PPA_BLEND_COLOR_MODE_ARGB8888;
+    oper_config.fg_alpha_update_mode = PPA_ALPHA_INVERT;
+    // A cleared entry is fully transparent, so the background alpha is forced opaque to keep the
+    // blending formula well defined while both layers would otherwise contribute nothing
+    oper_config.bg_alpha_update_mode = PPA_ALPHA_FIX_VALUE;
+    oper_config.bg_alpha_fix_val = 0xFF;
+    memset(out_buf_expected, 0, sizeof(out_buf_expected));
+    TEST_ESP_OK(ppa_do_blend(ppa_client_handle, &oper_config));
+    TEST_ASSERT_EQUAL_UINT8_ARRAY((void *)out_buf_expected, (void *)out_buf, sizeof(out_buf_expected));
+    oper_config.bg_alpha_update_mode = PPA_ALPHA_NO_CHANGE;
+
+    // An empty table disables the CLUT and releases its memory, so the indexed color mode becomes unavailable again
+    oper_config.in_bg.buffer = rgb_buf;
+    oper_config.in_bg.blend_cm = PPA_BLEND_COLOR_MODE_RGB888;
+    oper_config.in_fg.buffer = l8_buf;
+    oper_config.in_fg.blend_cm = PPA_BLEND_COLOR_MODE_L8;
+    oper_config.fg_alpha_update_mode = PPA_ALPHA_NO_CHANGE;
+    TEST_ESP_OK(ppa_set_color_lookup_table(PPA_CLUT_BLEND_FG, NULL, 0));
+    TEST_ESP_ERR(ESP_ERR_INVALID_STATE, ppa_do_blend(ppa_client_handle, &oper_config));
+
+    // Clear output buffer
+    memset(out_buf, 0xCC, sizeof(out_buf));
+    esp_cache_msync((void *)out_buf, sizeof(out_buf), ESP_CACHE_MSYNC_FLAG_DIR_C2M);
+
+    // The two CLUTs are disabled independently, so the background one still expands correctly. This
+    // also proves the shared clock gate and power switch were not turned off while it is still in use.
+    for (uint32_t p = 0; p < num_pixels; p++) {
+        l8_buf[p] = (uint8_t)(p % 4);
+    }
+    esp_cache_msync((void *)l8_buf, sizeof(l8_buf), ESP_CACHE_MSYNC_FLAG_DIR_C2M);
+    oper_config.in_bg.buffer = l8_buf;
+    oper_config.in_bg.blend_cm = PPA_BLEND_COLOR_MODE_L8;
+    oper_config.in_fg.buffer = argb_buf;
+    oper_config.in_fg.blend_cm = PPA_BLEND_COLOR_MODE_ARGB8888;
+    oper_config.fg_alpha_update_mode = PPA_ALPHA_INVERT;
+    for (uint32_t p = 0; p < num_pixels; p++) {
+        out_buf_expected[p * 3 + 0] = bg_palette[p % 4].b;
+        out_buf_expected[p * 3 + 1] = bg_palette[p % 4].g;
+        out_buf_expected[p * 3 + 2] = bg_palette[p % 4].r;
+    }
+    TEST_ESP_OK(ppa_do_blend(ppa_client_handle, &oper_config));
+    TEST_ASSERT_EQUAL_UINT8_ARRAY((void *)out_buf_expected, (void *)out_buf, sizeof(out_buf_expected));
+
+    // Disabling the last CLUT in use powers the memory off
+    TEST_ESP_OK(ppa_set_color_lookup_table(PPA_CLUT_BLEND_BG, NULL, 0));
+    TEST_ESP_ERR(ESP_ERR_INVALID_STATE, ppa_do_blend(ppa_client_handle, &oper_config));
+
+    TEST_ESP_OK(ppa_unregister_client(ppa_client_handle));
+}
+
 static void ppa_fill_basic_data_correctness_check(bool auto_light_sleep)
 {
     const uint32_t w = 80;

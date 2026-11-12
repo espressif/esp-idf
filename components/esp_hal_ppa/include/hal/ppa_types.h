@@ -22,6 +22,17 @@ typedef enum {
 } ppa_engine_type_t;
 
 /**
+ * @brief Enumeration of the Color Look-Up Tables (CLUT) in the PPA module
+ *
+ * Each CLUT is attached to one specific data path of one specific PPA engine, and they are configured independently.
+ */
+typedef enum {
+    PPA_CLUT_BLEND_BG,          /*!< The CLUT on the background input path of the blending engine */
+    PPA_CLUT_BLEND_FG,          /*!< The CLUT on the foreground input path of the blending engine */
+    PPA_CLUT_ID_MAX,            /*!< Number of the CLUTs in the PPA module, not a valid CLUT ID */
+} ppa_clut_id_t;
+
+/**
  * @brief Enumeration of PPA Scaling-Rotating-Mirroring available rotation angle (in the counterclockwise direction)
  */
 typedef enum {
@@ -64,9 +75,8 @@ typedef enum {
     PPA_BLEND_COLOR_MODE_YUV422_YUYV = ESP_COLOR_FOURCC_YUYV,       /*!< PPA blend color mode: YUV422, only available on blend background input */
     PPA_BLEND_COLOR_MODE_YUV422_YVYU = ESP_COLOR_FOURCC_YVYU,       /*!< PPA blend color mode: YUV422, only available on blend background input */
     PPA_BLEND_COLOR_MODE_GRAY8 = ESP_COLOR_FOURCC_GREY,             /*!< PPA blend color mode: GRAY8, only available on blend background input or on output */
-    // TODO: Support CLUT to support L4/L8 color mode
-    // PPA_BLEND_COLOR_MODE_L8,               /*!< PPA blend color mode: L8, only available on blend input */
-    // PPA_BLEND_COLOR_MODE_L4,               /*!< PPA blend color mode: L4, only available on blend input */
+    PPA_BLEND_COLOR_MODE_L8 = ESP_COLOR_FOURCC_CLUT8,               /*!< PPA blend color mode: L8, only available on blend input */
+    PPA_BLEND_COLOR_MODE_L4 = ESP_COLOR_FOURCC_CLUT4,               /*!< PPA blend color mode: L4, only available on blend input */
 } ppa_blend_color_mode_t;
 
 /**
