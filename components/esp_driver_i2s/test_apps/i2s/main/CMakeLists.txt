@@ -10,7 +10,12 @@ if(CONFIG_SOC_LIGHT_SLEEP_SUPPORTED)
     list(APPEND srcs "test_i2s_sleep.c")
 endif()
 
+if(CONFIG_PM_ENABLE)
+    list(APPEND srcs "test_i2s_pm.c")
+endif()
+
 idf_component_register(SRCS ${srcs}
                        PRIV_REQUIRES unity esp_driver_pcnt spi_flash
                                      esp_driver_gpio esp_driver_i2s esp_driver_uart esp_psram
+                                     esp_pm esp_timer
                        WHOLE_ARCHIVE)
