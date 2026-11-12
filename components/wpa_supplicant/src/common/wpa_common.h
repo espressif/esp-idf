@@ -596,6 +596,7 @@ int wpa_cipher_key_len(int cipher);
 int wpa_cipher_rsc_len(int cipher);
 int wpa_cipher_to_alg(int cipher);
 int wpa_cipher_valid_pairwise(int cipher);
+int wpa_cipher_valid_group(int cipher);
 int wpa_cipher_valid_mgmt_group(int cipher);
 u32 wpa_cipher_to_suite(int proto, int cipher);
 

@@ -822,7 +822,9 @@ int wpa_sm_update_ft_ies(struct wpa_sm *sm, const u8 *md,
     if (auth_ie) {
         esp_wifi_set_appie_internal(WIFI_APPIE_RAM_STA_AUTH, (u8 *)ies, ies_len, 0);
     } else {
-        esp_set_assoc_ie(sm->bssid, ies, ies_len, false);
+        if (esp_set_assoc_ie(sm->bssid, ies, ies_len, false) < 0) {
+            return -1;
+        }
     }
     wpa_printf(MSG_INFO, "Updated FT IEs (len=%d) auth_ie=%d", ies_len, auth_ie);
 
@@ -925,7 +927,7 @@ esp_err_t esp_rrm_get_feature_disable_mask(uint32_t *disable_mask)
 #endif
 
 #if defined(CONFIG_RRM) || defined(CONFIG_IEEE80211R) || defined(CONFIG_WPA3_SAE)
-void esp_set_assoc_ie(uint8_t *bssid, const u8 *ies, size_t ies_len, bool mdie)
+int esp_set_assoc_ie(uint8_t *bssid, const u8 *ies, size_t ies_len, bool mdie)
 {
 #define ASSOC_IE_LEN 128
     uint8_t *ie, *pos;
@@ -936,7 +938,7 @@ void esp_set_assoc_ie(uint8_t *bssid, const u8 *ies, size_t ies_len, bool mdie)
     ie = os_malloc(ASSOC_IE_LEN + ies_len);
     if (!ie) {
         wpa_printf(MSG_ERROR, "failed to allocate ie");
-        return;
+        return -1;
     }
     pos = ie;
 #if defined(CONFIG_RRM)
@@ -967,9 +969,13 @@ void esp_set_assoc_ie(uint8_t *bssid, const u8 *ies, size_t ies_len, bool mdie)
     esp_wifi_set_appie_internal(WIFI_APPIE_ASSOC_REQ, ie, ASSOC_IE_LEN - len, 0);
     os_free(ie);
 #undef ASSOC_IE_LEN
+    return 0;
 }
 #else
-void esp_set_assoc_ie(uint8_t *bssid, const u8 *ies, size_t ies_len, bool mdie) { }
+int esp_set_assoc_ie(uint8_t *bssid, const u8 *ies, size_t ies_len, bool mdie)
+{
+    return 0;
+}
 #endif  /* defined(CONFIG_RRM) || defined(CONFIG_IEEE80211R) || defined(CONFIG_WPA3_SAE) */
 
 #ifndef CONFIG_SAE_H2E
