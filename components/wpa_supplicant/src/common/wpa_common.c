@@ -265,13 +265,15 @@ int wpa_ft_parse_ies(const u8 *ies, size_t ies_len,
 	}
 
 	/* Determine the end of the RIC IE(s) */
-	pos = parse->ric;
-	while (pos && pos + 2 <= end && pos + 2 + pos[1] <= end &&
-	       prot_ie_count) {
-		prot_ie_count--;
-		pos += 2 + pos[1];
+	if (parse->ric) {
+		pos = parse->ric;
+		while (pos && pos + 2 <= end && pos + 2 + pos[1] <= end &&
+		       prot_ie_count) {
+			prot_ie_count--;
+			pos += 2 + pos[1];
+		}
+		parse->ric_len = pos - parse->ric;
 	}
-	parse->ric_len = pos - parse->ric;
 	if (prot_ie_count) {
 	    wpa_printf(MSG_DEBUG, "FT: %d protected IEs missing from "
 		       "frame", (int) prot_ie_count);
@@ -1672,6 +1674,20 @@ int wpa_cipher_valid_pairwise(int cipher)
 		cipher == WPA_CIPHER_CCMP ||
 		cipher == WPA_CIPHER_GCMP ||
 		cipher == WPA_CIPHER_TKIP;
+}
+
+
+int wpa_cipher_valid_group(int cipher)
+{
+	if (cipher == WPA_CIPHER_CCMP ||
+	    cipher == WPA_CIPHER_GCMP ||
+	    cipher == WPA_CIPHER_TKIP)
+		return 1;
+#ifdef CONFIG_GCMP
+	if (cipher == WPA_CIPHER_GCMP_256)
+		return 1;
+#endif /* CONFIG_GCMP */
+	return 0;
 }
 
 
