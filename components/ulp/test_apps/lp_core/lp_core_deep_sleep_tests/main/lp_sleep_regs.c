@@ -22,6 +22,27 @@ uint32_t lp_sleep_i2c_timing_reg(void)
 }
 #endif
 
+#if CONFIG_SOC_LP_SPI_SUPPORTED
+#include "hal/lp_spi_ll.h"
+
+uint32_t lp_sleep_spi_clock_reg(void)
+{
+    /* Register headers name the LP peripheral base differently across chip
+     * revisions. The HAL struct is the same view the driver programs. */
+    return LP_SPI_LL_GET_HW()->spi_clock.val;
+}
+
+uint32_t lp_sleep_spi_slave_reg(void)
+{
+    return LP_SPI_LL_GET_HW()->spi_slave.val;
+}
+
+uint32_t lp_sleep_spi_slave_mode(void)
+{
+    return LP_SPI_LL_GET_HW()->spi_slave.reg_slave_mode;
+}
+#endif
+
 #if CONFIG_SOC_ULP_LP_UART_SUPPORTED
 #include "soc/lp_uart_reg.h"
 
