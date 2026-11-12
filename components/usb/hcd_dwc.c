@@ -498,7 +498,8 @@ static inline hcd_pipe_event_t pipe_decode_error_event(usb_dwc_hal_chan_error_t 
  *
  * @note This function can block
  * @param pipe Pipe object
- * @return esp_err_t
+ * @return
+ *    - ESP_OK: Pipe halted (or was already halted)
  */
 static esp_err_t _pipe_cmd_halt(pipe_t *pipe);
 
@@ -510,7 +511,9 @@ static esp_err_t _pipe_cmd_halt(pipe_t *pipe);
  * - The pipe callback will be run if one or more URBs become done
  *
  * @param pipe Pipe object
- * @return esp_err_t
+ * @return
+ *    - ESP_OK: Pipe flushed, pending URBs became done
+ *    - ESP_ERR_INVALID_STATE: Pipe is not halted
  */
 static esp_err_t _pipe_cmd_flush(pipe_t *pipe);
 
@@ -522,9 +525,27 @@ static esp_err_t _pipe_cmd_flush(pipe_t *pipe);
  * - If there are any enqueued URBs, they will executed
  *
  * @param pipe Pipe object
- * @return esp_err_t
+ * @return
+ *    - ESP_OK: Pipe cleared and active again
+ *    - ESP_ERR_INVALID_STATE: Pipe is not halted, or no enabled device on its port
  */
 static esp_err_t _pipe_cmd_clear(pipe_t *pipe);
+
+/**
+ * @brief Resync a pipe's data toggle to DATA0
+ *
+ * - Pipe must be halted, so the underlying channel is disabled and HCTSIZ.Pid can be reprogrammed
+ * - Only bulk and interrupt pipes rely on the core-maintained data toggle; control pipes set their
+ *   stage PIDs explicitly and isochronous pipes have no data toggle, so both are unaffected
+ * - Must only be used when the device endpoint's data toggle was reinitialized to DATA0, i.e. as part
+ *   of endpoint halt recovery via CLEAR_FEATURE(ENDPOINT_HALT) (USB 2.0 section 9.4.5)
+ *
+ * @param pipe Pipe object
+ * @return
+ *    - ESP_OK: Pipe's data toggle resynced to DATA0
+ *    - ESP_ERR_INVALID_STATE: Pipe is not halted
+ */
+static esp_err_t _pipe_cmd_reset_data_toggle(pipe_t *pipe);
 
 // ------------------------ Port ---------------------------
 
@@ -1871,6 +1892,25 @@ exit:
     return ret;
 }
 
+static esp_err_t _pipe_cmd_reset_data_toggle(pipe_t *pipe)
+{
+    esp_err_t ret;
+    // Pipe must be in the halted state, so the underlying channel is disabled and HCTSIZ.Pid can be reprogrammed
+    if (pipe->state != HCD_PIPE_STATE_HALTED) {
+        ret = ESP_ERR_INVALID_STATE;
+        goto exit;
+    }
+    // Bulk/interrupt pipes rely on the core-maintained HCTSIZ.Pid. Resync it to DATA0 only when the device
+    // endpoint's data toggle was reinitialized to DATA0 as well, i.e. via CLEAR_FEATURE(ENDPOINT_HALT) (USB 2.0 section 9.4.5).
+    // Control pipes set their stage PIDs explicitly and isochronous pipes have no data toggle
+    if (pipe->ep_char.type == USB_DWC_XFER_TYPE_BULK || pipe->ep_char.type == USB_DWC_XFER_TYPE_INTR) {
+        usb_dwc_hal_chan_set_pid(pipe->chan_obj, 0);    // 0 = DATA0
+    }
+    ret = ESP_OK;
+exit:
+    return ret;
+}
+
 // ----------------------- Public --------------------------
 
 esp_err_t hcd_pipe_alloc(hcd_port_handle_t port_hdl, const hcd_pipe_config_t *pipe_config, hcd_pipe_handle_t *pipe_hdl)
@@ -2082,6 +2122,10 @@ esp_err_t hcd_pipe_command(hcd_pipe_handle_t pipe_hdl, hcd_pipe_cmd_t command)
     }
     case HCD_PIPE_CMD_CLEAR: {
         ret = _pipe_cmd_clear(pipe);
+        break;
+    }
+    case HCD_PIPE_CMD_RESET_DATA_TOGGLE: {
+        ret = _pipe_cmd_reset_data_toggle(pipe);
         break;
     }
     }

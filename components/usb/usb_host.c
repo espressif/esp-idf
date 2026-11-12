@@ -1574,6 +1574,25 @@ exit:
     return ret;
 }
 
+esp_err_t usb_host_endpoint_reset_data_toggle(usb_device_handle_t dev_hdl, uint8_t bEndpointAddress)
+{
+    esp_err_t ret;
+    usbh_ep_handle_t ep_hdl;
+
+    ret = usbh_ep_get_handle(dev_hdl, bEndpointAddress, &ep_hdl);
+    if (ret != ESP_OK) {
+        print_error_ep_get_handle(ret);
+        goto exit;
+    }
+    ret = usbh_ep_command(ep_hdl, USBH_EP_CMD_RESET_DATA_TOGGLE);
+    if (ret != ESP_OK) {
+        print_error_ep_command(ret);
+    }
+
+exit:
+    return ret;
+}
+
 // ------------------------------------------------ Asynchronous I/O ---------------------------------------------------
 
 // ----------------------- Public --------------------------

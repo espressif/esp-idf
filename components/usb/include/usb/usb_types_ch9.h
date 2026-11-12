@@ -160,6 +160,15 @@ ESP_STATIC_ASSERT(sizeof(usb_device_status_t) == sizeof(uint16_t), "Size of usb_
 #define USB_W_VALUE_DT_INTERFACE_POWER      0x08
 
 /**
+ * @brief Feature selector values belonging to the wValue field of a setup packet
+ *
+ * See Table 9-6 of USB2.0 specification for more details
+ */
+#define ENDPOINT_HALT                       0x00
+#define DEVICE_REMOTE_WAKEUP                0x01
+#define TEST_MODE                           0x02
+
+/**
  * @brief Initializer for a GET_STATUS request
  *
  * Sets the address of a connected device
@@ -182,6 +191,25 @@ ESP_STATIC_ASSERT(sizeof(usb_device_status_t) == sizeof(uint16_t), "Size of usb_
     (setup_pkt_ptr)->bRequest = USB_B_REQUEST_SET_ADDRESS;  \
     (setup_pkt_ptr)->wValue = (addr);   \
     (setup_pkt_ptr)->wIndex = 0;    \
+    (setup_pkt_ptr)->wLength = 0;   \
+})
+
+/**
+ * @brief Initializer for a CLEAR_FEATURE request targeting an endpoint
+ *
+ * Clears a feature of an endpoint of a connected device; clearing ENDPOINT_HALT resets the endpoint's data toggle
+ * to DATA0 (see Chapter 9.4.5) so the caller must call usb_host_endpoint_reset_data_toggle()
+ *
+ * @note ENDPOINT_HALT is currently the only feature selector defined for an endpoint
+ *       recipient (see Table 9-6 of USB2.0 specification)
+ *
+ * See Chapter 9.4.1 of USB2.0 specification for more details
+ */
+#define USB_SETUP_PACKET_INIT_CLEAR_EP_FEATURE(setup_pkt_ptr, ep_addr, feature_to_clear) ({  \
+    (setup_pkt_ptr)->bmRequestType = USB_BM_REQUEST_TYPE_DIR_OUT | USB_BM_REQUEST_TYPE_TYPE_STANDARD | USB_BM_REQUEST_TYPE_RECIP_ENDPOINT;   \
+    (setup_pkt_ptr)->bRequest = USB_B_REQUEST_CLEAR_FEATURE;  \
+    (setup_pkt_ptr)->wValue = (feature_to_clear);   \
+    (setup_pkt_ptr)->wIndex = (ep_addr);    \
     (setup_pkt_ptr)->wLength = 0;   \
 })
 

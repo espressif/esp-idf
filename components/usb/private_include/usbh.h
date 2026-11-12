@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -90,6 +90,8 @@ typedef enum {
     USBH_EP_CMD_HALT,           /**< Halt an active endpoint. Any currently executing URB will be canceled. Enqueued URBs are left untouched */
     USBH_EP_CMD_FLUSH,          /**< Can only be called when halted. Will cause all enqueued URBs to be canceled */
     USBH_EP_CMD_CLEAR,          /**< Causes a halted endpoint to become active again. Any enqueued URBs will being executing.*/
+    USBH_EP_CMD_RESET_DATA_TOGGLE, /**< Can only be called when halted. Resyncs the pipe's data toggle to DATA0 (only BULK and INTR pipes).
+                                        Must only be used when the device endpoint's data toggle was reinitialized to DATA0, i.e. CLEAR_FEATURE(ENDPOINT_HALT) */
 } usbh_ep_cmd_t;
 
 // ---------------------- Callbacks ------------------------
