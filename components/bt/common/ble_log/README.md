@@ -218,6 +218,7 @@ snapshot differences an exact SN-interval accounting boundary.
 bool ble_log_init(void);
 void ble_log_deinit(void);
 bool ble_log_enable(bool enable);
+void ble_log_pause(void);
 void ble_log_flush(void);
 bool ble_log_write_hex(ble_log_src_t source, const uint8_t *data, size_t len);
 uint8_t *ble_log_claim(ble_log_src_t source, size_t maximum,
@@ -312,11 +313,58 @@ payload.
 
 ### Flush and record writes
 
-`ble_log_flush()` is an ordinary FreeRTOS task API. Do not call it from an ISR,
-critical section, or the shared ESP Timer task.
-The shutdown handler uses it to drain logs before a software restart. Normal
-operation, including example initialization, relies on periodic OPEN flushing;
+In the current IDF build, the only production caller of `ble_log_flush()` is
+`ble_log_shutdown_handler()` during restart. Normal logging and controller
+disable/deinit do not call it. Test applications also call it directly to verify
+buffered output; those calls must run in a caller-owned FreeRTOS task, never an
+ISR, critical section, or the shared ESP Timer task.
+
+Shutdown handlers execute sequentially. Thus the BLE Log flush and BTDM pause do
+not overlap, whichever handler runs first. BLE Log init/deinit/enable/pause/flush
+and controller lifecycle operations must remain serialized; concurrent lifecycle
+calls are unsupported. `flush_in_progress` means flush has started, not that its
+writers have drained, and must not be used to skip the pause wait.
+
+The dynamic shutdown handler closes producer admission before flushing and
+leaves it closed until reset. On S31/H4, the dynamic BTDM shutdown handler pauses
+writers before stopping the controller task when BLE Log v2 is enabled. Either
+handler may run first: queued logs can drain, while pending writes may be cancelled.
+Normal operation, including example initialization, relies on periodic OPEN flushing;
 startup statistics continue from INIT without an extra FLUSH snapshot or reset.
+
+`ble_log_pause()` closes producer admission and waits for active
+writers to exit, without draining transport output. Lifecycle owners must call
+it from a caller-owned, yieldable task and serialize it with init, deinit, enable
+and flush. ISR, critical sections, a suspended scheduler and shared system
+callbacks (including ESP Timer) are unsupported. An
+uninitialized module is a no-op. Pause closes
+admission directly under the writer-admission lock, then wakes and waits for
+writers using the existing drain loop. An already closed gate still requires
+waiting for writers; it is not an early-return condition.
+On all supported chips, once pause has run, controller disable leaves producer
+admission closed until log deinit, even if the controller itself fails to disable.
+The controller's error is still returned, but logging is not reopened. A subsequent
+controller enable does not reopen it either: controller, host and HCI writes to
+BLE Log remain disabled until a full log deinit/init cycle starts a new logging
+session. Calling log init on an already initialized module is a no-op. Writes
+rejected by the closed gate are intentionally disabled logging, not transport
+losses; they do not consume sequence numbers or increment loss counters. This
+policy keeps admission closed while deleted tasks may still be switching out.
+Supporting continuous logging across controller disable/enable would require
+a separate, synchronized reopening boundary. On S31/H4, internal
+enable-failure cleanup also pauses initialized logs; retrying controller enable
+alone does not reopen admission. Buffered transport output can still drain. If
+writers have not exited after 1 second, pause asserts
+with admission closed instead of returning a timeout error. Builds with assertions
+disabled keep waiting, so unfinished writers cannot be deleted. Buffer ownership
+and waiter counts stay internal to BLE Log.
+
+The drain uses the shared LBM lifetime reference count, which also covers
+snapshots and console dumps. A successful claim remains an unfinished write
+until commit; a lifecycle caller must commit its own claims before pausing.
+Console dump is a diagnostic operation and must not overlap normal lifecycle
+teardown. It holds the lifecycle lock while printing, so time spent waiting
+for that lock is outside the 1-second writer-drain timeout.
 
 A public or LL record that cannot fit completely in one pool transport is
 rejected and counted as lost; BLE Log never emits a truncated record.

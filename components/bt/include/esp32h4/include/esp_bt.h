@@ -237,6 +237,9 @@
   *               Due to a known issue, you cannot call esp_bt_controller_enable() a second time
   *               to change the controller mode dynamically. To change controller mode, call
   *               esp_bt_controller_disable() and then call esp_bt_controller_enable() with the new mode.
+  * @note With controller BLE Log v2 enabled, enabling the controller does not reopen
+  *       logging paused by disable. A full BLE Log deinit/init cycle is required
+  *       to start a new logging session; repeated log init alone does not reopen it.
   * @param mode : the mode(BLE/BT/BTDM) to enable. For compatible of API, retain this argument. This mode must be
   *               equal as the mode in "cfg" of esp_bt_controller_init().
   * @return       ESP_OK - success, other - failed
@@ -245,6 +248,10 @@
 
  /**
   * @brief  Disable BT controller
+  * @note With controller BLE Log v2 enabled, once disable pauses logging, the shared
+  *       write gate stays closed, including if the controller subsequently fails to
+  *       disable. This also stops host and HCI writes to BLE Log. Buffered output
+  *       can still drain. A later controller enable does not reopen logging.
   * @return       ESP_OK - success, other - failed
   */
  esp_err_t esp_bt_controller_disable(void);

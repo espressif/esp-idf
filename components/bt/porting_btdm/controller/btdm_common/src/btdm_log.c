@@ -564,3 +564,12 @@ btdm_log_deinit(void)
     esp_bt_controller_log_deinit();
 #endif // CONFIG_BT_LE_CONTROLLER_LOG_ENABLED
 }
+
+void btdm_log_pause(void)
+{
+#if CONFIG_BT_LE_CONTROLLER_LOG_ENABLED && CONFIG_BT_LE_CONTROLLER_LOG_MODE_BLE_LOG_V2
+    if (log_is_inited) {
+        ble_log_pause();
+    }
+#endif
+}
