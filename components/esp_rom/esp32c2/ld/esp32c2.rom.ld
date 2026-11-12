@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -614,7 +614,7 @@ wDevCheckBlockError = 0x40001cd8;
 /*wDev_AppendRxBlocks = 0x40001cdc;*/
 wDev_DiscardFrame = 0x40001ce0;
 wDev_GetNoiseFloor = 0x40001ce4;
-wDev_IndicateAmpdu = 0x40001ce8;
+//wDev_IndicateAmpdu = 0x40001ce8;
 /*wDev_IndicateFrame = 0x40001cec;*/
 wdev_mac_reg_load = 0x40001cf0;
 wdev_mac_reg_store = 0x40001cf4;
@@ -901,7 +901,7 @@ ieee80211_add_ssid = 0x40002050;
 ieee80211_add_rates = 0x40002054;
 /*ieee80211_add_xrates = 0x40002058;*/
 ieee80211_is_ht_cipher = 0x4000205c;
-ieee80211_setup_lr_rates = 0x40002068;
+//ieee80211_setup_lr_rates = 0x40002068;
 ieee80211_ht_node_init = 0x4000206c;
 /* ieee80211_is_support_rate = 0x40002070; */
 ieee80211_setup_rates = 0x40002074;
