@@ -179,6 +179,66 @@ function(idf_toolchain_remove_flags)
     _process_toolchain_flag_options("remove")
 endfunction()
 
+# __idf_gcc_specs_option(output_var specs_name)
+#
+# @brief Return one -specs= compile option.
+#
+# ccache < 4.12 opens a relative -specs= name from the working directory and
+# fails. If CMAKE_C_COMPILER_LAUNCHER or RULE_LAUNCH_COMPILE contains such a
+# ccache, return the compiler's canonical path as one quoted option:
+#
+#     "-specs=/absolute/path"
+#
+# Otherwise return:
+#
+#     -specs=<specs_name>
+function(__idf_gcc_specs_option output_var specs_name)
+    # Bare name unless an old ccache forces an absolute path below.
+    set(${output_var} "-specs=${specs_name}" PARENT_SCOPE)
+
+    # idf.py --ccache sets RULE_LAUNCH_COMPILE, not CMAKE_C_COMPILER_LAUNCHER.
+    get_property(_rule_launch_compile GLOBAL PROPERTY RULE_LAUNCH_COMPILE)
+    set(_ccache_bin "")
+    foreach(_launcher IN LISTS CMAKE_C_COMPILER_LAUNCHER _rule_launch_compile)
+        if(_launcher MATCHES "ccache")
+            set(_ccache_bin "${_launcher}")
+            break()
+        endif()
+    endforeach()
+    if(NOT _ccache_bin)
+        return()
+    endif()
+
+    execute_process(
+        COMMAND "${_ccache_bin}" --version
+        OUTPUT_VARIABLE _ccache_version_output
+        OUTPUT_STRIP_TRAILING_WHITESPACE
+        RESULT_VARIABLE _ccache_version_result)
+    if(NOT _ccache_version_result EQUAL 0)
+        return()
+    endif()
+    if(NOT _ccache_version_output MATCHES "ccache version ([0-9.]+)")
+        return()
+    endif()
+    if(NOT CMAKE_MATCH_1 VERSION_LESS "4.12")
+        return()
+    endif()
+
+    execute_process(
+        COMMAND "${CMAKE_C_COMPILER}" -print-file-name=${specs_name}
+        OUTPUT_VARIABLE _specs_path
+        OUTPUT_STRIP_TRAILING_WHITESPACE
+        RESULT_VARIABLE _specs_result)
+    if(NOT _specs_result EQUAL 0 OR NOT IS_ABSOLUTE "${_specs_path}")
+        return()
+    endif()
+
+    # get_filename_component(REALPATH): file(REAL_PATH) needs CMake >= 3.19.
+    get_filename_component(_specs_path "${_specs_path}" REALPATH)
+    # Quotes keep "-specs=/path with spaces" one response-file token.
+    set(${output_var} "\"-specs=${_specs_path}\"" PARENT_SCOPE)
+endfunction()
+
 # Workaround: Re-run CMake compiler ABI detection after ABI flags are set.
 #
 # Problem: CMake performs compiler checks at an early stage during
