@@ -3403,6 +3403,55 @@ static UINT check_fs (	/* 0:FAT/FAT32 VBR, 1:exFAT VBR, 2:Not FAT and valid BS, 
 }
 
 
+/* Check for an MBR when sector zero also looks like a FAT VBR. */
+/* Returns 0:not an MBR, 1:valid MBR, 4:disk error. */
+
+static UINT check_mbr (
+	FATFS* fs	/* Filesystem object with sector zero already in the window */
+)
+{
+	const BYTE *pte, *other;
+	DWORD start, size, other_start, other_size;
+	LBA_t sectors;
+	UINT i, j, occupied = 0;
+
+
+	if (ld_16(fs->win + BS_55AA) != 0xAA55) return 0;
+	for (i = 0; i < 4; i++) {
+		pte = fs->win + MBR_Table + i * SZ_PTE;
+		start = ld_32(pte + PTE_StLba);
+		size = ld_32(pte + PTE_SizLba);
+		if (pte[PTE_System] == 0) {
+			if (pte[PTE_Boot] != 0 || start != 0 || size != 0) return 0;
+			continue;
+		}
+		if ((pte[PTE_Boot] != 0 && pte[PTE_Boot] != 0x80) || start == 0 || size == 0) return 0;
+		if (size - 1 > 0xFFFFFFFF - start) return 0;	/* Last LBA must fit an MBR entry. */
+		for (j = 0; j < i; j++) {
+			other = fs->win + MBR_Table + j * SZ_PTE;
+			if (other[PTE_System] == 0) continue;
+			other_start = ld_32(other + PTE_StLba);
+			other_size = ld_32(other + PTE_SizLba);
+			if (start >= other_start ? start - other_start < other_size : other_start - start < size) return 0;
+		}
+		occupied++;
+	}
+	if (occupied == 0) return 0;
+
+	/* Boot code in an unpartitioned volume can occupy the same bytes. Only
+	 * prefer the partition table if all its allocations fit the device. */
+	if (disk_ioctl(fs->pdrv, GET_SECTOR_COUNT, &sectors) != RES_OK) return 4;
+	for (i = 0; i < 4; i++) {
+		pte = fs->win + MBR_Table + i * SZ_PTE;
+		if (pte[PTE_System] == 0) continue;
+		start = ld_32(pte + PTE_StLba);
+		size = ld_32(pte + PTE_SizLba);
+		if (start >= sectors || size > sectors - start) return 0;
+	}
+	return 1;
+}
+
+
 /* Find an FAT volume */
 /* (It supports only generic partitioning rules, MBR, GPT and SFD) */
 
@@ -3415,10 +3464,16 @@ static UINT find_volume (	/* Returns BS status found in the hosting drive */
 	DWORD mbr_pt[4];
 
 
-	fmt = check_fs(fs, 0);				/* Load sector 0 and check if it is an FAT VBR as SFD format */
-	if (fmt != 2 && (fmt >= 3 || part == 0)) return fmt;	/* Returns if it is an FAT VBR as auto scan, not a BS or disk error */
+	fmt = check_fs(fs, 0);				/* Load sector 0 and check for a FAT VBR. */
+	if (fmt >= 3) return fmt;				/* Invalid boot sector or disk error */
+	if (fmt <= 1 && part == 0) {
+		i = check_mbr(fs);
+		if (i != 1) return i == 4 ? 4 : fmt;
+		/* A valid partition table takes precedence over a stale sector-zero
+		 * VBR. Do not fall back to that VBR if no partition can be mounted. */
+	}
 
-	/* Sector 0 is not an FAT VBR or forced partition number wants a partitioned drive */
+	/* Search the partitioned drive, or the explicitly selected partition. */
 
 #if FF_LBA64
 	if (fs->win[MBR_Table + PTE_System] == 0xEE) {	/* GPT protective MBR? */
@@ -3449,7 +3504,7 @@ static UINT find_volume (	/* Returns BS status found in the hosting drive */
 	i = part ? part - 1 : 0;		/* Table index to find first */
 	do {							/* Find an FAT volume */
 		fmt = mbr_pt[i] ? check_fs(fs, mbr_pt[i]) : 3;	/* Check if the partition is FAT */
-	} while (part == 0 && fmt >= 2 && ++i < 4);
+	} while (part == 0 && fmt >= 2 && fmt < 4 && ++i < 4);
 	return fmt;
 }
 
