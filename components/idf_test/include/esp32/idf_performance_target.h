@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2020-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2020-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -21,11 +21,11 @@
 #define IDF_PERFORMANCE_MAX_TIME_SHA1_32KB                                      5000
 #define IDF_PERFORMANCE_MAX_TIME_SHA512_32KB                                    4500
 
-#define IDF_PERFORMANCE_MAX_RSA_2048KEY_PUBLIC_OP                               45000
+#define IDF_PERFORMANCE_MAX_RSA_2048KEY_PUBLIC_OP                               47500
 #define IDF_PERFORMANCE_MAX_RSA_2048KEY_PRIVATE_OP                              750000
 #define IDF_PERFORMANCE_MAX_RSA_3072KEY_PUBLIC_OP                               33000
 #define IDF_PERFORMANCE_MAX_RSA_3072KEY_PRIVATE_OP                              950000
-#define IDF_PERFORMANCE_MAX_RSA_4096KEY_PUBLIC_OP                               170000
+#define IDF_PERFORMANCE_MAX_RSA_4096KEY_PUBLIC_OP                               175000
 #define IDF_PERFORMANCE_MAX_RSA_4096KEY_PRIVATE_OP                              3000000
 
 // floating point instructions per divide and per sqrt (configured for worst-case with PSRAM workaround)
