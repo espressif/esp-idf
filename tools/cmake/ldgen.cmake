@@ -148,11 +148,34 @@ function(__ldgen_create_target exe_target)
     set(ldgen_libraries)
     __ldgen_get_lib_deps_of_target(${exe_target} ldgen_libraries)
     list(REMOVE_ITEM ldgen_libraries ${exe_target})
+
+    # Components listed in LDGEN_EXCLUDE_COMPONENTS are left out of the libraries
+    # passed to ldgen, so rebuilding them does not regenerate the linker script.
+    # ldgen is told their archive names so that it fails on a mapping that needs
+    # their contents instead of silently ignoring it.
+    idf_build_get_property(exclude_components LDGEN_EXCLUDE_COMPONENTS)
+    set(exclude_component_names)
+    foreach(component ${exclude_components})
+        __component_get_target(component_target ${component})
+        if(NOT component_target)
+            message(FATAL_ERROR "LDGEN_EXCLUDE_COMPONENTS: unknown component '${component}'")
+        endif()
+        # The property may name a component by its alias; match on the component name
+        __component_get_property(component_name ${component_target} COMPONENT_NAME)
+        list(APPEND exclude_component_names ${component_name})
+    endforeach()
     set(ldgen_deps)
+    set(ldgen_excluded_option)
     foreach(lib ${ldgen_libraries})
         if(TARGET ${lib})
             get_target_property(lib_type ${lib} TYPE)
             if(lib_type STREQUAL "INTERFACE_LIBRARY")
+                continue()
+            endif()
+            # The OUTPUT_NAME of a component library is the component name
+            get_target_property(component_name ${lib} OUTPUT_NAME)
+            if(component_name IN_LIST exclude_component_names)
+                list(APPEND ldgen_excluded_option "--excluded-archive" "$<TARGET_LINKER_FILE_NAME:${lib}>")
                 continue()
             endif()
             list(APPEND ldgen_libraries_expr "$<TARGET_FILE:${lib}>")
@@ -237,6 +260,7 @@ function(__ldgen_create_target exe_target)
         --objdump   "${CMAKE_OBJDUMP}"
         ${ldgen_check}
         ${mutable_libs_option}
+        ${ldgen_excluded_option}
         DEPENDS     ${template} ${ldgen_fragment_files} ${ldgen_deps} ${SDKCONFIG}
         VERBATIM
     )

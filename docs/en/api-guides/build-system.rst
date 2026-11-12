@@ -1566,6 +1566,7 @@ These are properties that describe the build. Values of build properties can be 
 - INCLUDE_DIRECTORIES - include directories for all component source files
 - KCONFIGS - list of Kconfig files found in components in build; set by ``idf_build_process``
 - KCONFIG_PROJBUILDS - list of Kconfig.projbuild files found in components in build; set by ``idf_build_process``
+- LDGEN_EXCLUDE_COMPONENTS - list of components whose archives are left out of :doc:`linker script generation <linker-script-generation>`; rebuilding them does not regenerate the linker script, so no linker fragment may place objects or symbols from them
 - MINIMAL_BUILD - perform a minimal build by including only the "common" components required by all other components, along with the components that are direct or transitive dependencies only of the ``main`` component. By default, this property is disabled (set to ``OFF``), but it can be enabled by setting it to ``ON``.
 - PROJECT_NAME - name of the project; set from ``idf_build_process`` PROJECT_NAME argument
 - PROJECT_DIR - directory of the project; set from ``idf_build_process`` PROJECT_DIR argument
