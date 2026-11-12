@@ -1,10 +1,12 @@
 /*
- * SPDX-FileCopyrightText: 2021-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
 #include <errno.h>
+#include <poll.h>
+#include <sys/eventfd.h>
 #include <sys/select.h>
 #include "freertos/FreeRTOS.h"
 #include "unity.h"
@@ -108,6 +110,32 @@ TEST_CASE("eventfd write then read", "[vfs][eventfd]")
     TEST_ASSERT_EQUAL(sizeof(val), read(fd, &val, sizeof(val)));
     TEST_ASSERT_EQUAL(9, val);
     TEST_ASSERT_EQUAL(0, close(fd));
+    TEST_ESP_OK(esp_vfs_eventfd_unregister());
+}
+
+TEST_CASE("eventfd through sys/eventfd.h and poll.h", "[vfs][eventfd]")
+{
+    esp_vfs_eventfd_config_t config = ESP_VFS_EVENTD_CONFIG_DEFAULT();
+    TEST_ESP_OK(esp_vfs_eventfd_register(&config));
+
+    int fd = eventfd(0, 0);
+    TEST_ASSERT_GREATER_OR_EQUAL(0, fd);
+
+    // nothing written yet: not readable
+    struct pollfd pfd = { .fd = fd, .events = POLLIN };
+    TEST_ASSERT_EQUAL(0, poll(&pfd, 1, 0));
+
+    TEST_ASSERT_EQUAL(0, eventfd_write(fd, 3));
+    TEST_ASSERT_EQUAL(0, eventfd_write(fd, 4));
+    TEST_ASSERT_EQUAL(1, poll(&pfd, 1, 0));
+    TEST_ASSERT_TRUE(pfd.revents & POLLIN);
+
+    eventfd_t value = 0;
+    TEST_ASSERT_EQUAL(0, eventfd_read(fd, &value));
+    TEST_ASSERT_EQUAL(7, value);
+
+    TEST_ASSERT_EQUAL(0, close(fd));
+    TEST_ASSERT_EQUAL(-1, eventfd_read(fd, &value));
     TEST_ESP_OK(esp_vfs_eventfd_unregister());
 }
 
