@@ -400,8 +400,11 @@ esp_err_t usb_del_phy(usb_phy_handle_t handle)
         p_phy_ctrl_obj->external_phy = NULL;
 #if (SOC_USB_FSLS_PHY_NUM > 0)
     } else if (handle->target == USB_PHY_TARGET_INT) {
-        // Clear pullup and pulldown loads on D+ / D-, and disable the pads
+        // Clear pullup and pulldown loads on D+ / D-.
         usb_wrap_hal_phy_disable_pull_override(&handle->wrap_hal);
+        // Disable the pads since they can no longer be released once
+        // phy_uninstall() disables the USB clock.
+        usb_wrap_hal_phy_enable_pad(&handle->wrap_hal, false);
         p_phy_ctrl_obj->fsls_phy = NULL;
 #if USB_WRAP_LL_DEPENDS_ON_BBPLL
         rtc_clk_bbpll_remove_consumer();

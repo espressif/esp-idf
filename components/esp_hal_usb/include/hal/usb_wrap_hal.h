@@ -91,6 +91,17 @@ static inline void usb_wrap_hal_phy_disable_pull_override(usb_wrap_hal_context_t
 }
 
 /**
+ * @brief Enables/disables the USB FSLS PHY pads
+ *
+ * @param hal USB WRAP HAL context
+ * @param enable Whether to enable the pads
+ */
+static inline void usb_wrap_hal_phy_enable_pad(usb_wrap_hal_context_t *hal, bool enable)
+{
+    usb_wrap_ll_phy_enable_pad(hal->dev, enable);
+}
+
+/**
  * @brief Enables/disables the USB FSLS PHY's test mode
  *
  * @param hal USB WRAP HAL context
