@@ -393,6 +393,19 @@ SECTIONS
   ASSERT_SECTIONS_GAP(.flash.rodata, SECTION_AFTER_FLASH_RODATA)
 
 #if EH_FRAME_LINKING_ENABLED
+  .eh_frame_hdr :
+  {
+    ALIGNED_SYMBOL(4, __eh_frame_hdr)
+    ALIGNED_SYMBOL(4, __eh_frame_hdr_start)
+
+    KEEP (*(.eh_frame_hdr))
+
+    __eh_frame_hdr_end = ABSOLUTE(.);
+
+    . = ALIGN(ALIGNOF(.eh_frame));
+  } > default_rodata_seg
+  ASSERT_SECTIONS_GAP(.eh_frame_hdr, .eh_frame)
+
   .eh_frame :
   {
     ALIGNED_SYMBOL(4, __eh_frame)
