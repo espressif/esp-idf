@@ -1,6 +1,8 @@
 ESP-TEE: User Guide
 ===================
 
+:link_to_translation:`zh_CN:[中文]`
+
 The ESP-TEE (Espressif Trusted Execution Environment) is a security framework built on top of dedicated hardware that ensures only authorized parties or applications can access protected information or services.
 When enabled, ESP-TEE runs in parallel with a FreeRTOS-based ESP-IDF application. In this case, the execution environment is split into the following:
 
@@ -8,7 +10,7 @@ When enabled, ESP-TEE runs in parallel with a FreeRTOS-based ESP-IDF application
 
 - **REE**: the unprotected or rich execution environment, where the ESP-IDF user application runs.
 
-An example use case for ESP-TEE is securely storing a cryptographic key in the TEE for authentication in a challenge-response protocol with external entities and enabling secure communication to protect data.
+An example use case for ESP-TEE is securely storing a cryptographic key in the TEE for authentication in a challenge-response protocol with external entities. ESP-TEE can also protect data by enabling secure communication.
 
 ESP-TEE offers several key secure services, including:
 
@@ -31,7 +33,7 @@ Scope of Protection
 
 The :doc:`Secure Boot <../secure-boot-v2>` feature ensures that only authenticated software can execute on the device. When enabled, a signed TEE image is generated during the build process alongside the signed REE image. The signing scheme and key are the same for both applications.
 
-Secure Boot establishes a robust chain of trust by verifying all mutable software entities involved in the :doc:`Application Startup Flow <../../api-guides/startup>` i.e. the second stage bootloader, TEE, and REE applications. Signature verification is performed both during boot-up and OTA updates. While Secure Boot ensures boot-time security, ESP-TEE provides runtime security by safeguarding the security assets within the TEE.
+Secure Boot establishes a robust chain of trust by verifying all mutable software entities involved in the :doc:`Application Startup Flow <../../api-guides/startup>`, i.e., the second stage bootloader, TEE, and REE applications. Signature verification is performed both during boot-up and OTA updates. While Secure Boot ensures boot-time security, ESP-TEE provides runtime security by safeguarding the security assets within the TEE.
 
 In addition, the attestation service verifies the signature and firmware hash for all active software upon request, ensuring ongoing protection against unauthorized modifications.
 
@@ -51,7 +53,7 @@ The :doc:`Flash Encryption <../flash-encryption>` feature encrypts the contents 
 Architecture: Simplified Overview
 ---------------------------------
 
-ESP-TEE offers a secure execution environment centered around a Root-of-Trust (RoT), which is a set of implicitly trusted functions on which the system or device relies on for security.
+ESP-TEE offers a secure execution environment centered around a Root-of-Trust (RoT), which is a set of implicitly trusted functions on which the system or device relies for security.
 
 The **Immutable RoT** consists of the following components:
 
@@ -91,7 +93,7 @@ External Memory (Flash)
 
 Designated partitions in the external flash are reserved for the TEE to support functions such as code XIP (eXecute-In-Place), secure storage, and OTA data. The partition table must include at least one TEE app slot (type ``app`` and subtype ``tee_0``) with a minimum size of 192 KB.
 
-Example partition table is given below: ::
+An example partition table is given below: ::
 
   # ESP-IDF Partition Table
   # Name,         Type, SubType,     Offset,   Size, Flags
@@ -126,7 +128,7 @@ For {IDF_TARGET_NAME}, a list of secure services can be found at this :component
 
 - **Optional secure Services**: Configurable services that extend the capabilities of the TEE and can be enabled or disabled as needed, such as attestation.
 
-- **Custom secure services**: User-defined secure services as required by the user application. For more details, refer to the :ref:`Adding Custom Secure Services <custom-secure-services>` section and the :example:`tee_basic <security/tee/tee_basic>` example.
+- **Custom secure services**: User-defined secure services required by the user application. For more details, refer to the :ref:`Adding Custom Secure Services <custom-secure-services>` section and the :example:`tee_basic <security/tee/tee_basic>` example.
 
 Usage
 -----
@@ -145,7 +147,7 @@ Usage
 
    - Set :menuitem:`CONFIG_SECURE_TEE_DRAM_SIZE` to configure the TEE DRAM size
 
-   - Set :menuitem:`CONFIG_SECURE_TEE_STACK_SIZE` and :menuitem:`CONFIG_SECURE_TEE_INTR_STACK_SIZE` to configure the TEE task and interrupt stack from the reserved DRAM
+   - Set :menuitem:`CONFIG_SECURE_TEE_STACK_SIZE` and :menuitem:`CONFIG_SECURE_TEE_INTR_STACK_SIZE` to configure the TEE task and interrupt stacks from the reserved DRAM
 
 #. **Configure the partition table**:
 
@@ -182,7 +184,13 @@ The version is defined in :component_file:`esp_tee/version.cmake` and :component
 Reproducible Builds and Code Hash
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-The TEE binary is built reproducibly, irrespective of the REE application configuration: the same ESP-IDF release, target and TEE configuration always produce a byte-identical ``esp_tee.bin``. Options that change the compiled TEE code (e.g., the compiler optimization and assertion levels, log verbosity, Secure Boot) are part of the TEE configuration and therefore change the image and its code hash. The image still embeds packaging metadata (flash mode/frequency/size, chip revision bounds, version strings, the ESP-IDF version and the ELF digest), so its plain SHA-256 changes with them even when the compiled code does not. The **code hash** leaves those parts (the image header, the app descriptor, the checksum and the appended digest) out, covering the image segments alone, and so identifies the compiled code alone. It can be computed from a built image with :component_file:`esp_tee/scripts/esp_tee_code_hash/esp_tee_code_hash.py` and is reported by the device in the attestation token (see :doc:`tee-attestation`).
+The TEE binary is built reproducibly, irrespective of the REE application configuration: the same ESP-IDF release, target and TEE configuration always produce a byte-identical ``esp_tee.bin``.
+
+Options that change the compiled TEE code (e.g., the compiler optimization and assertion levels, log verbosity, Secure Boot) are part of the TEE configuration and therefore change the image and its code hash.
+
+The image still embeds packaging metadata (flash mode/frequency/size, chip revision bounds, version strings, the ESP-IDF version and the ELF digest), so its plain SHA-256 changes with that metadata even when the compiled code does not.
+
+The **code hash** leaves out the image header, the app descriptor, the checksum and the appended digest, and covers the image segments only, so it identifies the compiled code. It can be computed from a built image with :component_file:`esp_tee/scripts/esp_tee_code_hash/esp_tee_code_hash.py` and is reported by the device in the attestation token (see :doc:`tee-attestation`).
 
 Application Examples
 --------------------

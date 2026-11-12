@@ -1,6 +1,8 @@
 Attestation
 ===========
 
+:link_to_translation:`zh_CN:[中文]`
+
 Overview
 --------
 
@@ -16,7 +18,7 @@ To ensure security, the EAT is cryptographically protected. The remote relying p
 
   - The attestation signing key (identified by :menuitem:`CONFIG_SECURE_TEE_ATT_KEY_STR_ID`) is owned exclusively by the TEE. When the TEE generates this key, it is marked with the ``SEC_STORAGE_FLAG_TEE_ONLY`` flag, and the REE is denied any access to it through the secure service interface - it cannot use the key for signing, regenerate it, or clear it. This ensures that the attestation evidence can only ever be signed from within the TEE.
 
-  - In addition, the reserved key ID is treated as TEE-owned even before the key exists, which prevents the REE from "squatting" the ID with a key of its own before the TEE provisions it. If the key is pre-provisioned as part of an NVS image (see :doc:`Secure Storage <tee-sec-storage>`), it **must** be generated with the ``--tee-only`` flag of the :component_file:`esp_tee_sec_stg_keygen.py<esp_tee/scripts/esp_tee_sec_stg_keygen/esp_tee_sec_stg_keygen.py>`  tool.
+  - In addition, the reserved key ID is treated as TEE-owned even before the key exists, which prevents the REE from "squatting" the ID with a key of its own before the TEE provisions it. If the key is pre-provisioned as part of an NVS image (see :doc:`Secure Storage <tee-sec-storage>`), it **must** be generated with the ``--tee-only`` flag of the :component_file:`esp_tee_sec_stg_keygen.py<esp_tee/scripts/esp_tee_sec_stg_keygen/esp_tee_sec_stg_keygen.py>` tool.
 
 Attestation Flow
 ----------------
@@ -49,23 +51,22 @@ Attestation Flow
 
 #. The Relying Party sends an Attestation Request (AR) to the device REE with some challenge or nonce (usually a random number).
 #. The device REE forwards the request to the device TEE attestation service through the secure service call interface.
-#. The TEE assembles the Entity Attestation Token (EAT) (the attestation evidence) by gathering all the relevant claim information as outlined in the EAT claim table. It then generates a signature on the claim data, appending it to the token.
+#. The TEE assembles the Entity Attestation Token (EAT), the attestation evidence, by gathering all the relevant claim information as outlined in the EAT claim table. It then generates a signature on the claim data, appending it to the token.
 #. The evidence is transmitted back to the remote attestation service (verifier) through the device REE and the relying party. In certain cases, the Relying Party itself may act as the attestation service.
 #. The attestation service assesses the received evidence and, upon successful verification, compares the EAT claim data with the available reference values.
 #. The relying party determines the trustworthiness of the device based on the attestation result and its predefined policy. Subsequently, it communicates this determination to the device.
-
 
 Entity Attestation Token
 ------------------------
 
 The Entity Attestation Token (EAT) is a small blob of data that contains claims and is cryptographically signed. The cryptographic signing secures the token, so the means to convey the token does not need to provide any security.
 
-When an attestation request is sent to the device, it generates the EAT in the predefined JSON format as given below. The token contains all the necessary information about the hardware and software entities on device. Here, an ECDSA key-pair from the TEE secure storage is used for signing the EAT, utilizing the slot ID mentioned in the attestation request. The EAT contains the **compressed** ECDSA public key as well as the ``R`` and ``S`` components of the signature.
+When an attestation request is sent to the device, it generates the EAT in the predefined JSON format as given below. The token contains all the necessary information about the hardware and software entities on the device. Here, an ECDSA key-pair from the TEE secure storage is used for signing the EAT, utilizing the slot ID mentioned in the attestation request. The EAT contains the **compressed** ECDSA public key as well as the ``R`` and ``S`` components of the signature.
 
     .. figure:: ../../../_static/esp_tee/tee_attestation_evidence.png
         :align: center
         :scale: 75%
-        :alt: ESP TEE Attestation Evidence
+        :alt: ESP-TEE Attestation Evidence
         :figclass: align-center
 
         ESP-TEE: Attestation Evidence
@@ -133,7 +134,7 @@ EAT: Claim Table
       - Development/Production Mode
       -
     * - Software Measurement
-      - Details of the active firmware components - for e.g. app version, ESP-IDF version, digest, etc. There will be one entry of this type in the EAT for each firmware in the device.
+      - Details of the active firmware components, for example, the app version, ESP-IDF version, and digest. There will be one entry of this type in the EAT for each firmware in the device.
       -
 
 EAT: Software Measurement
@@ -170,16 +171,15 @@ EAT: Software Measurement
       -
     * - Secure Padding status
       -
-      - For more details, refer :ref:`here <secure_padding>`.
+      - For more details, see :ref:`secure_padding`.
     * - Digest: Code hash
-      - SHA256 of the image segments alone, leaving out the packaging metadata (image header, app descriptor, checksum and appended digest)
+      - SHA256 of the image segments alone, leaving out the packaging metadata (image header, app descriptor, checksum, and appended digest)
       - Applicable only to the TEE; matches the host-side tool :component_file:`esp_tee/scripts/esp_tee_code_hash/esp_tee_code_hash.py`
     * - Digest: Code hash version
       - Version of the definition used for the code hash
       - Applicable only to the TEE; ``0`` means the claim is absent
 
-
-Sample EAT in JSON format
+Sample EAT in JSON Format
 ^^^^^^^^^^^^^^^^^^^^^^^^^
 
 .. code-block:: JSON
