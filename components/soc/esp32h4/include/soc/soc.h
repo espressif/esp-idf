@@ -16,6 +16,8 @@
 
 #define PRO_CPU_NUM (0)
 
+#define REG_SPI_MEM_BASE(i)                     (DR_REG_SPIMEM0_BASE + (i) * 0x1000)     // SPIMEM0 and SPIMEM1
+
 //Registers Operation {{
 #define ETS_UNCACHED_ADDR(addr) (addr)
 #define ETS_CACHED_ADDR(addr) (addr)
