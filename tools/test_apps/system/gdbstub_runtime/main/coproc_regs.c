@@ -4,6 +4,7 @@
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
 #include <string.h>
+#include <stdlib.h>
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "freertos/semphr.h"
@@ -11,6 +12,10 @@
 #include "riscv/rvruntime-frames.h"
 #endif
 #include "soc/soc_caps.h"
+#if SOC_CPU_HAS_DSP
+#include "riscv/csr.h"
+#include "riscv/csr_dsp.h"
+#endif
 
 static SemaphoreHandle_t sem = NULL;
 #if SOC_CPU_HAS_PIE
@@ -18,6 +23,39 @@ static volatile bool test_pie_ready = false;
 #endif
 #if SOC_CPU_HAS_FPU
 static volatile bool test_fpu_ready = false;
+#endif
+#if SOC_CPU_HAS_DSP
+static volatile bool test_dsp_ready = false;
+#endif
+
+#if SOC_CPU_HAS_DSP
+static void test_dsp(void * arg)
+{
+    /* DSP STATUS register is not checked because its writable bits are hardware-defined */
+    uint32_t xacc_l, xacc_h, sar;
+
+    /* Set DSP owner to current task by accessing a DSP register */
+    (void) RV_READ_CSR(CSR_DSP_XACC_L);
+
+dsp_start:
+    asm volatile ("nop");
+
+    while (!test_dsp_ready) {
+        vTaskDelay(50 / portTICK_PERIOD_MS);
+    }
+
+    xacc_l = RV_READ_CSR(CSR_DSP_XACC_L);
+    xacc_h = RV_READ_CSR(CSR_DSP_XACC_H);
+    sar = RV_READ_CSR(CSR_DSP_SAR);
+
+    if (xacc_l == 0x12345670 + (uint32_t) arg &&
+        xacc_h == (uint32_t) arg &&
+        sar == (uint32_t) arg) {
+        xSemaphoreGive((SemaphoreHandle_t) sem);
+    }
+
+    vTaskDelete(NULL);
+}
 #endif
 
 #if SOC_CPU_HAS_PIE
@@ -193,6 +231,25 @@ fpu_succeed:
     }
     vTaskDelay(10); // Allow tasks to clean up
 pie_succeed:
+#endif
+
+#if SOC_CPU_HAS_DSP
+    xTaskCreatePinnedToCore(test_dsp, "test_dsp_1", 4096, (void *)1, 10, NULL, 0);
+    xTaskCreatePinnedToCore(test_dsp, "test_dsp_2", 4096, (void *)2, 10, NULL, 0);
+
+    int got = 0;
+    for (int tries = 0; tries < 20 && got < 2; tries++) {
+        if (xSemaphoreTake(sem, 500 / portTICK_PERIOD_MS)) {
+            got++;
+        }
+    }
+    /* Tasks delete themselves even when the values do not match.
+     * Falling through would hit dsp_succeed and the pytest would pass. */
+    if (got != 2) {
+        abort();
+    }
+    vTaskDelay(10); // Allow tasks to clean up
+dsp_succeed:
 #endif
 
     vSemaphoreDelete(sem);

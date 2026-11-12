@@ -130,21 +130,25 @@ def check_registers_numbers(dut: PanicTestDut) -> None:
     assert dut.find_gdb_response('done', 'result', responses) is not None
 
     registers = responses[0]['payload']['register-values']
-    assert len(registers) == 83  # 80 registers supported + xesppie misc + pseudo frm, fflags
+    # ft11 is 64, fcsr is 68. The next feature is unknown to GDB, so GDB
+    # numbers it after the fixed RISC-V block: RISCV_LAST_REGNUM + 1 == 4211.
+    # That matches q0 on PIE targets. On ESP32-H4 the same slot is dsp_xacc_l;
+    # dsp_xacc_h, dsp_sar, dsp_status, frm, and fflags follow with no gap.
+    # Remote regnums start at 4211. DSP adds the PIE register count when that feature is present.
+    if dut.target == 'esp32h4':
+        assert len(registers) == 72  # 33 general + 32 fp + fcsr + 4 dsp + frm + fflags
+    else:
+        assert len(registers) == 83  # 33 general + 32 fp + fcsr + 15 espv + frm + fflags
+    gaps = {64: 68, 68: 4211}
 
     r_id = 0
     for r in registers:
         assert int(r['number']) == r_id
 
-        if r_id == 4211:  # check if value of q0 register is uint128
+        if dut.target != 'esp32h4' and r_id == 4211:  # q0 is uint128
             assert 'uint128' in r['value']
 
-        if r_id == 64:
-            r_id = 68  # fcsr
-        elif r_id == 68:
-            r_id = 4211  # q0
-        else:
-            r_id += 1
+        r_id = gaps.get(r_id, r_id + 1)
 
 
 def set_riscv_float_registers(dut: PanicTestDut, t_id: int, addition: int) -> None:
@@ -216,6 +220,17 @@ def set_riscv_pie_registers(dut: PanicTestDut, t_id: int, addition: int) -> None
     assert dut.find_gdb_response('done', 'result', responses) is not None
 
 
+def set_riscv_dsp_registers(dut: PanicTestDut, t_id: int, addition: int) -> None:
+    cmd = f'-thread-select {t_id}'
+    responses = dut.gdb_write(cmd)
+    assert dut.find_gdb_response('done', 'result', responses) is not None
+
+    for reg, value in (('dsp_xacc_l', 0x12345670 + addition), ('dsp_xacc_h', addition), ('dsp_sar', addition)):
+        cmd = f'-interpreter-exec console "set ${reg}={value}"'
+        responses = dut.gdb_write(cmd)
+        assert dut.find_gdb_response('done', 'result', responses) is not None
+
+
 def coproc_registers_test(dut: PanicTestDut, regs_type: str, set_registers: Callable) -> None:
     # set start test breakpoint
     cmd = f'-break-insert --source coproc_regs.c --function test_{regs_type} --label {regs_type}_start'
@@ -275,7 +290,7 @@ def coproc_registers_test(dut: PanicTestDut, regs_type: str, set_registers: Call
 
 
 @pytest.mark.generic
-@idf_parametrize('target', ['esp32', 'esp32s3', 'esp32p4', 'esp32s31'], indirect=['target'])
+@idf_parametrize('target', ['esp32', 'esp32s3', 'esp32p4', 'esp32s31', 'esp32h4'], indirect=['target'])
 def test_coproc_registers(dut: PanicTestDut) -> None:
     start_gdb(dut)
 
@@ -289,6 +304,8 @@ def test_coproc_registers(dut: PanicTestDut) -> None:
         coproc_registers_test(dut, 'fpu', set_riscv_float_registers)
         if dut.target == 'esp32p4':
             coproc_registers_test(dut, 'pie', set_riscv_pie_registers)
+        if dut.target == 'esp32h4':
+            coproc_registers_test(dut, 'dsp', set_riscv_dsp_registers)
 
 
 @pytest.mark.generic
