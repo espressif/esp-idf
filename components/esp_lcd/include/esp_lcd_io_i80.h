@@ -23,7 +23,7 @@ typedef struct esp_lcd_i80_bus_t *esp_lcd_i80_bus_handle_t;   /*!< Type of LCD i
  * @brief LCD Intel 8080 bus configuration structure
  */
 typedef struct {
-    gpio_num_t dc_gpio_num; /*!< GPIO used for D/C line */
+    gpio_num_t dc_gpio_num; /*!< GPIO used for D/C line, set this to -1 if the D/C line is not used */
     gpio_num_t wr_gpio_num; /*!< GPIO used for WR line */
     lcd_clock_source_t clk_src; /*!< Clock source for the I80 LCD peripheral */
     gpio_num_t data_gpio_nums[ESP_LCD_I80_BUS_WIDTH_MAX]; /*!< GPIOs used for data lines */
