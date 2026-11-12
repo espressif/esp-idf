@@ -53,6 +53,7 @@ set(srcs "port/os_xtensa.c"
     "src/eap_peer/eap_mschapv2.c"
     "src/eap_peer/eap_peap.c"
     "src/eap_peer/eap_peap_common.c"
+    "src/eap_peer/eap_gtc.c"
     "src/eap_peer/eap_tls.c"
     "src/eap_peer/eap_tls_common.c"
     "src/eap_peer/eap_ttls.c"
@@ -79,7 +80,6 @@ set(srcs "port/os_xtensa.c"
     "src/wps/wps_enrollee.c")
 
 set(esp_srcs "esp_supplicant/src/esp_eap_client.c"
-    "esp_supplicant/src/esp_wpa2_api_port.c"
     "esp_supplicant/src/esp_wpa_main.c"
     "esp_supplicant/src/esp_wpas_glue.c"
     "esp_supplicant/src/esp_common.c"
@@ -291,6 +291,7 @@ target_compile_definitions(${COMPONENT_LIB} PRIVATE
     EAP_TTLS
     EAP_TLS
     EAP_PEAP
+    EAP_GTC
     USE_WPA2_TASK
     CONFIG_WPS
     ESPRESSIF_USE

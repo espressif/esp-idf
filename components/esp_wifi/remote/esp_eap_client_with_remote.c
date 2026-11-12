@@ -87,6 +87,11 @@ esp_err_t esp_eap_client_get_disable_time_check(_Bool *disable)
     return esp_eap_client_remote_get_disable_time_check(disable);
 }
 
+esp_err_t esp_eap_client_set_phase2_method(esp_eap_phase2_types type)
+{
+    return esp_eap_client_remote_set_phase2_method(type);
+}
+
 esp_err_t esp_eap_client_set_ttls_phase2_method(esp_eap_ttls_phase2_types type)
 {
     return esp_eap_client_remote_set_ttls_phase2_method(type);

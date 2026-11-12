@@ -27,6 +27,7 @@ esp_err_t esp_eap_client_remote_set_certificate_and_key(const unsigned char *cli
 void esp_eap_client_remote_clear_certificate_and_key(void);
 esp_err_t esp_eap_client_remote_set_disable_time_check(_Bool disable);
 esp_err_t esp_eap_client_remote_get_disable_time_check(_Bool *disable);
+esp_err_t esp_eap_client_remote_set_phase2_method(esp_eap_phase2_types type);
 esp_err_t esp_eap_client_remote_set_ttls_phase2_method(esp_eap_ttls_phase2_types type);
 esp_err_t esp_eap_client_remote_set_suiteb_192bit_certification(_Bool enable);
 esp_err_t esp_eap_client_remote_set_pac_file(const unsigned char *pac_file, int pac_file_len);

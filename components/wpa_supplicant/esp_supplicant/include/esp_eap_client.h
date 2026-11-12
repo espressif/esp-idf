@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -14,6 +14,21 @@ extern "C" {
 #endif
 
 /**
+ * @brief Enumeration of phase 2 authentication types for EAP-TTLS and EAP-PEAP.
+ *
+ * This enumeration is compatible and has the same values as esp_eap_ttls_phase2_types,
+ * and is intended to be used across both EAP-TTLS and EAP-PEAP.
+ */
+typedef enum {
+    ESP_EAP_PHASE2_EAP,        /**< EAP (Extensible Authentication Protocol) - Supported by TTLS */
+    ESP_EAP_PHASE2_MSCHAPV2,   /**< MS-CHAPv2 (Microsoft Challenge Handshake Authentication Protocol - Version 2) - Supported by PEAP and TTLS */
+    ESP_EAP_PHASE2_MSCHAP,     /**< MS-CHAP (Microsoft Challenge Handshake Authentication Protocol) - Supported by TTLS */
+    ESP_EAP_PHASE2_PAP,        /**< PAP (Password Authentication Protocol) - Supported by TTLS */
+    ESP_EAP_PHASE2_CHAP,       /**< CHAP (Challenge Handshake Authentication Protocol) - Supported by TTLS */
+    ESP_EAP_PHASE2_GTC,        /**< GTC (Generic Token Card) - Supported by PEAP and TTLS. ESP-IDF sends the static password from esp_eap_client_set_password() inside the tunnel and does not prompt for a token or OTP */
+} esp_eap_phase2_types;
+
+/**
  * @brief Enumeration of phase 2 authentication types for EAP-TTLS.
  *
  * This enumeration defines the supported phase 2 authentication methods
@@ -26,7 +41,8 @@ typedef enum {
     ESP_EAP_TTLS_PHASE2_MSCHAPV2,   /**< MS-CHAPv2 (Microsoft Challenge Handshake Authentication Protocol - Version 2) */
     ESP_EAP_TTLS_PHASE2_MSCHAP,     /**< MS-CHAP (Microsoft Challenge Handshake Authentication Protocol) */
     ESP_EAP_TTLS_PHASE2_PAP,        /**< PAP (Password Authentication Protocol) */
-    ESP_EAP_TTLS_PHASE2_CHAP        /**< CHAP (Challenge Handshake Authentication Protocol) */
+    ESP_EAP_TTLS_PHASE2_CHAP,       /**< CHAP (Challenge Handshake Authentication Protocol) */
+    ESP_EAP_TTLS_PHASE2_GTC,        /**< GTC (Generic Token Card) */
 } esp_eap_ttls_phase2_types;
 
 /**
@@ -265,14 +281,41 @@ esp_err_t esp_eap_client_set_disable_time_check(bool disable);
 esp_err_t esp_eap_client_get_disable_time_check(bool *disable);
 
 /**
+ * @brief Set EAP phase 2 method for TTLS/PEAP.
+ *
+ * This function sets the phase 2 method to be used during tunneled authentication.
+ * EAP-PEAP supports only tunneled EAP methods (EAP-MSCHAPv2 and EAP-GTC).
+ * EAP-TTLS supports those tunneled EAP methods and the legacy non-EAP protocols
+ * MSCHAPv2, MSCHAP, PAP, and CHAP.
+ *
+ * This API will overwrite the value set by the older API esp_eap_client_set_ttls_phase2_method
+ * and can be used instead of it.
+ *
+ * On the hosted Wi-Fi remote backend (ESP32-P4 and ESP32-H2), current esp_hosted
+ * releases do not implement this function, so the call returns ESP_ERR_NOT_SUPPORTED.
+ *
+ * @param[in] type The type of phase 2 method to be used.
+ *
+ * @return
+ *    - ESP_OK: The EAP phase 2 method was set successfully.
+ *    - ESP_ERR_INVALID_ARG: Invalid argument (type is not a supported phase 2 method).
+ *    - ESP_ERR_NOT_SUPPORTED: Wi-Fi is provided by the hosted remote backend, which does not implement this function.
+ */
+esp_err_t esp_eap_client_set_phase2_method(esp_eap_phase2_types type);
+
+/**
  * @brief Set EAP-TTLS phase 2 method.
  *
  * This function sets the phase 2 method to be used during EAP-TTLS authentication.
  *
- * @param[in] type The type of phase 2 method to be used (e.g., EAP, MSCHAPv2, MSCHAP, PAP, CHAP).
+ * @param[in] type The type of phase 2 method to be used (e.g., EAP, MSCHAPv2, MSCHAP, PAP, CHAP, GTC).
  *
  * @return
  *    - ESP_OK: The EAP-TTLS phase 2 method was set successfully.
+ *    - ESP_ERR_INVALID_ARG: Invalid argument (type is not a supported phase 2 method).
+ *      Earlier versions stored an out-of-range value as MSCHAPv2 and returned ESP_OK.
+ *
+ * Use esp_eap_client_set_phase2_method() instead. It sets the phase 2 method for both EAP-TTLS and EAP-PEAP.
  */
 esp_err_t esp_eap_client_set_ttls_phase2_method(esp_eap_ttls_phase2_types type);
 

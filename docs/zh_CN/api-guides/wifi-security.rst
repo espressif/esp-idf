@@ -84,7 +84,7 @@ API 及用法
 
 - **PEAP**
 
-  一种受保护的 EAP 方法，需要提供用户名和密码。
+  一种受保护的 EAP 方法，需要提供用户名和密码。隧道内的 Phase 2 认证可使用 EAP-MSCHAPv2 (``ESP_EAP_PHASE2_MSCHAPV2``) 或 EAP-GTC (``ESP_EAP_PHASE2_GTC``)。EAP-GTC 会发送通过 ``esp_eap_client_set_password()`` 配置的静态密码，而不会提示用户输入令牌或 OTP。
 
 - **EAP-TTLS**
 
@@ -94,10 +94,13 @@ API 及用法
   - CHAP：挑战握手认证协议
   - MSCHAP
   - MSCHAP-V2
+  - EAP-GTC：通用令牌卡，在隧道内使用。ESP-IDF 发送 ``esp_eap_client_set_password()`` 配置的静态密码
 
 - **EAP-FAST**
 
   基于受保护访问凭证 (PAC) 的认证方法，需要身份标识和密码。使用 EAP-FAST 时需要 **禁用** :menuitem:`CONFIG_ESP_WIFI_MBEDTLS_TLS_CLIENT`。
+
+``esp_eap_client_set_phase2_method()`` 用于为 EAP-PEAP 和 EAP-TTLS 选择 Phase 2 方法。
 
 示例
 ++++++++
