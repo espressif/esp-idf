@@ -21,15 +21,19 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/semphr.h"
 #include "esp_private/esp_cache_private.h"
+#include "esp_private/spi_common_internal.h"
 
 /// Max number of transactions in flight (used in start_command_write_blocks)
 #define SDSPI_TRANSACTION_COUNT 4
 #define SDSPI_MOSI_IDLE_VAL     0xff    //!< Data value which causes MOSI to stay high
 #define GPIO_UNUSED 0xff                //!< Flag indicating that CD/WP is unused
-/// Size of the buffer returned by get_block_buf
+/// Minimum size of the slot buffer: one data block, its CRC, and 2 bytes to scan for the next start token
 #define SDSPI_BLOCK_BUF_SIZE    (SDSPI_MAX_DATA_LEN + 4)
 /// Maximum number of dummy bytes between the request and response (minimum is 1)
 #define SDSPI_RESPONSE_MAX_DELAY  8
+/// Number of bytes read per poll while waiting for a data start token
+#define SDSPI_TOKEN_POLL_SIZE   8
+#define SDSPI_ALIGN_UP(n, a)    (((n) + (a) - 1) / (a) * (a))
 
 /**
  * @brief Structure containing run time configuration for a single SD slot
@@ -42,7 +46,14 @@
 typedef struct {
     spi_host_device_t   host_id; //!< SPI host id.
     spi_device_handle_t spi_handle; //!< SPI device handle, used for transactions
+    /// DMA buffer for every receive and for transmitting non-DMA-capable data,
+    /// allocated at init, aligned to and a multiple of rx_align, block_buf_size bytes.
+    /// Receiving only into this buffer, with lengths padded to rx_len_align, means
+    /// spi_master never has to allocate a temporary DMA buffer for a transaction.
     uint8_t* block_buf;
+    size_t block_buf_size;
+    size_t rx_align;              //!< RX DMA address alignment required by the SPI bus
+    size_t rx_len_align;          //!< RX DMA length alignment required by the SPI bus (1 if none)
     /// semaphore of gpio interrupt
     SemaphoreHandle_t   semphr_int;
     uint16_t duty_cycle_pos;  ///< Duty cycle of positive clock, in 1/256th increments (128 = 50%/50% duty). Setting this to 0 (=not setting it) is equivalent to setting this to 128.
@@ -57,8 +68,6 @@ typedef struct {
     uint8_t gpio_wp_polarity : 1;
     /// Set to 1 if the higher layer has asked the card to enable CRC checks
     uint8_t data_crc_enabled : 1;
-    /// Intermediate buffer used when application buffer is not in DMA memory;
-    /// allocated on demand, SDSPI_BLOCK_BUF_SIZE bytes long. May be zero.
 } slot_info_t;
 
 // Reserved for old API to be back-compatible
@@ -70,7 +79,8 @@ static const bool no_use_polling = true;
 
 /// Functions to send out different kinds of commands
 static esp_err_t start_command_read_blocks(slot_info_t *slot, sdspi_hw_cmd_t *cmd,
-                                           uint8_t *data, uint32_t rx_length, bool need_stop_command);
+                                           uint8_t *data, uint32_t rx_length, bool need_stop_command,
+                                           size_t response_extra);
 
 static esp_err_t start_command_write_blocks(slot_info_t *slot, sdspi_hw_cmd_t *cmd,
                                             const uint8_t *data, uint32_t tx_length, bool multi_block, bool stop_trans);
@@ -155,26 +165,92 @@ static bool card_missing(slot_info_t *slot)
     return gpio_get_level(slot->gpio_cd) == 1;
 }
 
-/// Get pointer to a block of DMA memory, allocate if necessary.
-/// This is used if the application provided buffer is not in DMA capable memory.
-static esp_err_t get_block_buf(slot_info_t *slot, uint8_t **out_buf)
+/// RX DMA address and length alignment that spi_master applies to internal
+/// RAM on this bus (see spicommon_dma_setup_priv_buffer() in spi_common.c):
+/// the address must be a multiple of the larger of the DMA and cache line
+/// alignment, and the length only when the cache line alignment is > 1.
+/// Both are 1 when the bus has no DMA.
+static void get_rx_dma_alignment(spi_host_device_t host_id, size_t *addr_align, size_t *len_align)
 {
-    if (slot->block_buf == NULL) {
-        slot->block_buf = heap_caps_malloc(SDSPI_BLOCK_BUF_SIZE, MALLOC_CAP_DMA);
-        if (slot->block_buf == NULL) {
-            return ESP_ERR_NO_MEM;
+    *addr_align = 1;
+    *len_align = 1;
+    const spi_bus_attr_t *bus_attr = spi_bus_get_attr(host_id);
+    if (bus_attr && bus_attr->dma_enabled) {
+        const spi_dma_ctx_t *dma_ctx = spi_bus_get_dma_ctx(host_id);
+        if (dma_ctx) {
+            *addr_align = MAX(*addr_align, dma_ctx->dma_align_rx_int);
+        }
+        *addr_align = MAX(*addr_align, bus_attr->cache_align_int);
+        if (bus_attr->cache_align_int > 1) {
+            *len_align = *addr_align;
         }
     }
-    *out_buf = slot->block_buf;
+}
+
+/// Allocate the slot's DMA buffer, sized and aligned for the bus RX DMA alignment
+static esp_err_t alloc_block_buf(slot_info_t *slot)
+{
+    get_rx_dma_alignment(slot->host_id, &slot->rx_align, &slot->rx_len_align);
+    slot->block_buf_size = SDSPI_ALIGN_UP(SDSPI_BLOCK_BUF_SIZE, slot->rx_align);
+    slot->block_buf = heap_caps_aligned_alloc(MAX(slot->rx_align, 4), slot->block_buf_size,
+                                              MALLOC_CAP_DMA | MALLOC_CAP_INTERNAL);
+    if (slot->block_buf == NULL) {
+        return ESP_ERR_NO_MEM;
+    }
+    ESP_LOGD(TAG, "%s: RX DMA alignment %u, length alignment %u, buffer %u bytes", __func__,
+             (unsigned)slot->rx_align, (unsigned)slot->rx_len_align, (unsigned)slot->block_buf_size);
     return ESP_OK;
+}
+
+/**
+ * Full-duplex transfer of padded bytes (>= len) through the slot buffer.  The
+ * first len bytes sent are copied from tx, or are 0xff if tx is NULL; the rest
+ * are 0xff, so the card sees only extra idle clocks.  On success *rx points to
+ * the received bytes in the slot buffer and *rx_len is padded.  The data is
+ * valid until the next transfer.
+ */
+static esp_err_t transfer(slot_info_t *slot, const void *tx, size_t len, size_t padded, bool polling,
+                          uint8_t **rx, size_t *rx_len)
+{
+    assert(len <= padded && padded <= slot->block_buf_size);
+    uint8_t *buf = slot->block_buf;
+    size_t tx_len = 0;
+    if (tx) {
+        memcpy(buf, tx, len);
+        tx_len = len;
+    }
+    memset(buf + tx_len, SDSPI_MOSI_IDLE_VAL, padded - tx_len);
+    spi_transaction_t t = {
+        .length = padded * 8,
+        .tx_buffer = buf,
+        .rx_buffer = buf,
+    };
+    esp_err_t ret;
+    if (polling) {
+        ret = spi_device_polling_transmit(slot->spi_handle, &t);
+    } else {
+        ret = spi_device_transmit(slot->spi_handle, &t);
+    }
+    *rx = buf;
+    *rx_len = padded;
+    return ret;
+}
+
+/// transfer(), padded to the RX DMA length alignment so spi_master needs no temporary buffer
+static esp_err_t rx_transfer(slot_info_t *slot, const void *tx, size_t len, bool polling,
+                             uint8_t **rx, size_t *rx_len)
+{
+    return transfer(slot, tx, len, SDSPI_ALIGN_UP(len, slot->rx_len_align), polling, rx, rx_len);
 }
 
 /// Clock out one byte (CS has to be high) to make the card release MISO
 /// (clocking one bit would work as well, but that triggers a bug in SPI DMA)
 static void release_bus(slot_info_t *slot)
 {
+    // TX only: the received byte is not used, and where spi_master checks the
+    // RX DMA length a 1-byte RX would need a bounce buffer on every command.
     spi_transaction_t t = {
-        .flags = SPI_TRANS_USE_RXDATA | SPI_TRANS_USE_TXDATA,
+        .flags = SPI_TRANS_USE_TXDATA,
         .length = 8,
         .tx_data = {0xff}
     };
@@ -185,13 +261,14 @@ static void release_bus(slot_info_t *slot)
 /// Clock out 80 cycles (10 bytes) before GO_IDLE command
 static void go_idle_clockout(slot_info_t *slot)
 {
-    //actually we need 10, declare 12 to meet requirement of RXDMA
+    // 12 bytes for 10 sent: without DMA, the TX FIFO is filled a 32-bit word at a time
     uint8_t data[12];
     memset(data, 0xff, sizeof(data));
+    // TX only: the received bytes are not used, and a 10-byte RX would not
+    // meet the RX DMA length alignment.
     spi_transaction_t t = {
         .length = 10 * 8,
         .tx_buffer = data,
-        .rx_buffer = data,
     };
     spi_device_polling_transmit(slot->spi_handle, &t);
     // don't care if this failed
@@ -233,9 +310,10 @@ static esp_err_t deinit_slot(slot_info_t *slot)
     if (slot->spi_handle) {
         spi_bus_remove_device(slot->spi_handle);
         slot->spi_handle = NULL;
-        free(slot->block_buf);
-        slot->block_buf = NULL;
     }
+    // Allocated at init, so free it even if a reconfiguration left no device
+    free(slot->block_buf);
+    slot->block_buf = NULL;
 
     uint64_t pin_bit_mask = 0;
     if (slot->gpio_cs != GPIO_UNUSED) {
@@ -373,6 +451,11 @@ esp_err_t sdspi_host_init_device(const sdspi_device_config_t* slot_config, sdspi
         goto cleanup;
     }
 
+    ret = alloc_block_buf(slot);
+    if (ret != ESP_OK) {
+        goto cleanup;
+    }
+
     // Configure CS pin
     gpio_config_t io_conf = {
         .intr_type = GPIO_INTR_DISABLE,
@@ -473,6 +556,7 @@ cleanup:
         spi_bus_remove_device(slot->spi_handle);
         slot->spi_handle = NULL;
     }
+    free(slot->block_buf);
     free(slot);
     return ret;
 }
@@ -527,7 +611,9 @@ esp_err_t sdspi_host_start_command(sdspi_dev_handle_t handle, sdspi_hw_cmd_t *cm
         if (flags & SDSPI_CMD_FLAG_WRITE) {
             ret = start_command_write_blocks(slot, cmd, data, data_size, multi_block, stop_transmission);
         } else {
-            ret = start_command_read_blocks(slot, cmd, data, data_size, stop_transmission);
+            // R5 (SDIO CMD53) has a second response byte after R1, not part of the data stream
+            const size_t response_extra = (flags & SDSPI_CMD_FLAG_RSP_R5) ? 1 : 0;
+            ret = start_command_read_blocks(slot, cmd, data, data_size, stop_transmission, response_extra);
         }
     } else {
         ret = start_command_default(slot, flags, cmd);
@@ -569,13 +655,12 @@ static esp_err_t start_command_default(slot_info_t *slot, int flags, sdspi_hw_cm
     }
     //add extra clocks to avoid polling
     cmd_size += (SDSPI_NCR_MAX_SIZE - SDSPI_NCR_MIN_SIZE);
-    spi_transaction_t t = {
-        .flags = 0,
-        .length = cmd_size * 8,
-        .tx_buffer = cmd,
-        .rx_buffer = cmd,
-    };
-    esp_err_t ret = spi_device_polling_transmit(slot->spi_handle, &t);
+    uint8_t *rx;
+    size_t rx_len;
+    esp_err_t ret = rx_transfer(slot, cmd, cmd_size, use_polling, &rx, &rx_len);
+    if (ret == ESP_OK) {
+        memcpy(cmd, rx, cmd_size);
+    }
     if (cmd->cmd_index == MMC_STOP_TRANSMISSION) {
         /* response is a stuff byte from previous transfer, ignore it */
         cmd->r1 = 0xff;
@@ -614,73 +699,24 @@ static esp_err_t poll_busy(slot_info_t *slot, int timeout_ms, bool polling)
     } else if (timeout_ms == 0) {
         return ESP_OK;
     }
-    uint8_t t_rx;
-    spi_transaction_t t = {
-        .tx_buffer = &t_rx,
-        .flags = SPI_TRANS_USE_RXDATA,  //data stored in rx_data
-        .length = 8,
-    };
+    uint8_t *rx;
+    size_t rx_len;
     esp_err_t ret;
 
     int64_t t_end = esp_timer_get_time() + timeout_ms * 1000;
     int nonzero_count = 0;
     do {
-        t_rx = SDSPI_MOSI_IDLE_VAL;
-        t.rx_data[0] = 0;
-        if (polling) {
-            ret = spi_device_polling_transmit(slot->spi_handle, &t);
-        } else {
-            ret = spi_device_transmit(slot->spi_handle, &t);
-        }
+        // A 1-byte read, padded to the RX DMA length alignment; every byte is a sample of MISO
+        ret = rx_transfer(slot, NULL, 1, polling, &rx, &rx_len);
         if (ret != ESP_OK) {
             return ret;
         }
-        if (t.rx_data[0] != 0) {
-            if (++nonzero_count == 2) {
-                return ESP_OK;
+        for (size_t i = 0; i < rx_len; i++) {
+            if (rx[i] != 0) {
+                if (++nonzero_count == 2) {
+                    return ESP_OK;
+                }
             }
-        }
-    } while (esp_timer_get_time() < t_end);
-    ESP_LOGD(TAG, "%s: timeout", __func__);
-    return ESP_ERR_TIMEOUT;
-}
-
-// Wait for data token, reading 8 bytes at a time.
-// If the token is found, write all subsequent bytes to extra_ptr,
-// and store the number of bytes written to extra_size.
-static esp_err_t poll_data_token(slot_info_t *slot, uint8_t *extra_ptr, size_t *extra_size, int timeout_ms)
-{
-    uint8_t t_rx[8];
-    spi_transaction_t t = {
-        .tx_buffer = &t_rx,
-        .rx_buffer = &t_rx,
-        .length = sizeof(t_rx) * 8,
-    };
-    esp_err_t ret;
-    int64_t t_end = esp_timer_get_time() + timeout_ms * 1000;
-    do {
-        memset(t_rx, SDSPI_MOSI_IDLE_VAL, sizeof(t_rx));
-        ret = spi_device_polling_transmit(slot->spi_handle, &t);
-        if (ret != ESP_OK) {
-            return ret;
-        }
-        bool found = false;
-        for (size_t byte_idx = 0; byte_idx < sizeof(t_rx); byte_idx++) {
-            uint8_t rd_data = t_rx[byte_idx];
-            if (rd_data == TOKEN_BLOCK_START) {
-                found = true;
-                memcpy(extra_ptr, t_rx + byte_idx + 1, sizeof(t_rx) - byte_idx - 1);
-                *extra_size = sizeof(t_rx) - byte_idx - 1;
-                break;
-            }
-            if (rd_data != 0xff && rd_data != 0) {
-                ESP_LOGD(TAG, "%s: received 0x%02x while waiting for data",
-                         __func__, rd_data);
-                return ESP_ERR_INVALID_RESPONSE;
-            }
-        }
-        if (found) {
-            return ESP_OK;
         }
     } while (esp_timer_get_time() < t_end);
     ESP_LOGD(TAG, "%s: timeout", __func__);
@@ -728,142 +764,166 @@ static esp_err_t shift_cmd_response(sdspi_hw_cmd_t* cmd, int sent_bytes)
  * and the beginning of step 4. A delay between two blocking SPI transactions
  * in step 2 is even higher (~60 microseconds).
  *
- * To improve read performance the following sequence is adopted:
- * 1. Do the first transfer: command + r1 response + 8 extra bytes.
- *    Set pre_scan_data_ptr to point to the 8 extra bytes, and set
- *    pre_scan_data_size to 8.
- * 2. Search pre_scan_data_size bytes for TOKEN_BLOCK_START.
- *    If found, the rest of the bytes contain part of the actual data.
- *    Store pointer to and size of that extra data as extra_data_{ptr,size}.
- *    If not found, fall back to polling for TOKEN_BLOCK_START, 8 bytes at a
- *    time (in poll_data_token function). Deal with extra data in the same way,
- *    by setting extra_data_{ptr,size}.
- * 3. Receive the remaining 512 - extra_data_size bytes, plus 4 extra bytes
- *    (i.e. 516 - extra_data_size). Of the 4 extra bytes, first two will capture
- *    the CRC value, and the other two will capture 0xff 0xfe sequence
- *    indicating the start of the next block. Actual scanning is done by
- *    setting pre_scan_data_ptr to point to these last 2 bytes, and setting
- *    pre_scan_data_size = 2, then going to step 2 to receive the next block.
- *    When the final block is being received, the number of extra bytes is 2
- *    (only for CRC), because we don't need to wait for start token of the
- *    next block, and some cards are getting confused by these two extra bytes.
+ * To improve read performance, everything clocked in after the command is
+ * treated as one byte stream and fed to read_stream_feed(), so bytes that
+ * arrive ahead of time in one transfer (start token, data, CRC) are consumed
+ * in order and never re-read:
+ * 1. Do the first transfer: command + r1 response + 8 extra bytes.  The bytes
+ *    after r1 go to the parser, which may find the start token among them.
+ * 2. While waiting for TOKEN_BLOCK_START, poll SDSPI_TOKEN_POLL_SIZE bytes at
+ *    a time.  Bytes after the token are data.
+ * 3. Once in a block, receive the rest of the data and the CRC in one
+ *    transfer, plus 2 extra bytes when another block follows, which often
+ *    contain the next start token so that step 2 is skipped.  When the final
+ *    block is being received, the 2 extra bytes are not requested, because
+ *    some cards take extra bytes before STOP_TRANSMISSION as part of the command.
  *
- * With this approach the delay between blocks of a multi-block transfer is
- * ~95 microseconds, out of which 35 microseconds are spend doing the CRC check.
- * Further speedup is possible by pipelining transfers and CRC checks, at an
- * expense of one extra temporary buffer.
+ * Every transfer is padded to the bus RX DMA length alignment (1 on most
+ * targets, the cache line on ESP32-P4), so spi_master never allocates a
+ * temporary buffer.  The padding is parsed like any other received bytes,
+ * except after the final CRC, where it is ignored.  The one exception is the
+ * transfer ending with the final CRC of a multi-block read, which is done at
+ * its exact length so that no extra clocks precede STOP_TRANSMISSION; where
+ * the length must be aligned, spi_master allocates a temporary buffer for it,
+ * once per multi-block read.
  */
-static esp_err_t start_command_read_blocks(slot_info_t *slot, sdspi_hw_cmd_t *cmd,
-                                           uint8_t *data, uint32_t rx_length, bool need_stop_command)
+typedef struct {
+    size_t skip;            ///< Response bytes after R1 still to be discarded
+    uint8_t *data;          ///< Destination of the next data byte
+    uint32_t remaining;     ///< Data bytes not yet completed, including the current block
+    uint8_t *block_start;   ///< Destination of the current block
+    size_t block_len;       ///< Size of the current block
+    size_t block_left;      ///< Data bytes still to come in the current block
+    size_t crc_got;         ///< CRC bytes received for the current block
+    uint8_t crc[2];         ///< CRC of the current block, as received
+    bool in_block;          ///< Start token of the current block has been seen
+    bool crc_enabled;       ///< Check the CRC of each block
+} read_stream_t;
+
+/// Consume received bytes of a block read.  Bytes after the final CRC are ignored.
+static esp_err_t read_stream_feed(read_stream_t *rs, const uint8_t *p, size_t n)
 {
-    spi_transaction_t t_command = {
-        .length = (SDSPI_CMD_R1_SIZE + SDSPI_RESPONSE_MAX_DELAY) * 8,
-        .tx_buffer = cmd,
-        .rx_buffer = cmd,
-    };
-    esp_err_t ret = spi_device_polling_transmit(slot->spi_handle, &t_command);
+    size_t skip = MIN(n, rs->skip);
+    rs->skip -= skip;
+    p += skip;
+    n -= skip;
+    while (n > 0 && rs->remaining > 0) {
+        if (!rs->in_block) {
+            uint8_t b = *p++;
+            --n;
+            if (b == TOKEN_BLOCK_START) {
+                rs->in_block = true;
+                rs->block_start = rs->data;
+                rs->block_len = MIN(rs->remaining, SDSPI_MAX_DATA_LEN);
+                rs->block_left = rs->block_len;
+                rs->crc_got = 0;
+            } else if (b != 0xff && b != 0) {
+                ESP_LOGD(TAG, "%s: received 0x%02x while waiting for data", __func__, b);
+                return ESP_ERR_INVALID_RESPONSE;
+            }
+        } else if (rs->block_left > 0) {
+            size_t k = MIN(n, rs->block_left);
+            memcpy(rs->data, p, k);
+            rs->data += k;
+            rs->block_left -= k;
+            p += k;
+            n -= k;
+        } else {
+            rs->crc[rs->crc_got++] = *p++;
+            --n;
+            if (rs->crc_got == sizeof(rs->crc)) {
+                if (rs->crc_enabled) {
+                    uint16_t crc;
+                    memcpy(&crc, rs->crc, sizeof(crc));
+                    uint16_t crc_of_data = sdspi_crc16(rs->block_start, rs->block_len);
+                    if (crc_of_data != crc) {
+                        ESP_LOGE(TAG, "data CRC failed, got=0x%04x expected=0x%04x", crc_of_data, crc);
+                        ESP_LOG_BUFFER_HEX(TAG, rs->block_start, MIN(rs->block_len, 16));
+                        return ESP_ERR_INVALID_CRC;
+                    }
+                }
+                rs->remaining -= rs->block_len;
+                rs->in_block = false;
+            }
+        }
+    }
+    return ESP_OK;
+}
+
+static esp_err_t start_command_read_blocks(slot_info_t *slot, sdspi_hw_cmd_t *cmd,
+                                           uint8_t *data, uint32_t rx_length, bool need_stop_command,
+                                           size_t response_extra)
+{
+    const size_t cmd_bytes = SDSPI_CMD_R1_SIZE + SDSPI_RESPONSE_MAX_DELAY;
+    uint8_t *rx;
+    size_t rx_len;
+    esp_err_t ret = rx_transfer(slot, cmd, cmd_bytes, use_polling, &rx, &rx_len);
     if (ret != ESP_OK) {
         return ret;
     }
-
-    uint8_t* cmd_u8 = (uint8_t*) cmd;
-    size_t pre_scan_data_size = SDSPI_RESPONSE_MAX_DELAY;
-    uint8_t* pre_scan_data_ptr = cmd_u8 + SDSPI_CMD_R1_SIZE;
+    memcpy(cmd, rx, cmd_bytes);
 
     /* R1 response is delayed by 1-8 bytes from the request.
      * This loop searches for the response and writes it to cmd->r1.
      */
-    while ((cmd->r1 & SD_SPI_R1_NO_RESPONSE) != 0 && pre_scan_data_size > 0) {
-        cmd->r1 = *pre_scan_data_ptr;
-        ++pre_scan_data_ptr;
-        --pre_scan_data_size;
+    size_t pos = SDSPI_CMD_R1_SIZE;
+    while ((cmd->r1 & SD_SPI_R1_NO_RESPONSE) != 0 && pos < cmd_bytes) {
+        cmd->r1 = rx[pos++];
     }
     if (cmd->r1 & SD_SPI_R1_NO_RESPONSE) {
         ESP_LOGD(TAG, "no response token found");
         return ESP_ERR_TIMEOUT;
     }
 
-    while (rx_length > 0) {
-        size_t extra_data_size = 0;
-        const uint8_t* extra_data_ptr = NULL;
-        bool need_poll = true;
+    read_stream_t rs = {
+        .skip = response_extra,
+        .data = data,
+        .remaining = rx_length,
+        .crc_enabled = slot->data_crc_enabled,
+    };
+    ret = read_stream_feed(&rs, rx + pos, rx_len - pos);
+    if (ret != ESP_OK) {
+        return ret;
+    }
 
-        for (size_t i = 0; i < pre_scan_data_size; ++i) {
-            if (pre_scan_data_ptr[i] == TOKEN_BLOCK_START) {
-                extra_data_size = pre_scan_data_size - i - 1;
-                extra_data_ptr = pre_scan_data_ptr + i + 1;
-                need_poll = false;
-                break;
-            }
-        }
-
-        if (need_poll) {
+    int64_t t_end = esp_timer_get_time() + cmd->timeout_ms * 1000;
+    while (rs.remaining > 0) {
+        size_t want;
+        bool polling;
+        if (!rs.in_block) {
             // Wait for data to be ready
-            ret = poll_data_token(slot, cmd_u8 + SDSPI_CMD_R1_SIZE, &extra_data_size, cmd->timeout_ms);
-            if (ret != ESP_OK) {
-                return ret;
+            if (esp_timer_get_time() >= t_end) {
+                ESP_LOGD(TAG, "%s: timeout", __func__);
+                return ESP_ERR_TIMEOUT;
             }
-            if (extra_data_size) {
-                extra_data_ptr = cmd_u8 + SDSPI_CMD_R1_SIZE;
+            want = SDSPI_TOKEN_POLL_SIZE;
+            polling = true;
+        } else {
+            want = rs.block_left + sizeof(rs.crc) - rs.crc_got;
+            if (rs.remaining > rs.block_len) {
+                // Look for the start token of the next block in the same transfer
+                want += 2;
             }
+            want = MIN(want, slot->block_buf_size);
+            polling = false;
         }
-
-        // Arrange RX buffer
-        size_t expected_data_size = MIN(rx_length, SDSPI_MAX_DATA_LEN);
-        if (extra_data_size > expected_data_size) {
-            ESP_LOGD(TAG, "%s: invalid extra data size %u (expected <= %u)", __func__, (unsigned)extra_data_size, (unsigned)expected_data_size);
-            return ESP_ERR_INVALID_RESPONSE;
+        size_t padded = SDSPI_ALIGN_UP(want, slot->rx_len_align);
+        if (need_stop_command && rs.in_block && rs.remaining == rs.block_len) {
+            // No extra clocks between the final CRC and STOP_TRANSMISSION
+            padded = want;
         }
-        size_t will_receive = expected_data_size - extra_data_size;
-        uint8_t* rx_data;
-        ret = get_block_buf(slot, &rx_data);
+        ret = transfer(slot, NULL, want, padded, polling, &rx, &rx_len);
         if (ret != ESP_OK) {
             return ret;
         }
-
-        // receive actual data
-        const size_t receive_extra_bytes = (rx_length > SDSPI_MAX_DATA_LEN) ? 4 : 2;
-        memset(rx_data, 0xff, will_receive + receive_extra_bytes);
-        spi_transaction_t t_data = {
-            .length = (will_receive + receive_extra_bytes) * 8,
-            .rx_buffer = rx_data,
-            .tx_buffer = rx_data
-        };
-
-        ret = spi_device_transmit(slot->spi_handle, &t_data);
+        ret = read_stream_feed(&rs, rx, rx_len);
         if (ret != ESP_OK) {
             return ret;
         }
-
-        // CRC bytes need to be received even if CRC is not enabled
-        uint16_t crc = UINT16_MAX;
-        memcpy(&crc, rx_data + will_receive, sizeof(crc));
-
-        // Bytes to scan for the start token
-        pre_scan_data_size = receive_extra_bytes - sizeof(crc);
-        pre_scan_data_ptr = rx_data + will_receive + sizeof(crc);
-
-        // Copy data to the destination buffer
-        memcpy(data + extra_data_size, rx_data, will_receive);
-        if (extra_data_size) {
-            memcpy(data, extra_data_ptr, extra_data_size);
+        if (!polling) {
+            // The wait for the next start token is timed from the end of this block
+            t_end = esp_timer_get_time() + cmd->timeout_ms * 1000;
         }
-
-        // compute CRC of the received data
-        uint16_t crc_of_data = 0;
-        if (slot->data_crc_enabled) {
-            crc_of_data = sdspi_crc16(data, will_receive + extra_data_size);
-            if (crc_of_data != crc) {
-                ESP_LOGE(TAG, "data CRC failed, got=0x%04x expected=0x%04x", crc_of_data, crc);
-                ESP_LOG_BUFFER_HEX(TAG, data, 16);
-                return ESP_ERR_INVALID_CRC;
-            }
-        }
-
-        data += will_receive + extra_data_size;
-        rx_length -= will_receive + extra_data_size;
-        extra_data_size = 0;
-        extra_data_ptr = NULL;
     }
 
     if (need_stop_command) {
@@ -902,15 +962,13 @@ static esp_err_t start_command_write_blocks(slot_info_t *slot, sdspi_hw_cmd_t *c
     // SD cards always return R1 (1bytes), SDIO returns R5 (2 bytes)
     const int send_bytes = SDSPI_CMD_R5_SIZE + SDSPI_NCR_MAX_SIZE - SDSPI_NCR_MIN_SIZE;
 
-    spi_transaction_t t_command = {
-        .length = send_bytes * 8,
-        .tx_buffer = cmd,
-        .rx_buffer = cmd,
-    };
-    esp_err_t ret = spi_device_polling_transmit(slot->spi_handle, &t_command);
+    uint8_t *rx;
+    size_t rx_len;
+    esp_err_t ret = rx_transfer(slot, cmd, send_bytes, use_polling, &rx, &rx_len);
     if (ret != ESP_OK) {
         return ret;
     }
+    memcpy(cmd, rx, send_bytes);
 
     // check if command response valid
     ret = shift_cmd_response(cmd, send_bytes);
@@ -954,21 +1012,18 @@ static esp_err_t start_command_write_blocks(slot_info_t *slot, sdspi_hw_cmd_t *c
 
         // Write CRC and get the response in one transaction
         uint16_t crc = sdspi_crc16(data, will_send);
-        const int size_crc_response = sizeof(crc) + 1;
+        // CRC (2 bytes) then the data response (1 byte).  Any padding to the
+        // RX DMA alignment is clocked while the card is busy; poll_busy follows.
+        uint8_t crc_rsp[sizeof(crc) + 1];
+        memcpy(crc_rsp, &crc, sizeof(crc));
+        crc_rsp[sizeof(crc)] = SDSPI_MOSI_IDLE_VAL;
 
-        spi_transaction_t t_crc_rsp = {
-            .length = size_crc_response * 8,
-            .flags = SPI_TRANS_USE_TXDATA | SPI_TRANS_USE_RXDATA,
-        };
-        memset(t_crc_rsp.tx_data, 0xff, 4);
-        memcpy(t_crc_rsp.tx_data, &crc, sizeof(crc));
-
-        ret = spi_device_polling_transmit(slot->spi_handle, &t_crc_rsp);
+        ret = rx_transfer(slot, crc_rsp, sizeof(crc_rsp), use_polling, &rx, &rx_len);
         if (ret != ESP_OK) {
             return ret;
         }
 
-        uint8_t data_rsp = t_crc_rsp.rx_data[2];
+        uint8_t data_rsp = rx[sizeof(crc)];
         if (!SD_SPI_DATA_RSP_VALID(data_rsp)) {
             return ESP_ERR_INVALID_RESPONSE;
         }
