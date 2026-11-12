@@ -233,7 +233,22 @@ esp_err_t i2c_select_periph_clock(i2c_bus_handle_t handle, soc_module_clk_t clk_
 esp_err_t i2c_common_set_pins(i2c_bus_handle_t handle);
 
 /**
+ * @brief Init I2C SCL/SDA pins
+ *
+ * Reserves GPIO pins used by the I2C master bus or slave device
+ *
+ * @param handle I2C bus handle
+ * @return
+ *      - ESP_OK: I2C set SCL/SDA pins successfully.
+ *      - ESP_ERR_INVALID_ARG: Argument error.
+ *      - Otherwise: Set SCL/SDA IOs error.
+ */
+esp_err_t i2c_common_init_pins(i2c_bus_handle_t handle);
+
+/**
  * @brief Deinit I2C SCL/SDA pins
+ *
+ * Revokes GPIO pins used by the I2C master bus or slave device
  *
  * @param handle I2C bus handle
  * @return

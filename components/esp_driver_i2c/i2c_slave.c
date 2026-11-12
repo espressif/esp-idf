@@ -273,7 +273,7 @@ esp_err_t i2c_new_slave_device(const i2c_slave_config_t *slave_config, i2c_slave
     i2c_slave->base->pull_up_enable = slave_config->flags.enable_internal_pullup;
     i2c_slave->rx_data_count = 0;
     i2c_port_num_t i2c_port_num = i2c_slave->base->port_num;
-    ESP_GOTO_ON_ERROR(i2c_common_set_pins(i2c_slave->base), err, TAG, "i2c slave set pins failed");
+    ESP_GOTO_ON_ERROR(i2c_common_init_pins(i2c_slave->base), err, TAG, "i2c slave init pins failed");
 
     i2c_slave->rx_ring_buf = xRingbufferCreateWithCaps(slave_config->receive_buf_depth, RINGBUF_TYPE_BYTEBUF, I2C_MEM_ALLOC_CAPS);
     ESP_GOTO_ON_FALSE(i2c_slave->rx_ring_buf != NULL, ESP_ERR_INVALID_STATE, err, TAG, "ringbuffer create failed");
