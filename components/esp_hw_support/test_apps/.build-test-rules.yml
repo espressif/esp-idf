@@ -1,6 +1,8 @@
 # Documentation: .gitlab/ci/README.md#manifest-file-to-control-the-buildtest-apps
 
 components/esp_hw_support/test_apps/cpu:
+  disable:
+    - if: CONFIG_NAME == "psram" and IDF_TARGET not in ["esp32s3", "esp32p4"]
   depends_components:
     - esp_hw_support
     - riscv
