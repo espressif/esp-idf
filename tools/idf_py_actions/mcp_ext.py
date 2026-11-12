@@ -2,6 +2,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 import json
+import locale
 import math
 import os
 import subprocess
@@ -384,6 +385,17 @@ def tail(text: str, limit: int) -> str:
     return f'[...truncated...]\n{text[-limit:]}'
 
 
+def _run_cmd(cmd: list[str]) -> subprocess.CompletedProcess[str]:
+    """Run a tool handler's command and capture its output as text.
+
+    stdin is DEVNULL because the MCP server's stdin is the long-lived JSON-RPC
+    transport pipe; a child that inherits it can hang instead of exiting.
+    Tool output is not guaranteed to be UTF-8, and a strict decode would lose
+    the exit code, so undecodable bytes are replaced.
+    """
+    return subprocess.run(cmd, capture_output=True, text=True, errors='replace', stdin=subprocess.DEVNULL)
+
+
 def action_extensions(base_actions: dict, project_path: str) -> dict:
     """ESP-IDF MCP Server Extension"""
 
@@ -427,9 +439,6 @@ def action_extensions(base_actions: dict, project_path: str) -> dict:
         mcp = _MCPServer('ESP-IDF')
 
         # === TOOLS (Actions) ===
-        # Tool handlers spawn idf.py with stdin=subprocess.DEVNULL. The MCP server's
-        # stdin is the long-lived JSON-RPC transport pipe; a child that inherits it
-        # can hang instead of exiting.
         @mcp.tool(description=f'Build the ESP-IDF project (runs `idf.py build`). {bound_hint}')
         def build_project(project_dir: str | None = None) -> str:
             """Build the ESP-IDF project.
@@ -453,7 +462,7 @@ def action_extensions(base_actions: dict, project_path: str) -> dict:
                     'build',
                 ]
                 print(f'INFO: Building project with command: {" ".join(cmd)} in path: {effective_dir}', file=sys.stderr)
-                result = subprocess.run(cmd, capture_output=True, text=True, stdin=subprocess.DEVNULL)
+                result = _run_cmd(cmd)
                 if result.returncode == 0:
                     print('INFO: Build successful', file=sys.stderr)
                     return 'Successfully built project'
@@ -494,7 +503,7 @@ def action_extensions(base_actions: dict, project_path: str) -> dict:
                     target,
                 ]
                 print(f'INFO: Setting target with command: {" ".join(cmd)} in path: {effective_dir}', file=sys.stderr)
-                result = subprocess.run(cmd, capture_output=True, text=True, stdin=subprocess.DEVNULL)
+                result = _run_cmd(cmd)
                 if result.returncode == 0:
                     print(f'INFO: Target set to: {target}', file=sys.stderr)
                     return f'Target set to: {target}'
@@ -536,7 +545,7 @@ def action_extensions(base_actions: dict, project_path: str) -> dict:
                     effective_dir,
                 ] + flash_args
                 print(f'INFO: Flashing project with command: {" ".join(cmd)} in path: {effective_dir}', file=sys.stderr)
-                result = subprocess.run(cmd, capture_output=True, text=True, stdin=subprocess.DEVNULL)
+                result = _run_cmd(cmd)
 
                 if result.returncode == 0:
                     print('INFO: Flash successful', file=sys.stderr)
@@ -617,6 +626,10 @@ def action_extensions(base_actions: dict, project_path: str) -> dict:
                 script, effective_timeout = assemble_monitor_script_from_agent_commands(
                     commands, timeout_sec=timeout_sec
                 )
+                # subprocess.run encodes input with the same errors= used to decode output
+                script.encode(locale.getpreferredencoding(False))
+            except UnicodeEncodeError as e:
+                return f'The monitor script contains a character that cannot be sent to the monitor: {e}'
             except ValueError as e:
                 return str(e)
             hard_timeout = 2 * effective_timeout
@@ -640,6 +653,7 @@ def action_extensions(base_actions: dict, project_path: str) -> dict:
                     # in order with the serial lines they belong to.
                     stderr=subprocess.STDOUT,
                     text=True,
+                    errors='replace',
                     timeout=hard_timeout,
                 )
             except subprocess.TimeoutExpired as e:
@@ -697,7 +711,7 @@ def action_extensions(base_actions: dict, project_path: str) -> dict:
                     name,
                 ]
                 print(f'INFO: Creating project "{name}" in {parent_dir}', file=sys.stderr)
-                result = subprocess.run(cmd, capture_output=True, text=True, stdin=subprocess.DEVNULL)
+                result = _run_cmd(cmd)
                 if result.returncode == 0:
                     project_path_new = os.path.join(parent_dir, name)
                     print(f'INFO: Project "{name}" created at {project_path_new}', file=sys.stderr)
@@ -733,7 +747,7 @@ def action_extensions(base_actions: dict, project_path: str) -> dict:
                     'clean',
                 ]
                 print(f'INFO: Cleaning project with command: {" ".join(cmd)} in path: {effective_dir}', file=sys.stderr)
-                result = subprocess.run(cmd, capture_output=True, text=True, stdin=subprocess.DEVNULL)
+                result = _run_cmd(cmd)
                 if result.returncode == 0:
                     print('INFO: Project cleaned successfully', file=sys.stderr)
                     return 'Project cleaned successfully'
