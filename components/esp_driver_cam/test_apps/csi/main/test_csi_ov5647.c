@@ -157,9 +157,9 @@ TEST_CASE("TEST esp_cam on ov5647", "[csi][camera][ov5647]")
     TEST_ESP_OK(esp_isp_disable(isp_proc));
     TEST_ESP_OK(esp_isp_del_processor(isp_proc));
 
-    TEST_ESP_OK(esp_ldo_release_channel(ldo_mipi_phy));
-
     example_sensor_deinit(sensor_handle);
+
+    TEST_ESP_OK(esp_ldo_release_channel(ldo_mipi_phy));
 
     heap_caps_free(frame_buffer);
 }
@@ -224,7 +224,7 @@ TEST_CASE("TEST CSI error callback on lane mismatch", "[csi][camera][ov5647]")
     };
     TEST_ESP_OK(esp_cam_ctlr_register_event_callbacks(cam_handle, &cbs, &error_ctx));
 
-    TEST_ASSERT_EQUAL(pdFALSE, xSemaphoreTake(error_ctx.sem, pdMS_TO_TICKS(100)));
+    bool unexpected_error_reported = xSemaphoreTake(error_ctx.sem, pdMS_TO_TICKS(100)) == pdTRUE;
 
     example_sensor_init(&sensor_config, &sensor_handle);
 
@@ -240,10 +240,11 @@ TEST_CASE("TEST CSI error callback on lane mismatch", "[csi][camera][ov5647]")
     TEST_ESP_OK(esp_cam_ctlr_del(cam_handle));
 
     vSemaphoreDelete(error_ctx.sem);
-    TEST_ESP_OK(esp_ldo_release_channel(ldo_mipi_phy));
     example_sensor_deinit(sensor_handle);
+    TEST_ESP_OK(esp_ldo_release_channel(ldo_mipi_phy));
     heap_caps_free(frame_buffer);
 
+    TEST_ASSERT_FALSE(unexpected_error_reported);
     TEST_ASSERT_TRUE(error_reported);
     TEST_ASSERT_NOT_EQUAL(0, err_flags);
 }
