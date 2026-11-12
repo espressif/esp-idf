@@ -964,7 +964,8 @@ int esp_bredr_controller_init(esp_bt_controller_config_t *cfg)
     bredr_register_setup_callback(bredr_ctrl_setup_callback);
     bredr_register_ext_dep_callback(bredr_ctrl_ext_dep_callback);
 
-    cfg->bredr.mempool_size = 1024 * (cfg->bredr.max_acl_conn + 2);
+    uint32_t shared_mem = (cfg->bredr.max_acl_conn > 1) ? (1024 * 4) : (1024 * 3);
+    cfg->bredr.mempool_size = shared_mem + 1024 * cfg->bredr.max_acl_conn;
     cfg->bredr.mempool_ops = bredr_mempool_ops_get();
 
     uint32_t bredr_btdm_version = 0;
