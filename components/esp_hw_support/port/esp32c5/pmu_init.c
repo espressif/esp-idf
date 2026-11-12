@@ -236,10 +236,8 @@ void pmu_init(void)
     uint32_t blk_version = efuse_hal_blk_version();
     soc_reset_reason_t rst_reason = esp_rom_get_reset_reason(0);
     if (blk_version >= 2) {
-        if ((rst_reason == RESET_REASON_CHIP_POWER_ON) || (rst_reason == RESET_REASON_SYS_BROWN_OUT)   \
-            || (rst_reason == RESET_REASON_SYS_RTC_WDT) || (rst_reason == RESET_REASON_SYS_SUPER_WDT)   \
-            || (rst_reason == RESET_REASON_CORE_PWR_GLITCH)) {
-            /* INIT + hand over DBIAS_SEL together on power-on style reset,
+        if (soc_reset_get_level(rst_reason) >= SOC_RESET_LEVEL_SYSTEM) {
+            /* INIT + hand over DBIAS_SEL together on system/chip reset,
             the DIG_DBIAS gear lives in the retained LP/PMU domain,
             so a core reset that keeps DBIAS_SEL = 0 does not need to re-pulse DBIAS_INIT */
             pvt_dig_dbias_init();

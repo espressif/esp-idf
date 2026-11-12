@@ -105,13 +105,7 @@ typedef struct {
  */
 static inline void periph_ll_clk_gate_set_default(soc_reset_reason_t rst_reason, const periph_ll_clk_gate_config_t *config)
 {
-    const bool skip_hp_periph_gate = (rst_reason == RESET_REASON_CPU_MWDT) ||
-                                     (rst_reason == RESET_REASON_CPU_SW) ||
-                                     (rst_reason == RESET_REASON_CPU_RWDT) ||
-                                     (rst_reason == RESET_REASON_CPU_JTAG) ||
-                                     (rst_reason == RESET_REASON_CPU_LOCKUP);
-
-    if (!skip_hp_periph_gate) {
+    if (soc_reset_get_level(rst_reason) >= SOC_RESET_LEVEL_CORE) {
         // UART0~3
         if (config->disable_uart0_clk) {
             HP_SYS_CLKRST.uart0_ctrl0.reg_uart0_sys_clk_en = 0;
@@ -225,9 +219,7 @@ static inline void periph_ll_clk_gate_set_default(soc_reset_reason_t rst_reason,
         }
     }
 
-    if ((rst_reason == RESET_REASON_CHIP_POWER_ON) || (rst_reason == RESET_REASON_SYS_BROWN_OUT) ||
-            (rst_reason == RESET_REASON_SYS_RWDT) || (rst_reason == RESET_REASON_SYS_SUPER_WDT) ||
-            (rst_reason == RESET_REASON_CORE_PWR_GLITCH) || (rst_reason == RESET_REASON_CORE_EFUSE_CRC)) {
+    if (soc_reset_get_level(rst_reason) >= SOC_RESET_LEVEL_SYSTEM) {
         LP_GPIO.clock_gate.clk_en = 0;
         while (LP_GPIO.clock_gate.clk_en != 0) {
             ;
