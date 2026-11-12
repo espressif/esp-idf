@@ -31,7 +31,7 @@ idf_component_register(SRCS ${srcs}
                        PRIV_REQUIRES "${priv_requires}"
                        WHOLE_ARCHIVE)
 
-if(CONFIG_IDF_TARGET_LINUX AND NOT CMAKE_HOST_SYSTEM_NAME STREQUAL "Darwin")
+if(CONFIG_IDF_TARGET_LINUX AND NOT CMAKE_SYSTEM_NAME STREQUAL "Darwin")
     # Linux host heap integrity checks are stubs, so use ASan to catch dump overflows.
     set(asan_options -fsanitize=address -fno-omit-frame-pointer)
     idf_component_get_property(esp_timer_lib esp_timer COMPONENT_LIB)

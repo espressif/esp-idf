@@ -15,7 +15,7 @@ if(${target} STREQUAL "linux")
         list(APPEND srcs "vfs_linux.c" "vfs_linux_default_coop.c" "vfs.c" "vfs_calls.c" "nullfs.c")
     endif()
 
-    if(CMAKE_HOST_SYSTEM_NAME STREQUAL "Linux")
+    if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
         list(APPEND srcs "vfs_eventfd_linux.c")
     endif()
 
@@ -29,7 +29,7 @@ if(${target} STREQUAL "linux")
 
     if(CONFIG_VFS_SUPPORT_IO)
         # On macOS, C symbols have a leading underscore prefix.
-        if(CMAKE_HOST_SYSTEM_NAME STREQUAL "Darwin")
+        if(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
             target_link_libraries(${COMPONENT_LIB} INTERFACE "-u _esp_vfs_include_linux_coop_init")
         else()
             target_link_libraries(${COMPONENT_LIB} INTERFACE "-u esp_vfs_include_linux_coop_init")

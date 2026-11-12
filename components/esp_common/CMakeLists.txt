@@ -27,7 +27,7 @@ idf_component_register(SRCS "${srcs}"
 # multiplicity property on this universal dependency is the established fix.
 set_property(TARGET ${COMPONENT_LIB} APPEND PROPERTY LINK_INTERFACE_MULTIPLICITY 4)
 
-if(CONFIG_IDF_TARGET_LINUX AND NOT CMAKE_HOST_SYSTEM_NAME STREQUAL "Darwin")
+if(CONFIG_IDF_TARGET_LINUX AND NOT CMAKE_SYSTEM_NAME STREQUAL "Darwin")
     # On Linux, provide a linker script that collects specific sections entries (e.g., .esp_err_msg_tbl)
     # and place them in the final binary, since the linker script used for Linux build doesn't have the usual
     # memory layout and section placement as in embedded targets.

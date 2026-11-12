@@ -470,6 +470,11 @@ function(__project_info test_components)
         set(PROJECT_BUILD_TYPE flash_app)
     endif()
 
+    set(PROJECT_CROSS_COMPILING false)
+    if(CMAKE_CROSSCOMPILING)
+        set(PROJECT_CROSS_COMPILING true)
+    endif()
+
     # Write project description JSON file
     idf_build_get_property(build_dir BUILD_DIR)
     make_json_list("${build_components};${test_components}" build_components_json)
@@ -975,7 +980,7 @@ macro(project project_name)
     # their transitive dependencies such as the mbedtls sub-libraries) have
     # circular symbol references.  Wrap all archives in --start-group /
     # --end-group so the linker re-scans until every symbol is resolved.
-    if(CONFIG_IDF_TARGET_LINUX AND NOT CMAKE_HOST_SYSTEM_NAME STREQUAL "Darwin")
+    if(CONFIG_IDF_TARGET_LINUX AND NOT CMAKE_SYSTEM_NAME STREQUAL "Darwin")
         string(CONCAT _link_exe_template
             "<CMAKE_C_COMPILER> <FLAGS> <CMAKE_C_LINK_FLAGS> <LINK_FLAGS>"
             " <OBJECTS> -o <TARGET>"
@@ -992,8 +997,8 @@ macro(project project_name)
     add_executable(${project_elf} "${project_elf_src}")
     add_dependencies(${project_elf} _project_elf_src)
 
-    if(CONFIG_IDF_TARGET_LINUX AND CMAKE_HOST_SYSTEM_NAME STREQUAL "Darwin")
-        # Compiling for the host, and the host is macOS, so the linker is Darwin LD.
+    if(CONFIG_IDF_TARGET_LINUX AND CMAKE_SYSTEM_NAME STREQUAL "Darwin")
+        # Compiling for macOS, so the linker is Darwin LD.
         # Note, when adding support for Clang and LLD based toolchain this check will
         # need to be modified.
         set(linker_type "Darwin")

@@ -84,6 +84,23 @@ Linux 模拟器采用 *协作式抢占*：专用调度器线程按照 ``configTI
   idf.py build
   idf.py monitor
 
+为其他 Linux 系统交叉编译
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+默认情况下，应用程序使用主机编译器为主机系统构建。如需为其他 Linux 系统（例如采用不同 CPU 架构的嵌入式 Linux 设备）构建应用程序，请通过 ``CMAKE_TOOLCHAIN_FILE`` 传入该系统的 CMake 工具链文件：
+
+.. code-block:: bash
+
+  idf.py --preview -DIDF_TARGET=linux -DCMAKE_TOOLCHAIN_FILE=/path/to/toolchain.cmake build
+
+也可以通过环境变量 ``CMAKE_TOOLCHAIN_FILE`` 设置工具链文件。工具链文件通常由目标系统的 SDK 提供，例如由 Yocto 或 Buildroot 生成的 SDK。
+
+请注意：
+
+- 上述前提中列出的库必须适用于目标系统，通常位于工具链文件指定的 sysroot 中。
+- 交叉编译的应用程序无法通过 ``idf.py monitor`` 运行，请将其复制到目标系统上运行。
+- 如需更换工具链文件，请先运行 ``idf.py fullclean``。
+
 .. _host-apps-networking:
 
 Linux 目标上的网络功能

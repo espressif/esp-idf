@@ -18,9 +18,14 @@ function(__esp_blockdev_ioctl_check_post_elf target)
     # On macOS, Apple Clang needs the SDK sysroot to resolve system headers
     # (e.g. <stdio.h> via esp_err.h) during preprocessing.
     set(ioctl_compiler_flags)
-    if(CMAKE_HOST_SYSTEM_NAME STREQUAL "Darwin" AND CMAKE_OSX_SYSROOT)
+    if(CMAKE_SYSTEM_NAME STREQUAL "Darwin" AND CMAKE_OSX_SYSROOT)
         # Use --compiler-flag=VALUE so argparse does not treat -isysroot as an option.
         list(APPEND ioctl_compiler_flags "--compiler-flag=-isysroot${CMAKE_OSX_SYSROOT}")
+    endif()
+    # When cross-compiling (e.g. the linux target with a Yocto SDK toolchain file),
+    # the compiler may rely on --sysroot to find the target libc headers.
+    if(CMAKE_SYSROOT)
+        list(APPEND ioctl_compiler_flags "--compiler-flag=--sysroot=${CMAKE_SYSROOT}")
     endif()
 
     add_custom_command(

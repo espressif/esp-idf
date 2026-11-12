@@ -45,6 +45,10 @@ include(${CMAKE_CURRENT_LIST_DIR}/../cmake/err_codes.cmake)
 # used to decide which components must be excluded from link-time optimization.
 include(${CMAKE_CURRENT_LIST_DIR}/../cmake/lto.cmake)
 
+# The linux_toolchain.cmake file from cmakev1 provides __get_linux_custom_toolchain_file(),
+# used to select a user-provided toolchain file for the linux target.
+include(${CMAKE_CURRENT_LIST_DIR}/../cmake/linux_toolchain.cmake)
+
 include(component)
 include(build)
 include(kconfig)
@@ -335,6 +339,16 @@ function(__init_toolchain)
 
     idf_build_get_property(idf_path IDF_PATH)
     idf_build_get_property(idf_target IDF_TARGET)
+
+    # For the linux target, a user-provided toolchain file (e.g. for
+    # cross-compiling) takes precedence over ESP-IDF's toolchain-linux.cmake.
+    __get_linux_custom_toolchain_file("${idf_target}" "${cache_toolchain_file}" custom_toolchain_file)
+    if(custom_toolchain_file)
+        idf_msg("Using custom toolchain file: ${custom_toolchain_file}")
+        set(CMAKE_TOOLCHAIN_FILE "${custom_toolchain_file}" PARENT_SCOPE)
+        idf_build_set_property(IDF_TOOLCHAIN_FILE "${custom_toolchain_file}")
+        return()
+    endif()
 
     __get_default_value(VARIABLE IDF_TOOLCHAIN
                         DEFAULT gcc
