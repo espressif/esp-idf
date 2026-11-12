@@ -191,8 +191,13 @@ void emac_hal_init_dma_default(emac_hal_context_t *hal, emac_hal_dma_config_t *h
     /* Disable Receive Store Forward (Rx FIFO is only 256B) */
     emac_ll_recv_store_forward_enable(hal->dma_regs, false);
 #endif
+#if SOC_IS(ESP32P4)
+    /* Avoid RX FIFO stalls when timestamped frames are flushed in cut-through mode. */
+    emac_ll_flush_recv_frame_enable(hal->dma_regs, false);
+#else
     /* Enable Flushing of Received Frames because of the unavailability of receive descriptors or buffers */
     emac_ll_flush_recv_frame_enable(hal->dma_regs, true);
+#endif
     /* Disable Transmit Store Forward */
     emac_ll_trans_store_forward_enable(hal->dma_regs, false);
     /* Flush Transmit FIFO */
