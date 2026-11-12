@@ -15,6 +15,8 @@
 #include <sys/param.h>
 #include <inttypes.h>
 #include "esp_check.h"
+#include "freertos/FreeRTOS.h"
+#include "freertos/task.h"
 #include "esp_efuse.h"
 #include "hal/efuse_hal.h"
 
@@ -1104,9 +1106,30 @@ esp_err_t esp_https_ota(const esp_https_ota_config_t *ota_config)
         return ESP_FAIL;
     }
 
+    /* esp_https_ota_perform() reports a read timeout as ESP_ERR_HTTPS_OTA_IN_PROGRESS,
+     * so a server that stops sending without closing the connection would keep this
+     * loop going for ever. Give up once no image data has arrived for the HTTP timeout
+     * (esp_http_client's default of 5000 ms when timeout_ms is 0). A partial download
+     * also returns IN_PROGRESS once with no new data after reconnecting for the next
+     * range, which may itself take longer than that: only give up after a second
+     * call in a row without data. */
+    const int stall_ms = ota_config->http_config->timeout_ms > 0 ? ota_config->http_config->timeout_ms : 5000;
+    int last_len_read = esp_https_ota_get_image_len_read(https_ota_handle);
+    TickType_t last_progress = xTaskGetTickCount();
+    int calls_without_data = 0;
     while (1) {
         err = esp_https_ota_perform(https_ota_handle);
         if (err != ESP_ERR_HTTPS_OTA_IN_PROGRESS) {
+            break;
+        }
+        int len_read = esp_https_ota_get_image_len_read(https_ota_handle);
+        if (len_read != last_len_read) {
+            last_len_read = len_read;
+            last_progress = xTaskGetTickCount();
+            calls_without_data = 0;
+        } else if (++calls_without_data >= 2 && xTaskGetTickCount() - last_progress >= pdMS_TO_TICKS(stall_ms)) {
+            ESP_LOGE(TAG, "No image data received for %d ms, giving up", stall_ms);
+            err = ESP_ERR_TIMEOUT;
             break;
         }
     }
