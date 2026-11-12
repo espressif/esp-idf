@@ -53,3 +53,16 @@ Code Size Impact
 """""""""""""""""
 
 Enabling application rollback with automatic confirmation by default adds a small amount of code compared to the previous default (rollback disabled). Measured on :example:`system/ota/native_ota_example` for ESP32, the bootloader grows by approximately 80 bytes, and the application by approximately 350 bytes. The exact numbers depend on the target and application configuration.
+
+
+SPIRAM DMA Reserve Pool
+-----------------------
+
+When ``CONFIG_SPIRAM_MALLOC_RESERVE_INTERNAL`` is enabled, the reserved pool's capability priorities changed:
+
+- **Before**: medium priority for ``MALLOC_CAP_DMA | MALLOC_CAP_INTERNAL``; low priority for ``MALLOC_CAP_DEFAULT``.
+- **After**: medium priority for ``MALLOC_CAP_DMA`` only; low priority for ``MALLOC_CAP_DEFAULT | MALLOC_CAP_INTERNAL``.
+
+``heap_caps_malloc(MALLOC_CAP_INTERNAL)`` no longer preferentially uses the reserve pool. Explicit ``MALLOC_CAP_DMA`` requests still do.
+
+With a non-zero ``CONFIG_SPIRAM_MALLOC_ALWAYSINTERNAL``, the internal-first attempt of ``malloc()`` now skips heaps that provide ``MALLOC_CAP_DEFAULT`` only at low priority (the reserve pool, and on some targets RTC RAM and SPM). These heaps are used only after PSRAM is exhausted.

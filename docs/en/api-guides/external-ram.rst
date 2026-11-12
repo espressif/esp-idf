@@ -118,10 +118,10 @@ Because some buffers can only be allocated in internal memory, a second configur
 
 The reserved pool uses the heap capability priority mechanism:
 
-- **Medium priority** — ``MALLOC_CAP_DMA | MALLOC_CAP_INTERNAL``: explicit ``heap_caps_malloc()`` requests with these flags are preferentially served from this pool.
-- **Low priority** — ``MALLOC_CAP_DEFAULT``: ``malloc()`` may use the pool only after other internal heaps with higher-priority ``MALLOC_CAP_DEFAULT`` are exhausted.
+- **Medium priority** — ``MALLOC_CAP_DMA``: explicit DMA ``heap_caps_malloc()`` requests are preferentially served from this pool.
+- **Low priority** — ``MALLOC_CAP_DEFAULT | MALLOC_CAP_INTERNAL``: generic / internal-capable allocations may use the pool only after other heaps with higher-priority matching caps are exhausted.
 
-Therefore, under normal conditions ``malloc()`` does not allocate from this pool, but it can fall back to it as a last resort before allocation fails entirely.
+Since ``malloc()`` skips heaps that provide ``MALLOC_CAP_DEFAULT`` only at low priority when trying internal memory first (see :menuitem:`CONFIG_SPIRAM_MALLOC_ALWAYSINTERNAL`), it does not allocate from this pool under normal conditions. It falls back to the pool only after all other memory, including external RAM, is exhausted.
 
 .. _external_ram_config_bss:
 
