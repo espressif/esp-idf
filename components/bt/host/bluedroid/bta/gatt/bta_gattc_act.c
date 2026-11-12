@@ -1039,6 +1039,9 @@ void bta_gattc_cfg_mtu(tBTA_GATTC_CLCB *p_clcb, tBTA_GATTC_DATA *p_data)
             /* Dequeue the data, if it was enqueued */
             if (p_clcb->p_q_cmd == p_data) {
                 p_clcb->p_q_cmd = NULL;
+                /* p_data may be the head of p_cmd_list, run from bta_gattc_pop_command_to_send();
+                 * drop it from the queue first so the pop below does not run it again. */
+                list_remove(p_clcb->p_cmd_list, (void *)p_data);
                 bta_gattc_pop_command_to_send(p_clcb);
             }
 
@@ -1349,6 +1352,9 @@ void bta_gattc_execute(tBTA_GATTC_CLCB *p_clcb, tBTA_GATTC_DATA *p_data)
             /* Dequeue the data, if it was enqueued */
             if (p_clcb->p_q_cmd == p_data) {
                 p_clcb->p_q_cmd = NULL;
+                /* p_data may be the head of p_cmd_list, run from bta_gattc_pop_command_to_send();
+                 * drop it from the queue first so the pop below does not run it again. */
+                list_remove(p_clcb->p_cmd_list, (void *)p_data);
                 bta_gattc_pop_command_to_send(p_clcb);
             }
 
