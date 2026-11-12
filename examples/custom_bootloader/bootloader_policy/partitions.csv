@@ -1,0 +1,6 @@
+# Offsets are left blank so the build system places them after the partition table.
+# name,     type, subtype, offset, size
+nvs,        data, nvs,     ,       0x6000,
+phy_init,   data, phy,     ,       0x1000,
+factory,    app,  factory, ,       1M,
+bootpolicy, data, 0x40,    ,       128K,
