@@ -22,7 +22,9 @@ public :
     ~WL_Flash() override;
 
     virtual esp_err_t config(wl_config_t *cfg, Flash_Access *partition);
-    virtual esp_err_t init();
+    // When allow_formatting is false, init() only mounts an already-valid, up-to-date instance without any
+    // write, and returns ESP_ERR_NOT_FOUND (leaving flash untouched) if the partition is not in that state
+    virtual esp_err_t init(bool allow_formatting = true);
 
     size_t get_flash_size() override;
     size_t get_sector_size() override;

@@ -48,9 +48,9 @@ esp_err_t WL_Ext_Perf::config(WL_Config_s *cfg, Flash_Access *partition)
     return WL_Flash::config(cfg, partition);
 }
 
-esp_err_t WL_Ext_Perf::init()
+esp_err_t WL_Ext_Perf::init(bool allow_formatting)
 {
-    return WL_Flash::init();
+    return WL_Flash::init(allow_formatting);
 }
 
 size_t WL_Ext_Perf::get_flash_size()
