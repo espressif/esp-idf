@@ -1,2 +1,4 @@
 CONFIG_IDF_TARGET="esp32h4"
 CONFIG_UART_RX_IO=23
+# Some H4 boards in CI have slow flashing speeds.
+CONFIG_UART_BAUD_RATE=115200
