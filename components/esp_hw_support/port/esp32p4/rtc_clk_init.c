@@ -76,7 +76,6 @@ void rtc_clk_init(rtc_clk_config_t cfg)
     pmu_ll_set_dcdc_en(&PMU, true);
     pmu_ll_set_dcdc_switch_force_power_down(&PMU, false);
     pmu_ll_hp_set_dcm_vset(&PMU, PMU_MODE_HP_ACTIVE, hp_dcmvset);
-    SET_PERI_REG_MASK(PMU_HP_ACTIVE_HP_REGULATOR0_REG, PMU_DIG_REGULATOR0_DBIAS_SEL); // Hand over control of dbias to pmu
     esp_rom_delay_us(1000);
 #if CONFIG_ESP32P4_REV_MIN_FULL >= 300
     if (ESP_CHIP_REV_ABOVE(chip_version, 301)) {

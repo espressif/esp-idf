@@ -383,7 +383,7 @@ static void rtc_clk_update_pll_state_on_cpu_src_switching_start(soc_cpu_clk_src_
     if (((old_src != SOC_CPU_CLK_SRC_CPLL) && (old_src != SOC_CPU_CLK_SRC_PLL_F240M)) &&
         ((new_src == SOC_CPU_CLK_SRC_CPLL) || (new_src == SOC_CPU_CLK_SRC_PLL_F240M))) {
 #if CONFIG_ESP_ENABLE_PVT && !defined(BOOTLOADER_BUILD)
-        pvt_auto_dbias_enable(true);
+        pvt_auto_dbias_enable(true, true);
 #endif
     }
 #endif
@@ -395,7 +395,7 @@ static void rtc_clk_update_pll_state_on_cpu_src_switching_end(soc_cpu_clk_src_t 
     if (((old_src == SOC_CPU_CLK_SRC_CPLL) || (old_src == SOC_CPU_CLK_SRC_PLL_F240M)) &&
         ((new_src != SOC_CPU_CLK_SRC_CPLL) && (new_src != SOC_CPU_CLK_SRC_PLL_F240M))) {
 #if CONFIG_ESP_ENABLE_PVT && !defined(BOOTLOADER_BUILD)
-        pvt_auto_dbias_enable(false);
+        pvt_auto_dbias_enable(false, false);
 #endif
     }
     if (old_src == SOC_CPU_CLK_SRC_CPLL) {
@@ -564,7 +564,7 @@ void rtc_clk_cpu_freq_set_xtal_for_sleep(void)
     s_cur_cpll_freq = 0;
     s_cur_bbpll_freq = 0;
 #if CONFIG_ESP_ENABLE_PVT && !defined(BOOTLOADER_BUILD)
-    pvt_auto_dbias_enable(false);
+    pvt_auto_dbias_enable(false, false);
 #endif
 }
 

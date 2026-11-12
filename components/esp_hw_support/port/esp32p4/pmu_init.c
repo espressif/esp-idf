@@ -219,10 +219,22 @@ void pmu_init(void)
     pmu_lp_system_init_default(PMU_instance());
     pmu_power_domain_force_default(PMU_instance());
 #if CONFIG_ESP_ENABLE_PVT
-    pvt_auto_dbias_init();
-    pvt_func_enable(true);
-    // For PVT func taking effect, need delay.
-    esp_rom_delay_us(1000);
+    /* Setup pvt function */
+    uint32_t blk_version = efuse_hal_blk_version();
+    soc_reset_reason_t rst_reason = esp_rom_get_reset_reason(0);
+    if (blk_version >= 2 && blk_version != 100) {
+        if ((rst_reason == RESET_REASON_CHIP_POWER_ON) || (rst_reason == RESET_REASON_SYS_BROWN_OUT)   \
+            || (rst_reason == RESET_REASON_SYS_RWDT) || (rst_reason == RESET_REASON_SYS_SUPER_WDT)   \
+            || (rst_reason == RESET_REASON_CORE_PWR_GLITCH) || (rst_reason == RESET_REASON_CORE_DEEP_SLEEP)) {
+            /* INIT + hand over DBIAS_SEL together on power-on style reset and deep-sleep wake */
+            pvt_dig_dbias_init();
+        }
+        pvt_auto_dbias_enable(true, true);
+        esp_rom_delay_us(1000);
+    }
+    else {
+        ESP_HW_LOGW(TAG, "blk_version is less than 2 or equal to 100, pvt function not supported in efuse.");
+    }
 #endif
 #if !CONFIG_ESP32P4_SELECTS_REV_LESS_V3
     REG_SET_BIT(PMU_RF_PWC_REG, PMU_MSPI_PHY_XPD);

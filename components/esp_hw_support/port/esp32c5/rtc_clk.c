@@ -211,10 +211,7 @@ static void rtc_clk_cpu_freq_to_rc_fast(void)
 static void rtc_clk_cpu_freq_to_pll_240_mhz(int cpu_freq_mhz)
 {
 #if CONFIG_ESP_ENABLE_PVT && !defined(BOOTLOADER_BUILD)
-    pvt_auto_dbias_init();
-    charge_pump_init();
-    pvt_func_enable(true);
-    charge_pump_enable(true);
+    pvt_auto_dbias_enable(true, true);
 #endif
     // f_hp_root = 240MHz
     uint32_t cpu_divider = CLK_LL_PLL_240M_FREQ_MHZ / cpu_freq_mhz;
@@ -237,10 +234,7 @@ static void rtc_clk_cpu_freq_to_pll_240_mhz(int cpu_freq_mhz)
 static void rtc_clk_cpu_freq_to_pll_160_mhz(int cpu_freq_mhz)
 {
 #if CONFIG_ESP_ENABLE_PVT && !defined(BOOTLOADER_BUILD)
-    pvt_auto_dbias_init();
-    charge_pump_init();
-    pvt_func_enable(true);
-    charge_pump_enable(true);
+    pvt_auto_dbias_enable(true, true);
 #endif
     // f_hp_root = 160MHz
     uint32_t cpu_divider = CLK_LL_PLL_160M_FREQ_MHZ / cpu_freq_mhz;
@@ -482,11 +476,10 @@ FORCE_IRAM_ATTR void rtc_clk_cpu_set_to_default_config(void)
 
 void rtc_clk_cpu_freq_set_xtal_for_sleep(void)
 {
-    rtc_clk_cpu_set_to_default_config();
 #if CONFIG_ESP_ENABLE_PVT && !defined(BOOTLOADER_BUILD)
-    charge_pump_enable(false);
-    pvt_func_enable(false);
+    pvt_auto_dbias_enable(false, false);
 #endif
+    rtc_clk_cpu_set_to_default_config();
 }
 
 #ifndef BOOTLOADER_BUILD
