@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2020-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2020-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -10,6 +10,7 @@
 #include "esp_private/regi2c_ctrl.h"
 #include "esp_private/sar_periph_ctrl.h"
 #include "hal/adc_ll.h"
+#include "hal/sar_ctrl_ll.h"
 #include "hal/temperature_sensor_ll.h"
 #include "esp_private/sar_periph_ctrl.h"
 
@@ -19,10 +20,6 @@
 
 void bootloader_random_enable(void)
 {
-    /* RNG module is always clock enabled */
-    REG_SET_FIELD(RTC_CNTL_SENSOR_CTRL_REG, RTC_CNTL_FORCE_XPD_SAR, 0x3);
-    SET_PERI_REG_MASK(RTC_CNTL_ANA_CONF_REG, RTC_CNTL_SAR_I2C_PU_M);
-
 #ifndef BOOTLOADER_BUILD
     sar_periph_ctrl_adc_reset();
 #else
@@ -33,6 +30,10 @@ void bootloader_random_enable(void)
     _temperature_sensor_ll_reset_module();
     tsens_ll_restore_registers(&saved_tsens_regs);
 #endif
+
+    /* RNG module is always clock enabled */
+    sar_ctrl_ll_set_power_mode(SAR_CTRL_LL_POWER_ON);
+    SET_PERI_REG_MASK(RTC_CNTL_ANA_CONF_REG, RTC_CNTL_SAR_I2C_PU_M);
 
     _adc_ll_enable_bus_clock(true);
     adc_ll_enable_func_clock(true);
