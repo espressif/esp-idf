@@ -552,21 +552,10 @@ void vPortTCBPreDeleteHook( void *pxTCB );
 #define portEXIT_CRITICAL_ISR(mux)                  portEXIT_CRITICAL(mux)
 #define portTRY_ENTER_CRITICAL_ISR(mux, timeout)    portTRY_ENTER_CRITICAL(mux, timeout)
 
-/* [refactor-todo] on RISC-V, both ISR and non-ISR cases result in the same call. We can redefine this macro */
-#define portENTER_CRITICAL_SAFE(mux)    ({  \
-    if (xPortInIsrContext()) {              \
-        portENTER_CRITICAL_ISR(mux);        \
-    } else {                                \
-        portENTER_CRITICAL(mux);            \
-    }                                       \
-})
-#define portEXIT_CRITICAL_SAFE(mux)     ({  \
-    if (xPortInIsrContext()) {              \
-        portEXIT_CRITICAL_ISR(mux);         \
-    } else {                                \
-        portEXIT_CRITICAL(mux);             \
-    }                                       \
-})
+/* On single-core RISC-V the ISR and task variants are the same call, so there is no need
+ * to check the context first */
+#define portENTER_CRITICAL_SAFE(mux)    ({ (void)(mux); vPortEnterCritical(); })
+#define portEXIT_CRITICAL_SAFE(mux)     ({ (void)(mux); vPortExitCritical(); })
 #define portTRY_ENTER_CRITICAL_SAFE(mux, timeout)   ({  \
     (void)timeout;                                      \
     portENTER_CRITICAL_SAFE(mux);                       \
