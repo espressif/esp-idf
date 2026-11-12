@@ -14,11 +14,13 @@ import argparse
 import os
 import re
 import subprocess
-import sys
 from collections.abc import Iterable
 from collections.abc import Iterator
 from dataclasses import dataclass
 from pathlib import Path
+
+from esp_pylib.logger import log
+from rich.markup import escape
 
 MARKER_TOKEN = 'ESP_BLOCKDEV_RESERVE_MARKER'
 
@@ -285,13 +287,22 @@ def build_arg_parser() -> argparse.ArgumentParser:
         default=[],
         help='Extra flag passed to the preprocessor (repeatable, e.g. -isysroot <sdk>)',
     )
-    parser.add_argument('--files', nargs='+', required=True, help='Reservation definition files to check for overlaps')
+    parser.add_argument(
+        '--files',
+        nargs='+',
+        required=True,
+        type=Path,
+        help='Reservation definition files to check for overlaps',
+    )
     return parser
 
 
 def main(argv: list[str] | None = None) -> int:
     parser = build_arg_parser()
     args = parser.parse_args(argv)
+    for file_path in args.files:
+        if not file_path.is_file():
+            parser.error(f'argument --files: {file_path} is not an existing file')
     try:
         check_files(
             args.files,
@@ -300,7 +311,7 @@ def main(argv: list[str] | None = None) -> int:
             compiler_flags=args.compiler_flag,
         )
     except ReservationError as exc:
-        print(str(exc), file=sys.stderr)
+        log.err(escape(str(exc)))
         return 1
     return 0
 
