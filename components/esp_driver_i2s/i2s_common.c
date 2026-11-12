@@ -848,7 +848,8 @@ static void IRAM_ATTR i2s_dma_rx_callback(void *arg)
     i2s_chan_handle_t handle = (i2s_chan_handle_t)arg;
     uint32_t dummy;
 
-    uint32_t status = i2s_hal_get_intr_status(&(handle->controller->hal));
+    /* Each shared handler clears only its own events, so the other direction stays pending for the dispatcher. */
+    uint32_t status = i2s_hal_get_intr_status(&(handle->controller->hal)) & I2S_LL_RX_EVENT_MASK;
     i2s_hal_clear_intr_status(&(handle->controller->hal), status);
     if (!status) {
         return;
@@ -888,7 +889,8 @@ static void IRAM_ATTR i2s_dma_tx_callback(void *arg)
     i2s_chan_handle_t handle = (i2s_chan_handle_t)arg;
     uint32_t dummy;
 
-    uint32_t status = i2s_hal_get_intr_status(&(handle->controller->hal));
+    /* Each shared handler clears only its own events, so the other direction stays pending for the dispatcher. */
+    uint32_t status = i2s_hal_get_intr_status(&(handle->controller->hal)) & I2S_LL_TX_EVENT_MASK;
     i2s_hal_clear_intr_status(&(handle->controller->hal), status);
     if (!status) {
         return;
