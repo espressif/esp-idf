@@ -747,6 +747,9 @@ static const esp_blockdev_ops_t s_bdl_ops = {
 
 esp_err_t esp_partition_ptr_get_blockdev(const esp_partition_t* partition, esp_blockdev_handle_t *out_bdl_handle_ptr)
 {
+    assert(partition != NULL);
+    assert(out_bdl_handle_ptr != NULL);
+
     esp_blockdev_t *out = calloc(1, sizeof(esp_blockdev_t));
     if (out == NULL) {
         return ESP_ERR_NO_MEM;

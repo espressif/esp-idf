@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -512,7 +512,9 @@ void esp_partition_munmap(esp_partition_mmap_handle_t handle);
  * For apps without SHA-256 appended to the image, the result is the SHA-256 of all bytes in the app image.
  * For other partition types, the result is the SHA-256 of the entire partition.
  *
- * @param[in]  partition    Pointer to info for partition containing app or data. (fields: address, size and type, are required to be filled).
+ * @param[in]  partition    Pointer to info for partition containing app or data.
+ *                          (fields: address, size and type, are required to be filled).
+ *                          Must be non-NULL.
  * @param[out] sha_256      Returned SHA-256 digest for a given partition.
  *
  * @return
@@ -527,8 +529,10 @@ esp_err_t esp_partition_get_sha256(const esp_partition_t* partition, uint8_t* sh
 /**
  * @brief Check for the identity of two partitions by SHA-256 digest.
  *
- * @param[in] partition_1 Pointer to info for partition 1 containing app or data. (fields: address, size and type, are required to be filled).
- * @param[in] partition_2 Pointer to info for partition 2 containing app or data. (fields: address, size and type, are required to be filled).
+ * @param[in] partition_1 Pointer to info for partition 1 containing app or data.
+ *                        (fields: address, size and type, are required to be filled). Must be non-NULL.
+ * @param[in] partition_2 Pointer to info for partition 2 containing app or data.
+ *                        (fields: address, size and type, are required to be filled). Must be non-NULL.
  *
  * @return
  *         - True:  In case of the two firmware is equal.
@@ -649,8 +653,8 @@ esp_err_t esp_partition_get_blockdev(const esp_partition_type_t type, const esp_
 /**
  * @brief The same as esp_partition_get_blockdev(), it just accepts existing partition holder as an parameter and doesn't provide the partition search by itself.
  *
- * @param[in] partition Pointer to existing esp_partition_t instance
- * @param[out] out_bdl_handle Block device instance handle for "native" BDL control
+ * @param[in] partition Pointer to existing esp_partition_t instance. Must be non-NULL.
+ * @param[out] out_bdl_handle Block device instance handle for "native" BDL control. Must be non-NULL.
  *
  * @return
  *      - ESP_OK on success
