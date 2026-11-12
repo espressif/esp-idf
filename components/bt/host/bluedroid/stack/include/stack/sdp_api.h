@@ -718,6 +718,23 @@ BOOLEAN SDP_ConnClose (UINT32 handle);
 *******************************************************************************/
 BOOLEAN SDP_FindServiceUUIDInRec(tSDP_DISC_REC *p_rec, tBT_UUID *p_uuid);
 
+#if (BT_SDP_BQB_INCLUDED == TRUE)
+void sdp_bqb_disable_ctrl(BOOLEAN enable);
+void sdp_bqb_inact_timeout_ctrl(BOOLEAN enable);
+void sdp_bqb_data_len_min_48_ctrl(BOOLEAN enable);
+#if (SDP_CLIENT_ENABLED == TRUE)
+typedef void (*sdp_bqb_ss_cb_t)(UINT16 status, UINT16 num_handles, const UINT32 *handles);
+typedef void (*sdp_bqb_sa_cb_t)(UINT16 status, UINT32 handle);
+
+/* One discovery at a time. Both entry points drive the same static
+ * discovery buffer, so a second call while one is outstanding returns
+ * FALSE. Call them from a single task and wait for the callback before
+ * starting the next discovery. The callback runs on the BTU task. */
+BOOLEAN sdp_bqb_service_search(UINT8 *bd_addr, UINT16 uuid16, sdp_bqb_ss_cb_t cb);
+BOOLEAN sdp_bqb_service_attr(UINT8 *bd_addr, UINT32 handle, sdp_bqb_sa_cb_t cb);
+#endif
+#endif
+
 #ifdef __cplusplus
 }
 #endif

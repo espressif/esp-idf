@@ -78,6 +78,7 @@ static void smp_continue_private_key_creation(tSMP_CB *p_cb, tBTM_RAND_ENC *p);
 static void smp_process_private_key(tSMP_CB *p_cb);
 static void smp_finish_nonce_generation(tSMP_CB *p_cb);
 static void smp_process_new_nonce(tSMP_CB *p_cb);
+static BOOLEAN smp_calculate_h7(UINT8 *salt, UINT8 *w, UINT8 *c);
 
 static const tSMP_ACT smp_encrypt_action[] = {
     smp_generate_compare,           /* SMP_GEN_COMPARE */
@@ -2268,6 +2269,19 @@ BOOLEAN smp_calculate_f6(UINT8 *w, UINT8 *n1, UINT8 *n2, UINT8 *r, UINT8 *iocap,
 
 /*******************************************************************************
 **
+** Function         smp_use_h7
+**
+** Description      h7 is only used for cross transport key derivation when both
+**                  devices set CT2 in AuthReq, otherwise h6 applies.
+**
+*******************************************************************************/
+static BOOLEAN smp_use_h7(tSMP_CB *p_cb)
+{
+    return (p_cb->loc_auth_req & p_cb->peer_auth_req & SMP_CT2_SUPPORT_BIT) ? TRUE : FALSE;
+}
+
+/*******************************************************************************
+**
 ** Function         smp_calculate_link_key_from_long_term_key
 **
 ** Description      The function calculates and saves BR/EDR link key derived from
@@ -2303,7 +2317,13 @@ BOOLEAN smp_calculate_link_key_from_long_term_key(tSMP_CB *p_cb)
     BT_OCTET16 intermediate_link_key;
     BOOLEAN ret = TRUE;
 
-    ret = smp_calculate_h6(p_cb->ltk, (UINT8 *)"1pmt" /* reversed "tmp1" */, intermediate_link_key);
+    if (smp_use_h7(p_cb)) {
+        /* SALT is "tmp1" padded with zeroes, in little endian order */
+        BT_OCTET16 salt = {'1', 'p', 'm', 't'};
+        ret = smp_calculate_h7(salt, p_cb->ltk, intermediate_link_key);
+    } else {
+        ret = smp_calculate_h6(p_cb->ltk, (UINT8 *)"1pmt" /* reversed "tmp1" */, intermediate_link_key);
+    }
     if (!ret) {
         SMP_TRACE_ERROR("%s failed to derive intermediate_link_key", __func__);
         return ret;
@@ -2395,9 +2415,15 @@ BOOLEAN smp_calculate_long_term_key_from_link_key(tSMP_CB *p_cb)
     REVERSE_ARRAY_TO_STREAM(p1, p2, 16);
 
     BT_OCTET16 intermediate_long_term_key;
-    /* "tmp2" obtained from the spec */
-    ret = smp_calculate_h6(rev_link_key, (UINT8 *) "2pmt" /* reversed "tmp2" */,
-                           intermediate_long_term_key);
+    if (smp_use_h7(p_cb)) {
+        /* SALT is "tmp2" padded with zeroes, in little endian order */
+        BT_OCTET16 salt = {'2', 'p', 'm', 't'};
+        ret = smp_calculate_h7(salt, rev_link_key, intermediate_long_term_key);
+    } else {
+        /* "tmp2" obtained from the spec */
+        ret = smp_calculate_h6(rev_link_key, (UINT8 *) "2pmt" /* reversed "tmp2" */,
+                               intermediate_long_term_key);
+    }
 
     if (!ret) {
         SMP_TRACE_ERROR("%s failed to derive intermediate_long_term_key", __FUNCTION__);
@@ -2417,6 +2443,48 @@ BOOLEAN smp_calculate_long_term_key_from_link_key(tSMP_CB *p_cb)
     }
 
     return ret;
+}
+
+/*******************************************************************************
+**
+** Function         smp_calculate_h7
+**
+** Description      The function calculates
+**                  C = h7(SALT, W) = AES-CMAC (W)
+**                                            SALT
+**                  where
+**                  input:  SALT is 128 bit,
+**                          W is 128 bit,
+**                  output: C is 128 bit.
+**
+** Returns          FALSE if out of resources, TRUE in other cases.
+**
+** Note             The LSB is the first octet, the MSB is the last octet of
+**                  the AES-CMAC input/output stream.
+**
+*******************************************************************************/
+static BOOLEAN smp_calculate_h7(UINT8 *salt, UINT8 *w, UINT8 *c)
+{
+    UINT8 key[BT_OCTET16_LEN];
+    UINT8 msg[BT_OCTET16_LEN];
+    UINT8 cmac[BT_OCTET16_LEN];
+    UINT8 *p;
+
+    SMP_TRACE_DEBUG ("%s", __FUNCTION__);
+
+    p = key;
+    ARRAY_TO_STREAM(p, salt, BT_OCTET16_LEN);
+    p = msg;
+    ARRAY_TO_STREAM(p, w, BT_OCTET16_LEN);
+
+    if (!aes_cipher_msg_auth_code(key, msg, BT_OCTET16_LEN, BT_OCTET16_LEN, cmac)) {
+        SMP_TRACE_ERROR("%s failed", __FUNCTION__);
+        return FALSE;
+    }
+
+    p = c;
+    ARRAY_TO_STREAM(p, cmac, BT_OCTET16_LEN);
+    return TRUE;
 }
 
 /*******************************************************************************

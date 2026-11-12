@@ -151,6 +151,10 @@ void sdpu_release_ccb (tCONN_CB *p_ccb)
     p_ccb->con_state = SDP_STATE_IDLE;
 #if SDP_CLIENT_ENABLED == TRUE
     p_ccb->is_attr_search = FALSE;
+#if BT_SDP_BQB_INCLUDED
+    p_ccb->is_search_only = FALSE;
+    p_ccb->is_attr_only = FALSE;
+#endif
 #endif
 
     /* Free the response buffer */
@@ -314,8 +318,10 @@ void sdpu_build_n_send_error (tCONN_CB *p_ccb, UINT16 trans_num, UINT16 error_co
     SDP_TRACE_WARNING ("SDP - sdpu_build_n_send_error  code: 0x%x  CID: 0x%x\n",
                        error_code, p_ccb->connection_id);
 
-    /* pdu id(1), trans num(2), param len(2), error code(2) and the optional error text */
-    buf_size = sizeof(BT_HDR) + L2CAP_MIN_OFFSET + 7;
+    /* pdu id(1), trans num(2), param len(2), error code(2) and the optional error text.
+     * L2CAP_MIN_OFFSET is only the header pulled from the front. prepare_I_frame
+     * writes L2CAP_FCS_LEN after the SDU, so the allocation includes that tail. */
+    buf_size = sizeof(BT_HDR) + L2CAP_MIN_OFFSET + L2CAP_FCS_LEN + 7;
     if (p_error_text) {
         len = (UINT16)strlen(p_error_text);
         if (len > SDP_DATA_BUF_SIZE - buf_size) {
