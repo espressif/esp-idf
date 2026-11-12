@@ -44,6 +44,8 @@ Bluedroid
 
         - Audio connection state ``ESP_HF_AUDIO_STATE_CONNECTED_LC3`` is added for an established LC3-SWB link, alongside the existing ``ESP_HF_AUDIO_STATE_CONNECTED`` (CVSD) and ``ESP_HF_AUDIO_STATE_CONNECTED_MSBC`` values.
 
+        - ``ESP_HF_IND_TYPE_MAX`` and ``ESP_HF_AT_RESPONSE_CODE_MAX`` are appended after the last defined enumerator. Existing values are unchanged. A ``switch`` on either enumeration that has no ``default`` branch fails to compile when ``-Werror=switch`` is enabled.
+
     - :component_file:`/bt/host/bluedroid/api/include/api/esp_hf_ag_api.h`
 
         - ``esp_hf_ag_set_codec()`` now takes ``esp_hf_codec_mode_t``. Pass ``ESP_HF_CODEC_CVSD``, ``ESP_HF_CODEC_MSBC``, ``ESP_HF_CODEC_LC3``, or ``ESP_HF_CODEC_NONE`` to restore the stack default.
@@ -61,6 +63,22 @@ Bluedroid
         - Call setup, call answer, call reject, call end, volume control, and audio connect or disconnect still apply on an HSP link. While handling those calls the stack may still submit HFP-only results such as indicator reports. Those results are dropped and a warning is logged. Ring and the SCO connection are unchanged.
 
         - The following calls apply to an HFP link only. On an HSP link the request is ignored and a warning is logged: ``esp_hf_ag_ciev_report()``, ``esp_hf_ag_cind_response()``, ``esp_hf_ag_cops_response()``, ``esp_hf_ag_clcc_response()``, and ``esp_hf_ag_cnum_response()``. ``esp_hf_ag_set_codec()`` is also HFP only. On HSP, ``ESP_HF_WBS_RESPONSE_EVT`` reports failure. ``esp_hf_ag_vra_control()`` does not send ``+BVRA`` on an HSP link or when the peer does not support voice recognition, and a warning is logged. Audio is still connected or disconnected according to the requested state.
+
+        - ``esp_hf_ag_register_callback()`` returns ``ESP_ERR_INVALID_ARG`` when ``callback`` is NULL. It previously returned ``ESP_FAIL``.
+
+        - ``esp_hf_ag_vra_control()`` returns ``ESP_ERR_INVALID_ARG`` unless ``value`` is ``ESP_HF_VR_STATE_ENABLED`` or ``ESP_HF_VR_STATE_DISABLED``.
+
+        - ``esp_hf_ag_volume_control()`` returns ``ESP_ERR_INVALID_ARG`` unless ``type`` is ``ESP_HF_VOLUME_CONTROL_TARGET_SPK`` or ``ESP_HF_VOLUME_CONTROL_TARGET_MIC``. The volume range 0–15 is unchanged.
+
+        - ``esp_hf_ag_cmee_send()`` returns ``ESP_ERR_INVALID_ARG`` when ``response_code`` is outside ``[ESP_HF_AT_RESPONSE_CODE_OK, ESP_HF_AT_RESPONSE_CODE_MAX)``. Pass a defined ``esp_hf_cme_err_t`` value; that enumeration is sparse.
+
+        - ``esp_hf_ag_unknown_at_send()`` still accepts a NULL ``unat`` and sends the default ERROR result.
+
+        - ``esp_hf_ag_ciev_report()`` returns ``ESP_ERR_INVALID_ARG`` when ``ind_type`` is less than ``ESP_HF_IND_TYPE_CALL`` or greater than or equal to ``ESP_HF_IND_TYPE_MAX``.
+
+        - ``esp_hf_ag_cind_response()`` returns ``ESP_ERR_INVALID_ARG`` when the call, call-setup, network, roaming, or call-held argument is outside its enumeration. Signal and battery level 0–5 were already rejected.
+
+        - Except for the NULL callback, the arguments above were previously forwarded and the call returned ``ESP_OK``.
 
     - :component_file:`/bt/host/bluedroid/api/include/api/esp_a2dp_api.h`
 
@@ -82,6 +100,14 @@ Bluedroid
                  - ``esp_a2d_media_ctrl_by_handle()``
 
         - A handle that does not match the active A2DP connection is not applied. Media control reports ``ESP_A2D_MEDIA_CTRL_ACK_FAILURE``. Disconnect is ignored.
+
+        - ``esp_a2d_register_callback()`` returns ``ESP_ERR_INVALID_ARG`` when ``callback`` is NULL. It previously returned ``ESP_FAIL``.
+
+        - ``esp_a2d_sink_disconnect()`` and ``esp_a2d_source_disconnect()`` return ``ESP_ERR_INVALID_ARG`` when ``remote_bda`` is NULL. They previously returned ``ESP_FAIL``.
+
+        - ``esp_a2d_sink_connect()`` and ``esp_a2d_source_connect()`` return ``ESP_ERR_INVALID_ARG`` when ``remote_bda`` is NULL. A NULL address was previously passed to ``memcpy``.
+
+        - ``esp_a2d_sink_set_active_device()`` checks the stack status before ``conn_hdl``. An invalid handle while the stack is disabled, or while deinitialization is in progress, returns ``ESP_ERR_INVALID_STATE``. It previously returned ``ESP_ERR_INVALID_ARG``.
 
     - :component_file:`/bt/host/bluedroid/api/include/api/esp_avrc_api.h`
 
@@ -125,6 +151,58 @@ Bluedroid
                   // block until ESP_SPP_CONG_EVT with cong == false
               }
               // ESP_SPP_WRITE_EVT only reports that a chunk was submitted to RFCOMM.
+
+    - :component_file:`/bt/host/bluedroid/api/include/api/esp_hf_client_api.h`
+
+        - ``esp_hf_client_register_callback()`` returns ``ESP_ERR_INVALID_ARG`` when ``callback`` is NULL. It previously returned ``ESP_FAIL``.
+
+        - ``esp_hf_client_volume_update()`` returns ``ESP_ERR_INVALID_ARG`` unless ``type`` is ``ESP_HF_VOLUME_CONTROL_TARGET_SPK`` or ``ESP_HF_VOLUME_CONTROL_TARGET_MIC``. The volume range 0–15 is unchanged.
+
+        - ``esp_hf_client_dial_memory()`` returns ``ESP_ERR_INVALID_ARG`` when ``location`` is less than 1.
+
+        - ``esp_hf_client_send_chld_cmd()`` returns ``ESP_ERR_INVALID_ARG`` when ``chld`` is outside ``ESP_HF_CHLD_TYPE_REL`` through ``ESP_HF_CHLD_TYPE_PRIV_X``, or when ``idx`` is less than 1 for ``ESP_HF_CHLD_TYPE_REL_X`` or ``ESP_HF_CHLD_TYPE_PRIV_X``.
+
+        - ``esp_hf_client_send_btrh_cmd()`` returns ``ESP_ERR_INVALID_ARG`` when ``btrh`` is outside ``ESP_HF_BTRH_CMD_HOLD`` through ``ESP_HF_BTRH_CMD_REJECT``.
+
+        - An invalid volume target, memory location, CHLD command, or BTRH command was previously accepted with ``ESP_OK`` and then dropped in the stack.
+
+    - :component_file:`/bt/host/bluedroid/api/include/api/esp_l2cap_bt_api.h`
+
+        - ``esp_bt_l2cap_register_callback()`` returns ``ESP_ERR_INVALID_ARG`` when ``callback`` is NULL. It previously returned ``ESP_FAIL``.
+
+        - ``esp_bt_l2cap_connect()`` and ``esp_bt_l2cap_start_srv()`` return ``ESP_ERR_INVALID_ARG`` when ``(psm & 0x0101) != 0x0001`` (the PSM is even, or bit 8 is set). ``esp_bt_l2cap_connect()`` still returns ``ESP_ERR_INVALID_ARG`` for a NULL peer address. ``esp_bt_l2cap_stop_srv()`` still forwards its PSM, and ``0`` still stops every server, the same as ``esp_bt_l2cap_stop_all_srv()``. An invalid PSM on connect or start was previously forwarded and the call returned ``ESP_OK``.
+
+    - :component_file:`/bt/host/bluedroid/api/include/api/esp_spp_api.h`
+
+        - ``esp_spp_connect()`` returns ``ESP_ERR_INVALID_ARG`` when ``remote_scn`` is 0 or greater than or equal to ``ESP_SPP_MAX_SCN`` (31), or when ``role`` is neither ``ESP_SPP_ROLE_MASTER`` nor ``ESP_SPP_ROLE_SLAVE``. A NULL peer address was already rejected.
+
+        - ``esp_spp_start_srv()`` and ``esp_spp_start_srv_with_cfg()`` return ``ESP_ERR_INVALID_ARG`` when ``local_scn`` is greater than or equal to ``ESP_SPP_MAX_SCN``, or when ``role`` is neither master nor slave. ``local_scn`` 0 still asks the stack to allocate a server channel. These values were previously forwarded and the call returned ``ESP_OK``.
+
+    - :component_file:`/bt/host/bluedroid/api/include/api/esp_sdp_api.h`
+
+        - ``esp_sdp_register_callback()`` returns ``ESP_ERR_INVALID_ARG`` when ``callback`` is NULL. It previously returned ``ESP_FAIL``.
+
+        - ``esp_sdp_search_record()`` returns ``ESP_ERR_INVALID_ARG`` when ``bd_addr`` is NULL, or when ``uuid.len`` is not ``ESP_UUID_LEN_16``, ``ESP_UUID_LEN_32``, or ``ESP_UUID_LEN_128``. A NULL address previously faulted in ``memcpy``. An unsupported length was forwarded and the call returned ``ESP_OK``.
+
+    - :component_file:`/bt/host/bluedroid/api/include/api/esp_pbac_api.h`
+
+        - ``esp_pbac_register_callback()`` returns ``ESP_ERR_INVALID_ARG`` when ``callback`` is NULL. It previously returned ``ESP_FAIL``.
+
+    - :component_file:`/bt/host/bluedroid/api/include/api/esp_gap_bt_api.h`
+
+        - ``esp_bt_gap_read_rssi_delta()`` and ``esp_bt_gap_read_acl_real_rssi()`` return ``ESP_ERR_INVALID_ARG`` when ``remote_addr`` is NULL. A NULL address was previously passed to ``memcpy``.
+
+        - ``esp_bt_gap_get_profile_status()`` checks the stack status before ``profile_status``. A NULL ``profile_status`` while the stack is disabled returns ``ESP_ERR_INVALID_STATE``. It previously returned ``ESP_ERR_INVALID_ARG``.
+
+    - :component_file:`/bt/host/bluedroid/api/include/api/esp_bt_device.h`
+
+        - ``ESP_BT_DEV_COEX_TYPE_MAX`` is appended. ``ESP_BT_DEV_COEX_TYPE_BLE`` and ``ESP_BT_DEV_COEX_TYPE_BT`` keep their values. A ``switch`` without a ``default`` branch needs the same treatment as the new HFP enumerators.
+
+        - ``esp_bt_dev_coex_status_config()`` returns ``ESP_ERR_INVALID_ARG`` when ``type`` is less than ``ESP_BT_DEV_COEX_TYPE_BLE`` or greater than or equal to ``ESP_BT_DEV_COEX_TYPE_MAX``. Those values were previously forwarded.
+
+        - ``esp_bt_config_file_path_get()`` and ``esp_bt_config_file_path_update()`` return ``ESP_ERR_INVALID_ARG`` when ``file_path`` is NULL. They previously returned ``ESP_FAIL``. ``esp_bt_config_file_path_update()`` still returns ``ESP_FAIL`` when the path length is not less than ``NVS_NS_NAME_MAX_SIZE``.
+
+    Function signatures are unchanged. An argument that was already valid still returns ``ESP_OK`` when the request is sent. Code that only tests the result against ``ESP_OK`` does not need to change. Code that treats a NULL-pointer failure as ``ESP_FAIL`` must accept ``ESP_ERR_INVALID_ARG``.
 
     Suggested replacements:
 

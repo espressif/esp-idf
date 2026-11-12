@@ -247,6 +247,7 @@ typedef void (* esp_sdp_cb_t)(esp_sdp_cb_event_t event, esp_sdp_cb_param_t *para
  *
  * @return
  *              - ESP_OK: success
+ *              - ESP_ERR_INVALID_ARG: if callback is a NULL function pointer
  *              - other: failed
  */
 esp_err_t esp_sdp_register_callback(esp_sdp_cb_t callback);
@@ -286,6 +287,8 @@ esp_err_t esp_sdp_deinit(void);
  *
  * @return
  *              - ESP_OK: success
+ *              - ESP_ERR_INVALID_ARG: if bd_addr is NULL, or uuid.len is not
+ *                ESP_UUID_LEN_16, ESP_UUID_LEN_32, or ESP_UUID_LEN_128
  *              - other: failed
  */
 esp_err_t esp_sdp_search_record(esp_bd_addr_t bd_addr, esp_bt_uuid_t uuid);
