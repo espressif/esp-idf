@@ -623,6 +623,7 @@ static inline void _adc_ll_reset_register(void)
 {
     SYSTEM.perip_rst_en0.reg_apb_saradc_rst = 1;
     SYSTEM.perip_rst_en0.reg_apb_saradc_rst = 0;
+    adc_ll_digi_reset_pattern_table();
 }
 //  SYSTEM.perip_rst_en0 is a shared register, so this function must be used in an atomic way
 #define adc_ll_reset_register(...) do { \
