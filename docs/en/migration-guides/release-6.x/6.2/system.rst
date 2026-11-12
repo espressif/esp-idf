@@ -3,6 +3,17 @@ System
 
 :link_to_translation:`zh_CN:[中文]`
 
+Reset Reasons
+-------------
+
+``soc/reset_reasons.h`` now exposes ``soc_reset_level_t`` and ``soc_reset_get_level()`` to classify a ``soc_reset_reason_t`` as CPU / Core / System / Chip.
+
+Power-glitch reset codes that the TRM classifies as System Reset were renamed to ``RESET_REASON_SYS_PWR_GLITCH``, except ESP32-H4's second code ``0x19``, which is named ``RESET_REASON_SYS_RTC_PWR_GLITCH``. The previous names remain as deprecated macros.
+
+On ESP32-C61, reset code ``0x19`` now reports ``ESP_RST_PWR_GLITCH`` instead of ``ESP_RST_BROWNOUT``; update comparisons against ``ESP_RST_BROWNOUT``.
+
+With :ref:`CONFIG_ESP_PHY_REDUCE_TX_POWER <CONFIG_ESP_PHY_REDUCE_TX_POWER>` enabled, PHY TX power is now also reduced after power-glitch resets on ESP32-C5 and ESP32-S31. Disable the option to keep the previous TX power.
+
 FreeRTOS
 ---------
 
