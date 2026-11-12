@@ -70,7 +70,7 @@ When ``idf.py`` does something, it prints each command that it runs for easy ref
 
   mkdir -p build
   cd build
-  cmake .. -G Ninja   # or 'Unix Makefiles'
+  cmake .. -DIDF_TARGET={IDF_TARGET_PATH_NAME} -G Ninja   # or 'Unix Makefiles'
   ninja
 
 In the above list, the ``cmake`` command configures the project and generates build files for use with the final build tool. In this case, the final build tool is Ninja_: running ``ninja`` actually builds the project.
