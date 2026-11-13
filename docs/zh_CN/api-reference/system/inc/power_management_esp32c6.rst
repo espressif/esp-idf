@@ -9,17 +9,17 @@
       - 获取 ``ESP_PM_CPU_FREQ_MAX``
       -
         - CPU: 160 MHz
-        - APB: 80 MHz
+        - APB: 40 MHz
     * - 获取 ``ESP_PM_APB_FREQ_MAX``，未获得 ``ESP_PM_CPU_FREQ_MAX``
       -
         - CPU: 80 MHz
-        - APB: 80 MHz
+        - APB: 40 MHz
     * - 无
       - 使用 :cpp:func:`esp_pm_configure` 为二者设置最小值
     * - :rspan:`1` 80
       - 获取 ``ESP_PM_CPU_FREQ_MAX`` 或 ``ESP_PM_APB_FREQ_MAX``
       -
         - CPU: 80 MHz
-        - APB: 80 MHz
+        - APB: 40 MHz
     * - 无
       - 使用 :cpp:func:`esp_pm_configure` 为二者设置最小值
