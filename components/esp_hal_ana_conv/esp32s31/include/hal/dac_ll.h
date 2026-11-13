@@ -9,7 +9,9 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include "hal/assert.h"
+#include "soc/dac_reg.h"
 #include "soc/dac_struct.h"
+#include "soc/lp_peri_clkrst_reg.h"
 #include "soc/lp_peri_clkrst_struct.h"
 #include "soc/clk_tree_defs.h"
 #include "hal/dac_types.h"
@@ -17,9 +19,11 @@
 
 #if SOC_DAC_SUPPORTED
 
-#define SOC_DAC_DC_VIA_SINTX           1
-#define SOC_DAC_SINTX_HAS_TIMER_TARGET 1
-#define SOC_DAC_SINTX_LUT_SIGNED       0
+#define DAC_LL_SHARED_HS_LS_CLK       1
+#define DAC_LL_DC_VIA_SINTX           1
+#define DAC_LL_SINTX_HAS_TIMER_TARGET 1
+#define DAC_LL_SINTX_LUT_SIGNED       0
+#define DAC_LL_SINTX_PHASE_ACC_RANGE  65536
 
 #ifdef __cplusplus
 extern "C" {
@@ -28,6 +32,12 @@ extern "C" {
 /*---------------------------------------------------------------
                     Clock setting
 ---------------------------------------------------------------*/
+
+#define DAC_LL_CLK_HS_DIV_MIN    1U
+#define DAC_LL_CLK_HS_DIV_MAX    (LP_PERICLKRST_LP_DAC_DIV_NUM_V + 1)
+#define DAC_LL_CLK_LS_DIV_MIN    1U
+#define DAC_LL_CLK_LS_DIV_MAX    (DAC_DIV_NUM_V + 1)
+
 /**
  * @brief Reset the DAC module
  */
@@ -43,15 +53,15 @@ static inline void dac_ll_reset_register(void)
  * @note  On ESP32-S31 both the Sintx (cosine) path and the GDMA path share this
  *        functional clock, so the source applies to both.
  *
- * @param clk_src Clock source, see `soc_periph_dac_digi_clk_src_t`
+ * @param clk_src Clock source, see 'clk_tree_defs.h'
  */
-static inline void dac_ll_clk_set_source(soc_periph_dac_digi_clk_src_t clk_src)
+static inline void dac_ll_clk_set_source(soc_module_clk_t clk_src)
 {
     switch (clk_src) {
-    case DAC_DIGI_CLK_SRC_LP_FAST:
+    case SOC_MOD_CLK_RTC_FAST:
         LP_PERI_CLKRST.dac_ctrl.lp_dac_clk_sel = 0;
         break;
-    case DAC_DIGI_CLK_SRC_XTAL:
+    case SOC_MOD_CLK_XTAL:
         LP_PERI_CLKRST.dac_ctrl.lp_dac_clk_sel = 1;
         break;
     default:
@@ -77,37 +87,39 @@ static inline void dac_ll_clk_enable(bool enable)
 /**
  * @brief Set the divider from the source clock to DAC_HS_CLK.
  *
- * @note  DAC_HS_CLK = clock_source / (hs_div + 1)
+ * @note  DAC_HS_CLK = clock_source / hs_div. The register's minus-one encoding is hidden by LL.
  */
-static inline void dac_ll_clk_set_hs_div(uint8_t hs_div)
+static inline void dac_ll_clk_set_hs_div(uint32_t hs_div)
 {
-    LP_PERI_CLKRST.dac_ctrl.lp_dac_div_num = hs_div;
+    HAL_ASSERT(hs_div >= DAC_LL_CLK_HS_DIV_MIN && hs_div <= DAC_LL_CLK_HS_DIV_MAX);
+    LP_PERI_CLKRST.dac_ctrl.lp_dac_div_num = hs_div - 1;
 }
 
 /**
  * @brief Get the divider from the source clock to DAC_HS_CLK.
  */
-static inline uint8_t dac_ll_clk_get_hs_div(void)
+static inline uint32_t dac_ll_clk_get_hs_div(void)
 {
-    return LP_PERI_CLKRST.dac_ctrl.lp_dac_div_num;
+    return LP_PERI_CLKRST.dac_ctrl.lp_dac_div_num + 1;
 }
 
 /**
  * @brief Set the internal divider from DAC_HS_CLK to the low-speed pad clock (clk_ls).
  *
- * @note  clk_ls = DAC_HS_CLK / (ls_div + 1)
+ * @note  clk_ls = DAC_HS_CLK / ls_div. The register's minus-one encoding is hidden by LL.
  */
-static inline void dac_ll_clk_set_ls_div(uint16_t ls_div)
+static inline void dac_ll_clk_set_ls_div(uint32_t ls_div)
 {
-    LP_DAC.pad_cfg.div_num = ls_div;
+    HAL_ASSERT(ls_div >= DAC_LL_CLK_LS_DIV_MIN && ls_div <= DAC_LL_CLK_LS_DIV_MAX);
+    LP_DAC.pad_cfg.div_num = ls_div - 1;
 }
 
 /**
  * @brief Get the divider from DAC_HS_CLK to the low-speed pad clock (clk_ls).
  */
-static inline uint16_t dac_ll_clk_get_ls_div(void)
+static inline uint32_t dac_ll_clk_get_ls_div(void)
 {
-    return LP_DAC.pad_cfg.div_num;
+    return LP_DAC.pad_cfg.div_num + 1;
 }
 
 /*---------------------------------------------------------------
