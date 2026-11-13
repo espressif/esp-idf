@@ -157,7 +157,6 @@ typedef enum {
     ESP_PAN_INIT_EVT = 0,                 /*!< When PAN is initialized, the event comes. */
     ESP_PAN_DEINIT_EVT,                   /*!< When PAN is deinitialized, the event comes. */
     ESP_PAN_SET_ROLE_EVT,                 /*!< When PAN role registration completes, the event comes. */
-    ESP_PAN_OPENING_EVT,                  /*!< When an incoming PAN connection is being established, the event comes. */
     ESP_PAN_OPEN_EVT,                     /*!< When a PAN connection is opened, the event comes. */
     ESP_PAN_CLOSE_EVT,                    /*!< When a PAN connection is closed, the event comes. */
     ESP_PAN_DATA_IND_EVT,                 /*!< When PAN connection received data, the event comes. */
@@ -192,14 +191,6 @@ typedef union {
         esp_pan_status_t status;          /*!< Role registration status. */
         esp_pan_role_mask_t role;         /*!< Registered local role bitmap. */
     } set_role;                           /*!< PAN callback param of ESP_PAN_SET_ROLE_EVT */
-
-    /**
-     * @brief ESP_PAN_OPENING_EVT
-     */
-    struct pan_opening_evt_param {
-        esp_bd_addr_t remote_bda;         /*!< Remote Bluetooth device address. */
-        uint16_t handle;                  /*!< Connection handle assigned by PAN stack. */
-    } opening;                            /*!< PAN callback param of ESP_PAN_OPENING_EVT */
 
     /**
      * @brief ESP_PAN_OPEN_EVT
@@ -327,7 +318,6 @@ esp_err_t esp_pan_deinit(void);
  * @brief       This function makes a PAN connection to a remote Bluetooth device.
  *
  *              When the connection is established or fails, the callback function will be called with ESP_PAN_OPEN_EVT.
- *              For an incoming connection, ESP_PAN_OPENING_EVT is reported before ESP_PAN_OPEN_EVT.
  *              This function must be called after esp_pan_init() succeeds and before esp_pan_deinit().
  *
  * @param[in]   remote_bda: Remote Bluetooth device address.

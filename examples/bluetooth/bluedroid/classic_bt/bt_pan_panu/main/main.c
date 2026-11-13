@@ -122,12 +122,6 @@ static void esp_hdl_pan_cb_evt(uint16_t event, void *p_param)
                  param->set_role.role, param->set_role.status);
         break;
 
-    case ESP_PAN_OPENING_EVT:
-        ESP_LOGI(PAN_TAG, "PAN opening, handle=%u, peer=[%s]",
-                 param->opening.handle,
-                 bda2str(param->opening.remote_bda, bda_str, sizeof(bda_str)));
-        break;
-
     case ESP_PAN_OPEN_EVT:
         if (param->open.status == ESP_PAN_SUCCESS) {
             ESP_LOGI(PAN_TAG, "PAN connected, handle=%u, peer=[%s], local_role=0x%x, peer_role=0x%x",
@@ -172,7 +166,6 @@ static void esp_pan_cb(esp_pan_cb_event_t event, esp_pan_cb_param_t *param)
         break;
     case ESP_PAN_INIT_EVT:
     case ESP_PAN_SET_ROLE_EVT:
-    case ESP_PAN_OPENING_EVT:
     case ESP_PAN_OPEN_EVT:
     case ESP_PAN_CLOSE_EVT:
     case ESP_PAN_CONG_EVT:
