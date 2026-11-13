@@ -239,8 +239,10 @@ void pmu_init(void)
     if (blk_version >= 1) {
         if ((rst_reason == RESET_REASON_CHIP_POWER_ON) || (rst_reason == RESET_REASON_SYS_BROWN_OUT)   \
             || (rst_reason == RESET_REASON_SYS_RTC_WDT) || (rst_reason == RESET_REASON_SYS_SUPER_WDT)   \
-            || (rst_reason == RESET_REASON_RTC_BROWN_OUT) || (rst_reason == RESET_REASON_CORE_DEEP_SLEEP)) {
-            /* INIT + hand over DBIAS_SEL together on power-on style reset and deep-sleep wake */
+            || (rst_reason == RESET_REASON_RTC_BROWN_OUT)) {
+            /* INIT + hand over DBIAS_SEL together on power-on style reset,
+            the DIG_DBIAS gear lives in the retained LP/PMU domain,
+            so a core reset that keeps DBIAS_SEL = 0 does not need to re-pulse DBIAS_INIT */
             pvt_dig_dbias_init();
         }
         pvt_auto_dbias_enable(true, true);
