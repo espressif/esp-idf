@@ -24,3 +24,6 @@ no_runner_tags:
   - esp32p4,jtag
   - esp32p4_2,*
   - esp32s2,usb_host_flash_disk
+  - flash_encryption,esp32p4,esp32p4_rev1  # old ESP32-P4 eco, no matching runner
+  - twai_adapter,esp32p4,esp32p4_rev1  # old ESP32-P4 eco, no matching runner
+  - usb_host_flash_disk,esp32p4,esp32p4_rev1  # old ESP32-P4 eco, no matching runner
