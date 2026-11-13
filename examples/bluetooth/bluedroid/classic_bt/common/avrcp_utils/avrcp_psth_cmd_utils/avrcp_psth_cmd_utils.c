@@ -18,12 +18,12 @@
 #define RC_PSTH_SRV_TAG "RC_PSTH_UTILS"
 
 static volatile bool s_is_connected = false;
-static esp_a2d_conn_hdl_t s_conn_hdl = ESP_A2D_INVALID_CONN_HDL;
+static esp_avrc_conn_hdl_t s_conn_hdl = ESP_AVRC_INVALID_CONN_HDL;
 static TaskHandle_t s_mcs_task_hdl = NULL;    /* handle for music control simulation task */
 
 static void music_control_simulation(void *arg)
 {
-    esp_a2d_conn_hdl_t *conn_hdl = (esp_a2d_conn_hdl_t *)arg;
+    esp_avrc_conn_hdl_t *conn_hdl = (esp_avrc_conn_hdl_t *)arg;
     ESP_LOGI(RC_PSTH_SRV_TAG, "start music control simulation");
 
     for (;;) {
@@ -62,7 +62,7 @@ void bt_avrc_psth_cmd_ct_evt_hdl(esp_avrc_ct_cb_event_t event, esp_avrc_ct_cb_pa
         uint8_t *bda = param->conn_stat.remote_bda;
         ESP_LOGI(RC_PSTH_SRV_TAG, "AVRC conn_state event: state %d, [%02x:%02x:%02x:%02x:%02x:%02x]",
                  param->conn_stat.connected, bda[0], bda[1], bda[2], bda[3], bda[4], bda[5]);
-        s_conn_hdl = param->conn_stat.connected ? param->conn_stat.conn_hdl : ESP_A2D_INVALID_CONN_HDL;
+        s_conn_hdl = param->conn_stat.connected ? param->conn_stat.conn_hdl : ESP_AVRC_INVALID_CONN_HDL;
         if (param->conn_stat.connected) {
             /* create task to simulate music control */
             s_is_connected = true;

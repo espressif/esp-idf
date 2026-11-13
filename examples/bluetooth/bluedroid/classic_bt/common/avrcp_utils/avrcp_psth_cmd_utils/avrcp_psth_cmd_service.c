@@ -11,7 +11,7 @@
 
 #define RC_PSTH_SRV_TAG    "RC_PSTH_SRV"
 
-esp_err_t avrc_psth_cmd_srv_send_cmd(esp_a2d_conn_hdl_t conn_hdl, esp_avrc_pt_cmd_t key_code,
+esp_err_t avrc_psth_cmd_srv_send_cmd(esp_avrc_conn_hdl_t conn_hdl, esp_avrc_pt_cmd_t key_code,
                                      esp_avrc_pt_cmd_state_t key_state)
 {
     esp_err_t err = ESP_OK;

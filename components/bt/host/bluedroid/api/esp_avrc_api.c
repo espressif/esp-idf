@@ -81,7 +81,7 @@ esp_err_t esp_avrc_ct_deinit(void)
     return (stat == BT_STATUS_SUCCESS) ? ESP_OK : ESP_FAIL;
 }
 
-static esp_err_t avrc_ct_send_set_player_value(esp_a2d_conn_hdl_t conn_hdl, uint8_t tl, uint8_t attr_id, uint8_t value_id)
+static esp_err_t avrc_ct_send_set_player_value(esp_avrc_conn_hdl_t conn_hdl, uint8_t tl, uint8_t attr_id, uint8_t value_id)
 {
     if (tl > ESP_AVRC_TRANS_LABEL_MAX || attr_id >= ESP_AVRC_PS_MAX_ATTR) {
         return ESP_ERR_INVALID_ARG;
@@ -96,10 +96,10 @@ static esp_err_t avrc_ct_send_set_player_value(esp_a2d_conn_hdl_t conn_hdl, uint
     return avrc_ct_transfer(BTC_AVRC_CTRL_API_SND_SET_PLAYER_SETTING_EVT, &arg);
 }
 
-esp_err_t esp_avrc_ct_send_set_player_value_cmd_by_handle(esp_a2d_conn_hdl_t conn_hdl, uint8_t tl,
+esp_err_t esp_avrc_ct_send_set_player_value_cmd_by_handle(esp_avrc_conn_hdl_t conn_hdl, uint8_t tl,
                                                           uint8_t attr_id, uint8_t value_id)
 {
-    if (conn_hdl == ESP_A2D_INVALID_CONN_HDL || avrc_ct_check_user_tl(tl) != ESP_OK) {
+    if (conn_hdl == ESP_AVRC_INVALID_CONN_HDL || avrc_ct_check_user_tl(tl) != ESP_OK) {
         return ESP_ERR_INVALID_ARG;
     }
     return avrc_ct_send_set_player_value(conn_hdl, tl, attr_id, value_id);
@@ -107,10 +107,10 @@ esp_err_t esp_avrc_ct_send_set_player_value_cmd_by_handle(esp_a2d_conn_hdl_t con
 
 esp_err_t esp_avrc_ct_send_set_player_value_cmd(uint8_t tl, uint8_t attr_id, uint8_t value_id)
 {
-    return avrc_ct_send_set_player_value(ESP_A2D_INVALID_CONN_HDL, tl, attr_id, value_id);
+    return avrc_ct_send_set_player_value(ESP_AVRC_INVALID_CONN_HDL, tl, attr_id, value_id);
 }
 
-static esp_err_t avrc_ct_send_get_rn_caps(esp_a2d_conn_hdl_t conn_hdl, uint8_t tl)
+static esp_err_t avrc_ct_send_get_rn_caps(esp_avrc_conn_hdl_t conn_hdl, uint8_t tl)
 {
     if (tl > ESP_AVRC_TRANS_LABEL_MAX) {
         return ESP_ERR_INVALID_ARG;
@@ -123,9 +123,9 @@ static esp_err_t avrc_ct_send_get_rn_caps(esp_a2d_conn_hdl_t conn_hdl, uint8_t t
     return avrc_ct_transfer(BTC_AVRC_STATUS_API_SND_GET_RN_CAPS_EVT, &arg);
 }
 
-esp_err_t esp_avrc_ct_send_get_rn_capabilities_cmd_by_handle(esp_a2d_conn_hdl_t conn_hdl, uint8_t tl)
+esp_err_t esp_avrc_ct_send_get_rn_capabilities_cmd_by_handle(esp_avrc_conn_hdl_t conn_hdl, uint8_t tl)
 {
-    if (conn_hdl == ESP_A2D_INVALID_CONN_HDL || avrc_ct_check_user_tl(tl) != ESP_OK) {
+    if (conn_hdl == ESP_AVRC_INVALID_CONN_HDL || avrc_ct_check_user_tl(tl) != ESP_OK) {
         return ESP_ERR_INVALID_ARG;
     }
     return avrc_ct_send_get_rn_caps(conn_hdl, tl);
@@ -133,10 +133,10 @@ esp_err_t esp_avrc_ct_send_get_rn_capabilities_cmd_by_handle(esp_a2d_conn_hdl_t 
 
 esp_err_t esp_avrc_ct_send_get_rn_capabilities_cmd(uint8_t tl)
 {
-    return avrc_ct_send_get_rn_caps(ESP_A2D_INVALID_CONN_HDL, tl);
+    return avrc_ct_send_get_rn_caps(ESP_AVRC_INVALID_CONN_HDL, tl);
 }
 
-static esp_err_t avrc_ct_send_reg_notify(esp_a2d_conn_hdl_t conn_hdl, uint8_t tl, uint8_t event_id, uint32_t event_parameter)
+static esp_err_t avrc_ct_send_reg_notify(esp_avrc_conn_hdl_t conn_hdl, uint8_t tl, uint8_t event_id, uint32_t event_parameter)
 {
     if (tl > ESP_AVRC_TRANS_LABEL_MAX || event_id > ESP_AVRC_RN_MAX_EVT - 1) {
         return ESP_ERR_INVALID_ARG;
@@ -154,10 +154,10 @@ static esp_err_t avrc_ct_send_reg_notify(esp_a2d_conn_hdl_t conn_hdl, uint8_t tl
     return avrc_ct_transfer(BTC_AVRC_NOTIFY_API_SND_REG_NOTIFY_EVT, &arg);
 }
 
-esp_err_t esp_avrc_ct_send_register_notification_cmd_by_handle(esp_a2d_conn_hdl_t conn_hdl, uint8_t tl,
+esp_err_t esp_avrc_ct_send_register_notification_cmd_by_handle(esp_avrc_conn_hdl_t conn_hdl, uint8_t tl,
                                                                uint8_t event_id, uint32_t event_parameter)
 {
-    if (conn_hdl == ESP_A2D_INVALID_CONN_HDL || avrc_ct_check_user_tl(tl) != ESP_OK) {
+    if (conn_hdl == ESP_AVRC_INVALID_CONN_HDL || avrc_ct_check_user_tl(tl) != ESP_OK) {
         return ESP_ERR_INVALID_ARG;
     }
     return avrc_ct_send_reg_notify(conn_hdl, tl, event_id, event_parameter);
@@ -165,10 +165,10 @@ esp_err_t esp_avrc_ct_send_register_notification_cmd_by_handle(esp_a2d_conn_hdl_
 
 esp_err_t esp_avrc_ct_send_register_notification_cmd(uint8_t tl, uint8_t event_id, uint32_t event_parameter)
 {
-    return avrc_ct_send_reg_notify(ESP_A2D_INVALID_CONN_HDL, tl, event_id, event_parameter);
+    return avrc_ct_send_reg_notify(ESP_AVRC_INVALID_CONN_HDL, tl, event_id, event_parameter);
 }
 
-static esp_err_t avrc_ct_send_abs_vol(esp_a2d_conn_hdl_t conn_hdl, uint8_t tl, uint8_t volume)
+static esp_err_t avrc_ct_send_abs_vol(esp_avrc_conn_hdl_t conn_hdl, uint8_t tl, uint8_t volume)
 {
     if (tl > ESP_AVRC_TRANS_LABEL_MAX || volume > BTC_AVRC_MAX_VOLUME) {
         return ESP_ERR_INVALID_ARG;
@@ -185,9 +185,9 @@ static esp_err_t avrc_ct_send_abs_vol(esp_a2d_conn_hdl_t conn_hdl, uint8_t tl, u
     return avrc_ct_transfer(BTC_AVRC_CTRL_API_SND_SET_ABSOLUTE_VOLUME_EVT, &arg);
 }
 
-esp_err_t esp_avrc_ct_send_set_absolute_volume_cmd_by_handle(esp_a2d_conn_hdl_t conn_hdl, uint8_t tl, uint8_t volume)
+esp_err_t esp_avrc_ct_send_set_absolute_volume_cmd_by_handle(esp_avrc_conn_hdl_t conn_hdl, uint8_t tl, uint8_t volume)
 {
-    if (conn_hdl == ESP_A2D_INVALID_CONN_HDL || avrc_ct_check_user_tl(tl) != ESP_OK) {
+    if (conn_hdl == ESP_AVRC_INVALID_CONN_HDL || avrc_ct_check_user_tl(tl) != ESP_OK) {
         return ESP_ERR_INVALID_ARG;
     }
     return avrc_ct_send_abs_vol(conn_hdl, tl, volume);
@@ -195,10 +195,10 @@ esp_err_t esp_avrc_ct_send_set_absolute_volume_cmd_by_handle(esp_a2d_conn_hdl_t 
 
 esp_err_t esp_avrc_ct_send_set_absolute_volume_cmd(uint8_t tl, uint8_t volume)
 {
-    return avrc_ct_send_abs_vol(ESP_A2D_INVALID_CONN_HDL, tl, volume);
+    return avrc_ct_send_abs_vol(ESP_AVRC_INVALID_CONN_HDL, tl, volume);
 }
 
-static esp_err_t avrc_ct_send_metadata(esp_a2d_conn_hdl_t conn_hdl, uint8_t tl, uint8_t attr_mask)
+static esp_err_t avrc_ct_send_metadata(esp_avrc_conn_hdl_t conn_hdl, uint8_t tl, uint8_t attr_mask)
 {
     if (tl > ESP_AVRC_TRANS_LABEL_MAX) {
         return ESP_ERR_INVALID_ARG;
@@ -212,9 +212,9 @@ static esp_err_t avrc_ct_send_metadata(esp_a2d_conn_hdl_t conn_hdl, uint8_t tl, 
     return avrc_ct_transfer(BTC_AVRC_STATUS_API_SND_META_EVT, &arg);
 }
 
-esp_err_t esp_avrc_ct_send_metadata_cmd_by_handle(esp_a2d_conn_hdl_t conn_hdl, uint8_t tl, uint8_t attr_mask)
+esp_err_t esp_avrc_ct_send_metadata_cmd_by_handle(esp_avrc_conn_hdl_t conn_hdl, uint8_t tl, uint8_t attr_mask)
 {
-    if (conn_hdl == ESP_A2D_INVALID_CONN_HDL || avrc_ct_check_user_tl(tl) != ESP_OK) {
+    if (conn_hdl == ESP_AVRC_INVALID_CONN_HDL || avrc_ct_check_user_tl(tl) != ESP_OK) {
         return ESP_ERR_INVALID_ARG;
     }
     return avrc_ct_send_metadata(conn_hdl, tl, attr_mask);
@@ -222,10 +222,10 @@ esp_err_t esp_avrc_ct_send_metadata_cmd_by_handle(esp_a2d_conn_hdl_t conn_hdl, u
 
 esp_err_t esp_avrc_ct_send_metadata_cmd(uint8_t tl, uint8_t attr_mask)
 {
-    return avrc_ct_send_metadata(ESP_A2D_INVALID_CONN_HDL, tl, attr_mask);
+    return avrc_ct_send_metadata(ESP_AVRC_INVALID_CONN_HDL, tl, attr_mask);
 }
 
-static esp_err_t avrc_ct_send_pt(esp_a2d_conn_hdl_t conn_hdl, uint8_t tl, uint8_t key_code, uint8_t key_state)
+static esp_err_t avrc_ct_send_pt(esp_avrc_conn_hdl_t conn_hdl, uint8_t tl, uint8_t key_code, uint8_t key_state)
 {
     if (tl > ESP_AVRC_TRANS_LABEL_MAX || key_state > ESP_AVRC_PT_CMD_STATE_RELEASED) {
         return ESP_ERR_INVALID_ARG;
@@ -240,10 +240,10 @@ static esp_err_t avrc_ct_send_pt(esp_a2d_conn_hdl_t conn_hdl, uint8_t tl, uint8_
     return avrc_ct_transfer(BTC_AVRC_CTRL_API_SND_PTCMD_EVT, &arg);
 }
 
-esp_err_t esp_avrc_ct_send_passthrough_cmd_by_handle(esp_a2d_conn_hdl_t conn_hdl, uint8_t tl, uint8_t key_code,
+esp_err_t esp_avrc_ct_send_passthrough_cmd_by_handle(esp_avrc_conn_hdl_t conn_hdl, uint8_t tl, uint8_t key_code,
                                                      uint8_t key_state)
 {
-    if (conn_hdl == ESP_A2D_INVALID_CONN_HDL ||
+    if (conn_hdl == ESP_AVRC_INVALID_CONN_HDL ||
         avrc_ct_check_user_tl(tl) != ESP_OK ||
         key_state > ESP_AVRC_PT_CMD_STATE_RELEASED) {
         return ESP_ERR_INVALID_ARG;
@@ -253,10 +253,10 @@ esp_err_t esp_avrc_ct_send_passthrough_cmd_by_handle(esp_a2d_conn_hdl_t conn_hdl
 
 esp_err_t esp_avrc_ct_send_passthrough_cmd(uint8_t tl, uint8_t key_code, uint8_t key_state)
 {
-    return avrc_ct_send_pt(ESP_A2D_INVALID_CONN_HDL, tl, key_code, key_state);
+    return avrc_ct_send_pt(ESP_AVRC_INVALID_CONN_HDL, tl, key_code, key_state);
 }
 
-static esp_err_t avrc_ct_send_play_status(esp_a2d_conn_hdl_t conn_hdl, uint8_t tl)
+static esp_err_t avrc_ct_send_play_status(esp_avrc_conn_hdl_t conn_hdl, uint8_t tl)
 {
     if (tl > ESP_AVRC_TRANS_LABEL_MAX) {
         return ESP_ERR_INVALID_ARG;
@@ -269,9 +269,9 @@ static esp_err_t avrc_ct_send_play_status(esp_a2d_conn_hdl_t conn_hdl, uint8_t t
     return avrc_ct_transfer(BTC_AVRC_STATUS_API_SND_GET_PLAY_STATUS_EVT, &arg);
 }
 
-esp_err_t esp_avrc_ct_send_get_play_status_cmd_by_handle(esp_a2d_conn_hdl_t conn_hdl, uint8_t tl)
+esp_err_t esp_avrc_ct_send_get_play_status_cmd_by_handle(esp_avrc_conn_hdl_t conn_hdl, uint8_t tl)
 {
-    if (conn_hdl == ESP_A2D_INVALID_CONN_HDL || avrc_ct_check_user_tl(tl) != ESP_OK) {
+    if (conn_hdl == ESP_AVRC_INVALID_CONN_HDL || avrc_ct_check_user_tl(tl) != ESP_OK) {
         return ESP_ERR_INVALID_ARG;
     }
     return avrc_ct_send_play_status(conn_hdl, tl);
@@ -279,7 +279,7 @@ esp_err_t esp_avrc_ct_send_get_play_status_cmd_by_handle(esp_a2d_conn_hdl_t conn
 
 esp_err_t esp_avrc_ct_send_get_play_status_cmd(uint8_t tl)
 {
-    return avrc_ct_send_play_status(ESP_A2D_INVALID_CONN_HDL, tl);
+    return avrc_ct_send_play_status(ESP_AVRC_INVALID_CONN_HDL, tl);
 }
 
 #if BTC_AV_CA_INCLUDED
@@ -608,7 +608,7 @@ bool esp_avrc_rn_evt_bit_mask_operation(esp_avrc_bit_mask_op_t op, esp_avrc_rn_e
     return true;
 }
 
-static esp_err_t avrc_tg_send_rn(esp_a2d_conn_hdl_t conn_hdl, esp_avrc_rn_event_ids_t event_id,
+static esp_err_t avrc_tg_send_rn(esp_avrc_conn_hdl_t conn_hdl, esp_avrc_rn_event_ids_t event_id,
                                   esp_avrc_rn_rsp_t rsp, esp_avrc_rn_param_t *param)
 {
     ESP_BLUEDROID_STATUS_CHECK(ESP_BLUEDROID_STATUS_ENABLED);
@@ -640,10 +640,10 @@ static esp_err_t avrc_tg_send_rn(esp_a2d_conn_hdl_t conn_hdl, esp_avrc_rn_event_
     return (stat == BT_STATUS_SUCCESS) ? ESP_OK : ESP_FAIL;
 }
 
-esp_err_t esp_avrc_tg_send_rn_rsp_by_handle(esp_a2d_conn_hdl_t conn_hdl, esp_avrc_rn_event_ids_t event_id,
+esp_err_t esp_avrc_tg_send_rn_rsp_by_handle(esp_avrc_conn_hdl_t conn_hdl, esp_avrc_rn_event_ids_t event_id,
                                             esp_avrc_rn_rsp_t rsp, esp_avrc_rn_param_t *param)
 {
-    if (conn_hdl == ESP_A2D_INVALID_CONN_HDL) {
+    if (conn_hdl == ESP_AVRC_INVALID_CONN_HDL) {
         return ESP_ERR_INVALID_ARG;
     }
     return avrc_tg_send_rn(conn_hdl, event_id, rsp, param);
@@ -652,7 +652,7 @@ esp_err_t esp_avrc_tg_send_rn_rsp_by_handle(esp_a2d_conn_hdl_t conn_hdl, esp_avr
 esp_err_t esp_avrc_tg_send_rn_rsp(esp_avrc_rn_event_ids_t event_id, esp_avrc_rn_rsp_t rsp,
                                   esp_avrc_rn_param_t *param)
 {
-    return avrc_tg_send_rn(ESP_A2D_INVALID_CONN_HDL, event_id, rsp, param);
+    return avrc_tg_send_rn(ESP_AVRC_INVALID_CONN_HDL, event_id, rsp, param);
 }
 
 esp_err_t esp_avrc_get_profile_status(esp_avrc_profile_status_t *profile_status)

@@ -29,6 +29,9 @@ extern "C" {
 #define ESP_AVRC_CA_MTU_MIN             255                             /*!< Minimal MTU can be used in Cover Art OBEX connection */
 #define ESP_AVRC_CA_MTU_MAX             1691                            /*!< Maximum MTU can be used in Cover Art OBEX connection */
 
+typedef uint16_t esp_avrc_conn_hdl_t;            /*!< Connection handle, associate with specific device that connected */
+#define ESP_AVRC_INVALID_CONN_HDL    (0)         /*!< Invalid AVRCP connection handle */
+
 /// AVRC feature bit mask
 typedef enum {
     ESP_AVRC_FEAT_RCTG = 0x0001,                 /*!< remote control target */
@@ -333,7 +336,7 @@ typedef union {
     struct avrc_ct_conn_stat_param {
         bool connected;                          /*!< whether AVRC connection is set up */
         esp_bd_addr_t remote_bda;                /*!< remote bluetooth device address */
-        esp_a2d_conn_hdl_t conn_hdl;             /*!< A2DP connection handle of this peer */
+        esp_avrc_conn_hdl_t conn_hdl;             /*!< AVRCP connection handle of this peer */
     } conn_stat;                                 /*!< AVRC connection status */
 
     /**
@@ -344,7 +347,7 @@ typedef union {
         uint8_t key_code;                        /*!< passthrough command code */
         uint8_t key_state;                       /*!< 0 for PRESSED, 1 for RELEASED */
         esp_avrc_rsp_t rsp_code;                 /*!< response code */
-        esp_a2d_conn_hdl_t conn_hdl;             /*!< A2DP connection handle of this peer */
+        esp_avrc_conn_hdl_t conn_hdl;             /*!< AVRCP connection handle of this peer */
     } psth_rsp;                                  /*!< passthrough command response */
 
     /**
@@ -354,7 +357,7 @@ typedef union {
         uint8_t attr_id;                         /*!< id of metadata attribute */
         uint8_t *attr_text;                      /*!< attribute itself */
         int attr_length;                         /*!< attribute character length */
-        esp_a2d_conn_hdl_t conn_hdl;             /*!< A2DP connection handle of this peer */
+        esp_avrc_conn_hdl_t conn_hdl;             /*!< AVRCP connection handle of this peer */
     } meta_rsp;                                  /*!< metadata attributes response */
 
     /**
@@ -364,7 +367,7 @@ typedef union {
         uint32_t song_length;                    /*!< total length of the playing song in milliseconds */
         uint32_t song_position;                  /*!< current position of the playing song in milliseconds elapsed */
         esp_avrc_playback_stat_t play_status;    /*!< current status of playing */
-        esp_a2d_conn_hdl_t conn_hdl;             /*!< A2DP connection handle of this peer */
+        esp_avrc_conn_hdl_t conn_hdl;             /*!< AVRCP connection handle of this peer */
     } play_status_rsp;                           /*!< get play status command response */
 
     /**
@@ -373,7 +376,7 @@ typedef union {
     struct avrc_ct_change_notify_param {
         uint8_t event_id;                        /*!< id of AVRC event notification */
         esp_avrc_rn_param_t event_parameter;     /*!< event notification parameter */
-        esp_a2d_conn_hdl_t conn_hdl;             /*!< A2DP connection handle of this peer */
+        esp_avrc_conn_hdl_t conn_hdl;             /*!< AVRCP connection handle of this peer */
     } change_ntf;                                /*!< notifications */
 
     /**
@@ -383,7 +386,7 @@ typedef union {
         uint32_t feat_mask;                      /*!< AVRC feature mask of remote device */
         uint16_t tg_feat_flag;                   /*!< feature flag of remote device as TG */
         esp_bd_addr_t remote_bda;                /*!< remote bluetooth device address */
-        esp_a2d_conn_hdl_t conn_hdl;             /*!< A2DP connection handle of this peer */
+        esp_avrc_conn_hdl_t conn_hdl;             /*!< AVRCP connection handle of this peer */
     } rmt_feats;                                 /*!< AVRC features discovered from remote SDP server */
 
     /**
@@ -392,7 +395,7 @@ typedef union {
     struct avrc_ct_get_rn_caps_rsp_param {
         uint8_t cap_count;                       /*!< number of items provided in event or company_id according to cap_id used */
         esp_avrc_rn_evt_cap_mask_t evt_set;      /*!< supported event_ids represented in bit-mask */
-        esp_a2d_conn_hdl_t conn_hdl;             /*!< A2DP connection handle of this peer */
+        esp_avrc_conn_hdl_t conn_hdl;             /*!< AVRCP connection handle of this peer */
     } get_rn_caps_rsp;                           /*!< get supported event capabilities response from AVRCP target */
 
     /**
@@ -400,7 +403,7 @@ typedef union {
      */
     struct avrc_ct_set_volume_rsp_param {
         uint8_t volume;                          /*!< the volume which has actually been set, range is 0 to 0x7f, means 0% to 100% */
-        esp_a2d_conn_hdl_t conn_hdl;             /*!< A2DP connection handle of this peer */
+        esp_avrc_conn_hdl_t conn_hdl;             /*!< AVRCP connection handle of this peer */
     } set_volume_rsp;                            /*!< set absolute volume response event */
 
     /**
@@ -438,7 +441,7 @@ typedef union {
     struct avrc_tg_conn_stat_param {
         bool connected;                          /*!< whether AVRC connection is set up */
         esp_bd_addr_t remote_bda;                /*!< remote bluetooth device address */
-        esp_a2d_conn_hdl_t conn_hdl;             /*!< A2DP connection handle of this peer */
+        esp_avrc_conn_hdl_t conn_hdl;             /*!< AVRCP connection handle of this peer */
     } conn_stat;                                 /*!< AVRC connection status */
 
     /**
@@ -448,7 +451,7 @@ typedef union {
         uint32_t feat_mask;                      /*!< AVRC feature mask of remote device */
         uint16_t ct_feat_flag;                   /*!< feature flag of remote device as CT */
         esp_bd_addr_t remote_bda;                /*!< remote bluetooth device address */
-        esp_a2d_conn_hdl_t conn_hdl;             /*!< A2DP connection handle of this peer */
+        esp_avrc_conn_hdl_t conn_hdl;             /*!< AVRCP connection handle of this peer */
     } rmt_feats;                                 /*!< AVRC features discovered through SDP */
 
     /**
@@ -457,7 +460,7 @@ typedef union {
     struct avrc_tg_psth_cmd_param {
         uint8_t key_code;                        /*!< passthrough command code */
         uint8_t key_state;                       /*!< 0 for PRESSED, 1 for RELEASED */
-        esp_a2d_conn_hdl_t conn_hdl;             /*!< A2DP connection handle of this peer */
+        esp_avrc_conn_hdl_t conn_hdl;             /*!< AVRCP connection handle of this peer */
     } psth_cmd;                                  /*!< passthrough command */
 
     /**
@@ -465,7 +468,7 @@ typedef union {
      */
     struct avrc_tg_set_abs_vol_param {
         uint8_t volume;                          /*!< volume ranges from 0 to 127 */
-        esp_a2d_conn_hdl_t conn_hdl;             /*!< A2DP connection handle of this peer */
+        esp_avrc_conn_hdl_t conn_hdl;             /*!< AVRCP connection handle of this peer */
     } set_abs_vol;                               /*!< set absolute volume command targeted on audio sink */
 
     /**
@@ -474,7 +477,7 @@ typedef union {
     struct avrc_tg_reg_ntf_param {
         uint8_t event_id;                        /*!< event id of AVRC RegisterNotification */
         uint32_t event_parameter;                /*!< event notification parameter */
-        esp_a2d_conn_hdl_t conn_hdl;             /*!< A2DP connection handle of this peer */
+        esp_avrc_conn_hdl_t conn_hdl;             /*!< AVRCP connection handle of this peer */
     } reg_ntf;                                   /*!< register notification */
 
     /**
@@ -483,7 +486,7 @@ typedef union {
     struct avrc_tg_set_app_value_param {
         uint8_t num_val;                        /*!< attribute num */
         esp_avrc_set_app_value_param_t *p_vals; /*!< point to the id and value of player application attribute */
-        esp_a2d_conn_hdl_t conn_hdl;             /*!< A2DP connection handle of this peer */
+        esp_avrc_conn_hdl_t conn_hdl;             /*!< AVRCP connection handle of this peer */
     } set_app_value;                            /*!< set player application value */
 
     /**
@@ -582,7 +585,7 @@ __attribute__((deprecated("Please use esp_avrc_ct_send_set_player_value_cmd_by_h
  * @brief           Send player application settings command to the AVRCP target identified by
  *                  connection handle.
  *
- * @param[in]       conn_hdl : A2DP connection handle, reported in ESP_A2D_CONNECTION_STATE_EVT
+ * @param[in]       conn_hdl : AVRCP connection handle, reported in ESP_AVRC_CT_CONNECTION_STATE_EVT
  * @param[in]       tl : transaction label, 0 to ESP_USER_AVRC_TRANS_LABEL_MAX (13); 14 and 15 are reserved for the stack
  * @param[in]       attr_id, value_id : see esp_avrc_ct_send_set_player_value_cmd()
  *
@@ -596,7 +599,7 @@ __attribute__((deprecated("Please use esp_avrc_ct_send_set_player_value_cmd_by_h
  *                  - ESP_ERR_INVALID_ARG: @p conn_hdl is ESP_A2D_INVALID_CONN_HDL, or @p tl or @p attr_id is invalid
  *                  - ESP_FAIL: others
  */
-esp_err_t esp_avrc_ct_send_set_player_value_cmd_by_handle(esp_a2d_conn_hdl_t conn_hdl, uint8_t tl,
+esp_err_t esp_avrc_ct_send_set_player_value_cmd_by_handle(esp_avrc_conn_hdl_t conn_hdl, uint8_t tl,
                                                           uint8_t attr_id, uint8_t value_id);
 
 /**
@@ -619,7 +622,7 @@ __attribute__((deprecated("Please use esp_avrc_ct_send_get_rn_capabilities_cmd_b
 /**
  * @brief           Send GetCapabilities to the AVRCP target identified by connection handle.
  *
- * @param[in]       conn_hdl : A2DP connection handle, reported in ESP_A2D_CONNECTION_STATE_EVT
+ * @param[in]       conn_hdl : AVRCP connection handle, reported in ESP_AVRC_CT_CONNECTION_STATE_EVT
  * @param[in]       tl : transaction label, 0 to ESP_USER_AVRC_TRANS_LABEL_MAX (13); 14 and 15 are reserved for the stack
  *
  * @note            If @p conn_hdl is not ESP_A2D_INVALID_CONN_HDL but does not match a
@@ -632,7 +635,7 @@ __attribute__((deprecated("Please use esp_avrc_ct_send_get_rn_capabilities_cmd_b
  *                  - ESP_ERR_INVALID_ARG: @p conn_hdl is ESP_A2D_INVALID_CONN_HDL, or @p tl is invalid
  *                  - ESP_FAIL: others
  */
-esp_err_t esp_avrc_ct_send_get_rn_capabilities_cmd_by_handle(esp_a2d_conn_hdl_t conn_hdl, uint8_t tl);
+esp_err_t esp_avrc_ct_send_get_rn_capabilities_cmd_by_handle(esp_avrc_conn_hdl_t conn_hdl, uint8_t tl);
 
 /**
  * @brief           Send register notification command to AVRCP target. This function should be called after
@@ -658,7 +661,7 @@ __attribute__((deprecated("Please use esp_avrc_ct_send_register_notification_cmd
 /**
  * @brief           Register notification on the AVRCP target identified by connection handle.
  *
- * @param[in]       conn_hdl : A2DP connection handle, reported in ESP_A2D_CONNECTION_STATE_EVT
+ * @param[in]       conn_hdl : AVRCP connection handle, reported in ESP_AVRC_CT_CONNECTION_STATE_EVT
  * @param[in]       tl : transaction label, 0 to ESP_USER_AVRC_TRANS_LABEL_MAX (13); 14 and 15 are reserved for the stack
  * @param[in]       event_id, event_parameter : see esp_avrc_ct_send_register_notification_cmd()
  *
@@ -666,7 +669,7 @@ __attribute__((deprecated("Please use esp_avrc_ct_send_register_notification_cmd
  *                  connected peer, this function still returns ESP_OK and the command
  *                  is dropped. No event is reported.
  */
-esp_err_t esp_avrc_ct_send_register_notification_cmd_by_handle(esp_a2d_conn_hdl_t conn_hdl, uint8_t tl,
+esp_err_t esp_avrc_ct_send_register_notification_cmd_by_handle(esp_avrc_conn_hdl_t conn_hdl, uint8_t tl,
                                                                uint8_t event_id, uint32_t event_parameter);
 
 /**
@@ -691,7 +694,7 @@ __attribute__((deprecated("Please use esp_avrc_ct_send_set_absolute_volume_cmd_b
 /**
  * @brief           Set absolute volume on the AVRCP target identified by connection handle.
  *
- * @param[in]       conn_hdl : A2DP connection handle, reported in ESP_A2D_CONNECTION_STATE_EVT
+ * @param[in]       conn_hdl : AVRCP connection handle, reported in ESP_AVRC_CT_CONNECTION_STATE_EVT
  * @param[in]       tl : transaction label, 0 to ESP_USER_AVRC_TRANS_LABEL_MAX (13); 14 and 15 are reserved for the stack
  * @param[in]       volume : see esp_avrc_ct_send_set_absolute_volume_cmd()
  *
@@ -699,7 +702,7 @@ __attribute__((deprecated("Please use esp_avrc_ct_send_set_absolute_volume_cmd_b
  *                  connected peer, this function still returns ESP_OK and the command
  *                  is dropped. No event is reported.
  */
-esp_err_t esp_avrc_ct_send_set_absolute_volume_cmd_by_handle(esp_a2d_conn_hdl_t conn_hdl, uint8_t tl, uint8_t volume);
+esp_err_t esp_avrc_ct_send_set_absolute_volume_cmd_by_handle(esp_avrc_conn_hdl_t conn_hdl, uint8_t tl, uint8_t volume);
 
 /**
  * @brief           Send metadata command to AVRCP target. This function should be called after
@@ -722,7 +725,7 @@ __attribute__((deprecated("Please use esp_avrc_ct_send_metadata_cmd_by_handle() 
 /**
  * @brief           Send a metadata command to the AVRCP target identified by connection handle.
  *
- * @param[in]       conn_hdl : A2DP connection handle, reported in ESP_A2D_CONNECTION_STATE_EVT
+ * @param[in]       conn_hdl : AVRCP connection handle, reported in ESP_AVRC_CT_CONNECTION_STATE_EVT
  * @param[in]       tl : transaction label, 0 to ESP_USER_AVRC_TRANS_LABEL_MAX (13); 14 and 15 are reserved for the stack
  * @param[in]       attr_mask : see esp_avrc_ct_send_metadata_cmd()
  *
@@ -730,7 +733,7 @@ __attribute__((deprecated("Please use esp_avrc_ct_send_metadata_cmd_by_handle() 
  *                  connected peer, this function still returns ESP_OK and the command
  *                  is dropped. No event is reported.
  */
-esp_err_t esp_avrc_ct_send_metadata_cmd_by_handle(esp_a2d_conn_hdl_t conn_hdl, uint8_t tl, uint8_t attr_mask);
+esp_err_t esp_avrc_ct_send_metadata_cmd_by_handle(esp_avrc_conn_hdl_t conn_hdl, uint8_t tl, uint8_t attr_mask);
 
 /**
  * @brief           Send passthrough command to AVRCP target. This function should be called after
@@ -756,7 +759,7 @@ __attribute__((deprecated("Please use esp_avrc_ct_send_passthrough_cmd_by_handle
 /**
  * @brief           Send a passthrough command to the AVRCP target identified by connection handle.
  *
- * @param[in]       conn_hdl : A2DP connection handle, reported in ESP_A2D_CONNECTION_STATE_EVT
+ * @param[in]       conn_hdl : AVRCP connection handle, reported in ESP_AVRC_CT_CONNECTION_STATE_EVT
  * @param[in]       tl : transaction label, 0 to ESP_USER_AVRC_TRANS_LABEL_MAX (13); 14 and 15 are reserved for the stack
  * @param[in]       key_code, key_state : see esp_avrc_ct_send_passthrough_cmd()
  *
@@ -764,7 +767,7 @@ __attribute__((deprecated("Please use esp_avrc_ct_send_passthrough_cmd_by_handle
  *                  connected peer, this function still returns ESP_OK and the command
  *                  is dropped. No event is reported.
  */
-esp_err_t esp_avrc_ct_send_passthrough_cmd_by_handle(esp_a2d_conn_hdl_t conn_hdl, uint8_t tl, uint8_t key_code,
+esp_err_t esp_avrc_ct_send_passthrough_cmd_by_handle(esp_avrc_conn_hdl_t conn_hdl, uint8_t tl, uint8_t key_code,
                                                      uint8_t key_state);
 
 /**
@@ -786,14 +789,14 @@ __attribute__((deprecated("Please use esp_avrc_ct_send_get_play_status_cmd_by_ha
 /**
  * @brief           Get play status from the AVRCP target identified by connection handle.
  *
- * @param[in]       conn_hdl : A2DP connection handle, reported in ESP_A2D_CONNECTION_STATE_EVT
+ * @param[in]       conn_hdl : AVRCP connection handle, reported in ESP_AVRC_CT_CONNECTION_STATE_EVT
  * @param[in]       tl : transaction label, 0 to ESP_USER_AVRC_TRANS_LABEL_MAX (13); 14 and 15 are reserved for the stack
  *
  * @note            If @p conn_hdl is not ESP_A2D_INVALID_CONN_HDL but does not match a
  *                  connected peer, this function still returns ESP_OK and the command
  *                  is dropped. No event is reported.
  */
-esp_err_t esp_avrc_ct_send_get_play_status_cmd_by_handle(esp_a2d_conn_hdl_t conn_hdl, uint8_t tl);
+esp_err_t esp_avrc_ct_send_get_play_status_cmd_by_handle(esp_avrc_conn_hdl_t conn_hdl, uint8_t tl);
 
 /**
  * @brief           Register application callbacks to AVRCP target module. This function should be
@@ -994,14 +997,14 @@ __attribute__((deprecated("Please use esp_avrc_tg_send_rn_rsp_by_handle() instea
 /**
  * @brief           Send a RegisterNotification response to the controller identified by connection handle.
  *
- * @param[in]       conn_hdl : A2DP connection handle, reported in ESP_A2D_CONNECTION_STATE_EVT
+ * @param[in]       conn_hdl : AVRCP connection handle, reported in ESP_AVRC_TG_CONNECTION_STATE_EVT
  * @param[in]       event_id, rsp, param : see esp_avrc_tg_send_rn_rsp()
  *
  * @note            If @p conn_hdl is not ESP_A2D_INVALID_CONN_HDL but does not match a
  *                  connected peer, this function still returns ESP_OK and the response
  *                  is dropped. No event is reported.
  */
-esp_err_t esp_avrc_tg_send_rn_rsp_by_handle(esp_a2d_conn_hdl_t conn_hdl, esp_avrc_rn_event_ids_t event_id,
+esp_err_t esp_avrc_tg_send_rn_rsp_by_handle(esp_avrc_conn_hdl_t conn_hdl, esp_avrc_rn_event_ids_t event_id,
                                             esp_avrc_rn_rsp_t rsp, esp_avrc_rn_param_t *param);
 
 /**

@@ -113,6 +113,28 @@ Bluedroid
 
         - The ``*_by_handle`` AVRCP Controller send APIs accept transaction labels ``0`` through ``ESP_USER_AVRC_TRANS_LABEL_MAX`` (13). Labels ``14`` and ``15`` are reserved for the stack (A2DP sink active-device Play/Pause). Passing 14 or 15 to those APIs returns ``ESP_ERR_INVALID_ARG``. The deprecated send APIs still accept ``0`` through ``ESP_AVRC_TRANS_LABEL_MAX`` (15).
 
+        - ``conn_hdl`` in AVRCP CT and TG callbacks is now ``esp_avrc_conn_hdl_t``. The invalid value is ``ESP_AVRC_INVALID_CONN_HDL``. It was ``esp_a2d_conn_hdl_t``, filled from the A2DP connection of the same peer. When AVRCP connected before A2DP, ``ESP_AVRC_CT_CONNECTION_STATE_EVT`` often reported ``conn_hdl`` 0. Response events also reported 0 when no A2DP link matched the peer.
+
+        - The handle is now the ``conn_hdl`` reported in ``ESP_AVRC_CT_CONNECTION_STATE_EVT`` or ``ESP_AVRC_TG_CONNECTION_STATE_EVT``. It does not depend on A2DP. It stays the same for a session slot (typically ``1`` through ``N``) across disconnect and reconnect of that slot. Pair it with ``remote_bda``: after disconnect, another peer can reuse the same slot and the same handle. Cover Art callbacks do not carry ``conn_hdl`` and are unchanged.
+
+        - ``esp_avrc_ct_send_*_by_handle()`` and ``esp_avrc_tg_send_rn_rsp_by_handle()`` take this handle. ``ESP_AVRC_INVALID_CONN_HDL`` returns ``ESP_ERR_INVALID_ARG``. An A2DP ``conn_hdl`` is not a valid argument. The deprecated send APIs without a handle are unchanged. They still act on the AVRCP session of the active A2DP peer, or on the first connected AVRCP session when none is active. Code that only uses those APIs and does not read ``conn_hdl`` does not need to change.
+
+        - :example:`bluetooth/bluedroid/classic_bt/a2dp_source` and :example:`bluetooth/bluedroid/classic_bt/a2dp_source_aac` store the AVRCP handle separately from the A2DP handle.
+
+          .. code-block:: c
+
+              // Before: the A2DP handle was passed to AVRCP. It was often 0 until A2DP connected.
+              esp_avrc_ct_send_get_rn_capabilities_cmd_by_handle(s_a2d_conn_hdl, tl);
+
+              // After: keep the handle from the AVRCP connection callback.
+              case ESP_AVRC_CT_CONNECTION_STATE_EVT:
+                  s_avrc_conn_hdl = rc->conn_stat.connected ?
+                      rc->conn_stat.conn_hdl : ESP_AVRC_INVALID_CONN_HDL;
+                  if (rc->conn_stat.connected) {
+                      esp_avrc_ct_send_get_rn_capabilities_cmd_by_handle(s_avrc_conn_hdl, tl);
+                  }
+                  break;
+
     - :component_file:`/bt/host/bluedroid/api/include/api/esp_spp_api.h`
 
         - ``esp_spp_write()`` in ``ESP_SPP_MODE_CB`` copies the whole buffer into the transmit buffer and returns immediately. ``ESP_OK`` means the data is queued, not that it has been sent. If ``len`` can never fit in the TX buffer, the call returns ``ESP_ERR_INVALID_SIZE`` and queues nothing. For ``ESP_ERR_INVALID_SIZE``, waiting for ``ESP_SPP_CONG_EVT`` does not help because the buffer never shrinks. If ``len`` can fit but the free space is smaller, the call returns ``ESP_ERR_NO_MEM`` and queues nothing. Retry that buffer only after ``ESP_SPP_CONG_EVT`` with ``cong`` equal to false. After ``ESP_OK``, do not submit the same buffer again: a later failure inside the stack keeps the queued data and is not a reason to resend it.

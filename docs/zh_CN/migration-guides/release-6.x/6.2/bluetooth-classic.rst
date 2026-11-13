@@ -113,6 +113,28 @@ Bluedroid
 
         - ``*_by_handle`` AVRCP Controller 发送接口的事务标签为 ``0`` 到 ``ESP_USER_AVRC_TRANS_LABEL_MAX`` （13）。``14`` 和 ``15`` 保留给协议栈（A2DP Sink 切换活动设备时的 Play/Pause）。向这些接口传入 14 或 15 会返回 ``ESP_ERR_INVALID_ARG``。已废弃的发送接口仍接受 ``0`` 到 ``ESP_AVRC_TRANS_LABEL_MAX`` （15）。
 
+        - AVRCP CT 和 TG 回调中的 ``conn_hdl`` 现为 ``esp_avrc_conn_hdl_t``。无效值为 ``ESP_AVRC_INVALID_CONN_HDL``。原先类型为 ``esp_a2d_conn_hdl_t``，由同一对端的 A2DP 连接填充。AVRCP 先于 A2DP 建立时，``ESP_AVRC_CT_CONNECTION_STATE_EVT`` 中的 ``conn_hdl`` 常为 0。没有匹配的 A2DP 链路时，响应事件也会上报 0。
+
+        - 句柄现为 ``ESP_AVRC_CT_CONNECTION_STATE_EVT`` 或 ``ESP_AVRC_TG_CONNECTION_STATE_EVT`` 上报的 ``conn_hdl``，不再依赖 A2DP。同一会话槽位（一般为 ``1`` 到 ``N``）断开后重连，数值不变。请与 ``remote_bda`` 一起使用：断开后另一对端可能复用同一槽位和同一句柄。Cover Art 回调不含 ``conn_hdl``，未改动。
+
+        - ``esp_avrc_ct_send_*_by_handle()`` 和 ``esp_avrc_tg_send_rn_rsp_by_handle()`` 使用该句柄。传入 ``ESP_AVRC_INVALID_CONN_HDL`` 返回 ``ESP_ERR_INVALID_ARG``。A2DP 的 ``conn_hdl`` 不是合法参数。不带句柄的废弃发送 API 行为不变，仍作用于当前活动 A2DP 对端的 AVRCP 会话；没有活动对端时作用于第一个已连接的 AVRCP 会话。只使用这些 API、且不读取 ``conn_hdl`` 的代码不必修改。
+
+        - :example:`bluetooth/bluedroid/classic_bt/a2dp_source` 和 :example:`bluetooth/bluedroid/classic_bt/a2dp_source_aac` 将 AVRCP 句柄与 A2DP 句柄分开保存。
+
+          .. code-block:: c
+
+              // 修改前：把 A2DP 句柄传给 AVRCP。A2DP 连上之前该值常为 0。
+              esp_avrc_ct_send_get_rn_capabilities_cmd_by_handle(s_a2d_conn_hdl, tl);
+
+              // 修改后：保存 AVRCP 连接回调里的句柄。
+              case ESP_AVRC_CT_CONNECTION_STATE_EVT:
+                  s_avrc_conn_hdl = rc->conn_stat.connected ?
+                      rc->conn_stat.conn_hdl : ESP_AVRC_INVALID_CONN_HDL;
+                  if (rc->conn_stat.connected) {
+                      esp_avrc_ct_send_get_rn_capabilities_cmd_by_handle(s_avrc_conn_hdl, tl);
+                  }
+                  break;
+
     - :component_file:`/bt/host/bluedroid/api/include/api/esp_spp_api.h`
 
         - ``ESP_SPP_MODE_CB`` 下的 ``esp_spp_write()`` 会把整包数据拷进发送缓冲并立即返回。``ESP_OK`` 表示数据已入队，不是已经发出。``len`` 永远无法放入发送缓冲时返回 ``ESP_ERR_INVALID_SIZE``，这一包不会入队。对于 ``ESP_ERR_INVALID_SIZE``，等待 ``ESP_SPP_CONG_EVT`` 没有用，因为这块缓冲永远装不下。``len`` 能够放入但当前剩余空间不足时返回 ``ESP_ERR_NO_MEM``，这一包不会入队。只有在收到 ``cong`` 为 false 的 ``ESP_SPP_CONG_EVT`` 之后，才能重试这一包。``ESP_OK`` 之后不要再提交同一包数据：协议栈内部之后的失败会保留已入队的数据，不需要应用重发。
