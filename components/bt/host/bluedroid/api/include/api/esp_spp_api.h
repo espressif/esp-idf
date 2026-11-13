@@ -356,6 +356,7 @@ esp_err_t esp_spp_start_discovery(esp_bd_addr_t bd_addr);
  *
  * @return
  *              - ESP_OK: success
+ *              - ESP_ERR_INVALID_ARG: peer address is NULL, remote SCN is out of range, or role is invalid
  *              - other: failed
  */
 esp_err_t esp_spp_connect(esp_spp_sec_t sec_mask, esp_spp_role_t role, uint8_t remote_scn, esp_bd_addr_t peer_bd_addr);
@@ -388,6 +389,7 @@ esp_err_t esp_spp_disconnect(uint32_t handle);
  *
  * @return
  *              - ESP_OK: success
+ *              - ESP_ERR_INVALID_ARG: server name is invalid, local SCN is out of range, or role is invalid
  *              - other: failed
  */
 esp_err_t esp_spp_start_srv(esp_spp_sec_t sec_mask, esp_spp_role_t role, uint8_t local_scn, const char *name);
@@ -401,6 +403,7 @@ esp_err_t esp_spp_start_srv(esp_spp_sec_t sec_mask, esp_spp_role_t role, uint8_t
  *
  * @return
  *              - ESP_OK: success
+ *              - ESP_ERR_INVALID_ARG: if cfg is NULL, or name/SCN/role is invalid
  *              - other: failed
  */
 esp_err_t esp_spp_start_srv_with_cfg(const esp_spp_start_srv_cfg_t *cfg);
