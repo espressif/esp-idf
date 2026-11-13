@@ -2,6 +2,7 @@
 
 - [IDF CI](#idf-ci)
   - [General Workflow](#general-workflow)
+  - [Dynamic build toolchains](#dynamic-build-toolchains)
   - [What if Expected Jobs ARE NOT Created?](#what-if-expected-jobs-are-not-created)
   - [MR labels for additional jobs](#mr-labels-for-additional-jobs)
     - [Supported MR Labels](#supported-mr-labels)
@@ -31,6 +32,41 @@
 2. Create an MR, choose related labels (not required)
 3. A `detached` pipeline will be created.
 4. if you push a new commit, a new pipeline will be created automatically.
+
+## Dynamic build toolchains
+
+`generate_build_child_pipeline` discovers apps separately for GCC and Clang. The
+normal `build_child_pipeline` uses the original GCC files and target tests;
+`build_child_pipeline_clang` uses `build_child_pipeline_clang.yml` and the
+`*_apps_clang.txt` lists. Clang builds use `IDF_TOOLCHAIN=clang` and the `clang`
+artifact namespace, so they cannot overwrite GCC firmware. Clang target tests
+are generated separately with `test_child_pipeline_clang.yml`. Only the normal
+GCC pipeline includes `tools/ci/dynamic_pipelines/templates/additional_jobs.yml`;
+Clang and buildv2 use the two shared YAML includes from `.idf_ci.toml`.
+
+Manifest `supported_toolchains` controls which toolchains build an app:
+
+- Omitted or `[gcc]`: GCC only.
+- `[gcc, clang]`: both.
+- `[clang]`: Clang only.
+
+Automatic test collection checks manifest build and test eligibility, including
+`disable_test`; selecting all
+cases bypasses dependency-change selection only, not manifest eligibility.
+Consequently, unlisted apps disappear from Clang app lists and test jobs may
+shrink even when the old manifest-filter setting was not enabled.
+
+CI installs the released idf-ci 1.4.1 or newer (below 2.0) and its
+idf-build-apps dependency (3.1.1+ on Python 3.10+, 2.17.1+ on older Python).
+The custom `ci_python_constraint_branch` remains until the default v6.2
+constraints permit these idf-build-apps releases. Check the installed versions
+and generated GCC/Clang app lists and test YAML in the generator job before
+claiming GitLab CI validation.
+
+The separate, label-gated `generate_build_child_pipeline_buildv2` job runs GCC-only
+discovery with `IDF_BUILD_V2=1`. It creates `*_apps_buildv2.txt` and uses the
+`buildv2` artifact namespace; MRs without the `buildv2` label skip that
+discovery and its child pipeline.
 
 ## What if Expected Jobs ARE NOT Created?
 

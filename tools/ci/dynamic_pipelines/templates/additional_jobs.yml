@@ -1,0 +1,5 @@
+include:
+  - project: "ci/actions/common"
+    file:
+      - "templates/idf/app-size-metrics-report.yml"
+      - "templates/idf/app-size-metrics-full-report.yml"

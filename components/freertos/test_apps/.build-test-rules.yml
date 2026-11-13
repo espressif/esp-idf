@@ -29,6 +29,7 @@ components/freertos/test_apps/freertos:
     - xtensa
     - riscv
 components/freertos/test_apps/task_self_delete:
+  supported_toolchains: [gcc, clang]
   enable:
     - if: IDF_TARGET in ["esp32", "esp32s2", "esp32s3"]
       reason: Clang -O2 on Xtensa unicore is required to exercise the self-delete yield path

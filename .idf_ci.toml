@@ -21,34 +21,40 @@ LDGEN_CHECK_MAPPING = "1"
 IDF_CI_BUILD = "1"
 
 [gitlab]
+build_enabled_toolchains = ['gcc', 'clang']
+test_enabled_toolchains = ['gcc', 'clang']
 
 [gitlab.build_pipeline]
-workflow_name = "build_child_pipeline"
 runs_per_job = 30
 
 job_tags = ['build', 'shiny']
 job_template_name = '.dynamic_build_template'
 job_template_jinja = ''  # write in tools/ci/dynamic_pipelines/templates/.dynamic_jobs.yml
-pre_yaml_jinja = """
-include:
-  - .gitlab/ci/common.yml
-  - tools/ci/dynamic_pipelines/templates/.dynamic_jobs.yml
-  - tools/ci/dynamic_pipelines/templates/test_child_pipeline.yml
-"""
-yaml_jinja = """
-{{ settings.gitlab.build_pipeline.pre_yaml_jinja }}
-
-workflow:
-  name: {{ settings.gitlab.build_pipeline.workflow_name }}
-  rules:
-    - when: always
-
-{{ jobs }}
-"""  # simplified since we included the tools/ci/dynamic_pipelines/templates/test_child_pipeline.yml
+additional_include_yaml_files = [
+    '.gitlab/ci/common.yml',
+    'tools/ci/dynamic_pipelines/templates/.dynamic_jobs.yml',
+]
 
 [gitlab.test_pipeline]
 job_template_name = '.dynamic_target_test_template'
 job_template_jinja = ''  # write in tools/ci/dynamic_pipelines/templates/.dynamic_jobs.yml
+parent_pipeline_id = '$PARENT_PIPELINE_ID'  # pytest downloads artifacts from the original parent pipeline
+skip_mr_labels = ['For Maintainers: Only Build Tests']
+exclude_runner_tags = [
+    'esp32,ip101',
+    'esp32c2,jtag,xtal_40mhz',
+    'esp32c3,flash_multi',
+    'esp32c3,sdcard_sdmode',
+    'esp32c5,jtag',
+    'esp32c6,jtag',
+    'esp32c61,jtag',
+    'esp32h2,jtag',
+    'esp32h4,usb_host_flash_disk',
+    'esp32p4,jtag',
+    'esp32s2,usb_host_flash_disk',
+    'esp32s31,usb_host_flash_disk',
+]
+extra_extends_by_env_marker = { ethernet_stress = ['.timeout_4h_template'] }
 pre_yaml_jinja = """
 include:
   - .gitlab/ci/common.yml

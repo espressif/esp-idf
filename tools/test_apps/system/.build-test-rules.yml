@@ -51,10 +51,14 @@ tools/test_apps/system/build_tests/trax_esp32s2:
     - if: IDF_TARGET != "esp32s2"
 
 tools/test_apps/system/clang_build_test:
+  supported_toolchains: [gcc, clang]
   enable:
     - if: IDF_TARGET in ["esp32", "esp32s2", "esp32s3", "esp32c2", "esp32c3", "esp32c5", "esp32c6", "esp32h2", "esp32p4"]
       temporary: true
       reason: the other targets are not supported yet
+  disable:
+    - if: IDF_TOOLCHAIN != "clang" and CONFIG_NAME == "esp32p4.lld"
+      reason: this LLD configuration is only built with Clang
 
 tools/test_apps/system/cxx_no_except:
   enable:
