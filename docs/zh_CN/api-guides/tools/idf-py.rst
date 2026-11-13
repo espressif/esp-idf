@@ -180,6 +180,8 @@ uf2 二进制文件也可以通过 :ref:`idf.py uf2 <generate-uf2-binary>` 生�
 
 预计未来版本将支持 PowerShell 自动补全。
 
+PowerShell 会将以 ``-`` 开头且未加引号的参数在第一个 ``.`` 处拆分为两个参数（请见 `PowerShell issue #6291 <https://github.com/PowerShell/PowerShell/issues/6291>`__）。例如，``idf.py -DSDKCONFIG=build/sdkconfig.prod build`` 会向 ``idf.py`` 传递 ``-DSDKCONFIG=build/sdkconfig`` 和 ``.prod`` 两个参数。为避免此问题，可将该参数用引号括起来，写作 ``"-DSDKCONFIG=build/sdkconfig.prod"``，或在 ``-D`` 后加一个空格，如 ``-D SDKCONFIG=build/sdkconfig.prod``。
+
 高级命令
 =================
 
