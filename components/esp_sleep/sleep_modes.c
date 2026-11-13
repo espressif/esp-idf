@@ -1176,12 +1176,28 @@ static esp_err_t SLEEP_FN_ATTR esp_sleep_start(uint32_t sleep_flags, esp_sleep_m
     }
 #endif
     // Restore CPU frequency (Will fallback to rtc_clk_cpu_freq_set_config if PLL source is not configured.)
-    rtc_clk_cpu_freq_set_config_fast(&cpu_freq_config);
 #if SOC_PM_SUPPORT_PMU_MODEM_STATE && !SOC_PM_BBPLL_PD_IN_MODEM_STATE
     if (pmu_sleep_pll_already_enabled()) {
-        rtc_clk_modem_pll_lock_release();
-    }
+        /* The PMU holds HP_ROOT on PLL until the lock is released, so the PCR dividers
+         * written here apply to the PLL root immediately. Order must therefore follow the
+         * root the dividers belong to. */
+        const uint32_t xtal_freq_mhz = (uint32_t)rtc_clk_xtal_freq_get();
+        if (cpu_freq_config.source_freq_mhz <= xtal_freq_mhz) {
+            /* XTAL/RC_FAST dividers are computed for a slow root (usually 1), so writing
+             * them under the forced PLL root would overclock the bus. Unlock first. */
+            rtc_clk_modem_pll_lock_release();
+            rtc_clk_cpu_freq_set_config_fast(&cpu_freq_config);
+        } else {
+            /* PLL dividers match the root currently forced, so program them before
+             * unlocking; the reverse order would run the PLL root with slow-root dividers. */
+            rtc_clk_cpu_freq_set_config_fast(&cpu_freq_config);
+            rtc_clk_modem_pll_lock_release();
+        }
+    } else
 #endif
+    {
+        rtc_clk_cpu_freq_set_config_fast(&cpu_freq_config);
+    }
     esp_sleep_execute_event_callbacks(SLEEP_EVENT_SW_CLK_READY, (void *)0);
 
     if (!deep_sleep) {
