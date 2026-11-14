@@ -316,7 +316,7 @@ esp_err_t esp_ota_get_partition_description(const esp_partition_t *partition, es
  * @param[in] bootloader_partition Pointer to bootloader partition.
  *                                 If NULL, then the PRIMARY bootloader is used (the default location).
  *                                 offset = CONFIG_BOOTLOADER_OFFSET_IN_FLASH,
- *                                 size = CONFIG_PARTITION_TABLE_OFFSET - CONFIG_BOOTLOADER_OFFSET_IN_FLASH,
+ *                                 size = esp_partition_table_get_offset() - CONFIG_BOOTLOADER_OFFSET_IN_FLASH,
  * @param[out] desc     Structure of info about bootloader.
  * @return
  *  - ESP_OK                Successful.
