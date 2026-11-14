@@ -127,10 +127,6 @@ if(CONFIG_ESP_WIFI_ENABLED OR CONFIG_ESP_HOST_WIFI_ENABLED)
             target_link_libraries(${COMPONENT_LIB} PUBLIC ${blob_target})
         endforeach()
     endif()
-    # TODO IDF-13365: remove the following lines
-    set_source_files_properties(regulatory/esp_wifi_regulatory.c
-                                PROPERTIES COMPILE_FLAGS
-                                -Wno-unterminated-string-initialization)
 endif()
 
 if(CONFIG_SPIRAM)

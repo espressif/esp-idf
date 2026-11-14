@@ -213,11 +213,29 @@ struct nan_paired_peer {
     uint8_t  peer_nmi[MACADDR_LEN];
     uint8_t  role;                              /* enum nan_role value */
     uint8_t  ndp_csid;                          /* WIFI_NAN_CSID_NCS_SK_128 / _256 */
+    /* WPA_KEY_MGMT_* used for pairing (SAE password vs PASN opportunistic).
+     * Used with §7.4 strength ranking when an NDP reuses this ND-PMK. */
+    int      pairing_akmp;
     uint8_t  nd_pmk[ESP_WIFI_NAN_NDP_PMK_LEN];
     uint32_t lifetime_sec;
     int64_t  established_us;
 };
 #endif /* CONFIG_ESP_WIFI_NAN_SECURITY && CONFIG_ESP_WIFI_NAN_PAIRING */
+
+#ifdef CONFIG_ESP_WIFI_NAN_SECURITY
+/*
+ * Single secured-datapath SA (Wi-Fi Aware v4.0 §7.4).
+ * Mirrors hostap nan_peer_sec_info_entry for one NDI pair: store/update when
+ * the new SA is strictly stronger, or when it is the same NDP re-keying at
+ * equal strength; reject equal-strength SAs from a different NDP.
+ */
+struct nan_ndi_sec_sa {
+    bool     valid;
+    uint8_t  owner_ndp_id;  /* NDP that committed this SA; 0 when none */
+    uint8_t  csid;
+    int      pairing_akmp;   /* 0 if not from pairing */
+};
+#endif /* CONFIG_ESP_WIFI_NAN_SECURITY */
 
 /* Per-peer service info */
 struct peer_svc_info {
@@ -299,6 +317,13 @@ struct ndl_info {
 
     uint8_t anonce[NAN_NONCE_LEN];
     uint8_t snonce[NAN_NONCE_LEN];
+
+    /* AKMP used to source this NDP's ND-PMK (0 = passphrase/PMK credential,
+     * WPA_KEY_MGMT_SAE / WPA_KEY_MGMT_PASN = PASN pairing). Recorded where the
+     * PMK is chosen (initiator populate / responder apply-pending) so the
+     * confirm-time §7.4 gate ranks the SA by the actual key source instead of
+     * re-looking up the paired-peer cache, which may have expired on one side. */
+    int      key_source_akmp;
 
     uint8_t nd_kck[NAN_ND_KCK_MAX_LEN];
     uint8_t nd_kek[NAN_ND_KEK_MAX_LEN];
@@ -400,6 +425,8 @@ typedef struct {
     uint8_t num_peer_creds;
     bool use_nvs_for_caching;
     uint32_t nik_lifetime;
+    /* §7.4 NDI pairwise SA (single secured datapath for now). */
+    struct nan_ndi_sec_sa ndi_sec_sa;
 #endif
 #ifdef CONFIG_ESP_WIFI_PASN_SUPPORT
     struct nan_pasn_data *nan_pasn_data;
@@ -419,6 +446,10 @@ struct own_svc_info *nan_find_own_svc(uint8_t svc_id);
 struct own_svc_info *nan_find_own_svc_by_name(const char *svc_name);
 struct ndl_info *nan_find_ndl(uint8_t ndp_id, uint8_t peer_nmi[]);
 struct ndl_info *nan_find_ndl_by_pub_id_and_peer(uint8_t pub_id, const uint8_t *peer_nmi);
+/* A slot is in use once peer_nmi is stamped, even if ndp_id is still 0
+ * (initiator pre-claim window). Shared with nan_security.c so the wifi-task
+ * key-desc parser does not treat a pre-claimed ndp_id==0 slot as free. */
+bool nan_ndl_slot_in_use(const struct ndl_info *ndl);
 bool nan_compute_service_id(const char *service_name, uint8_t service_id[6]);
 
 #ifdef CONFIG_ESP_WIFI_NAN_SECURITY
@@ -493,6 +524,11 @@ void nan_security_apply_pending(struct ndl_info *ndl,
                                 const uint8_t *peer_nmi,
                                 const uint8_t *peer_ndi);
 
+/* Drop pending CSIA/SCIA captured for a request being rejected (no
+ * publish, duplicate NDP, or peer limit). Call before returning from the
+ * NDP indication callback without consuming the pending state. */
+void nan_security_discard_pending(void);
+
 /* PMK / PMKID derivation entry point used by the publish path. Derives from
  * (service_name, sec_cfg) (passphrase or PMK) and writes the result into
  * out_derived. */
@@ -525,6 +561,31 @@ void nan_security_install_own_group_integrity_keys(void);
  * (which resets the blob's monotonic replay counter) and key reuse if the NMI
  * is re-randomized on restart. */
 void nan_security_reset_own_group_keys(void);
+
+/* Wi-Fi Aware v4.0 §7.4: pick pairwise CSID from a csid_bitmap (ignores GTK bits). */
+uint8_t nan_sec_pairwise_csid_from_bitmap(uint16_t csid_bitmap);
+
+/*
+ * §7.4 gate only: true if the new pairwise SA is strictly stronger than the
+ * cached SA, equal strength from the same owning NDP (re-key), or no cached
+ * SA exists; false otherwise (weaker, or equal strength from a different NDP).
+ * ND-TK/NM-TK should be installed only when this returns true. Does not mutate
+ * the SA cache — call nan_sec_ndp_commit_keys() only after firmware key install
+ * succeeds so cache and driver keys stay aligned. Caller must hold NAN_DATA_LOCK.
+ */
+bool nan_sec_ndp_should_install_keys(uint8_t csid, int pairing_akmp, uint8_t ndp_id);
+
+/*
+ * Commit NDI pairwise SA into the cache after successful ND-TK (/NM-TK) install.
+ * Caller must hold NAN_DATA_LOCK and only call when should_install_keys was true.
+ */
+void nan_sec_ndp_commit_keys(const uint8_t *peer_ndi, uint8_t ndp_id,
+                             uint8_t csid, int pairing_akmp);
+
+/* Clear the SA cache entry owned by ndp_id, or all entries when ndp_id is 0.
+ * Ownership prevents a rejected/duplicate NDP teardown from wiping a live
+ * NDP's SA (same peer NDI, different publish). Holds no lock. */
+void nan_sec_ndp_clear_sa(uint8_t ndp_id);
 
 /*
  * Match subscriber discovery security to a publisher's params.
@@ -577,6 +638,7 @@ void nan_app_receive_pairing_followup(uint8_t svc_id, uint8_t peer_svc_id,
 esp_err_t nan_app_register_paired_peer(const uint8_t *peer_nmi,
                                        uint8_t role,
                                        uint8_t ndp_csid,
+                                       int pairing_akmp,
                                        const uint8_t *nd_pmk,
                                        size_t nd_pmk_len,
                                        uint32_t lifetime_sec);

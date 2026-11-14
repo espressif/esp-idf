@@ -26,6 +26,7 @@
 #include "crypto/sha256.h"
 #include "crypto/aes_wrap.h"
 #include "nan_i.h"
+#include "common/defs.h"
 
 static const char *TAG = "nan_sec";
 
@@ -41,15 +42,6 @@ static const char *TAG = "nan_sec";
  * Pending state captured by the NDP key-desc parser before the indication
  * callback fires. Consumed by nan_security_apply_pending().
  *-----------------------------------------------------------------------*/
-
-/* Pending M1 (ANonce + replay counter) */
-static struct {
-    bool valid;
-    uint8_t pub_id;
-    uint8_t anonce[NAN_NONCE_LEN];
-    uint8_t rx_replay_counter[NAN_REPLAY_COUNTER_LEN];
-    uint8_t key_rsc[NAN_KEY_RSC_LEN];
-} s_pending_m1;
 
 /* Pending PMKID and CSID from CSIA/SCIA. csid_bitmap accumulates every
  * spec-valid CSID advertised in the CSIA (a publisher may list more than
@@ -436,7 +428,7 @@ static struct ndl_info *nan_ndl_claim_for_pub_peer(uint8_t pub_id, const uint8_t
     }
     for (int i = 0; i < ESP_WIFI_NAN_DATAPATH_MAX_PEERS; i++) {
         struct ndl_info *ndl = &s_nan_ctx.ndl[i];
-        if (ndl->ndp_id == 0) {
+        if (!nan_ndl_slot_in_use(ndl)) {
             ndl->publisher_id = pub_id;
             MACADDR_COPY(ndl->peer_nmi, peer_nmi);
             ndl->ndp_id = ndp_id;
@@ -498,6 +490,7 @@ static bool nan_security_fill_from_paired_cache(struct ndl_info *ndl, const uint
     ndl->security_ctx.type = WIFI_NAN_SECURITY_ENCRYPTED;
     ndl->security_ctx.csid_bitmap = (uint16_t)(1u << paired->ndp_csid);
     memcpy(ndl->security_ctx.nd_pmk, paired->nd_pmk, ESP_WIFI_NAN_NDP_PMK_LEN);
+    ndl->key_source_akmp = paired->pairing_akmp;   /* PASN pairing sourced this PMK */
 
     ESP_LOGD(TAG, "Loaded ND-PMK from paired-peer cache for peer "MACSTR" (csid=%u)",
              MAC2STR(peer_nmi), paired->ndp_csid);
@@ -1420,7 +1413,7 @@ bool nan_security_service_match(const struct own_svc_info *own_svc,
             if (memcmp(pmkid, peer_sec->pmkids[i], ESP_WIFI_NAN_NDP_PMKID_LEN) == 0) {
                 ESP_LOGD(TAG, "ND-PMKID match: svc='%s' cred[%u] vs peer SCID[%u], publisher "MACSTR,
                          own_svc->svc_name, c, i, MAC2STR(publisher_nmi));
-                ESP_LOG_BUFFER_HEXDUMP(TAG, pmkid, ESP_WIFI_NAN_NDP_PMKID_LEN, ESP_LOG_INFO);
+                ESP_LOG_BUFFER_HEXDUMP(TAG, pmkid, ESP_WIFI_NAN_NDP_PMKID_LEN, ESP_LOG_DEBUG);
                 /* Remember which local cred matched, so the initiator NDP-req
                  * path (nan_security_populate_initiator_ndl) derives M1's
                  * pair-PMKID from the right credential. */
@@ -1505,11 +1498,13 @@ esp_err_t nan_security_populate_initiator_ndl(struct ndl_info *ndl,
     }
 
     uint8_t ndp_csid = 0;
+    int key_source_akmp = 0;   /* passphrase/PMK credential by default */
 #if defined(CONFIG_ESP_WIFI_NAN_PAIRING)
     if (paired && paired->valid && paired->ndp_csid >= WIFI_NAN_CSID_NCS_SK_128 &&
             paired->ndp_csid <= WIFI_NAN_CSID_NCS_SK_256) {
         memcpy(pmk, paired->nd_pmk, ESP_WIFI_NAN_NDP_PMK_LEN);
         ndp_csid = paired->ndp_csid;
+        key_source_akmp = paired->pairing_akmp;   /* PASN pairing sourced this PMK */
         ESP_LOGD(TAG, "NDP req security: using paired-peer cached ND-PMK for " MACSTR
                  " (csid=%u)", MAC2STR(peer_nmi), ndp_csid);
     } else
@@ -1574,6 +1569,7 @@ esp_err_t nan_security_populate_initiator_ndl(struct ndl_info *ndl,
     }
     memcpy(ndl->security_ctx.nd_pmk,   pmk,        ESP_WIFI_NAN_NDP_PMK_LEN);
     memcpy(ndl->security_ctx.nd_pmkid, pair_pmkid, ESP_WIFI_NAN_NDP_PMKID_LEN);
+    ndl->key_source_akmp = key_source_akmp;
 
     ESP_LOGD(TAG, "NDP req security: derived ND-PMK + pair PMKID for peer "MACSTR, MAC2STR(peer_nmi));
     ESP_LOG_BUFFER_HEXDUMP(TAG, pair_pmkid, ESP_WIFI_NAN_NDP_PMKID_LEN, ESP_LOG_DEBUG);
@@ -2180,8 +2176,26 @@ void esp_nan_parse_ndp_key_desc(void *frm, size_t buf_len, uint8_t ndp_id, const
     if (ndl == NULL && peer_nmi != NULL) {
         ndl = nan_ndl_claim_for_pub_peer(pub_id, peer_nmi, ndp_id);
     }
-    if (ndl == NULL) {
+    /* M1 must not reuse an unrelated established NDL on the same publish:
+     * with no free slot it would overwrite that NDL's ANonce/replay counter.
+     * M2/M3/M4 still fall back to recover their own established NDL. */
+    if (ndl == NULL && msg_type != 1) {
         ndl = nan_find_ndl_by_pub_id(pub_id);
+    }
+
+    /* Only update a pre-claim (ndp_id == 0) or the matching request. An
+     * established NDP with a different ndp_id is a duplicate request; the
+     * indication callback rejects it, so don't overwrite its security state.
+     * M1 is always a new request, so reject it whenever it resolves to an
+     * established NDP (covers an unknown incoming id too). M2/M3/M4 may
+     * legitimately arrive with ndp_id == 0 (id/peer not yet known), in which
+     * case the fallback above is the only way to recover their NDL — only
+     * reject those when the incoming id is known and differs. */
+    if (ndl && ndl->ndp_id != 0 && ndp_id != ndl->ndp_id &&
+            (msg_type == 1 || ndp_id != 0)) {
+        ESP_LOGW(TAG, "NDP Key Desc: ignoring msg %d for active NDP id %d (incoming ndp_id=%d, pub=%d)",
+                 msg_type, ndl->ndp_id, ndp_id, pub_id);
+        return;
     }
 
     if (ndl) {
@@ -2313,13 +2327,8 @@ void esp_nan_parse_ndp_key_desc(void *frm, size_t buf_len, uint8_t ndp_id, const
             forced_memzero(plain, sizeof(plain));   /* scrub decrypted group keys */
         }
     } else if (msg_type == 1) {
-        /* M1 received but NDL not created yet — store as pending */
-        s_pending_m1.valid = true;
-        s_pending_m1.pub_id = pub_id;
-        memcpy(s_pending_m1.anonce, key_nonce, NAN_NONCE_LEN);
-        memcpy(s_pending_m1.rx_replay_counter, replay_counter, NAN_REPLAY_COUNTER_LEN);
-        memcpy(s_pending_m1.key_rsc, key_rsc, NAN_KEY_RSC_LEN);
-        ESP_LOGI(TAG, "NDP Key Desc: M1 stored as pending for pub_id=%d", pub_id);
+        /* No free slot: drop the M1. */
+        ESP_LOGW(TAG, "NDP Key Desc: dropping M1 for pub_id=%d (no free NDL slot)", pub_id);
     } else {
         ESP_LOGI(TAG, "NDP Key Desc: no matching NDL (ndp_id=%d, pub_id=%d), key desc not applied",
                  ndp_id, pub_id);
@@ -2470,11 +2479,13 @@ void nan_security_apply_pending(struct ndl_info *ndl,
                 memcpy(ndl->security_ctx.nd_pmk,
                        p_own_svc->derived_security[matched_idx].nd_pmk,
                        ESP_WIFI_NAN_NDP_PMK_LEN);
+                ndl->key_source_akmp = 0;   /* passphrase/PMK credential */
                 ESP_LOGD(TAG, "NDP Indication: PMKID validated via cred slot %d", matched_idx);
                 pmk_resolved = true;
             }
 #if defined(CONFIG_ESP_WIFI_NAN_PAIRING)
             else if (nan_security_fill_from_paired_cache(ndl, peer_nmi)) {
+                /* fill_from_paired_cache sets ndl->key_source_akmp from the paired entry */
                 ESP_LOGD(TAG, "NDP Indication: PMK sourced from paired-peer cache");
                 pmk_resolved = true;
             }
@@ -2486,16 +2497,16 @@ void nan_security_apply_pending(struct ndl_info *ndl,
 
         memset(&s_pending_scia, 0, sizeof(s_pending_scia));
     }
+}
 
-    if (s_pending_m1.valid && s_pending_m1.pub_id == pub_id && ndl) {
-        memcpy(ndl->anonce, s_pending_m1.anonce, NAN_NONCE_LEN);
-        memcpy(ndl->rx_replay_counter, s_pending_m1.rx_replay_counter, NAN_REPLAY_COUNTER_LEN);
-        ndl->rx_replay_counter_set = 1;
-        memcpy(ndl->key_rsc, s_pending_m1.key_rsc, NAN_KEY_RSC_LEN);
-        ndl->handshake_state = NAN_HANDSHAKE_M1_RCVD;
-        ESP_LOGD(TAG, "NDP Indication: applied pending M1 to NDL");
-        s_pending_m1.valid = false;
-    }
+/* Drop pending CSIA/SCIA captured for a request that is being rejected
+ * (no publish, duplicate NDP, or peer limit). The pending cache is keyed
+ * on pub_id only, so a stale entry would otherwise be applied to the next
+ * indication on the same publish — even an open NDP — forcing it encrypted
+ * and then failing it. */
+void nan_security_discard_pending(void)
+{
+    memset(&s_pending_scia, 0, sizeof(s_pending_scia));
 }
 
 /* Replay counter helper (used by M3 initiator builder). */
@@ -2995,6 +3006,134 @@ int esp_nan_verify_ndp_security_install_mic(uint8_t *m4_body, size_t body_len, u
     }
     NAN_DATA_UNLOCK();
     return rc;
+}
+
+/**
+ * nan_sec_get_strength - Security strength for a cipher suite (Wi-Fi Aware v4.0 §7.4)
+ *
+ * Higher return value = stronger. pairing_akmp distinguishes SAE password PASN
+ * from opportunistic PASN (WPA_KEY_MGMT_PASN).
+ *
+ * ESP maps PASN pairing ciphers to NCS-SK for the NDP M1-M4 (§7.6.4.2). When
+ * pairing_akmp is set, SK_128/256 are ranked as their PASN equivalents so a
+ * password-paired NDP outranks a passphrase SK NDP.
+ */
+static int nan_sec_get_strength(uint8_t csid, int pairing_akmp)
+{
+    bool is_opportunistic = (pairing_akmp == WPA_KEY_MGMT_PASN);
+    uint8_t rank_csid = csid;
+
+    if (pairing_akmp) {
+        if (csid == WIFI_NAN_CSID_NCS_SK_128) {
+            rank_csid = WIFI_NAN_CSID_NCS_PK_PASN_128;
+        } else if (csid == WIFI_NAN_CSID_NCS_SK_256) {
+            rank_csid = WIFI_NAN_CSID_NCS_PK_PASN_256;
+        }
+    }
+
+    switch (rank_csid) {
+    case WIFI_NAN_CSID_NCS_PK_PASN_256:
+        return is_opportunistic ? 2 : 6;
+    case WIFI_NAN_CSID_NCS_PK_PASN_128:
+        return is_opportunistic ? 1 : 5;
+    case WIFI_NAN_CSID_NCS_SK_256:
+        return 4;
+    case WIFI_NAN_CSID_NCS_SK_128:
+        return 3;
+    default:
+        return 0;
+    }
+}
+
+uint8_t nan_sec_pairwise_csid_from_bitmap(uint16_t csid_bitmap)
+{
+    static const uint8_t pairwise[] = {
+        WIFI_NAN_CSID_NCS_PK_PASN_256,
+        WIFI_NAN_CSID_NCS_PK_PASN_128,
+        WIFI_NAN_CSID_NCS_SK_256,
+        WIFI_NAN_CSID_NCS_SK_128,
+    };
+
+    for (size_t i = 0; i < sizeof(pairwise) / sizeof(pairwise[0]); i++) {
+        if (csid_bitmap & (1u << pairwise[i])) {
+            return pairwise[i];
+        }
+    }
+    return 0;
+}
+
+bool nan_sec_ndp_should_install_keys(uint8_t csid, int pairing_akmp, uint8_t ndp_id)
+{
+    struct nan_ndi_sec_sa *sa = &s_nan_ctx.ndi_sec_sa;
+    int new_strength;
+
+    if (csid != WIFI_NAN_CSID_NCS_SK_128 && csid != WIFI_NAN_CSID_NCS_SK_256 &&
+            csid != WIFI_NAN_CSID_NCS_PK_PASN_128 && csid != WIFI_NAN_CSID_NCS_PK_PASN_256) {
+        return false;
+    }
+
+    new_strength = nan_sec_get_strength(csid, pairing_akmp);
+
+    if (!sa->valid) {
+        return true;
+    }
+
+    int cur_strength = nan_sec_get_strength(sa->csid, sa->pairing_akmp);
+    ESP_LOGD(TAG, "SEC: Comparing strength: new=%d (csid=%u akmp=0x%x ndp_id=%u) vs cur=%d "
+             "(csid=%u akmp=0x%x owner_ndp_id=%u)",
+             new_strength, csid, pairing_akmp, ndp_id, cur_strength, sa->csid,
+             sa->pairing_akmp, sa->owner_ndp_id);
+
+    if (new_strength < cur_strength) {
+        ESP_LOGI(TAG, "SEC: New security weaker than existing, discarding keys");
+        return false;
+    }
+    /* Equal strength: only allow the same NDP to re-key itself. An
+     * equal-strength SA from a different NDP would overwrite the live entry
+     * and then be cleared by that NDP's teardown while the first NDP is
+     * still up, leaving the session with no SA. Reject it instead. */
+    if (new_strength == cur_strength && sa->owner_ndp_id != ndp_id) {
+        ESP_LOGI(TAG, "SEC: Equal-strength SA from a different NDP (owner=%u, new=%u), discarding keys",
+                 sa->owner_ndp_id, ndp_id);
+        return false;
+    }
+    return true;
+}
+
+void nan_sec_ndp_commit_keys(const uint8_t *peer_ndi, uint8_t ndp_id,
+                             uint8_t csid, int pairing_akmp)
+{
+    struct nan_ndi_sec_sa *sa = &s_nan_ctx.ndi_sec_sa;
+
+    if (!peer_ndi) {
+        return;
+    }
+
+    memset(sa, 0, sizeof(*sa));
+    sa->valid = true;
+    sa->owner_ndp_id = ndp_id;
+    sa->csid = csid;
+    sa->pairing_akmp = pairing_akmp;
+
+    ESP_LOGD(TAG, "SEC: Committed SA csid=%u akmp=0x%x strength=%d peer_ndi=" MACSTR " ndp_id=%u",
+             csid, pairing_akmp, nan_sec_get_strength(csid, pairing_akmp),
+             MAC2STR(peer_ndi), ndp_id);
+}
+
+void nan_sec_ndp_clear_sa(uint8_t ndp_id)
+{
+    struct nan_ndi_sec_sa *sa = &s_nan_ctx.ndi_sec_sa;
+
+    if (!sa->valid) {
+        return;
+    }
+    /* ndp_id == 0 clears all (used by NAN stop / reset-all). Otherwise only
+     * clear the entry this NDP owns, so a rejected/duplicate NDP cannot wipe
+     * a live NDP's SA when they share a peer NDI. */
+    if (ndp_id != 0 && sa->owner_ndp_id != ndp_id) {
+        return;
+    }
+    memset(sa, 0, sizeof(*sa));
 }
 
 #endif /* CONFIG_ESP_WIFI_NAN_SECURITY */

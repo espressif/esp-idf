@@ -171,6 +171,7 @@ static struct nan_paired_peer *nan_app_alloc_paired_slot_locked(const uint8_t *p
 esp_err_t nan_app_register_paired_peer(const uint8_t *peer_nmi,
                                        uint8_t role,
                                        uint8_t ndp_csid,
+                                       int pairing_akmp,
                                        const uint8_t *nd_pmk,
                                        size_t nd_pmk_len,
                                        uint32_t lifetime_sec)
@@ -190,13 +191,14 @@ esp_err_t nan_app_register_paired_peer(const uint8_t *peer_nmi,
     MACADDR_COPY(p->peer_nmi, peer_nmi);
     p->role = role;
     p->ndp_csid = ndp_csid;
+    p->pairing_akmp = pairing_akmp;
     memcpy(p->nd_pmk, nd_pmk, nd_pmk_len);
     p->lifetime_sec = lifetime_sec;
     p->established_us = esp_timer_get_time();
     NAN_DATA_UNLOCK();
 
-    ESP_LOGI(TAG, "Paired peer cached: " MACSTR " role=%u csid=%u lifetime=%us",
-             MAC2STR(peer_nmi), role, ndp_csid, lifetime_sec);
+    ESP_LOGI(TAG, "Paired peer cached: " MACSTR " role=%u csid=%u akmp=0x%x lifetime=%us",
+             MAC2STR(peer_nmi), role, ndp_csid, pairing_akmp, lifetime_sec);
     return ESP_OK;
 }
 
@@ -253,12 +255,22 @@ static void nan_app_clear_one_peer_tks(const uint8_t *peer_nmi)
                                   NULL, 0, NAN_KEY_NM_TK);
 
 #ifdef CONFIG_ESP_WIFI_NAN_SECURITY
-    struct ndl_info *ndl = nan_find_ndl(0, (uint8_t *)peer_nmi);
-    uint8_t *key_addr = (uint8_t *)peer_nmi;
-
-    if (ndl) {
-        if (memcmp(ndl->peer_ndi, zero_mac, 6) != 0) {
-            key_addr = ndl->peer_ndi;
+    /* Clean up every NDL of this peer: delete firmware keys (ND-TK/GTK/
+     * IGTK/BIGTK), wipe local key material, and clear the SA if this NDL
+     * owns it. nan_find_ndl() returns only the first matching slot, so with
+     * one open + one secured NDP to the same peer the first match may not be
+     * the SA owner -- iterate all slots so both the keys and the SA are
+     * cleaned up for every NDL of the peer, keeping the strength gate
+     * consistent with the firmware key state. nan_sec_ndp_clear_sa() is a
+     * no-op for a non-owner ndp_id, so extra calls are harmless. */
+    for (int j = 0; j < ESP_WIFI_NAN_DATAPATH_MAX_PEERS; j++) {
+        struct ndl_info *n = &s_nan_ctx.ndl[j];
+        if (n->ndp_id == 0 || memcmp(n->peer_nmi, peer_nmi, MACADDR_LEN) != 0) {
+            continue;
+        }
+        uint8_t *key_addr = (uint8_t *)peer_nmi;
+        if (memcmp(n->peer_ndi, zero_mac, 6) != 0) {
+            key_addr = n->peer_ndi;
         }
 
         esp_wifi_set_nan_key_internal(NAN_WIFI_WPA_ALG_CCMP,
@@ -270,44 +282,46 @@ static void nan_app_clear_one_peer_tks(const uint8_t *peer_nmi)
          * state. The TX GTK keyed on the local NDI is released by the blob
          * when the NDI/interface is torn down. */
         esp_wifi_set_nan_key_internal(NAN_WIFI_WPA_ALG_CCMP,
-                                      key_addr, ndl->gtk_keyid, 0,
+                                      key_addr, n->gtk_keyid, 0,
                                       key_rsc, sizeof(key_rsc),
                                       NULL, 0, NAN_KEY_ND_GTK);
 
         /* Drop the peer's RX IGTK/BIGTK (BIP-CMAC-128, installed against the
          * peer NMI at NDP confirm) so no stale BIP keys linger in the blob. */
-        if (ndl->igtk_set) {
+        if (n->igtk_set) {
             esp_wifi_set_nan_key_internal(NAN_WIFI_WPA_ALG_BIP_CMAC_128,
-                                          (uint8_t *)peer_nmi, ndl->igtk_keyid, 0,
+                                          (uint8_t *)peer_nmi, n->igtk_keyid, 0,
                                           key_rsc, 6,
                                           NULL, 0, NAN_KEY_ND_IGTK);
         }
-        if (ndl->bigtk_set) {
+        if (n->bigtk_set) {
             esp_wifi_set_nan_key_internal(NAN_WIFI_WPA_ALG_BIP_CMAC_128,
-                                          (uint8_t *)peer_nmi, ndl->bigtk_keyid, 0,
+                                          (uint8_t *)peer_nmi, n->bigtk_keyid, 0,
                                           key_rsc, 6,
                                           NULL, 0, NAN_KEY_ND_BIGTK);
         }
 
-        forced_memzero(ndl->nd_tk, sizeof(ndl->nd_tk));
-        forced_memzero(ndl->nd_kck, sizeof(ndl->nd_kck));
-        forced_memzero(ndl->nd_kek, sizeof(ndl->nd_kek));
-        forced_memzero(ndl->gtk, sizeof(ndl->gtk));
-        forced_memzero(ndl->own_gtk, sizeof(ndl->own_gtk));
-        forced_memzero(ndl->igtk, sizeof(ndl->igtk));
-        forced_memzero(ndl->bigtk, sizeof(ndl->bigtk));
-        ndl->ptk_set = 0;
-        ndl->tk_len = 0;
-        ndl->kck_len = 0;
-        ndl->kek_len = 0;
-        ndl->gtk_set = 0;
-        ndl->own_gtk_set = 0;
-        ndl->gtk_len = 0;
-        ndl->own_gtk_len = 0;
-        ndl->igtk_set = 0;
-        ndl->bigtk_set = 0;
-        ndl->igtk_len = 0;
-        ndl->bigtk_len = 0;
+        forced_memzero(n->nd_tk, sizeof(n->nd_tk));
+        forced_memzero(n->nd_kck, sizeof(n->nd_kck));
+        forced_memzero(n->nd_kek, sizeof(n->nd_kek));
+        forced_memzero(n->gtk, sizeof(n->gtk));
+        forced_memzero(n->own_gtk, sizeof(n->own_gtk));
+        forced_memzero(n->igtk, sizeof(n->igtk));
+        forced_memzero(n->bigtk, sizeof(n->bigtk));
+        n->ptk_set = 0;
+        n->tk_len = 0;
+        n->kck_len = 0;
+        n->kek_len = 0;
+        n->gtk_set = 0;
+        n->own_gtk_set = 0;
+        n->gtk_len = 0;
+        n->own_gtk_len = 0;
+        n->igtk_set = 0;
+        n->bigtk_set = 0;
+        n->igtk_len = 0;
+        n->bigtk_len = 0;
+
+        nan_sec_ndp_clear_sa(n->ndp_id);
     }
 
     /* Fallback when no NDL slot tracks peer_ndi yet. */
@@ -547,11 +561,27 @@ static void nan_reset_ndl(uint8_t ndp_id, bool reset_all)
 
     if (reset_all) {
         memset(s_nan_ctx.ndl, 0, sizeof(struct ndl_info) * ESP_WIFI_NAN_DATAPATH_MAX_PEERS);
+#ifdef CONFIG_ESP_WIFI_NAN_SECURITY
+        nan_sec_ndp_clear_sa(0);
+#endif
         return;
     }
     for (int i = 0; i < ESP_WIFI_NAN_DATAPATH_MAX_PEERS; i++) {
         ndl = &s_nan_ctx.ndl[i];
         if (ndl->ndp_id == ndp_id) {
+#ifdef CONFIG_ESP_WIFI_NAN_SECURITY
+            /* Drop the §7.4 SA cache for this NDP when a secured NDP ends,
+             * otherwise the next secured NDP is strength-ranked against a
+             * stale (possibly stronger) entry and its keys get skipped,
+             * leaving the new NDP up with no working datapath. Clear by the
+             * owning ndp_id so a rejected/duplicate NDP (which never
+             * committed) cannot wipe a live NDP's SA when they share a peer
+             * NDI. The WiFi library already deletes the firmware key on peer
+             * removal. */
+            if (ndl->ptk_set) {
+                nan_sec_ndp_clear_sa(ndl->ndp_id);
+            }
+#endif
             memset(ndl, 0, sizeof(struct ndl_info));
             break;
         }
@@ -689,7 +719,7 @@ static void nan_abort_own_svc(const char *svc_name)
  * and the WiFi library returning the real ndp_id). Treating ndp_id==0 alone as
  * "free" lets a concurrent claim for a different peer overwrite a
  * pre-claimed slot's security context. */
-static inline bool nan_ndl_slot_in_use(const struct ndl_info *ndl)
+bool nan_ndl_slot_in_use(const struct ndl_info *ndl)
 {
     return (ndl->ndp_id != 0) || !MACADDR_EQUAL(ndl->peer_nmi, null_mac);
 }
@@ -1175,12 +1205,34 @@ static void nan_app_ndp_indication_cb(uint8_t pub_id, struct ndp_cb_peer_info *p
     struct own_svc_info *p_own_svc = nan_find_own_svc(pub_id);
 
     if (!p_own_svc) {
+#ifdef CONFIG_ESP_WIFI_NAN_SECURITY
+        nan_security_discard_pending();
+#endif
         NAN_DATA_UNLOCK();
         ESP_LOGE(TAG, "No Publish found with id %d", pub_id);
         return;
     }
     ndp_resp_needed = p_own_svc->ndp_resp_needed;
-    if (ndl_limit_reached()) {
+    /* A secured NDP Req pre-claims a slot in the M1 parser before this
+     * indication runs; nan_record_new_ndl() reuses it, so it must not
+     * count against the peer limit. A pre-claim carries this ndp_id or 0
+     * (id not yet known). An established NDP with a different ndp_id is a
+     * duplicate request — reject it instead of letting nan_record_new_ndl()
+     * re-stamp or wipe the live datapath. */
+    struct ndl_info *preclaimed = nan_find_ndl_by_pub_id_and_peer(pub_id, peer_nmi);
+    if (preclaimed && preclaimed->ndp_id != 0 && preclaimed->ndp_id != ndp_id) {
+#ifdef CONFIG_ESP_WIFI_NAN_SECURITY
+        nan_security_discard_pending();
+#endif
+        NAN_DATA_UNLOCK();
+        ESP_LOGE(TAG, "NDP Req from "MACSTR" duplicates active NDP id %d on pub %d",
+                 MAC2STR(peer_nmi), preclaimed->ndp_id, pub_id);
+        return;
+    }
+    if (!preclaimed && ndl_limit_reached()) {
+#ifdef CONFIG_ESP_WIFI_NAN_SECURITY
+        nan_security_discard_pending();
+#endif
         NAN_DATA_UNLOCK();
         ESP_LOGE(TAG, "NDP limit reached");
         return;
@@ -1411,23 +1463,60 @@ static void nan_app_ndp_confirm_cb(uint8_t status, struct ndp_cb_peer_info *peer
 #ifdef CONFIG_ESP_WIFI_NAN_SECURITY
     if (ndl->security_ctx.type == WIFI_NAN_SECURITY_ENCRYPTED) {
         uint8_t key_rsc[8] = {0};
-        int ret = esp_wifi_set_nan_key_internal(NAN_WIFI_WPA_ALG_CCMP,
-                                                peer_ndi,
-                                                0,
-                                                1,
-                                                key_rsc,
-                                                sizeof(key_rsc),
-                                                ndl->nd_tk,
-                                                NAN_NCS_SK_128_TK_LEN,
-                                                NAN_KEY_ND_TK);
-        ESP_LOG_BUFFER_HEXDUMP("ND-TK", ndl->nd_tk, NAN_NCS_SK_128_TK_LEN, ESP_LOG_DEBUG);
-        if (ret != 0) {
-            ESP_LOGE(TAG, "NDP confirm: failed to install ND-TK (ndp_id=%d, ret=%d)", ndp_id, ret);
+        uint8_t csid = nan_sec_pairwise_csid_from_bitmap(ndl->security_ctx.csid_bitmap);
+        /* Rank the SA by the AKMP that actually sourced this NDP's ND-PMK,
+         * recorded where the PMK was chosen (populate_initiator_ndl /
+         * apply_pending / fill_from_paired_cache). Avoids re-looking up the
+         * paired-peer cache here, which may have expired on one side while
+         * still valid on the other — that mismatch would rank a passphrase
+         * SA as PASN-paired and let it overwrite a real PASN SA. */
+        int pairing_akmp = ndl->key_source_akmp;
+        bool install_keys = false;
+
+#if CONFIG_ESP_WIFI_NAN_PAIRING
+        /* CSID fallback only: if the security_ctx bitmap lacked a pairwise
+         * CSID (atypical), recover it from a still-valid paired entry. The
+         * AKMP above is NOT taken from here. */
+        if (!csid) {
+            const struct nan_paired_peer *paired = nan_app_find_paired_peer(peer_nmi);
+            if (paired && paired->valid) {
+                csid = paired->ndp_csid;
+            }
+        }
+#endif /* CONFIG_ESP_WIFI_NAN_PAIRING */
+
+        if (!csid) {
+            ESP_LOGE(TAG, "NDP confirm: no pairwise CSID in security_ctx (ndp_id=%d)", ndp_id);
             os_free(evt);
             nan_ndp_confirm_teardown(peer_nmi, ndp_id);
             goto done;
         }
-        ret = esp_wifi_set_nan_key_internal(NAN_WIFI_WPA_ALG_CCMP,
+
+        install_keys = nan_sec_ndp_should_install_keys(csid, pairing_akmp, ndp_id);
+        if (install_keys) {
+            int ret = esp_wifi_set_nan_key_internal(NAN_WIFI_WPA_ALG_CCMP,
+                                                    peer_ndi,
+                                                    0,
+                                                    1,
+                                                    key_rsc,
+                                                    sizeof(key_rsc),
+                                                    ndl->nd_tk,
+                                                    NAN_NCS_SK_128_TK_LEN,
+                                                    NAN_KEY_ND_TK);
+            ESP_LOG_BUFFER_HEXDUMP("ND-TK", ndl->nd_tk, NAN_NCS_SK_128_TK_LEN, ESP_LOG_DEBUG);
+            if (ret != 0) {
+                ESP_LOGE(TAG, "NDP confirm: failed to install ND-TK (ndp_id=%d, ret=%d)", ndp_id, ret);
+                os_free(evt);
+                nan_ndp_confirm_teardown(peer_nmi, ndp_id);
+                goto done;
+            }
+            /* Bind the pairwise key as NM-TK for unicast NAN management frames
+             * (Wi-Fi Aware v4.0 §7.1.3). Install unconditionally against
+             * peer_nmi: the tree allows peer_ndi to be unassigned (falls back
+             * to peer NMI in nan_ndp_ptk_addrs), and nan_app_clear_one_peer_tks
+             * deletes NM-TK by peer_nmi, so a conditional install would leave
+             * secured unicast NAN mgmt frames to a no-NDPE peer unkeyed. */
+            ret = esp_wifi_set_nan_key_internal(NAN_WIFI_WPA_ALG_CCMP,
                                                 peer_nmi,
                                                 0,
                                                 1,
@@ -1436,8 +1525,23 @@ static void nan_app_ndp_confirm_cb(uint8_t status, struct ndp_cb_peer_info *peer
                                                 ndl->nd_tk,
                                                 NAN_NCS_SK_128_TK_LEN,
                                                 NAN_KEY_NM_TK);
-        if (ret != 0) {
-            ESP_LOGE(TAG, "NDP confirm: failed to install NM-TK (ndp_id=%d, ret=%d)", ndp_id, ret);
+            if (ret != 0) {
+                ESP_LOGE(TAG, "NDP confirm: failed to install NM-TK (ndp_id=%d, ret=%d)", ndp_id, ret);
+                os_free(evt);
+                nan_ndp_confirm_teardown(peer_nmi, ndp_id);
+                goto done;
+            }
+            /* Commit SA only after firmware install succeeds so a failed
+             * set_key cannot leave the §7.4 cache ahead of the driver. */
+            nan_sec_ndp_commit_keys(peer_ndi, ndp_id, csid, pairing_akmp);
+        } else {
+            /* A weaker or equal-strength duplicate secured NDP cannot share
+             * the single SA cache entry without corrupting the live secured
+             * datapath (overwriting its SA or coming up with no pairwise key).
+             * Tear it down instead of confirming a dead datapath. */
+            ESP_LOGE(TAG, "NDP confirm: rejecting weaker/duplicate secured NDP for "
+                     MACSTR " (ndp_id=%d csid=%u); a same-or-stronger secured SA is active",
+                     MAC2STR(peer_nmi), ndp_id, csid);
             os_free(evt);
             nan_ndp_confirm_teardown(peer_nmi, ndp_id);
             goto done;
@@ -1872,6 +1976,14 @@ void esp_nan_action_stop(void)
     nan_reset_service(0, true);
     s_nan_ctx.state &= ~NAN_STARTED_BIT;
     s_nan_ctx.state |= NAN_STOPPED_BIT;
+#ifdef CONFIG_ESP_WIFI_NAN_SECURITY
+    /* Clear the §7.4 SA cache under the lock: nan_sec_ndp_commit_keys()
+     * (confirm callback on the wifi task) writes the same object and also
+     * needs NAN_DATA_LOCK, so wiping it unlocked can leave a half-written SA
+     * that nan_sec_ndp_clear_sa(ndp_id) never matches again. Running it
+     * here is safe — it does not call into the wifi library. */
+    nan_sec_ndp_clear_sa(0);
+#endif
     NAN_DATA_UNLOCK();
 
 #if defined(CONFIG_ESP_WIFI_NAN_PAIRING) && defined(CONFIG_ESP_WIFI_NAN_SECURITY)
