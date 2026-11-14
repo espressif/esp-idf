@@ -65,6 +65,21 @@ extern portMUX_TYPE dac_priv_spinlock;
 #define DAC_MAX(a, b) ((a) > (b) ? (a) : (b))
 #define DAC_CLAMP(x, min, max) ((x) < (min) ? (min) : ((x) > (max) ? (max) : (x)))
 
+#define IS_VALID_DAC_CLK_SRC(clk_src, clk_src_list) ({                          \
+    bool _dac_valid = false;                                                    \
+    const soc_module_clk_t _dac_clk_src = (soc_module_clk_t)(clk_src);          \
+    const soc_module_clk_t _dac_clk_src_list[] = clk_src_list;                  \
+    for (size_t _dac_i = 0;                                                     \
+         _dac_i < sizeof(_dac_clk_src_list) / sizeof(_dac_clk_src_list[0]);     \
+         _dac_i++) {                                                            \
+        if (_dac_clk_src == _dac_clk_src_list[_dac_i]) {                        \
+            _dac_valid = true;                                                  \
+            break;                                                              \
+        }                                                                       \
+    }                                                                           \
+    _dac_valid;                                                                 \
+})
+
 static inline bool dac_priv_is_valid_channel_config(const dac_channel_config_t *cfg)
 {
     bool valid_output = cfg->output_mode == DAC_CHANNEL_OUTPUT_VOLTAGE;
@@ -90,6 +105,10 @@ FORCE_INLINE_ATTR uint8_t dac_priv_chan_cfg_get_bitwidth(const dac_channel_confi
     return SOC_DAC_RESOLUTION;
 #endif
 }
+
+/*---------------------------------------------------------------
+                  Channel (analog pad) management
+---------------------------------------------------------------*/
 
 /**
  * @brief Register dac channel in the driver, in case a same channel is reused by different modes
@@ -137,54 +156,149 @@ esp_err_t dac_priv_channel_enable(dac_channel_t chan_id, dac_channel_config_t ch
  */
 esp_err_t dac_priv_channel_disable(dac_channel_t chan_id);
 
-/**
- * @brief Acquire the shared cosine wave (Sintx/tone) generator (reference counted)
- *
- * @note  The cosine wave generator is a single shared resource: all DAC channels that output a
- *        cosine wave share one generator (and thus one frequency). This claims the generator in tone
- *        mode, programs the wave frequency, and starts the generator on the first acquire. The first
- *        acquirer (or any acquirer passing `force_set_freq`) programs the frequency; a later acquirer
- *        requesting a different frequency without `force_set_freq` is rejected. On targets where the
- *        tone generator and the direct (DC) output share one Sintx generator, a tone acquire is also
- *        rejected while the DC path is in use.
- *
- * @param[in] freq_hz         The cosine wave frequency in Hz
- * @param[in] clk_freq_hz     The clock frequency that drives the generator in Hz
- * @param[in] force_set_freq  Force (re)programming the frequency even if the generator is in use
- * @return
- *      - ESP_ERR_INVALID_STATE The generator is busy on a conflicting mode or frequency
- *      - ESP_OK                Success
- */
-esp_err_t dac_priv_sintx_acquire_tone(uint32_t freq_hz, uint32_t clk_freq_hz, bool force_set_freq);
-
-#if SOC_DAC_DC_VIA_SINTX
-/**
- * @brief Acquire the shared Sintx generator for the direct (DC) software output (reference counted)
- *
- * @note  On some targets, the direct (DC) software output runs through the same Sintx generator as
- *        the cosine wave output, so the two are mutually exclusive. This claims the generator in DC
- *        mode and, on the first acquire, starts the Sintx timer that pushes the written DC value to
- *        the pad.
- *
- * @return
- *      - ESP_ERR_INVALID_STATE The generator is busy on the cosine path
- *      - ESP_OK                Success
- */
-esp_err_t dac_priv_sintx_acquire_dc(void);
-#endif // SOC_DAC_DC_VIA_SINTX
+#if DAC_LL_SHARED_HS_LS_CLK
+/*---------------------------------------------------------------
+                  DAC HS/LS clock management
+---------------------------------------------------------------*/
 
 /**
- * @brief Release the shared Sintx generator (reference counted)
+ * @brief LS clock frequency constraint held by a DAC clock user
+ */
+typedef enum {
+    DAC_LS_CLK_CONSTRAINT_DEFAULT,       /*!< LS clock constraints under default conditions */
+    DAC_LS_CLK_CONSTRAINT_CALIBRATION,   /*!< LS clock constraints during calibration */
+    DAC_LS_CLK_CONSTRAINT_SAMPLE_HOLD,   /*!< LS clock constraints in sample-hold mode */
+    DAC_LS_CLK_CONSTRAINT_COUNT,
+} dac_ls_clk_constraint_t;
+
+/**
+ * @brief Acquire the shared DAC clocks and one LS clock constraint reference
  *
- * @note  Releases one reference acquired by `dac_priv_sintx_acquire_tone()` or
- *        `dac_priv_sintx_acquire_dc()`. The generator is stopped once the last reference is
- *        released.
+ * @note The first user selects the clock source. Further users must request the same source.
+ * @note HS is undivided and LS is dynamically adjusted to satisfy the most restrictive constraint.
+ * @note Sample-hold timing must be configured after acquiring its clock constraint. The LS frequency
+ *       remains fixed while sample-hold references exist, since no other constraint is stricter.
+ *
+ * @param[in] source Requested clock source
+ * @param[in] constraint LS frequency constraint to acquire
+ * @return
+ *      - ESP_ERR_INVALID_ARG   Invalid source or constraint
+ *      - ESP_ERR_INVALID_STATE Conflicting source
+ *      - ESP_ERR_NOT_SUPPORTED Required divider is outside the hardware range
+ *      - ESP_OK                Success
+ */
+esp_err_t dac_priv_clk_acquire(soc_module_clk_t source, dac_ls_clk_constraint_t constraint);
+
+/**
+ * @brief Get the configured DAC HS clock frequency in Hz
+ *
+ * @param[out] freq_hz Actual HS clock frequency
+ * @return
+ *      - ESP_ERR_INVALID_STATE No clock reference is held
+ *      - ESP_OK                Success
+ */
+esp_err_t dac_priv_clk_get_hs_freq_hz(uint32_t *freq_hz);
+
+/**
+ * @brief Get the configured DAC LS clock frequency in Hz
+ *
+ * @param[out] freq_hz Actual LS clock frequency
+ * @return
+ *      - ESP_ERR_INVALID_STATE No clock reference is held
+ *      - ESP_OK                Success
+ */
+esp_err_t dac_priv_clk_get_ls_freq_hz(uint32_t *freq_hz);
+
+/**
+ * @brief Release one DAC clock reference with its matching LS constraint
+ *
+ * @note The last release disables the DAC clocks and releases the source clock. Otherwise, LS is
+ *       updated to satisfy the remaining constraints.
+ *
+ * @param[in] constraint Constraint used for the corresponding successful acquire
+ * @return
+ *      - ESP_ERR_INVALID_ARG   Invalid constraint
+ *      - ESP_ERR_INVALID_STATE No reference exists for this constraint
+ *      - ESP_OK                Success
+ */
+esp_err_t dac_priv_clk_release(dac_ls_clk_constraint_t constraint);
+
+#endif // DAC_LL_SHARED_HS_LS_CLK
+
+/*---------------------------------------------------------------
+                Cosine generator (Sintx) management
+---------------------------------------------------------------*/
+
+typedef enum {
+    DAC_SINTX_MODE_TONE,       /*!< Cosine wave output */
+#if DAC_LL_DC_VIA_SINTX
+    DAC_SINTX_MODE_DC,         /*!< Direct (DC) software output */
+#endif
+} dac_sintx_mode_t;
+
+/**
+ * @brief Declare use of the shared Sintx generator in the specified mode (reference counted)
+ *
+ * @note  This function only claims a mode reference; it does not configure or start the hardware.
+ *        Tone and DC modes are mutually exclusive.
+ *
+ * @param[in] mode Sintx operating mode to declare
+ * @return
+ *      - ESP_ERR_INVALID_STATE The generator is declared in a conflicting mode
+ *      - ESP_OK                Success
+ */
+esp_err_t dac_priv_sintx_acquire(dac_sintx_mode_t mode);
+
+/**
+ * @brief Start one declared Sintx user (reference counted)
+ *
+ * @note  The first running user starts the hardware in the currently declared tone or DC mode.
  *
  * @return
- *      - ESP_ERR_INVALID_STATE The generator is not in use
+ *      - ESP_ERR_INVALID_STATE No unused declared reference is available
+ *      - ESP_OK                Success
+ */
+esp_err_t dac_priv_sintx_start(void);
+
+/**
+ * @brief Stop one running Sintx user (reference counted)
+ *
+ * @note  The last running user stops the hardware.
+ *
+ * @return
+ *      - ESP_ERR_INVALID_STATE The generator has no running user
+ *      - ESP_OK                Success
+ */
+esp_err_t dac_priv_sintx_stop(void);
+
+/**
+ * @brief Release one declared Sintx reference
+ *
+ * @note  Releases one reference acquired by `dac_priv_sintx_acquire()`. A running reference must be
+ *        stopped before it is released.
+ *
+ * @return
+ *      - ESP_ERR_INVALID_STATE No stopped declared reference is available
  *      - ESP_OK                Success
  */
 esp_err_t dac_priv_sintx_release(void);
+
+/**
+ * @brief Sintx hardware frequency parameters
+ */
+typedef struct {
+#if DAC_LL_SINTX_HAS_TIMER_TARGET
+    uint32_t timer_target;
+#endif
+    uint32_t fstep;
+} dac_sintx_freq_hw_t;
+
+/**
+ * @brief Set sintx frequency parameter
+ *
+ * @note The DAC lock is not acquired within this function and must be acquired by the caller.
+ */
+void dac_priv_sintx_set_freq_unlocked(dac_sintx_freq_hw_t freq_hw);
 
 #ifdef __cplusplus
 }
