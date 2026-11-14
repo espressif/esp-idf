@@ -116,7 +116,8 @@ HEAP_IRAM_ATTR void *heap_caps_malloc_default( size_t size )
 
         void *r;
         if (size <= (size_t)malloc_alwaysinternal_limit) {
-            r=heap_caps_malloc_base( size, MALLOC_CAP_DEFAULT | MALLOC_CAP_INTERNAL );
+            // skip low priority DEFAULT heaps (e.g. the DMA reserve pool), so they are used after PSRAM
+            r=heap_caps_malloc_base( size, MALLOC_CAP_DEFAULT | MALLOC_CAP_INTERNAL | MALLOC_CAP_SKIP_LOW_PRIO );
         } else {
             r=heap_caps_malloc_base( size, MALLOC_CAP_DEFAULT | MALLOC_CAP_SPIRAM );
         }
@@ -149,7 +150,8 @@ HEAP_IRAM_ATTR void *heap_caps_realloc_default( void *ptr, size_t size )
 
         void *r;
         if (size <= (size_t)malloc_alwaysinternal_limit) {
-            r=heap_caps_realloc_base( ptr, size, MALLOC_CAP_DEFAULT | MALLOC_CAP_INTERNAL);
+            // skip low priority DEFAULT heaps (e.g. the DMA reserve pool), so they are used after PSRAM
+            r=heap_caps_realloc_base( ptr, size, MALLOC_CAP_DEFAULT | MALLOC_CAP_INTERNAL | MALLOC_CAP_SKIP_LOW_PRIO);
         } else {
             r=heap_caps_realloc_base( ptr, size, MALLOC_CAP_DEFAULT | MALLOC_CAP_SPIRAM);
         }
@@ -546,7 +548,8 @@ HEAP_IRAM_ATTR void *heap_caps_aligned_alloc_default(size_t alignment, size_t si
     }
 
     if (size <= (size_t)malloc_alwaysinternal_limit) {
-        ret = heap_caps_aligned_alloc_base(alignment, size, MALLOC_CAP_DEFAULT | MALLOC_CAP_INTERNAL);
+        // skip low priority DEFAULT heaps (e.g. the DMA reserve pool), so they are used after PSRAM
+        ret = heap_caps_aligned_alloc_base(alignment, size, MALLOC_CAP_DEFAULT | MALLOC_CAP_INTERNAL | MALLOC_CAP_SKIP_LOW_PRIO);
     } else {
         ret = heap_caps_aligned_alloc_base(alignment, size, MALLOC_CAP_DEFAULT | MALLOC_CAP_SPIRAM);
     }

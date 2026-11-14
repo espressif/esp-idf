@@ -147,10 +147,14 @@ HEAP_IRAM_ATTR static inline void *aligned_or_unaligned_alloc(multi_heap_handle_
 This function should not be called directly as it does not check for failure / call heap_caps_alloc_failed()
 Note that this function does 'unaligned' alloc calls if alignment <= UNALIGNED_MEM_ALIGNMENT_BYTES (=4) as the
 allocator will align to that value by default.
+If caps contains MALLOC_CAP_SKIP_LOW_PRIO, only heaps matching at high or medium priority are used.
 */
 HEAP_IRAM_ATTR NOINLINE_ATTR void *heap_caps_aligned_alloc_base(size_t alignment, size_t size, uint32_t caps)
 {
     void *ret = NULL;
+    // MALLOC_CAP_SKIP_LOW_PRIO is a marker, not a heap capability: consume it before matching
+    const int max_prio = (caps & MALLOC_CAP_SKIP_LOW_PRIO) ? SOC_MEMORY_TYPE_NO_PRIOS - 1 : SOC_MEMORY_TYPE_NO_PRIOS;
+    caps &= ~MALLOC_CAP_SKIP_LOW_PRIO;
 
     // Alignment, size and caps may need to be modified because of hardware requirements.
     esp_heap_adjust_alignment_to_hw(&alignment, &size, &caps);
@@ -190,7 +194,7 @@ HEAP_IRAM_ATTR NOINLINE_ATTR void *heap_caps_aligned_alloc_base(size_t alignment
     /* Align the eventual user pointer (after block-owner + left redzone). */
     const size_t align_offset = MULTI_HEAP_BLOCK_OWNER_SIZE() + KASAN_RZ;
 
-    for (int prio = 0; prio < SOC_MEMORY_TYPE_NO_PRIOS; prio++) {
+    for (int prio = 0; prio < max_prio; prio++) {
         //Iterate over heaps and check capabilities at this priority
         heap_t *heap;
         SLIST_FOREACH(heap, &registered_heaps, next) {
@@ -328,8 +332,10 @@ HEAP_IRAM_ATTR NOINLINE_ATTR void *heap_caps_realloc_base( void *ptr, size_t siz
     const size_t alloc_size = KASAN_ADD_RZ(size);
 
     // are the existing heap's capabilities compatible with the
-    // requested ones?
-    bool compatible_caps = (caps & get_all_caps(heap)) == caps;
+    // requested ones? (MALLOC_CAP_SKIP_LOW_PRIO is ignored here but kept in caps,
+    // so a move to a new heap below still skips low priority heaps)
+    const uint32_t match_caps = caps & ~MALLOC_CAP_SKIP_LOW_PRIO;
+    bool compatible_caps = (match_caps & get_all_caps(heap)) == match_caps;
 
     //Note we don't try realloc() on memory that needs to be aligned, that is handled
     //by the fallthrough code.
@@ -369,7 +375,8 @@ HEAP_IRAM_ATTR NOINLINE_ATTR void *heap_caps_realloc_base( void *ptr, size_t siz
                 CALL_HOOK(esp_heap_trace_free_hook, ptr);
             }
 #endif
-            CALL_HOOK(esp_heap_trace_alloc_hook, r, size, caps);
+            // report the requested caps without the internal MALLOC_CAP_SKIP_LOW_PRIO marker
+            CALL_HOOK(esp_heap_trace_alloc_hook, r, size, match_caps);
             return r;
         }
     }
