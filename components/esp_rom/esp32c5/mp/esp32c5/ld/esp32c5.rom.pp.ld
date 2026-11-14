@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -123,10 +123,10 @@ pm_is_waked = 0x40000d74;
 pm_on_data_rx = 0x40000d80;
 pm_on_data_tx = 0x40000d84;
 pm_on_tbtt = 0x40000d88;
-pm_on_isr_sleep = 0x40000d8c;
+//pm_on_isr_sleep = 0x40000d8c;
 pm_on_isr = 0x40000d90;
-pm_on_isr_set_twt_target = 0x40000d94;
-pm_on_isr_twt_wake = 0x40000d98;
+//pm_on_isr_set_twt_target = 0x40000d94;
+//pm_on_isr_twt_wake = 0x40000d98;
 pm_on_tsf_timer = 0x40000d9c;
 pm_on_twt_force_tx = 0x40000da0;
 pm_parse_beacon = 0x40000da4;
@@ -197,7 +197,7 @@ ppTask = 0x40000ea4;
 //ppTxPkt = 0x40000ea8;
 ppTxProtoProc = 0x40000eac;
 ppTxqUpdateBitmap = 0x40000eb0;
-pp_coex_tx_request = 0x40000eb4;
+//pp_coex_tx_request = 0x40000eb4;
 pp_hdrsize = 0x40000eb8;
 pp_post = 0x40000ebc;
 pp_process_hmac_waiting_txq = 0x40000ec0;
@@ -218,7 +218,7 @@ ppCheckTxHEAMPDUlength = 0x40000ef8;
 ppCertSetRate = 0x40000efc;
 ppSelectTxFormat = 0x40000f00;
 ppCalTxHEAMPDULength = 0x40000f04;
-pp_coex_tx_release = 0x40000f08;
+//pp_coex_tx_release = 0x40000f08;
 ppAdd2AMPDUTail = 0x40000f0c;
 ppDirectRecycleAmpdu = 0x40000f10;
 ppRegressAmpdu = 0x40000f14;
