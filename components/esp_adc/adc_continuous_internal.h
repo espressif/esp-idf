@@ -100,9 +100,13 @@ struct adc_continuous_ctx_t {
 #if SOC_ADC_MONITOR_SUPPORTED
     adc_monitor_t                   *adc_monitor[SOC_ADC_DIGI_MONITOR_NUM];    // adc monitor context
 #endif
-    size_t                          adc_desc_size;
     adc_dma_t                       adc_dma;
     adc_dma_intr_func_t             adc_intr_func;
+#if SOC_CACHE_INTERNAL_MEM_VIA_L1CACHE
+    uint32_t                        cache_line_size;
+    size_t                          adc_desc_size;              //Cache-line-aligned descriptor synchronization size
+    size_t                          rx_dma_buf_size;            //Cache-line-aligned RX buffer synchronization size
+#endif
 };
 
 #ifdef __cplusplus
