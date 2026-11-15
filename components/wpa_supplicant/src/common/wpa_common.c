@@ -23,70 +23,102 @@
 
 #define MD5_MAC_LEN 16
 #ifdef CONFIG_IEEE80211R
-int wpa_ft_mic(const u8 *kck, size_t kck_len, const u8 *sta_addr,
-               const u8 *ap_addr, u8 transaction_seqnum,
-               const u8 *mdie, size_t mdie_len,
+int wpa_ft_mic(int key_mgmt, const u8 *kck, size_t kck_len, const u8 *sta_addr,
+	       const u8 *ap_addr, u8 transaction_seqnum,
+	       const u8 *mdie, size_t mdie_len,
 	       const u8 *ftie, size_t ftie_len,
 	       const u8 *rsnie, size_t rsnie_len,
-               const u8 *rsnxe, size_t rsnxe_len,
-	       const u8 *ric, size_t ric_len, u8 *mic)
+	       const u8 *ric, size_t ric_len,
+	       const u8 *rsnxe, size_t rsnxe_len,
+	       u8 *mic)
 {
-	u8 *buf, *pos;
-	size_t buf_len;
+	const u8 *addr[10];
+	size_t len[10];
+	size_t i, num_elem = 0;
+	u8 zero_mic[32];
+	size_t mic_len, fte_fixed_len;
+	int res;
 
-	if (kck_len != 16) {
+	if (kck_len == 16) {
+		mic_len = 16;
+	} else {
 		wpa_printf(MSG_WARNING, "FT: Unsupported KCK length %u",
-				(unsigned int) kck_len);
+			   (unsigned int) kck_len);
 		return -1;
 	}
 
-	buf_len = 2 * ETH_ALEN + 1 + mdie_len + ftie_len + rsnie_len + ric_len + rsnxe_len;
-	buf = os_malloc(buf_len);
-	if (buf == NULL)
-		return -1;
+	fte_fixed_len = sizeof(struct rsn_ftie) - 16 + mic_len;
 
-	pos = buf;
-	os_memcpy(pos, sta_addr, ETH_ALEN);
-	pos += ETH_ALEN;
-	os_memcpy(pos, ap_addr, ETH_ALEN);
-	pos += ETH_ALEN;
-	*pos++ = transaction_seqnum;
+	addr[num_elem] = sta_addr;
+	len[num_elem] = ETH_ALEN;
+	num_elem++;
+
+	addr[num_elem] = ap_addr;
+	len[num_elem] = ETH_ALEN;
+	num_elem++;
+
+	addr[num_elem] = &transaction_seqnum;
+	len[num_elem] = 1;
+	num_elem++;
+
 	if (rsnie) {
-            os_memcpy(pos, rsnie, rsnie_len);
-            pos += rsnie_len;
+		addr[num_elem] = rsnie;
+		len[num_elem] = rsnie_len;
+		num_elem++;
 	}
 	if (mdie) {
-            os_memcpy(pos, mdie, mdie_len);
-            pos += mdie_len;
+		addr[num_elem] = mdie;
+		len[num_elem] = mdie_len;
+		num_elem++;
 	}
 	if (ftie) {
-            struct rsn_ftie *_ftie;
-            os_memcpy(pos, ftie, ftie_len);
-            if (ftie_len < 2 + sizeof(*_ftie)) {
-                os_free(buf);
-                return -1;
-            }
-            _ftie = (struct rsn_ftie *) (pos + 2);
-            os_memset(_ftie->mic, 0, sizeof(_ftie->mic));
-            pos += ftie_len;
-        }
-        if (ric) {
-            os_memcpy(pos, ric, ric_len);
-            pos += ric_len;
-        }
-        if (rsnxe) {
-            os_memcpy(pos, rsnxe, rsnxe_len);
-            pos += rsnxe_len;
-        }
-	wpa_hexdump(MSG_MSGDUMP, "FT: MIC data", buf, pos - buf);
-        if (omac1_aes_128(kck, buf, pos - buf, mic)) {
-            os_free(buf);
-            return -1;
-        }
+		if (ftie_len < 2 + fte_fixed_len)
+			return -1;
 
-	os_free(buf);
+		/* IE hdr and mic_control */
+		addr[num_elem] = ftie;
+		len[num_elem] = 2 + 2;
+		num_elem++;
 
-        return 0;
+		/* MIC field with all zeros */
+		os_memset(zero_mic, 0, mic_len);
+		addr[num_elem] = zero_mic;
+		len[num_elem] = mic_len;
+		num_elem++;
+
+		/* Rest of FTIE */
+		addr[num_elem] = ftie + 2 + 2 + mic_len;
+		len[num_elem] = ftie_len - (2 + 2 + mic_len);
+		num_elem++;
+	}
+	if (ric) {
+		addr[num_elem] = ric;
+		len[num_elem] = ric_len;
+		num_elem++;
+	}
+
+	if (rsnxe) {
+		addr[num_elem] = rsnxe;
+		len[num_elem] = rsnxe_len;
+		num_elem++;
+	}
+
+	for (i = 0; i < num_elem; i++)
+		wpa_hexdump(MSG_MSGDUMP, "FT: MIC data", addr[i], len[i]);
+	res = -1;
+	if (kck_len == 16 && key_mgmt == WPA_KEY_MGMT_FT_SAE_EXT_KEY) {
+		u8 hash[SHA256_MAC_LEN];
+
+		if (hmac_sha256_vector(kck, kck_len, num_elem, addr, len, hash))
+			return -1;
+		os_memcpy(mic, hash, 16);
+		res = 0;
+	}
+	if (kck_len == 16 && key_mgmt != WPA_KEY_MGMT_FT_SAE_EXT_KEY &&
+	    omac1_aes_128_vector(kck, num_elem, addr, len, mic) == 0)
+		res = 0;
+
+	return res;
 }
 
 
@@ -233,13 +265,15 @@ int wpa_ft_parse_ies(const u8 *ies, size_t ies_len,
 	}
 
 	/* Determine the end of the RIC IE(s) */
-	pos = parse->ric;
-	while (pos && pos + 2 <= end && pos + 2 + pos[1] <= end &&
-	       prot_ie_count) {
-		prot_ie_count--;
-		pos += 2 + pos[1];
+	if (parse->ric) {
+		pos = parse->ric;
+		while (pos && pos + 2 <= end && pos + 2 + pos[1] <= end &&
+		       prot_ie_count) {
+			prot_ie_count--;
+			pos += 2 + pos[1];
+		}
+		parse->ric_len = pos - parse->ric;
 	}
-	parse->ric_len = pos - parse->ric;
 	if (prot_ie_count) {
 	    wpa_printf(MSG_DEBUG, "FT: %d protected IEs missing from "
 		       "frame", (int) prot_ie_count);
@@ -259,6 +293,7 @@ static unsigned int wpa_kck_len(int akmp, size_t pmk_len)
 	case WPA_KEY_MGMT_OWE:
 		return pmk_len / 2;
 	case WPA_KEY_MGMT_SAE_EXT_KEY:
+	case WPA_KEY_MGMT_FT_SAE_EXT_KEY:
 		return pmk_len / 2;
 	default:
 		return 16;
@@ -273,6 +308,7 @@ static unsigned int wpa_kek_len(int akmp, size_t pmk_len)
 	case WPA_KEY_MGMT_OWE:
 		return pmk_len <= 32 ? 16 : 32;
 	case WPA_KEY_MGMT_SAE_EXT_KEY:
+	case WPA_KEY_MGMT_FT_SAE_EXT_KEY:
 		return pmk_len <= 32 ? 16 : 32;
 	default:
 		return 16;
@@ -286,6 +322,7 @@ unsigned int wpa_mic_len(int akmp, size_t pmk_len)
 	case WPA_KEY_MGMT_IEEE8021X_SUITE_B_192:
 		return 24;
 	case WPA_KEY_MGMT_SAE_EXT_KEY:
+	case WPA_KEY_MGMT_FT_SAE_EXT_KEY:
 		return pmk_len / 2;
 	default:
 		return 16;
@@ -346,6 +383,10 @@ static int rsn_key_mgmt_to_bitfield(const u8 *s)
                 return WPA_KEY_MGMT_SAE_EXT_KEY;
         if (RSN_SELECTOR_GET(s) == RSN_AUTH_KEY_MGMT_FT_SAE)
                 return WPA_KEY_MGMT_FT_SAE;
+#ifdef CONFIG_IEEE80211R
+        if (RSN_SELECTOR_GET(s) == RSN_AUTH_KEY_MGMT_FT_SAE_EXT_KEY)
+                return WPA_KEY_MGMT_FT_SAE_EXT_KEY;
+#endif /* CONFIG_IEEE80211R */
 #endif /* CONFIG_WPA3_SAE */
 	if (RSN_SELECTOR_GET(s) == RSN_AUTH_KEY_MGMT_802_1X_SHA256)
 		return WPA_KEY_MGMT_IEEE8021X_SHA256;
@@ -433,6 +474,8 @@ static int rsn_key_mgmt_to_bitfield_scan_only(const u8 *s)
 		return WPA_KEY_MGMT_OWE;
 	if (sel == RSN_SELECTOR(0x00, 0x0f, 0xac, 24))
 		return WPA_KEY_MGMT_SAE_EXT_KEY;
+	if (sel == RSN_SELECTOR(0x00, 0x0f, 0xac, 25))
+		return WPA_KEY_MGMT_FT_SAE_EXT_KEY;
 	if (sel == RSN_SELECTOR(0x50, 0x6f, 0x9a, 0x02))
 		return WPA_KEY_MGMT_DPP;
 
@@ -1071,6 +1114,7 @@ int wpa_eapol_key_mic(const u8 *key, size_t key_len, int akmp, int ver,
                 case WPA_KEY_MGMT_FT_SAE:
 			return omac1_aes_128(key, buf, len, mic);
 		case WPA_KEY_MGMT_SAE_EXT_KEY:
+		case WPA_KEY_MGMT_FT_SAE_EXT_KEY:
 			wpa_printf(MSG_DEBUG,
 				   "WPA: EAPOL-Key MIC using HMAC-SHA%u (AKM-defined - SAE-EXT-KEY)",
 				   (unsigned int) key_len * 8 * 2);
@@ -1174,6 +1218,12 @@ u32 wpa_akm_to_suite(int akm)
 		return RSN_AUTH_KEY_MGMT_SAE_EXT_KEY;
 	if (akm & WPA_KEY_MGMT_FT_SAE)
 		return RSN_AUTH_KEY_MGMT_FT_SAE;
+#ifdef CONFIG_IEEE80211R
+#ifdef CONFIG_WPA3_SAE
+	if (akm & WPA_KEY_MGMT_FT_SAE_EXT_KEY)
+		return RSN_AUTH_KEY_MGMT_FT_SAE_EXT_KEY;
+#endif /* CONFIG_WPA3_SAE */
+#endif /* CONFIG_IEEE80211R */
 	if (akm & WPA_KEY_MGMT_OWE)
 		return RSN_AUTH_KEY_MGMT_OWE;
 	return 0;
@@ -1624,6 +1674,20 @@ int wpa_cipher_valid_pairwise(int cipher)
 		cipher == WPA_CIPHER_CCMP ||
 		cipher == WPA_CIPHER_GCMP ||
 		cipher == WPA_CIPHER_TKIP;
+}
+
+
+int wpa_cipher_valid_group(int cipher)
+{
+	if (cipher == WPA_CIPHER_CCMP ||
+	    cipher == WPA_CIPHER_GCMP ||
+	    cipher == WPA_CIPHER_TKIP)
+		return 1;
+#ifdef CONFIG_GCMP
+	if (cipher == WPA_CIPHER_GCMP_256)
+		return 1;
+#endif /* CONFIG_GCMP */
+	return 0;
 }
 
 

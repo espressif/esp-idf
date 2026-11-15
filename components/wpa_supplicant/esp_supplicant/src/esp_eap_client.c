@@ -620,9 +620,24 @@ static int eap_sm_rx_eapol_internal(u8 *src_addr, u8 *buf, u32 len, uint8_t *bss
     case EAP_CODE_RESPONSE:
         /*Ignore*/
         break;
-    case EAP_CODE_SUCCESS:
-        if (sm->eapKeyData) {
+    case EAP_CODE_SUCCESS: {
+        int msk_ok = sm->eapKeyData && sm->eapKeyDataLen >= PMK_LEN;
+
+#ifdef CONFIG_IEEE80211R
+        /* FT-EAP XXKey is the second 256 bits of the MSK. A shorter
+         * buffer must not be copied into the PMK or treated as success. */
+        if (gWpaSm.key_mgmt == WPA_KEY_MGMT_FT_IEEE8021X &&
+                (!sm->eapKeyData || sm->eapKeyDataLen < 2 * PMK_LEN)) {
+            msk_ok = 0;
+        }
+#endif /* CONFIG_IEEE80211R */
+        if (msk_ok) {
             wpa_set_pmk(sm->eapKeyData, 0, NULL, false);
+#ifdef CONFIG_IEEE80211R
+            if (gWpaSm.key_mgmt == WPA_KEY_MGMT_FT_IEEE8021X) {
+                wpa_sm_set_xxkey(sm->eapKeyData + PMK_LEN, PMK_LEN);
+            }
+#endif /* CONFIG_IEEE80211R */
             os_free(sm->eapKeyData);
             sm->eapKeyData = NULL;
             wpa_printf(MSG_INFO, ">>>>>EAP FINISH");
@@ -630,11 +645,20 @@ static int eap_sm_rx_eapol_internal(u8 *src_addr, u8 *buf, u32 len, uint8_t *bss
             wpa2_set_eap_state(WPA2_ENT_EAP_STATE_SUCCESS);
             eap_deinit_prev_method(sm, "EAP Success");
         } else {
-            wpa_printf(MSG_INFO, ">>>>>EAP FAILED, receive EAP_SUCCESS but pmk is empty, potential attack!");
+            wpa_printf(MSG_INFO, ">>>>>EAP FAILED, EAP-Success MSK unusable (len %u)",
+                       sm->eapKeyData ? (unsigned int) sm->eapKeyDataLen : 0);
+#ifdef CONFIG_IEEE80211R
+            if (gWpaSm.key_mgmt == WPA_KEY_MGMT_FT_IEEE8021X) {
+                wpa_sm_set_xxkey(NULL, 0);
+            }
+#endif /* CONFIG_IEEE80211R */
+            os_free(sm->eapKeyData);
+            sm->eapKeyData = NULL;
             ret = WPA2_ENT_EAP_STATE_FAIL;
             wpa2_set_eap_state(WPA2_ENT_EAP_STATE_FAIL);
         }
-        break;
+    }
+    break;
     case EAP_CODE_FAILURE:
         wpa_printf(MSG_INFO, ">>>>>EAP FAILED");
         ret = WPA2_ENT_EAP_STATE_FAIL;
@@ -686,6 +710,18 @@ static int wpa2_start_eapol_internal(void)
                    "RSN: PMKSA caching - do not send EAPOL-Start");
         return ESP_OK;
     }
+
+#ifdef CONFIG_IEEE80211R
+    /*
+     * FT reassoc already installed PMK-R1 and the PTK. ft_completed is
+     * cleared when the next FT auth IEs are prepared, so the flag that
+     * is still set when this timer fires is ft_reassoc_completed.
+     */
+    if (wpa_key_mgmt_ft(gWpaSm.key_mgmt) && gWpaSm.ft_reassoc_completed) {
+        wpa_printf("MSG_INFO", "FT: reassociation completed - do not send EAPOL-Start");
+        return ESP_OK;
+    }
+#endif /* CONFIG_IEEE80211R */
 
     ret = esp_wifi_get_assoc_bssid_internal(bssid);
     if (ret != 0) {
