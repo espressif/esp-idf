@@ -187,9 +187,7 @@ static u8 * wpa_ft_gen_req_ies(struct wpa_sm *sm, size_t *len,
 	pos = (u8 *) (rsnie + 1);
 
 	/* Group Suite Selector */
-	if (sm->group_cipher != WPA_CIPHER_CCMP &&
-	    sm->group_cipher != WPA_CIPHER_GCMP &&
-	    sm->group_cipher != WPA_CIPHER_TKIP) {
+	if (!wpa_cipher_valid_group(sm->group_cipher)) {
 		wpa_printf(MSG_WARNING, "FT: Invalid group cipher (%d)",
 			   sm->group_cipher);
 		os_free(buf);
@@ -225,6 +223,10 @@ static u8 * wpa_ft_gen_req_ies(struct wpa_sm *sm, size_t *len,
 		RSN_SELECTOR_PUT(pos, RSN_AUTH_KEY_MGMT_FT_PSK);
 	else if (sm->key_mgmt == WPA_KEY_MGMT_FT_SAE)
 		RSN_SELECTOR_PUT(pos, RSN_AUTH_KEY_MGMT_FT_SAE);
+#ifdef CONFIG_WPA3_SAE
+	else if (sm->key_mgmt == WPA_KEY_MGMT_FT_SAE_EXT_KEY)
+		RSN_SELECTOR_PUT(pos, RSN_AUTH_KEY_MGMT_FT_SAE_EXT_KEY);
+#endif /* CONFIG_WPA3_SAE */
 	else {
 		wpa_printf(MSG_WARNING, "FT: Invalid key management type (%d)",
 			   sm->key_mgmt);
@@ -236,9 +238,16 @@ static u8 * wpa_ft_gen_req_ies(struct wpa_sm *sm, size_t *len,
 	/* RSN Capabilities */
 	capab = 0;
 #ifdef CONFIG_IEEE80211W
-	if (sm->mgmt_group_cipher == WPA_CIPHER_AES_128_CMAC)
+	if (sm->pmf_cfg.capable) {
 		capab |= WPA_CAPABILITY_MFPC;
+		if (sm->pmf_cfg.required || wpa_key_mgmt_sae(sm->key_mgmt))
+			capab |= WPA_CAPABILITY_MFPR;
+	}
 #endif /* CONFIG_IEEE80211W */
+	if (sm->spp_sup.capable)
+		capab |= WPA_CAPABILITY_SPP_CAPABLE;
+	if (sm->spp_sup.require)
+		capab |= WPA_CAPABILITY_SPP_REQUIRED;
 	WPA_PUT_LE16(pos, capab);
 	pos += 2;
 
@@ -341,12 +350,13 @@ static u8 * wpa_ft_gen_req_ies(struct wpa_sm *sm, size_t *len,
 							       ric_ies_len);
                 if (rsnxe_len)
                     ftie->mic_control[1] += 1;
-		if (wpa_ft_mic(kck, kck_len, sm->own_addr, target_ap, 5,
+		if (wpa_ft_mic(sm->key_mgmt, kck, kck_len, sm->own_addr, target_ap, 5,
 			       ((u8 *) mdie) - 2, 2 + sizeof(*mdie),
 			       ftie_pos, 2 + *ftie_len,
 			       (u8 *) rsnie, 2 + rsnie->len,
-                               rsnxe_len ? rsnxe : NULL, rsnxe_len, ric_ies,
-			       ric_ies_len, ftie->mic) < 0) {
+			       ric_ies, ric_ies_len,
+			       rsnxe_len ? rsnxe : NULL, rsnxe_len,
+			       ftie->mic) < 0) {
 			wpa_printf(MSG_INFO, "FT: Failed to calculate MIC");
 			os_free(buf);
 			return NULL;
@@ -564,11 +574,16 @@ int wpa_ft_process_response(struct wpa_sm *sm, const u8 *ies, size_t ies_len,
 				    sm->ptk.kck, sm->ptk.kck_len, bssid,
 				    ric_ies, ric_ies_len,
 				    parse.mdie ? parse.mdie - 2 : NULL);
-	if (ft_ies) {
-		wpa_sm_update_ft_ies(sm, sm->mobility_domain,
-				     ft_ies, ft_ies_len, false);
-		os_free(ft_ies);
+	if (ft_ies == NULL) {
+		wpa_printf(MSG_INFO, "FT: Failed to generate Reassociation Request IEs");
+		return -1;
 	}
+	if (wpa_sm_update_ft_ies(sm, sm->mobility_domain,
+				 ft_ies, ft_ies_len, false) < 0) {
+		os_free(ft_ies);
+		return -1;
+	}
+	os_free(ft_ies);
 
 	wpa_sm_mark_authenticated(sm, bssid);
 	ret = wpa_ft_install_ptk(sm, bssid);
@@ -879,13 +894,13 @@ int wpa_ft_validate_reassoc_resp(struct wpa_sm *sm, const u8 *ies,
 		return -1;
 	}
 
-	if (wpa_ft_mic(sm->ptk.kck, sm->ptk.kck_len, sm->own_addr, src_addr, 6,
+	if (wpa_ft_mic(sm->key_mgmt, sm->ptk.kck, sm->ptk.kck_len, sm->own_addr, src_addr, 6,
 		       parse.mdie - 2, parse.mdie_len + 2,
 		       parse.ftie - 2, parse.ftie_len + 2,
 		       parse.rsn - 2, parse.rsn_len + 2,
-                       parse.rsnxe ? parse.rsnxe - 2 : NULL,
-                       parse.rsnxe ? parse.rsnxe_len + 2 : 0,
 		       parse.ric, parse.ric_len,
+		       parse.rsnxe ? parse.rsnxe - 2 : NULL,
+		       parse.rsnxe ? parse.rsnxe_len + 2 : 0,
 		       mic) < 0) {
 		wpa_printf(MSG_DEBUG, "FT: Failed to calculate MIC");
 		return -1;
@@ -898,7 +913,6 @@ int wpa_ft_validate_reassoc_resp(struct wpa_sm *sm, const u8 *ies,
 		return -1;
 	}
 
-	sm->ft_reassoc_completed = 1;
 	if (wpa_ft_process_gtk_subelem(sm, parse.gtk, parse.gtk_len) < 0)
 		return -1;
 
@@ -914,6 +928,7 @@ int wpa_ft_validate_reassoc_resp(struct wpa_sm *sm, const u8 *ies,
 			return -1;
 		sm->set_ptk_after_assoc = 0;
 	}
+	sm->ft_reassoc_completed = 1;
 
 	if (parse.ric) {
 		wpa_hexdump(MSG_MSGDUMP, "FT: RIC Response",

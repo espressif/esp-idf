@@ -52,7 +52,7 @@ WPS 注册
 快速 BSS 切换 (802.11r FT) 是一种标准，旨在允许移动中的无线设备保持连续连接，让客户端从一个 BSS（Basic Service Set，基本服务集，口头也称 AP）快速安全地切换到另一个 BSS， 实现几乎无缝的连接， **避免 802.11i 的四次握手过程**。802.11r 重新定义了安全密钥协商协议，规定了 AP 之间的转换方式，允许以并行的方式协商和请求无线资源。服务器生成的密钥会缓存在无线网络中，未来可以基于此缓存的密钥建立一定数量的连接，避免了 802.11x 过程。
 
 
-{IDF_TARGET_NAME} station 模式支持 WPA2-PSK 网络 FT。注意，{IDF_TARGET_NAME} station 模式仅支持空中 FT 协议。
+{IDF_TARGET_NAME} station 模式支持 WPA2-PSK、WPA2-Enterprise (FT-EAP) 和 WPA3 SAE-EXT (FT-SAE-EXT) 网络的 FT。注意，{IDF_TARGET_NAME} station 模式仅支持空中 FT 协议。
 
 在 :cpp:type:`wifi_sta_config_t` 中提供了配置选项 :menuitem:`CONFIG_ESP_WIFI_11R_SUPPORT` 和配置参数 :cpp:type:`ft_enabled`，可启用 station 的 802.11r 支持。详细信息请参阅 ESP-IDF 示例 :idf_file:`examples/wifi/roaming/README.md`。
 

@@ -100,9 +100,9 @@ enum rsn_hash_alg {
 #define RSN_AUTH_KEY_MGMT_802_1X_SUITE_B_192 RSN_SELECTOR(0x00, 0x0f, 0xac, 12)
 #define RSN_AUTH_KEY_MGMT_FT_802_1X_SUITE_B_192 \
 RSN_SELECTOR(0x00, 0x0f, 0xac, 13)
-#define RSN_AUTH_KEY_MGMT_FT_SAE RSN_SELECTOR(0x00, 0x0f, 0xac, 9)
 #define RSN_AUTH_KEY_MGMT_OWE RSN_SELECTOR(0x00, 0x0f, 0xac, 18)
 #define RSN_AUTH_KEY_MGMT_SAE_EXT_KEY RSN_SELECTOR(0x00, 0x0f, 0xac, 24)
+#define RSN_AUTH_KEY_MGMT_FT_SAE_EXT_KEY RSN_SELECTOR(0x00, 0x0f, 0xac, 25)
 #define RSN_AUTH_KEY_MGMT_DPP RSN_SELECTOR(0x50, 0x6f, 0x9a, 0x02)
 
 #define RSN_CIPHER_SUITE_NONE RSN_SELECTOR(0x00, 0x0f, 0xac, 0)
@@ -390,13 +390,14 @@ struct rsn_rdie {
 #define TRANSITION_DISABLE_ENHANCED_OPEN BIT(3)
 
 #ifdef CONFIG_IEEE80211R
-int wpa_ft_mic(const u8 *kck, size_t kck_len, const u8 *sta_addr,
-               const u8 *ap_addr, u8 transaction_seqnum,
-               const u8 *mdie, size_t mdie_len,
+int wpa_ft_mic(int key_mgmt, const u8 *kck, size_t kck_len, const u8 *sta_addr,
+	       const u8 *ap_addr, u8 transaction_seqnum,
+	       const u8 *mdie, size_t mdie_len,
 	       const u8 *ftie, size_t ftie_len,
 	       const u8 *rsnie, size_t rsnie_len,
-               const u8 *rsnxe, size_t rsnxe_len,
-	       const u8 *ric, size_t ric_len, u8 *mic);
+	       const u8 *ric, size_t ric_len,
+	       const u8 *rsnxe, size_t rsnxe_len,
+	       u8 *mic);
 void wpa_derive_pmk_r0(const u8 *xxkey, size_t xxkey_len,
 		       const u8 *ssid, size_t ssid_len,
 		       const u8 *mdid, const u8 *r0kh_id, size_t r0kh_id_len,
@@ -595,6 +596,7 @@ int wpa_cipher_key_len(int cipher);
 int wpa_cipher_rsc_len(int cipher);
 int wpa_cipher_to_alg(int cipher);
 int wpa_cipher_valid_pairwise(int cipher);
+int wpa_cipher_valid_group(int cipher);
 int wpa_cipher_valid_mgmt_group(int cipher);
 u32 wpa_cipher_to_suite(int proto, int cipher);
 

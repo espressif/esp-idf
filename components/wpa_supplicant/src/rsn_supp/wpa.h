@@ -46,6 +46,10 @@ void wpa_sm_set_state(enum wpa_states state);
 
 void wpa_set_pmk(uint8_t *pmk, size_t pmk_length, const u8 *pmkid, bool cache_pmksa);
 
+#ifdef CONFIG_IEEE80211R
+void wpa_sm_set_xxkey(const u8 *xxkey, size_t len);
+#endif /* CONFIG_IEEE80211R */
+
 int wpa_michael_mic_failure(u16 isunicast);
 
 wifi_cipher_type_t cipher_type_map_supp_to_public(unsigned cipher);

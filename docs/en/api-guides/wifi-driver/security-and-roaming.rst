@@ -52,7 +52,7 @@ Fast BSS Transition
 Fast BSS transition (802.11r FT), is a standard to permit continuous connectivity aboard wireless devices in motion, with fast and secure client transitions from one Basic Service Set (abbreviated BSS, and also known as a base station or more colloquially, an access point) to another performed in a nearly seamless manner **avoiding 802.11i 4 way handshake**. 802.11r specifies transitions between access points by redefining the security key negotiation protocol, allowing both the negotiation and requests for wireless resources to occur in parallel. The key derived from the server to be cached in the wireless network, so that a reasonable number of future connections can be based on the cached key, avoiding the 802.1X process.
 
 
-{IDF_TARGET_NAME} station supports FT for WPA2-PSK networks. Do note that {IDF_TARGET_NAME} station only support FT over the air protocol only.
+{IDF_TARGET_NAME} station supports FT for WPA2-PSK, WPA2-Enterprise (FT-EAP), and WPA3 SAE-EXT (FT-SAE-EXT) networks. Do note that {IDF_TARGET_NAME} station only support FT over the air protocol only.
 
 A config option :menuitem:`CONFIG_ESP_WIFI_11R_SUPPORT` and configuration parameter :cpp:type:`ft_enabled` in :cpp:type:`wifi_sta_config_t` is provided to enable 802.11r support for station. Refer ESP-IDF example :idf_file:`examples/wifi/roaming/README.md` for further details.
 
