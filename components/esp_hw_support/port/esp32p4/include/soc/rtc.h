@@ -69,6 +69,9 @@ extern "C" {
 #define RTC_CNTL_RC32K_DFREQ_DEFAULT 700
 
 #if CONFIG_ESP_ENABLE_PVT
+/**
+* @brief Set PVT default param
+*/
 #define PVT_CHANNEL0_SEL    49
 #define PVT_CHANNEL1_SEL    53
 #define PVT_CHANNEL0_CFG    0x11fff
@@ -89,16 +92,19 @@ extern "C" {
 #endif
 
 /**
- * @brief Initialize PVT related parameters
+ * @brief Initialize PVT dig dbias
  */
-void pvt_auto_dbias_init(void);
+void pvt_dig_dbias_init(void);
 
 /**
- * @brief Enable or disable PVT functions
+ * @brief Enable or disable auto dbias functions
  *
- * @param enable  true to enable, false to disable
+ * @param enable   true to enable, false to disable
+ * @param reconfig true: soft-reset + rewrite channel/cmd/threshold/timer config;
+ *                 false: only gate clocks/monitor/timer, keep existing config
+ *                 (e.g. after TOP retention restore). Ignored when enable is false.
  */
-void pvt_func_enable(bool enable);
+void pvt_auto_dbias_enable(bool enable, bool reconfig);
 
 #endif //#if CONFIG_ESP_ENABLE_PVT
 

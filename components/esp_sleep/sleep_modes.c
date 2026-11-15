@@ -178,7 +178,7 @@
 #elif CONFIG_IDF_TARGET_ESP32C6
 #define DEFAULT_SLEEP_OUT_OVERHEAD_US       (318)
 #define DEFAULT_HARDWARE_OUT_OVERHEAD_US    (56)
-#define PVT_REINIT_COST_US                  (60)
+#define PVT_REINIT_COST_US                  (110)
 #elif CONFIG_IDF_TARGET_ESP32C5
 #define DEFAULT_SLEEP_OUT_OVERHEAD_US       (318)
 #define DEFAULT_HARDWARE_OUT_OVERHEAD_US    (56)
@@ -186,7 +186,7 @@
 #elif CONFIG_IDF_TARGET_ESP32C61
 #define DEFAULT_SLEEP_OUT_OVERHEAD_US       (65)
 #define DEFAULT_HARDWARE_OUT_OVERHEAD_US    (70)
-#define PVT_REINIT_COST_US                  (90)
+#define PVT_REINIT_COST_US                  (140)
 #elif CONFIG_IDF_TARGET_ESP32H2
 #define DEFAULT_SLEEP_OUT_OVERHEAD_US       (118)
 #define DEFAULT_HARDWARE_OUT_OVERHEAD_US    (9)
@@ -670,7 +670,7 @@ static SLEEP_FN_ATTR void misc_modules_sleep_prepare(uint32_t sleep_flags, bool 
 #endif
     }
 #if CONFIG_ESP_ENABLE_PVT && SOC_PVT_EN_WITH_SLEEP
-    pvt_func_enable(false);
+    pvt_auto_dbias_enable(false, false);
 #endif
 
 #if SOC_ADC_SUPPORTED
@@ -689,11 +689,10 @@ static SLEEP_FN_ATTR void misc_modules_wake_prepare(uint32_t sleep_flags)
 {
     resume_timers(sleep_flags);
 #if CONFIG_ESP_ENABLE_PVT && SOC_PVT_EN_WITH_SLEEP
-    if ((sleep_flags & PMU_SLEEP_PD_CPU) && !(sleep_flags & PMU_SLEEP_PD_TOP)) {
-        /* If TOP is powered down, configuration in pvt_auto_dbias_init was already restored in wakeup retention*/
-        pvt_auto_dbias_init();
-    }
-    pvt_func_enable(true);
+    /* PD CPU without TOP: soft-reset + rewrite config.
+     * PD TOP: REGDMA already restored channel/cmd/timer; only re-enable clocks/timer. */
+    bool pvt_reconfig = (sleep_flags & PMU_SLEEP_PD_CPU) && !(sleep_flags & PMU_SLEEP_PD_TOP);
+    pvt_auto_dbias_enable(true, pvt_reconfig);
 #endif
 
 #if CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP && SOC_WDT_SUPPORTED
