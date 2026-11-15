@@ -400,22 +400,31 @@ esp_err_t spicommon_dma_desc_alloc(spi_host_device_t host_id, int cfg_max_sz, in
         rx_buffer_alignment = MAX(rx_buffer_alignment, dma_ctx->dma_align_rx_ext);
     }
 
-    size_t sct_item_num = howmany(cfg_max_sz, MAX(1, max_chunk_sz));
     size_t tx_item_num = esp_dma_calculate_node_count(cfg_max_sz, tx_buffer_alignment, DMA_DESCRIPTOR_BUFFER_MAX_SIZE);
     size_t rx_item_num = esp_dma_calculate_node_count(cfg_max_sz, rx_buffer_alignment, DMA_DESCRIPTOR_BUFFER_MAX_SIZE);
+    size_t data_item_num = MAX(MAX(tx_item_num, rx_item_num), 1); //default to 1 when 'cfg_max_sz' is not given
+    size_t max_sz = data_item_num * ESP_ALIGN_DOWN(DMA_DESCRIPTOR_BUFFER_MAX_SIZE, rx_buffer_alignment);
     gdma_link_list_config_t link_cfg = {
-        .num_items = MAX(MAX(tx_item_num, rx_item_num), 1) + sct_item_num, //default to 1 when 'cfg_max_sz' is not given
+        .num_items = data_item_num + howmany(cfg_max_sz, MAX(1, max_chunk_sz)),
         .item_alignment = DMA_DESC_MEM_ALIGN_SIZE,
     };
+    if (max_chunk_sz > 0 && cfg_max_sz > max_chunk_sz) {
+        // Transfers above 'max_chunk_sz' are mounted chunk by chunk (s_spi_split_sct_trans), each chunk taking
+        // 1 conf item + its own data items. Reserve that for every chunk of 'max_sz', the largest accepted transfer.
+        size_t chunk_tx_item_num = esp_dma_calculate_node_count(max_chunk_sz, tx_buffer_alignment, DMA_DESCRIPTOR_BUFFER_MAX_SIZE);
+        size_t chunk_rx_item_num = esp_dma_calculate_node_count(max_chunk_sz, rx_buffer_alignment, DMA_DESCRIPTOR_BUFFER_MAX_SIZE);
+        size_t chunk_item_num = MAX(chunk_tx_item_num, chunk_rx_item_num);
+        link_cfg.num_items = howmany(max_sz, max_chunk_sz) * (1 + chunk_item_num);
+    }
     ESP_RETURN_ON_ERROR(gdma_new_link_list(&link_cfg, &dma_ctx->tx_link_handle), SPI_TAG, "failed to allocate tx dma link");
     ESP_GOTO_ON_ERROR(gdma_new_link_list(&link_cfg, &dma_ctx->rx_link_handle), cleanup, SPI_TAG, "failed to allocate rx dma link");
 
     // save link info
-    dma_ctx->dma_desc_num = link_cfg.num_items - sct_item_num;
+    dma_ctx->dma_desc_num = data_item_num;
     dma_ctx->dmadesc_tx = (spi_dma_desc_t *)gdma_link_get_head_addr(dma_ctx->tx_link_handle);
     dma_ctx->dmadesc_rx = (spi_dma_desc_t *)gdma_link_get_head_addr(dma_ctx->rx_link_handle);
-    *actual_max_sz = dma_ctx->dma_desc_num * ESP_ALIGN_DOWN(DMA_DESCRIPTOR_BUFFER_MAX_SIZE, rx_buffer_alignment);
-    ESP_LOGV(SPI_TAG, "desc_num: %d, sct_item_num: %d", dma_ctx->dma_desc_num, sct_item_num);
+    *actual_max_sz = max_sz;
+    ESP_LOGV(SPI_TAG, "desc_num: %d, link_item_num: %d", dma_ctx->dma_desc_num, (int)link_cfg.num_items);
     return ESP_OK;
 
 cleanup:
