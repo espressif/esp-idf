@@ -40,9 +40,8 @@ typedef UINT8 tBTA_PAN_STATUS;
 /* PAN Callback events */
 #define BTA_PAN_ENABLE_EVT 0   /* PAN service is enabled. */
 #define BTA_PAN_SET_ROLE_EVT 1 /* PAN roles registered */
-#define BTA_PAN_OPENING_EVT 2  /* Connection is being opened. */
-#define BTA_PAN_OPEN_EVT 3     /* Connection has been opened. */
-#define BTA_PAN_CLOSE_EVT 4    /* Connection has been closed. */
+#define BTA_PAN_OPEN_EVT 2     /* Connection has been opened. */
+#define BTA_PAN_CLOSE_EVT 3    /* Connection has been closed. */
 
 typedef UINT8 tBTA_PAN_EVT;
 
@@ -67,13 +66,6 @@ typedef struct {
     tBTA_PAN_ROLE role;     /* PAN roles successfully registered */
 } tBTA_PAN_SET_ROLE;
 
-/* Event associated with BTA_PAN_OPENING_EVT */
-typedef struct {
-    BD_ADDR bd_addr; /* BD address of peer device. */
-    UINT16 handle;   /* Handle associated with this connection. */
-
-} tBTA_PAN_OPENING;
-
 /* Event associated with BTA_PAN_OPEN_EVT */
 typedef struct {
     BD_ADDR bd_addr;          /* BD address of peer device. */
@@ -93,7 +85,6 @@ typedef struct {
 typedef union {
     tBTA_PAN_SET_ROLE set_role; /* set_role event */
     tBTA_PAN_OPEN open;         /* Connection has been opened. */
-    tBTA_PAN_OPENING opening;   /* Connection being opened */
     tBTA_PAN_CLOSE close;       /* Connection has been closed. */
 } tBTA_PAN;
 
@@ -158,8 +149,9 @@ void BTA_PanSetRole(tBTA_PAN_ROLE role, tBTA_PAN_ROLE_INFO *p_user_info,
  * Function         BTA_PanOpen
  *
  * Description      Opens a connection to a peer device.
- *                  When connection is open callback function is called
- *                  with a BTA_PAN_OPEN_EVT.
+ *                  An open failure is reported immediately, a success
+ *                  when the connection completes. Both are reported
+ *                  with BTA_PAN_OPEN_EVT.
  *
  *
  * Returns          void

@@ -148,8 +148,9 @@ void BTA_PanSetRole(tBTA_PAN_ROLE role, tBTA_PAN_ROLE_INFO *p_user_info,
  * Function         BTA_PanOpen
  *
  * Description      Opens a connection to a peer device.
- *                  When connection is open callback function is called
- *                  with a BTA_PAN_OPEN_EVT.
+ *                  An open failure is reported immediately, a success
+ *                  when the connection completes. Both are reported
+ *                  with BTA_PAN_OPEN_EVT.
  *
  *
  * Returns          void
