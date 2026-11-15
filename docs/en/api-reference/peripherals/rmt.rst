@@ -146,6 +146,12 @@ Once the :cpp:type:`rmt_rx_channel_config_t` structure is populated with mandato
 
     When multiple RMT channels are allocated at the same time, the group’s prescale is determined based on the resolution of the first channel. The driver then selects the appropriate prescale from low to high. To avoid prescale conflicts when allocating multiple channels, allocate channels in order of their target resolution, either from highest to lowest or lowest to highest.
 
+.. only:: SOC_HP_CPU_HAS_MULTIPLE_CORES
+
+    .. note::
+
+        All RMT channels in a group share one interrupt, which stays on the CPU core that installed the first channel. Later :cpp:func:`rmt_new_tx_channel` / :cpp:func:`rmt_new_rx_channel` calls from another core still succeed; they join that group instead of moving the ISR. To run RMT interrupts on a specific core, create the first channel from a task pinned to that core.
+
 Uninstall RMT Channel
 ~~~~~~~~~~~~~~~~~~~~~
 
@@ -643,7 +649,7 @@ FAQ
         - Increase the :cpp:member:`rmt_tx_channel_config_t::mem_block_symbols`, in steps of {IDF_TARGET_SOC_RMT_MEM_WORDS_PER_CHANNEL}.
         - Place the encoding function in the IRAM with ``IRAM_ATTR`` attribute.
         - Enable the :cpp:member:`rmt_tx_channel_config_t::with_dma` if DMA is available.
-        - Install the RMT driver on a separate CPU core to avoid competing for the same CPU resources with other interrupt heavy peripherals (e.g. WiFi, Bluetooth).
+        - Install the first RMT channel from a task pinned to a separate CPU core, so the shared RMT interrupt runs there instead of competing with interrupt-heavy peripherals (e.g. WiFi, Bluetooth). Later channels join that group even if they are installed from another core.
 
 API Reference
 -------------

@@ -240,7 +240,7 @@ esp_err_t esp_intr_alloc_intrstatus(int source, int flags, uint32_t intrstatusre
  *               is required.
  *
  * @return ESP_ERR_INVALID_ARG if the combination of arguments is invalid.
- *         ESP_ERR_INVALID_STATE if the provided handler refers to an interrupt that on the other core.
+ *         ESP_ERR_INVALID_STATE if the provided shared handle is not in a usable state.
  *         ESP_ERR_NOT_FOUND No free interrupt found with the specified flags or the given level is different
  *                           from the one assigned to the share_handle parameter.
  *         ESP_OK on success
@@ -285,7 +285,7 @@ esp_err_t esp_intr_alloc_bind(int source, int flags, intr_handler_t handler, voi
  *               is required.
  *
  * @return ESP_ERR_INVALID_ARG if the combination of arguments is invalid.
- *         ESP_ERR_INVALID_STATE if the provided handler refers to an interrupt that on the other core.
+ *         ESP_ERR_INVALID_STATE if the provided shared handle is not in a usable state.
  *         ESP_ERR_NOT_FOUND No free interrupt found with the specified flags or the given level is different
  *                           from the one assigned to the share_handle parameter.
  *         ESP_OK on success
@@ -306,13 +306,17 @@ esp_err_t esp_intr_alloc_intrstatus_bind(int source, int flags, uint32_t intrsta
  * If a `name` is passed but the interrupt to share with is not found, the function will create a new group of interrupts
  * with the given name.
  *
+ * @note If the group to bind to resides on the other core, the new source is still attached to that
+ * group. The interrupt remains installed on the core the group was created on; only the shared
+ * handler list and the interrupt matrix are updated.
+ *
  * @param info The information to allocate the interrupt.
  * @param ret_handle Pointer to an intr_handle_t to store a handle that can later be
  *               used to request details or free the interrupt. Can be NULL if no handle
  *               is required.
  *
  * @return ESP_ERR_INVALID_ARG if the combination of arguments is invalid.
- *         ESP_ERR_INVALID_STATE if the provided handler refers to an interrupt that on the other core.
+ *         ESP_ERR_INVALID_STATE if the provided shared handle is not in a usable state.
  *         ESP_ERR_NOT_FOUND No free interrupt found with the specified flags or the given level is different
  *                           from the one assigned to the share_handle parameter.
  *         ESP_OK on success

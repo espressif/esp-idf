@@ -90,8 +90,8 @@ To illustrate why shared interrupts can only be level-triggered, take the scenar
 
 .. only:: SOC_HP_CPU_HAS_MULTIPLE_CORES
 
-    - Allocating an external interrupt will always allocate it on the core that does the allocation.
-    - Freeing an external interrupt must always happen on the same core it was allocated on.
+    - Allocating an external interrupt will always allocate it on the core that does the allocation. When attaching to a shared interrupt group owned by the other core, the new source is still attached to that group; the interrupt remains installed on the core the group was created on.
+    - Freeing an external interrupt happens on the core it was allocated on; :cpp:func:`esp_intr_free` defers to that core transparently when called from another core.
     - Disabling and enabling external interrupts from another core is allowed.
     - Multiple external interrupt sources can share an interrupt slot by passing ``ESP_INTR_FLAG_SHARED`` as a flag to :cpp:func:`esp_intr_alloc`.
 
@@ -170,6 +170,10 @@ Named Groups
 ^^^^^^^^^^^^
 
 Shared interrupts groups, public or private, can be defined by name. This is done via the ``bind_by.name`` field of the :cpp:type:`esp_intr_alloc_info_t` structure. If a shared interrupt group with the specified name already exists (created by an earlier call using the same name), the new source is attached to that group. Otherwise, a new shared interrupt group is allocated and tagged with that name. Only one of ``bind_by.handle`` or ``bind_by.name`` may be set. The usual flag rules (e.g., interrupt level, SHARED vs SHARED_PRIVATE) still apply. This does not affect the behavior of public shared interrupts: interrupt allocation functions can still attach new sources to existing public shared lines without specifying a name or handle.
+
+.. only:: SOC_HP_CPU_HAS_MULTIPLE_CORES
+
+    A shared interrupt group is bound to the core it was created on. Attaching to a group owned by the other core (by name or by handle) keeps the interrupt on that core: the new source is added to the group's shared handler list and routed through the interrupt matrix, without moving the CPU interrupt line.
 
 
 Troubleshooting Interrupt Allocation

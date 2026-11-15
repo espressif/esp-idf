@@ -577,7 +577,6 @@ bool esp_intr_ptr_in_isr_region(void* ptr)
     return esp_ptr_in_iram(ptr) || esp_ptr_in_rtc_iram_fast(ptr) || esp_ptr_in_rom(ptr);
 }
 
-
 /**
  * Allocate an interrupt with all the parameters in a single structure
  */
@@ -698,11 +697,13 @@ bool esp_intr_ptr_in_isr_region(void* ptr)
             cpu = vd->cpu;
         }
     }
-    if (cpu != esp_cpu_get_core_id()) {
-        esp_os_exit_critical(&spinlock);
-        free(ret);
-        return ESP_ERR_INVALID_STATE;
-    }
+    /* Binding to an existing group on another core does not need IPC.
+     * Handler, CPU enable and priority were programmed when the group was
+     * created; only the shared-vector list and the interrupt matrix still
+     * need updating, and both are safe from any core.
+     * cpu is only redirected when attaching to an existing group or handle,
+     * so a new group is always created on the calling core. */
+    const bool remote_core = (cpu != esp_cpu_get_core_id());
     int intr = get_available_int(flags, cpu, force, source, create_new_group);
     if (intr == -1) {
         //None found. Bail out.
@@ -760,8 +761,11 @@ bool esp_intr_ptr_in_isr_region(void* ptr)
         if (flags & ESP_INTR_FLAG_SHARED_PRIVATE) {
             vd->flags |= VECDESC_FL_PRIVATE;
         }
-        //(Re-)set shared isr handler to new value.
-        esp_cpu_intr_set_handler(intr, (esp_cpu_intr_handler_t)shared_intr_isr, vd);
+        //(Re-)set shared isr handler to new value. Skip on a remote core: the
+        //handler was already installed when the group was created there.
+        if (!remote_core) {
+            esp_cpu_intr_set_handler(intr, (esp_cpu_intr_handler_t)shared_intr_isr, vd);
+        }
     } else {
         //Mark as unusable for other interrupt sources. This is ours now!
         vd->flags = VECDESC_FL_NONSHARED;
@@ -803,8 +807,10 @@ bool esp_intr_ptr_in_isr_region(void* ptr)
     ret->vector_desc = vd;
     ret->shared_vector_desc = vd->shared_vec_info;
 
-    //Enable int at CPU-level;
-    ESP_INTR_ENABLE(intr);
+    //Enable int at CPU-level. Already done on the group's core when the group was created.
+    if (!remote_core) {
+        ESP_INTR_ENABLE(intr);
+    }
 
     //If interrupt has to be started disabled, do that now; ints won't be enabled for real until the end
     //of the critical section.
@@ -816,12 +822,14 @@ bool esp_intr_ptr_in_isr_region(void* ptr)
     //Extract the level from the interrupt passed flags
     int level = esp_intr_flags_to_level(flags);
     vd->flags |= level << VECDESC_FL_LEVEL_SHIFT;
-    esp_cpu_intr_set_priority(intr, level);
+    if (!remote_core) {
+        esp_cpu_intr_set_priority(intr, level);
 
-    if (flags & ESP_INTR_FLAG_EDGE) {
-        esp_cpu_intr_set_type(intr, ESP_CPU_INTR_TYPE_EDGE);
-    } else {
-        esp_cpu_intr_set_type(intr, ESP_CPU_INTR_TYPE_LEVEL);
+        if (flags & ESP_INTR_FLAG_EDGE) {
+            esp_cpu_intr_set_type(intr, ESP_CPU_INTR_TYPE_EDGE);
+        } else {
+            esp_cpu_intr_set_type(intr, ESP_CPU_INTR_TYPE_LEVEL);
+        }
     }
 #endif
 
@@ -830,7 +838,9 @@ bool esp_intr_ptr_in_isr_region(void* ptr)
 #if !CONFIG_SECURE_ENABLE_TEE
 #if SOC_INT_PLIC_SUPPORTED
     /* Make sure the interrupt is not delegated to user mode (IDF uses machine mode only) */
-    RV_CLEAR_CSR(mideleg, BIT(intr));
+    if (!remote_core) {
+        RV_CLEAR_CSR(mideleg, BIT(intr));
+    }
 #endif
 #endif
 
