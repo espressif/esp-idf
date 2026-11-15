@@ -99,7 +99,7 @@ Bluedroid
                * - ``esp_a2d_media_ctrl()``
                  - ``esp_a2d_media_ctrl_by_handle()``
 
-        - 与当前 A2DP 连接不匹配的句柄不会生效。媒体控制会以 ``ESP_A2D_MEDIA_CTRL_ACK_FAILURE`` 应答。断开请求会被忽略。
+        - 与已连接的 A2DP 对端不匹配的句柄不会生效。媒体控制会以 ``ESP_A2D_MEDIA_CTRL_ACK_FAILURE`` 应答。断开请求会被忽略。
 
         - ``esp_a2d_register_callback()`` 在 ``callback`` 为 NULL 时返回 ``ESP_ERR_INVALID_ARG``。原先返回 ``ESP_FAIL``。
 
@@ -111,7 +111,7 @@ Bluedroid
 
     - :component_file:`/bt/host/bluedroid/api/include/api/esp_avrc_api.h`
 
-        - 应用侧 AVRCP Controller 命令只能使用事务标签 ``0`` 到 ``ESP_USER_AVRC_TRANS_LABEL_MAX`` （13）。``14`` 和 ``15`` 保留给协议栈（A2DP Sink 切换活动设备时的 Play/Pause）。向发送类 API 传入 14 或 15 会返回 ``ESP_ERR_INVALID_ARG``。``ESP_AVRC_TRANS_LABEL_MAX`` 仍为 15（协议最大值）。
+        - ``*_by_handle`` AVRCP Controller 发送接口的事务标签为 ``0`` 到 ``ESP_USER_AVRC_TRANS_LABEL_MAX`` （13）。``14`` 和 ``15`` 保留给协议栈（A2DP Sink 切换活动设备时的 Play/Pause）。向这些接口传入 14 或 15 会返回 ``ESP_ERR_INVALID_ARG``。已废弃的发送接口仍接受 ``0`` 到 ``ESP_AVRC_TRANS_LABEL_MAX`` （15）。
 
     - :component_file:`/bt/host/bluedroid/api/include/api/esp_spp_api.h`
 

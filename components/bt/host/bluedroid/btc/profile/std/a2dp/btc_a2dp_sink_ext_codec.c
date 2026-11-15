@@ -245,9 +245,9 @@ static void btc_a2dp_sink_handle_inc_media(BT_HDR *p_msg)
         conn_hdl = btc_a2d_conn_handle_get();
     }
 
-    /* MEDIA_CFG on this connection is the negotiated stream codec. Do not use
-     * bta_av_co_get_codec_info_by_hndl() first: that falls back to the shared
-     * codec_cfg, which the last SetConfig (e.g. a second phone's SBC) overwrites. */
+    /* MEDIA_CFG on this connection is the negotiated stream codec. The call-out
+     * copy does not fall back to the shared codec_cfg; with no negotiated codec
+     * it sets BTC_AV_CODEC_NONE and the packet is dropped below. */
     if (!btc_av_get_sink_codec_info(conn_hdl, &cur_codec_info)) {
         bta_av_co_get_codec_info_by_hndl(conn_hdl, &cur_codec_info);
     }

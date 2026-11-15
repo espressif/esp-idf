@@ -1160,6 +1160,27 @@ void bta_av_config_ind (tBTA_AV_SCB *p_scb, tBTA_AV_DATA *p_data)
     tBTA_AV_STR_MSG  *p_msg = (tBTA_AV_STR_MSG *)p_data;
     UNUSED(p_data);
 
+    /*
+     * An idle SEP remains visible to every AVDTP signalling connection.  Its
+     * control callback, however, is registered to this BTA SCB, which is
+     * already associated with a particular peer when that signalling link is
+     * accepted.  Do not let another peer configure it: doing so would
+     * overwrite this SCB's peer address and codec configuration.
+     *
+     * Stream close clears peer_addr and leaves the AVDTP signalling channel
+     * up.  The peer of that channel is lcb[hdi].addr, which close does not
+     * clear, so a new Set Configuration from the same peer must be accepted.
+     * conn_lcb distinguishes that live binding from an address left behind
+     * after the signalling link itself has been freed.
+     */
+    if (p_scb->hdi >= BTA_AV_NUM_LINKS ||
+            (bta_av_cb.conn_lcb & (1 << p_scb->hdi)) == 0 ||
+            bdcmp(bta_av_cb.lcb[p_scb->hdi].addr, p_data->str_msg.bd_addr) != 0) {
+        AVDT_ConfigRsp(p_msg->handle, p_data->str_msg.msg.hdr.label,
+                       AVDT_ERR_IN_USE, 0);
+        return;
+    }
+
     /* If stream SSM was force-switched to INCOMING due to CONFIG_IND while in INIT,
      * notify upper layers early so BTC can move to OPENING and handle upcoming config/open events. */
     if (p_scb->force_incoming) {

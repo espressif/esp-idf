@@ -2905,11 +2905,13 @@
  *
  * BTA AV keeps a global ACP listener from A2DP registration, then allocates
  * another ACP CCB when each AVDT signaling channel comes up, and may still
- * open an INT CCB after AVRCP SDP. Dual-sink therefore needs:
+ * open an INT CCB after AVRCP SDP. Two peers therefore need:
  *   1 global ACP + N per-link ACP + N INT
- * The old (AVCT_NUM_LINKS + 2) pool is 4, which is enough for one peer but
- * overflows on the second ("Out of ccbs"). Size for that worst case plus a
- * spare slot. */
+ * plus one spare slot, which is (AVCT_NUM_LINKS * 2 + 2). AVCT_NUM_LINKS is
+ * fixed at 2, so this is 6 in every build, including a single sink connection.
+ * The previous CCB pool was the literal 3 (the old RCB pool was
+ * BTA_AV_NUM_STRS + 2 = 4). Three CCBs overflow on the second peer
+ * ("Out of ccbs"). */
 #ifndef AVCT_NUM_CONN
 #define AVCT_NUM_CONN               (AVCT_NUM_LINKS * 2 + 2)
 #endif

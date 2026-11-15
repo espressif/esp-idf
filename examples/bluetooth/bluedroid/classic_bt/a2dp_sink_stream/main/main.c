@@ -19,8 +19,9 @@
 #include "a2dp_utils_tags.h"
 #include "avrcp_utils_tags.h"
 #include "avrcp_common_utils.h"
-#if CONFIG_EXAMPLE_A2DP_SINK_USE_EXTERNAL_CODEC == FALSE
+#if !CONFIG_EXAMPLE_A2DP_SINK_USE_EXTERNAL_CODEC
 #include "a2dp_sink_int_codec_utils.h"
+#include "audio_sink_service.h"
 #else
 #include "a2dp_sink_ext_codec_utils.h"
 #endif
@@ -40,11 +41,19 @@ enum {
 #endif
 
 #if BT_APP_A2D_MAX_PEERS > 1
-/* Addresses of the source devices that are connected right now. Only one of them
- * is rendered at a time, the stack reports which one with
- * ESP_A2D_SNK_ACTIVE_DEVICE_EVT and discards the media packets of the others. */
-static esp_bd_addr_t s_a2d_peers[BT_APP_A2D_MAX_PEERS];
+/* One entry per connected source. The stack keeps the decoder configuration
+ * internally and does not report it again when the rendered device changes, so
+ * the negotiated mcc is cached here for the shared I2S output. */
+typedef struct {
+    esp_a2d_conn_hdl_t conn_hdl;
+    esp_bd_addr_t bda;
+    esp_a2d_mcc_t mcc;
+    bool mcc_valid;
+} bt_app_a2d_peer_t;
+
+static bt_app_a2d_peer_t s_a2d_peers[BT_APP_A2D_MAX_PEERS];
 static int s_a2d_peer_num;
+static esp_a2d_conn_hdl_t s_a2d_active_hdl;
 #endif
 
 /********************************
@@ -60,7 +69,7 @@ static void bt_app_gap_cb(esp_bt_gap_cb_event_t event, esp_bt_gap_cb_param_t *pa
 /* callback function for A2DP sink */
 static void bt_app_a2d_cb(esp_a2d_cb_event_t event, esp_a2d_cb_param_t *param);
 
-#if CONFIG_EXAMPLE_A2DP_SINK_USE_EXTERNAL_CODEC == FALSE
+#if !CONFIG_EXAMPLE_A2DP_SINK_USE_EXTERNAL_CODEC
 /* callback function for A2DP sink audio data stream */
 static void bt_app_a2d_data_cb(const uint8_t *data, uint32_t len);
 #else
@@ -95,36 +104,73 @@ static void bt_app_gap_cb(esp_bt_gap_cb_event_t event, esp_bt_gap_cb_param_t *pa
 }
 
 #if BT_APP_A2D_MAX_PEERS > 1
-static int bt_app_a2d_peer_find(const esp_bd_addr_t bda)
+static int bt_app_a2d_peer_find_by_bda(const esp_bd_addr_t bda)
 {
     for (int i = 0; i < s_a2d_peer_num; i++) {
-        if (memcmp(s_a2d_peers[i], bda, sizeof(esp_bd_addr_t)) == 0) {
+        if (memcmp(s_a2d_peers[i].bda, bda, sizeof(esp_bd_addr_t)) == 0) {
             return i;
         }
     }
     return -1;
 }
 
-static void bt_app_a2d_peer_add(const esp_bd_addr_t bda)
+static int bt_app_a2d_peer_find_by_hdl(esp_a2d_conn_hdl_t conn_hdl)
 {
-    if (bt_app_a2d_peer_find(bda) >= 0 || s_a2d_peer_num >= BT_APP_A2D_MAX_PEERS) {
-        return;
+    if (conn_hdl == ESP_A2D_INVALID_CONN_HDL) {
+        return -1;
     }
-    memcpy(s_a2d_peers[s_a2d_peer_num++], bda, sizeof(esp_bd_addr_t));
+    for (int i = 0; i < s_a2d_peer_num; i++) {
+        if (s_a2d_peers[i].conn_hdl == conn_hdl) {
+            return i;
+        }
+    }
+    return -1;
+}
+
+static bt_app_a2d_peer_t *bt_app_a2d_peer_get_or_add(esp_a2d_conn_hdl_t conn_hdl, const esp_bd_addr_t bda)
+{
+    int idx = bt_app_a2d_peer_find_by_hdl(conn_hdl);
+
+    if (idx < 0) {
+        idx = bt_app_a2d_peer_find_by_bda(bda);
+    }
+    if (idx < 0) {
+        if (s_a2d_peer_num >= BT_APP_A2D_MAX_PEERS) {
+            return NULL;
+        }
+        idx = s_a2d_peer_num++;
+        memset(&s_a2d_peers[idx], 0, sizeof(bt_app_a2d_peer_t));
+    }
+    s_a2d_peers[idx].conn_hdl = conn_hdl;
+    memcpy(s_a2d_peers[idx].bda, bda, sizeof(esp_bd_addr_t));
+    return &s_a2d_peers[idx];
 }
 
 static void bt_app_a2d_peer_remove(const esp_bd_addr_t bda)
 {
-    int idx = bt_app_a2d_peer_find(bda);
+    int idx = bt_app_a2d_peer_find_by_bda(bda);
 
     if (idx < 0) {
         return;
     }
+    if (s_a2d_peers[idx].conn_hdl == s_a2d_active_hdl) {
+        s_a2d_active_hdl = ESP_A2D_INVALID_CONN_HDL;
+    }
     s_a2d_peer_num--;
     if (idx != s_a2d_peer_num) {
-        memcpy(s_a2d_peers[idx], s_a2d_peers[s_a2d_peer_num], sizeof(esp_bd_addr_t));
+        s_a2d_peers[idx] = s_a2d_peers[s_a2d_peer_num];
     }
+    memset(&s_a2d_peers[s_a2d_peer_num], 0, sizeof(bt_app_a2d_peer_t));
 }
+
+#if !CONFIG_EXAMPLE_A2DP_SINK_USE_EXTERNAL_CODEC
+static void bt_app_a2d_apply_render_mcc(esp_a2d_mcc_t *mcc)
+{
+    audio_sink_srv_codec_info_update(mcc);
+    /* codec_info_update() disables I2S and does not enable it again. */
+    audio_sink_srv_start();
+}
+#endif
 
 /* Track how many sources are connected so that the device stays visible until
  * every slot is taken, and so that the audio output is only torn down when the
@@ -143,28 +189,95 @@ static void bt_app_a2d_multi_evt_hdl(uint16_t event, void *param)
             return;
         }
         if (a2d->a2d_snk_active_device.active) {
+#if !CONFIG_EXAMPLE_A2DP_SINK_USE_EXTERNAL_CODEC
+            esp_a2d_conn_hdl_t prev_hdl = s_a2d_active_hdl;
+#endif
+            s_a2d_active_hdl = a2d->a2d_snk_active_device.conn_hdl;
             ESP_LOGI(BT_AV_TAG, "A2DP rendering [%02x:%02x:%02x:%02x:%02x:%02x], other sources suspended",
                      bda[0], bda[1], bda[2], bda[3], bda[4], bda[5]);
+#if !CONFIG_EXAMPLE_A2DP_SINK_USE_EXTERNAL_CODEC
+            /* Retune only when the rendered peer changes. The same peer's AUDIO_CFG
+             * already configured I2S, and repeating it disables the channel. */
+            if (prev_hdl != s_a2d_active_hdl) {
+                int idx = bt_app_a2d_peer_find_by_hdl(s_a2d_active_hdl);
+
+                if (idx < 0) {
+                    idx = bt_app_a2d_peer_find_by_bda(bda);
+                }
+                if (idx >= 0 && s_a2d_peers[idx].mcc_valid) {
+                    bt_app_a2d_apply_render_mcc(&s_a2d_peers[idx].mcc);
+                }
+            }
+#endif
         } else {
             ESP_LOGI(BT_AV_TAG, "A2DP no source is being rendered");
+            s_a2d_active_hdl = ESP_A2D_INVALID_CONN_HDL;
         }
         return;
     }
 
+    if (event == ESP_A2D_AUDIO_CFG_EVT) {
+        bt_app_a2d_peer_t *peer = bt_app_a2d_peer_get_or_add(a2d->audio_cfg.conn_hdl,
+                                                            a2d->audio_cfg.remote_bda);
+
+        if (peer != NULL) {
+            peer->mcc = a2d->audio_cfg.mcc;
+            peer->mcc_valid = true;
+        }
+#if !CONFIG_EXAMPLE_A2DP_SINK_USE_EXTERNAL_CODEC
+        /* A single connection never reports SNK_ACTIVE_DEVICE, so the first
+         * configuration claims the output. A later peer only caches its mcc. */
+        if (s_a2d_active_hdl != ESP_A2D_INVALID_CONN_HDL &&
+                a2d->audio_cfg.conn_hdl != s_a2d_active_hdl) {
+            ESP_LOGI(BT_AV_TAG, "A2DP audio cfg cached for conn %u, codec %d (not rendered)",
+                     (unsigned)a2d->audio_cfg.conn_hdl, a2d->audio_cfg.mcc.type);
+            return;
+        }
+        if (s_a2d_active_hdl == ESP_A2D_INVALID_CONN_HDL) {
+            s_a2d_active_hdl = a2d->audio_cfg.conn_hdl;
+        }
+        bt_app_a2d_apply_render_mcc(&a2d->audio_cfg.mcc);
+        return;
+#endif
+    }
+
     if (event == ESP_A2D_CONNECTION_STATE_EVT) {
         if (a2d->conn_stat.state == ESP_A2D_CONNECTION_STATE_CONNECTED) {
-            bt_app_a2d_peer_add(a2d->conn_stat.remote_bda);
+            bt_app_a2d_peer_get_or_add(a2d->conn_stat.conn_hdl, a2d->conn_stat.remote_bda);
         } else if (a2d->conn_stat.state == ESP_A2D_CONNECTION_STATE_DISCONNECTED) {
+#if !CONFIG_EXAMPLE_A2DP_SINK_USE_EXTERNAL_CODEC
+            int gone = bt_app_a2d_peer_find_by_bda(a2d->conn_stat.remote_bda);
+            /* peer_remove clears the rendered handle, so remember it first. */
+            bool rendered_left = (gone >= 0 &&
+                                  s_a2d_peers[gone].conn_hdl == s_a2d_active_hdl);
+#endif
             bt_app_a2d_peer_remove(a2d->conn_stat.remote_bda);
             if (s_a2d_peer_num > 0) {
-                /* another source is still connected, leave its audio path alone */
+#if !CONFIG_EXAMPLE_A2DP_SINK_USE_EXTERNAL_CODEC
+                /* The rendered peer left. One link stays up, so the stack
+                 * reports neither SNK_ACTIVE_DEVICE nor a new AUDIO_CFG, and
+                 * I2S would keep the departed peer's clock. Retune from the
+                 * survivor's cached configuration. Disconnecting a peer that
+                 * is not rendered must not retune: codec_info_update()
+                 * disables the channel that is still playing. */
+                if (rendered_left) {
+                    for (int i = 0; i < s_a2d_peer_num; i++) {
+                        if (!s_a2d_peers[i].mcc_valid) {
+                            continue;
+                        }
+                        s_a2d_active_hdl = s_a2d_peers[i].conn_hdl;
+                        bt_app_a2d_apply_render_mcc(&s_a2d_peers[i].mcc);
+                        break;
+                    }
+                }
+#endif
                 esp_bt_gap_set_scan_mode(ESP_BT_CONNECTABLE, ESP_BT_GENERAL_DISCOVERABLE);
                 return;
             }
         }
     }
 
-#if CONFIG_EXAMPLE_A2DP_SINK_USE_EXTERNAL_CODEC == FALSE
+#if !CONFIG_EXAMPLE_A2DP_SINK_USE_EXTERNAL_CODEC
     bt_a2d_evt_int_codec_hdl(event, param);
 #else
     bt_a2d_evt_ext_codec_hdl(event, param);
@@ -187,7 +300,7 @@ static void bt_app_a2d_evt_hdl(uint16_t event, void *param)
     case ESP_A2D_PROF_STATE_EVT: {
         if (ESP_A2D_INIT_SUCCESS == a2d->a2d_prof_stat.init_state) {
             ESP_LOGI(BT_AV_TAG, "A2DP PROF STATE: Init Complete");
-#if CONFIG_EXAMPLE_A2DP_SINK_USE_EXTERNAL_CODEC == TRUE
+#if CONFIG_EXAMPLE_A2DP_SINK_USE_EXTERNAL_CODEC
             esp_a2d_mcc_t mcc = {0};
             mcc.type = ESP_A2D_MCT_SBC;
             mcc.cie.sbc_info.samp_freq = ESP_A2D_SBC_CIE_SF_16K |
@@ -250,7 +363,7 @@ static void bt_app_a2d_cb(esp_a2d_cb_event_t event, esp_a2d_cb_param_t *param)
         if (event == ESP_A2D_SNK_ACTIVE_DEVICE_EVT) {
             break;
         }
-#if CONFIG_EXAMPLE_A2DP_SINK_USE_EXTERNAL_CODEC == FALSE
+#if !CONFIG_EXAMPLE_A2DP_SINK_USE_EXTERNAL_CODEC
         bt_app_work_dispatch(bt_a2d_evt_int_codec_hdl, event, param, sizeof(esp_a2d_cb_param_t), NULL, NULL);
 #else
         bt_app_work_dispatch(bt_a2d_evt_ext_codec_hdl, event, param, sizeof(esp_a2d_cb_param_t), NULL, NULL);
@@ -264,7 +377,7 @@ static void bt_app_a2d_cb(esp_a2d_cb_event_t event, esp_a2d_cb_param_t *param)
     }
 }
 
-#if CONFIG_EXAMPLE_A2DP_SINK_USE_EXTERNAL_CODEC == FALSE
+#if !CONFIG_EXAMPLE_A2DP_SINK_USE_EXTERNAL_CODEC
 static void bt_app_a2d_data_cb(const uint8_t *data, uint32_t len)
 {
     bt_a2d_data_hdl(data, len);
@@ -375,7 +488,7 @@ static void bt_av_hdl_stack_evt(uint16_t event, void *p_param)
         esp_a2d_register_callback(&bt_app_a2d_cb);
         assert(esp_a2d_sink_init() == ESP_OK);
 
-#if CONFIG_EXAMPLE_A2DP_SINK_USE_EXTERNAL_CODEC == FALSE
+#if !CONFIG_EXAMPLE_A2DP_SINK_USE_EXTERNAL_CODEC
         esp_a2d_sink_register_data_callback(bt_app_a2d_data_cb);
 #else
         esp_a2d_sink_register_audio_data_callback(bt_app_a2d_audio_data_cb);

@@ -20,6 +20,11 @@ extern "C" {
 #define ESP_AVRC_TRANS_LABEL_MAX        15                              /*!< protocol max transaction label (0 to 15) */
 #define ESP_USER_AVRC_TRANS_LABEL_MAX   (ESP_AVRC_TRANS_LABEL_MAX - 2)  /*!< max transaction label for *_by_handle APIs (0 to 13); 14 and 15 are reserved for stack-initiated Play/Pause */
 
+#define ESP_AVRC_PLAY_PRESSED_LABEL     14                              /*!< transaction label reserved for stack */
+#define ESP_AVRC_PLAY_RELEASED_LABEL    15                              /*!< transaction label reserved for stack */
+#define ESP_AVRC_PAUSE_PRESSED_LABEL    ESP_AVRC_PLAY_PRESSED_LABEL     /*!< transaction label reserved for stack */
+#define ESP_AVRC_PAUSE_RELEASED_LABEL   ESP_AVRC_PLAY_RELEASED_LABEL    /*!< transaction label reserved for stack */
+
 #define ESP_AVRC_CA_IMAGE_HANDLE_LEN    7                               /*!< The image handle length is fixed to 7, specified by Basic Image Profile */
 #define ESP_AVRC_CA_MTU_MIN             255                             /*!< Minimal MTU can be used in Cover Art OBEX connection */
 #define ESP_AVRC_CA_MTU_MAX             1691                            /*!< Maximum MTU can be used in Cover Art OBEX connection */
@@ -581,10 +586,14 @@ __attribute__((deprecated("Please use esp_avrc_ct_send_set_player_value_cmd_by_h
  * @param[in]       tl : transaction label, 0 to ESP_USER_AVRC_TRANS_LABEL_MAX (13); 14 and 15 are reserved for the stack
  * @param[in]       attr_id, value_id : see esp_avrc_ct_send_set_player_value_cmd()
  *
+ * @note            If @p conn_hdl is not ESP_A2D_INVALID_CONN_HDL but does not match a
+ *                  connected peer, this function still returns ESP_OK and the command
+ *                  is dropped. No event is reported.
+ *
  * @return
  *                  - ESP_OK: success
  *                  - ESP_ERR_INVALID_STATE: if bluetooth stack is not yet enabled
- *                  - ESP_ERR_INVALID_ARG: invalid connection handle or command argument
+ *                  - ESP_ERR_INVALID_ARG: @p conn_hdl is ESP_A2D_INVALID_CONN_HDL, or @p tl or @p attr_id is invalid
  *                  - ESP_FAIL: others
  */
 esp_err_t esp_avrc_ct_send_set_player_value_cmd_by_handle(esp_a2d_conn_hdl_t conn_hdl, uint8_t tl,
@@ -613,10 +622,14 @@ __attribute__((deprecated("Please use esp_avrc_ct_send_get_rn_capabilities_cmd_b
  * @param[in]       conn_hdl : A2DP connection handle, reported in ESP_A2D_CONNECTION_STATE_EVT
  * @param[in]       tl : transaction label, 0 to ESP_USER_AVRC_TRANS_LABEL_MAX (13); 14 and 15 are reserved for the stack
  *
+ * @note            If @p conn_hdl is not ESP_A2D_INVALID_CONN_HDL but does not match a
+ *                  connected peer, this function still returns ESP_OK and the command
+ *                  is dropped. No event is reported.
+ *
  * @return
  *                  - ESP_OK: success
  *                  - ESP_ERR_INVALID_STATE: if bluetooth stack is not yet enabled
- *                  - ESP_ERR_INVALID_ARG: invalid connection handle or transaction label
+ *                  - ESP_ERR_INVALID_ARG: @p conn_hdl is ESP_A2D_INVALID_CONN_HDL, or @p tl is invalid
  *                  - ESP_FAIL: others
  */
 esp_err_t esp_avrc_ct_send_get_rn_capabilities_cmd_by_handle(esp_a2d_conn_hdl_t conn_hdl, uint8_t tl);
@@ -648,6 +661,10 @@ __attribute__((deprecated("Please use esp_avrc_ct_send_register_notification_cmd
  * @param[in]       conn_hdl : A2DP connection handle, reported in ESP_A2D_CONNECTION_STATE_EVT
  * @param[in]       tl : transaction label, 0 to ESP_USER_AVRC_TRANS_LABEL_MAX (13); 14 and 15 are reserved for the stack
  * @param[in]       event_id, event_parameter : see esp_avrc_ct_send_register_notification_cmd()
+ *
+ * @note            If @p conn_hdl is not ESP_A2D_INVALID_CONN_HDL but does not match a
+ *                  connected peer, this function still returns ESP_OK and the command
+ *                  is dropped. No event is reported.
  */
 esp_err_t esp_avrc_ct_send_register_notification_cmd_by_handle(esp_a2d_conn_hdl_t conn_hdl, uint8_t tl,
                                                                uint8_t event_id, uint32_t event_parameter);
@@ -677,6 +694,10 @@ __attribute__((deprecated("Please use esp_avrc_ct_send_set_absolute_volume_cmd_b
  * @param[in]       conn_hdl : A2DP connection handle, reported in ESP_A2D_CONNECTION_STATE_EVT
  * @param[in]       tl : transaction label, 0 to ESP_USER_AVRC_TRANS_LABEL_MAX (13); 14 and 15 are reserved for the stack
  * @param[in]       volume : see esp_avrc_ct_send_set_absolute_volume_cmd()
+ *
+ * @note            If @p conn_hdl is not ESP_A2D_INVALID_CONN_HDL but does not match a
+ *                  connected peer, this function still returns ESP_OK and the command
+ *                  is dropped. No event is reported.
  */
 esp_err_t esp_avrc_ct_send_set_absolute_volume_cmd_by_handle(esp_a2d_conn_hdl_t conn_hdl, uint8_t tl, uint8_t volume);
 
@@ -704,6 +725,10 @@ __attribute__((deprecated("Please use esp_avrc_ct_send_metadata_cmd_by_handle() 
  * @param[in]       conn_hdl : A2DP connection handle, reported in ESP_A2D_CONNECTION_STATE_EVT
  * @param[in]       tl : transaction label, 0 to ESP_USER_AVRC_TRANS_LABEL_MAX (13); 14 and 15 are reserved for the stack
  * @param[in]       attr_mask : see esp_avrc_ct_send_metadata_cmd()
+ *
+ * @note            If @p conn_hdl is not ESP_A2D_INVALID_CONN_HDL but does not match a
+ *                  connected peer, this function still returns ESP_OK and the command
+ *                  is dropped. No event is reported.
  */
 esp_err_t esp_avrc_ct_send_metadata_cmd_by_handle(esp_a2d_conn_hdl_t conn_hdl, uint8_t tl, uint8_t attr_mask);
 
@@ -734,6 +759,10 @@ __attribute__((deprecated("Please use esp_avrc_ct_send_passthrough_cmd_by_handle
  * @param[in]       conn_hdl : A2DP connection handle, reported in ESP_A2D_CONNECTION_STATE_EVT
  * @param[in]       tl : transaction label, 0 to ESP_USER_AVRC_TRANS_LABEL_MAX (13); 14 and 15 are reserved for the stack
  * @param[in]       key_code, key_state : see esp_avrc_ct_send_passthrough_cmd()
+ *
+ * @note            If @p conn_hdl is not ESP_A2D_INVALID_CONN_HDL but does not match a
+ *                  connected peer, this function still returns ESP_OK and the command
+ *                  is dropped. No event is reported.
  */
 esp_err_t esp_avrc_ct_send_passthrough_cmd_by_handle(esp_a2d_conn_hdl_t conn_hdl, uint8_t tl, uint8_t key_code,
                                                      uint8_t key_state);
@@ -759,6 +788,10 @@ __attribute__((deprecated("Please use esp_avrc_ct_send_get_play_status_cmd_by_ha
  *
  * @param[in]       conn_hdl : A2DP connection handle, reported in ESP_A2D_CONNECTION_STATE_EVT
  * @param[in]       tl : transaction label, 0 to ESP_USER_AVRC_TRANS_LABEL_MAX (13); 14 and 15 are reserved for the stack
+ *
+ * @note            If @p conn_hdl is not ESP_A2D_INVALID_CONN_HDL but does not match a
+ *                  connected peer, this function still returns ESP_OK and the command
+ *                  is dropped. No event is reported.
  */
 esp_err_t esp_avrc_ct_send_get_play_status_cmd_by_handle(esp_a2d_conn_hdl_t conn_hdl, uint8_t tl);
 
@@ -963,6 +996,10 @@ __attribute__((deprecated("Please use esp_avrc_tg_send_rn_rsp_by_handle() instea
  *
  * @param[in]       conn_hdl : A2DP connection handle, reported in ESP_A2D_CONNECTION_STATE_EVT
  * @param[in]       event_id, rsp, param : see esp_avrc_tg_send_rn_rsp()
+ *
+ * @note            If @p conn_hdl is not ESP_A2D_INVALID_CONN_HDL but does not match a
+ *                  connected peer, this function still returns ESP_OK and the response
+ *                  is dropped. No event is reported.
  */
 esp_err_t esp_avrc_tg_send_rn_rsp_by_handle(esp_a2d_conn_hdl_t conn_hdl, esp_avrc_rn_event_ids_t event_id,
                                             esp_avrc_rn_rsp_t rsp, esp_avrc_rn_param_t *param);

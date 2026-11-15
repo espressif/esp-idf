@@ -1311,13 +1311,34 @@ void bta_av_co_audio_open(tBTA_AV_HNDL hndl, tBTA_AV_CODEC codec_type, UINT8 *p_
 void bta_av_co_audio_close(tBTA_AV_HNDL hndl, tBTA_AV_CODEC codec_type, UINT16 mtu)
 
 {
-    tBTA_AV_CO_PEER *p_peer;
     UNUSED(codec_type);
     UNUSED(mtu);
 
     FUNC_TRACE();
 
     APPL_TRACE_DEBUG("bta_av_co_audio_close");
+
+    bta_av_co_clear_peer(hndl);
+}
+
+/*******************************************************************************
+ **
+ ** Function         bta_av_co_clear_peer
+ **
+ ** Description      Clear the codec-coordination state of one connection.
+ **
+ ** Returns          Nothing
+ **
+ *******************************************************************************/
+void bta_av_co_clear_peer(tBTA_AV_HNDL hndl)
+{
+    tBTA_AV_CO_PEER *p_peer;
+
+    if (hndl == ESP_A2D_INVALID_CONN_HDL) {
+        return;
+    }
+
+    osi_mutex_global_lock();
 
     /* Retrieve the peer info */
     p_peer = bta_av_co_get_peer(hndl);
@@ -1337,6 +1358,10 @@ void bta_av_co_audio_close(tBTA_AV_HNDL hndl, tBTA_AV_CODEC codec_type, UINT16 m
 #if (BTC_AV_EXT_CODEC == TRUE)
         bta_av_co_cb.cur_seid = 0;
 #endif
+#if defined(BTA_AV_CO_CP_SCMS_T) && (BTA_AV_CO_CP_SCMS_T == TRUE)
+        bta_av_co_cb.cp.active = FALSE;
+#endif
+        bta_av_co_audio_codec_reset();
     } else {
         int i;
 
@@ -1349,6 +1374,8 @@ void bta_av_co_audio_close(tBTA_AV_HNDL hndl, tBTA_AV_CODEC codec_type, UINT16 m
             }
         }
     }
+
+    osi_mutex_global_unlock();
 }
 
 /*******************************************************************************
@@ -2607,6 +2634,12 @@ void bta_av_co_init(tBTC_AV_CODEC_INFO *codec_caps)
 
     /* Reset the control block */
     memset(&bta_av_co_cb, 0, sizeof(bta_av_co_cb));
+    /* memset leaves cur_codec_cfg.id at 0, which is BTC_AV_CODEC_SBC. An
+     * unused slot must read as "no codec", or closing the last real peer
+     * copies that zeroed slot into the shared configuration. */
+    for (int i = 0; i < BTA_AV_CO_NUM_ELEMENTS(bta_av_co_cb.peers); i++) {
+        bta_av_co_cb.peers[i].cur_codec_cfg.id = BTC_AV_CODEC_NONE;
+    }
 
     if (codec_caps) {
 #if (BTC_AV_EXT_CODEC == TRUE)
@@ -2761,7 +2794,10 @@ void bta_av_co_get_cur_codec_info(tBTC_AV_CODEC_INFO *cur_codec_info)
  **
  ** Function         bta_av_co_get_codec_info_by_hndl
  **
- ** Description      Get the codec info a single connection was configured with
+ ** Description      Get the codec info a single connection was configured with.
+ **                  Does not fall back to the global configuration. When this
+ **                  connection has not negotiated a codec, id is set to
+ **                  BTC_AV_CODEC_NONE.
  **
  *******************************************************************************/
 void bta_av_co_get_codec_info_by_hndl(tBTA_AV_HNDL hndl, tBTC_AV_CODEC_INFO *cur_codec_info)

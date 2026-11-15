@@ -151,6 +151,12 @@ typedef union {
     struct {
         tBTA_AV_HNDL hndl;      /* connection the codec configuration belongs to */
         esp_a2d_mcc_t mcc;
+#if BTC_AV_SINK_INCLUDED
+        /* Raw AVDT codec. The BTC task stores it before the state machine
+         * runs, so a CLOSE queued earlier cannot leave the snapshot invalid. */
+        BOOLEAN has_codec;
+        UINT8 codec_info[AVDT_CODEC_SIZE];
+#endif
     } config;
     // BTC_AV_SINK_API_REG_SEP_EVT or BTC_AV_SRC_API_REG_SEP_EVT
     struct {
@@ -237,18 +243,6 @@ void btc_dispatch_sm_event(btc_av_sm_event_t event, void *p_data, int len);
 
 /*******************************************************************************
 **
-** Function         btc_av_is_connected
-**
-** Description      Checks if av has a connected sink
-**
-** Returns          BOOLEAN
-**
-*******************************************************************************/
-
-BOOLEAN btc_av_is_connected(void);
-
-/*******************************************************************************
-**
 ** Function         btc_av_is_started
 **
 ** Description      Checks if av is started
@@ -289,7 +283,10 @@ BOOLEAN btc_av_get_active_peer(esp_a2d_conn_hdl_t *conn_hdl);
 ** Function         btc_av_set_active_peer
 **
 ** Description      Choose which connected peer gets rendered. Accepts OPENED
-**                  or STARTED. An idle target is sent AVRCP Play.
+**                  or STARTED. An idle target is sent AVRCP Play. Returns
+**                  FALSE and reports ESP_BT_STATUS_BUSY, without changing the
+**                  selection, when a stack Play/Pause pair for the target or
+**                  the previously rendered peer is still outstanding.
 **
 ** Returns          TRUE when the peer became the active one
 **

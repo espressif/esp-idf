@@ -31,6 +31,12 @@
 void btc_a2dp_on_init(void)
 {
     BTC_TRACE_EVENT("A2DP Initialized.");
+#if (BTC_AV_EXT_CODEC == TRUE)
+    tBTC_AV_CODEC_INFO *codec_caps = btc_av_codec_cap_get();
+#else
+    tBTC_AV_CODEC_INFO *codec_caps = NULL;
+#endif
+    bta_av_co_init(codec_caps);
 }
 
 /*****************************************************************************
@@ -49,12 +55,6 @@ void btc_a2dp_on_idle(void)
     }
 #endif // BTC_AV_SRC_INCLUDED
 
-#if (BTC_AV_EXT_CODEC == TRUE)
-    tBTC_AV_CODEC_INFO *codec_caps = btc_av_codec_cap_get();
-#else
-    tBTC_AV_CODEC_INFO *codec_caps = NULL;
-#endif
-    bta_av_co_init(codec_caps);
 
 #if BTC_AV_SINK_INCLUDED
     if (btc_av_get_peer_sep() == AVDT_TSEP_SRC && btc_av_get_service_id() == BTA_A2DP_SINK_SERVICE_ID) {

@@ -193,6 +193,9 @@ typedef struct {
     UINT16                      rc_tg_features;
     BD_ADDR                     rc_addr;
     btc_rc_reg_ntf_t            rc_ntf[MAX_RC_NOTIFICATIONS];
+    /* Non-zero while a stack Play/Pause pair (labels 14/15) is outstanding.
+     * Boot time in ms of the send; 0 means none. */
+    UINT32                      stack_pt_ms;
 } btc_rc_cb_t;
 
 /*****************************************************************************
@@ -231,6 +234,21 @@ BOOLEAN btc_rc_get_connected_peer(BD_ADDR peer_addr);
 **
 *******************************************************************************/
 BOOLEAN btc_rc_get_peer_by_handle(UINT8 rc_handle, BD_ADDR peer_addr);
+
+/*******************************************************************************
+**
+** Function         btc_rc_stack_pt_busy_peer
+**
+** Description      TRUE when a stack Play/Pause pair (labels 14/15) is still
+**                  outstanding for this peer. FALSE when AVRCP CT is absent,
+**                  the peer has no target role, the pair has completed, or the
+**                  outstanding window has elapsed. A FALSE result is not a
+**                  reason to reject a set-active request.
+**
+** Returns          BOOLEAN
+**
+*******************************************************************************/
+BOOLEAN btc_rc_stack_pt_busy_peer(const BD_ADDR peer_addr);
 
 /*******************************************************************************
 **

@@ -662,6 +662,12 @@ static void btc_av_set_active(btc_av_cb_t *p_cb, BOOLEAN force)
             btc_a2dp_sink_reset_decoder(p_cb->codec_info);
         }
 #endif
+#if (BTC_AV_EXT_CODEC == TRUE)
+        if (p_cb->sm_handle != NULL &&
+                btc_sm_get_state(p_cb->sm_handle) == BTC_AV_STATE_STARTED) {
+            btc_a2dp_control_set_datachnl_stat(TRUE);
+        }
+#endif
         btc_a2dp_sink_set_rx_flush(FALSE);
         BTC_TRACE_DEBUG("active a2dp sink stream is h:0x%x", p_cb->bta_handle);
     }
@@ -906,10 +912,8 @@ static BOOLEAN btc_av_state_idle_handler(btc_sm_event_t event, void *p_data, voi
         p_cb->codec_info_valid = FALSE;
         p_cb->displace_ms = 0;
 #endif
-        /* Deinit posts BTA_AvClose before BTA_AvDisable, so CLOSE lands here
-         * while BTA is still deregistering and may read bta_av_co_cb.
-         * btc_a2dp_on_idle() reinitializes that block. The media path is
-         * shared: only tear it down when this connection owned it. */
+        /* The media path is shared: only tear it down when this connection
+         * owned it. Skip that during deinit; clean_up releases the path. */
         if (!btc_a2d_is_deinit_ongoing() &&
                 (btc_av_common.active_idx == BTC_AV_IDX_INVALID ||
                  btc_av_common.active_idx == (int)p_cb->idx)) {
@@ -2415,11 +2419,6 @@ static void bte_av_media_sink_cback_impl(UINT8 idx, tBTA_AV_EVT event, tBTA_AV_M
         btc_msg_t msg;
         btc_av_args_t arg;
 
-        /* remember the codec of this connection, it is needed again when this
-         * connection takes over the shared decoder */
-        memcpy(p_cb->codec_info, p_codec, AVDT_CODEC_SIZE);
-        p_cb->codec_info_valid = TRUE;
-
 #if (BTC_AV_EXT_CODEC == FALSE)
         /* re-configuring the decoder would cut off the connection that is being
          * rendered, it is done on hand over instead */
@@ -2434,6 +2433,10 @@ static void bte_av_media_sink_cback_impl(UINT8 idx, tBTA_AV_EVT event, tBTA_AV_M
         msg.act = BTC_AV_CONFIG_EVT;
         memset(&arg, 0, sizeof(btc_av_args_t));
         arg.config.hndl = p_cb->bta_handle;
+        /* Published on the BTC task. A CLOSE already in that queue clears the
+         * snapshot, and this event, queued after it, stores the new one. */
+        arg.config.has_codec = TRUE;
+        memcpy(arg.config.codec_info, p_codec, AVDT_CODEC_SIZE);
 
         if (p_codec[BTA_AV_CODEC_TYPE_IDX] == A2D_MEDIA_CT_SBC) {
             tA2D_SBC_CIE sbc_cie;
@@ -2831,20 +2834,6 @@ bt_status_t btc_av_sink_execute_service(BOOLEAN b_enable)
     return BT_STATUS_SUCCESS;
 }
 
-/*******************************************************************************
-**
-** Function         btc_av_is_connected
-**
-** Description      Checks if av has a connected sink
-**
-** Returns          BOOLEAN
-**
-*******************************************************************************/
-BOOLEAN btc_av_is_connected(void)
-{
-    return (btc_av_any_connected_cb() != NULL);
-}
-
 BOOLEAN btc_av_is_started(void)
 {
 #if A2D_DYNAMIC_MEMORY == TRUE
@@ -2942,7 +2931,9 @@ static void btc_a2d_sink_get_active_device(void)
 ** Description      Choose which connected peer gets rendered. The peer only
 **                  needs to be connected (OPENED or STARTED). A started peer
 **                  on the other connection is paused/suspended. An idle
-**                  (OPENED) target is sent AVRCP Play so it can start.
+**                  (OPENED) target is sent AVRCP Play so it can start. If a
+**                  stack Play/Pause pair for either peer is still outstanding,
+**                  the request is rejected and the selection stays as it is.
 **
 ** Returns          TRUE when the peer became the active one
 **
@@ -2951,6 +2942,7 @@ BOOLEAN btc_av_set_active_peer(esp_a2d_conn_hdl_t conn_hdl)
 {
 #if BTC_AV_SINK_INCLUDED
     btc_av_cb_t *p_cb = NULL;
+    btc_av_cb_t *p_prev = NULL;
     btc_sm_state_t state;
     esp_bt_status_t status;
 
@@ -2977,7 +2969,26 @@ BOOLEAN btc_av_set_active_peer(esp_a2d_conn_hdl_t conn_hdl)
         status =  ESP_BT_STATUS_FAIL;
         goto _error;
     }
+    /* Do not change the selection while a stack Play/Pause pair is still
+     * outstanding. A failure status leaves the current device rendered, and
+     * the caller can retry. No AVRCP session is not busy: those commands
+     * stay a silent skip. */
+    if (state != BTC_AV_STATE_STARTED &&
+            btc_rc_stack_pt_busy_peer(p_cb->peer_bda.address)) {
+        BTC_TRACE_WARNING("stack Play/Pause still outstanding, reject set-active");
+        status = ESP_BT_STATUS_BUSY;
+        goto _error;
+    }
     if (btc_av_common.active_idx != (int)p_cb->idx) {
+        p_prev = btc_av_active_cb();
+
+        if (p_prev != NULL && p_prev->sm_handle != NULL &&
+                btc_sm_get_state(p_prev->sm_handle) == BTC_AV_STATE_STARTED &&
+                btc_rc_stack_pt_busy_peer(p_prev->peer_bda.address)) {
+            BTC_TRACE_WARNING("stack Play/Pause still outstanding, reject set-active");
+            status = ESP_BT_STATUS_BUSY;
+            goto _error;
+        }
         btc_av_take_over_active(p_cb, TRUE);
     } else {
         /* already the rendered peer; still ack the set-active request */
@@ -3408,6 +3419,18 @@ void btc_a2dp_cb_handler(btc_msg_t *msg)
     btc_av_cb_t *p_cb = btc_av_route_cb_event(msg->act, (tBTA_AV *)msg->arg);
 
     if (p_cb != NULL) {
+#if BTC_AV_SINK_INCLUDED
+        if (msg->act == BTC_AV_CONFIG_EVT) {
+            btc_av_args_t *arg = (btc_av_args_t *)msg->arg;
+
+            /* Before the state machine: IDLE entered by an earlier CLOSE must
+             * not be the last writer of this connection's codec snapshot. */
+            if (arg->config.has_codec) {
+                memcpy(p_cb->codec_info, arg->config.codec_info, AVDT_CODEC_SIZE);
+                p_cb->codec_info_valid = TRUE;
+            }
+        }
+#endif
         btc_sm_dispatch(p_cb->sm_handle, msg->act, (void *)(msg->arg));
     } else {
         BTC_TRACE_WARNING("dropped event %d, no matching connection", msg->act);

@@ -49,7 +49,6 @@ typedef struct {
 } bt_app_a2d_peer_t;
 
 static QueueHandle_t s_a2dp_raw_q;
-static TaskHandle_t s_a2dp_dec_task;
 static SemaphoreHandle_t s_a2dp_raw_mux;
 static bool s_a2dp_raw_started;
 static uint32_t s_a2dp_raw_pkt_cnt;
@@ -318,44 +317,53 @@ static void bt_app_a2d_raw_audio_task(void *arg)
     for (;;) {
         xQueueReceive(s_a2dp_raw_q, &audio_buf, portMAX_DELAY);
 
-        if (!s_dec_opened) {
+        /*
+         * The render path replaces s_dec_hdl while holding this mutex. Hold
+         * it for the entire decoder/I2S operation so a codec change cannot
+         * close a decoder that is in esp_audio_dec_process().
+         */
+        if (s_a2dp_raw_mux == NULL ||
+                xSemaphoreTake(s_a2dp_raw_mux, portMAX_DELAY) != pdTRUE) {
             esp_a2d_audio_buff_free(audio_buf);
             continue;
         }
 
-        esp_audio_dec_in_raw_t in_raw = {
-            .buffer = audio_buf->data,
-            .len = audio_buf->data_len,
-        };
-        esp_audio_dec_out_frame_t out_frame = {
-            .buffer = out_buf,
-            .len = max_out_size,
-        };
+        if (s_dec_opened) {
+            esp_audio_dec_in_raw_t in_raw = {
+                .buffer = audio_buf->data,
+                .len = audio_buf->data_len,
+            };
+            esp_audio_dec_out_frame_t out_frame = {
+                .buffer = out_buf,
+                .len = max_out_size,
+            };
 
-        while (in_raw.len > 0) {
-            esp_audio_err_t dec_ret = esp_audio_dec_process(s_dec_hdl, &in_raw, &out_frame);
-            if (dec_ret != ESP_AUDIO_ERR_OK && dec_ret != ESP_AUDIO_ERR_BUFF_NOT_ENOUGH) {
-                ESP_LOGW(BT_AV_TAG, "esp_audio_dec_process failed: %d", dec_ret);
-                break;
-            }
-
-            if (dec_ret == ESP_AUDIO_ERR_BUFF_NOT_ENOUGH) {
-                uint8_t *new_dec_buff = (uint8_t *)realloc(out_frame.buffer, (size_t)max_out_size * 2u);
-                if (new_dec_buff == NULL) {
+            while (in_raw.len > 0) {
+                esp_audio_err_t dec_ret = esp_audio_dec_process(s_dec_hdl, &in_raw, &out_frame);
+                if (dec_ret != ESP_AUDIO_ERR_OK && dec_ret != ESP_AUDIO_ERR_BUFF_NOT_ENOUGH) {
+                    ESP_LOGW(BT_AV_TAG, "esp_audio_dec_process failed: %d", dec_ret);
                     break;
                 }
-                max_out_size *= 2;
-                out_buf = new_dec_buff;
-                out_frame.buffer = new_dec_buff;
-                out_frame.len = max_out_size;
-                continue;
-            }
 
-            audio_sink_srv_data_output(out_frame.buffer, out_frame.decoded_size);
-            in_raw.buffer += in_raw.consumed;
-            in_raw.len -= in_raw.consumed;
+                if (dec_ret == ESP_AUDIO_ERR_BUFF_NOT_ENOUGH) {
+                    uint8_t *new_dec_buff = (uint8_t *)realloc(out_frame.buffer, (size_t)max_out_size * 2u);
+                    if (new_dec_buff == NULL) {
+                        break;
+                    }
+                    max_out_size *= 2;
+                    out_buf = new_dec_buff;
+                    out_frame.buffer = new_dec_buff;
+                    out_frame.len = max_out_size;
+                    continue;
+                }
+
+                audio_sink_srv_data_output(out_frame.buffer, out_frame.decoded_size);
+                in_raw.buffer += in_raw.consumed;
+                in_raw.len -= in_raw.consumed;
+            }
         }
 
+        xSemaphoreGive(s_a2dp_raw_mux);
         esp_a2d_audio_buff_free(audio_buf);
     }
 }
@@ -383,10 +391,9 @@ static void bt_a2d_sink_ext_codec_postproc_start(void)
         return;
     }
     if (xTaskCreate(bt_app_a2d_raw_audio_task, "a2dp_raw_dec", BT_A2DP_DECODE_TASK_STACK,
-                    NULL, BT_A2DP_DECODE_TASK_PRIO, &s_a2dp_dec_task) != pdPASS) {
+                    NULL, BT_A2DP_DECODE_TASK_PRIO, NULL) != pdPASS) {
         vQueueDelete(s_a2dp_raw_q);
         s_a2dp_raw_q = NULL;
-        s_a2dp_dec_task = NULL;
         xSemaphoreGive(s_a2dp_raw_mux);
         ESP_LOGE(BT_AV_TAG, "A2DP raw decoder task create failed");
         return;
@@ -396,14 +403,11 @@ static void bt_a2d_sink_ext_codec_postproc_start(void)
     ESP_LOGI(BT_AV_TAG, "A2DP raw postproc (queue %d) started", BT_A2DP_RAW_Q_DEPTH);
 }
 
-/* Caller must hold s_a2dp_raw_mux. Leaves the decode task suspended. */
+/* Caller must hold s_a2dp_raw_mux. */
 static void bt_a2d_sink_ext_codec_flush_queue_locked(void)
 {
     esp_a2d_audio_buff_t *audio_buf;
 
-    if (s_a2dp_dec_task != NULL) {
-        vTaskSuspend(s_a2dp_dec_task);
-    }
     if (s_a2dp_raw_q != NULL) {
         while (xQueueReceive(s_a2dp_raw_q, &audio_buf, 0) == pdTRUE) {
             esp_a2d_audio_buff_free(audio_buf);
@@ -426,9 +430,6 @@ static void bt_a2d_sink_ext_codec_postproc_flush_ex(bool close_decoder)
     if (close_decoder) {
         bt_app_audio_decoder_close();
     }
-    if (s_a2dp_dec_task != NULL) {
-        vTaskResume(s_a2dp_dec_task);
-    }
     xSemaphoreGive(s_a2dp_raw_mux);
 }
 
@@ -438,8 +439,8 @@ static void bt_a2d_sink_ext_codec_postproc_flush(void)
 }
 
 /* Rebuild the shared decoder/I2S for the stream being rendered. The decode
- * task stays suspended across flush and decoder replace so it cannot consume
- * old frames with the new decoder (or the reverse).
+ * task uses the same mutex around decoder/I2S access, so it cannot run while
+ * the decoder is being replaced.
  * codec_info_update() stops I2S; pass restart_i2s=true when the output should
  * keep running (active switch / reconfig). Leave it false on the first
  * AUDIO_CFG so CONNECTED can start I2S as usual. */
@@ -454,9 +455,6 @@ static void bt_app_render_apply(const esp_a2d_mcc_t *mcc, bool restart_i2s)
         audio_sink_srv_codec_info_update((esp_a2d_mcc_t *)mcc);
         if (restart_i2s) {
             audio_sink_srv_start();
-        }
-        if (s_a2dp_dec_task != NULL) {
-            vTaskResume(s_a2dp_dec_task);
         }
         xSemaphoreGive(s_a2dp_raw_mux);
     } else {

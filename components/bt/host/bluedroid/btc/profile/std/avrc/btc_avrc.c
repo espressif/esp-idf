@@ -24,6 +24,7 @@
 #include "esp_avrc_api.h"
 #include "osi/mutex.h"
 #include "osi/allocator.h"
+#include "osi/alarm.h"
 
 #if BTC_AV_INCLUDED
 
@@ -134,7 +135,7 @@ static btc_rc_cb_t *btc_rc_alloc_cb(void)
 **                  on. That is the session of the device whose audio is being
 **                  rendered, or any connected one if none is rendering.
 **
-** Returns          Pointer to a control block, never NULL
+** Returns          Pointer to a control block, NULL only if btc_rc_cb_arr[0] is NULL
 **
 *******************************************************************************/
 static btc_rc_cb_t *btc_rc_default_cb(void)
@@ -691,6 +692,7 @@ static void handle_rc_connect (tBTA_AV_RC_OPEN *p_rc_open)
         p_cb->rc_features = p_rc_open->peer_features;
         p_cb->rc_connected = TRUE;
         p_cb->rc_handle = p_rc_open->rc_handle;
+        p_cb->stack_pt_ms = 0;
 
         bdcpy(rc_addr.address, p_cb->rc_addr);
         // callback to application
@@ -726,6 +728,7 @@ static void handle_rc_connect (tBTA_AV_RC_OPEN *p_rc_open)
         }
         if (p_cb != NULL) {
             p_cb->rc_connected = FALSE;
+            p_cb->stack_pt_ms = 0;
         }
     }
 }
@@ -765,6 +768,7 @@ static void handle_rc_disconnect (tBTA_AV_RC_CLOSE *p_rc_close)
     p_cb->rc_features = 0;
     p_cb->rc_ct_features = 0;
     p_cb->rc_tg_features = 0;
+    p_cb->stack_pt_ms = 0;
     memset(p_cb->rc_addr, 0, sizeof(BD_ADDR));
     memset(p_cb->rc_ntf, 0, sizeof(p_cb->rc_ntf));
 
@@ -1240,6 +1244,11 @@ static void handle_rc_passthrough_rsp ( tBTA_AV_REMOTE_RSP *p_remote_rsp)
                           p_remote_rsp->rc_handle);
         return;
     }
+
+    if (p_remote_rsp->label == ESP_AVRC_PLAY_RELEASED_LABEL &&
+            (p_remote_rsp->rc_id == BTA_AV_RC_PLAY || p_remote_rsp->rc_id == BTA_AV_RC_PAUSE)) {
+        p_cb->stack_pt_ms = 0;
+    }
     if (p_cb->rc_features & BTA_AV_FEAT_RCTG) {
         int key_state;
         if (p_remote_rsp->key_state == AVRC_STATE_RELEASE) {
@@ -1444,6 +1453,65 @@ BOOLEAN btc_rc_get_peer_by_handle(UINT8 rc_handle, BD_ADDR peer_addr)
     return TRUE;
 }
 
+#if (AVRC_CTLR_INCLUDED == TRUE)
+/* How long a stack Play/Pause pair may stay outstanding without a release
+ * response. The next send after this treats the pair as lost and may proceed. */
+#define BTC_RC_STACK_PT_TIMEOUT_MS      1000
+
+static BOOLEAN btc_rc_stack_pt_busy(btc_rc_cb_t *p_cb)
+{
+    UINT32 now;
+    UINT32 elapsed;
+
+    if (p_cb->stack_pt_ms == 0) {
+        return FALSE;
+    }
+    now = osi_time_get_os_boottime_ms();
+    elapsed = now - p_cb->stack_pt_ms;
+    if (elapsed >= BTC_RC_STACK_PT_TIMEOUT_MS) {
+        p_cb->stack_pt_ms = 0;
+        return FALSE;
+    }
+    return TRUE;
+}
+
+static void btc_rc_stack_pt_mark(btc_rc_cb_t *p_cb)
+{
+    p_cb->stack_pt_ms = osi_time_get_os_boottime_ms();
+    if (p_cb->stack_pt_ms == 0) {
+        p_cb->stack_pt_ms = 1;
+    }
+}
+#endif
+
+/*******************************************************************************
+**
+** Function         btc_rc_stack_pt_busy_peer
+**
+** Description      See btc_avrc.h.
+**
+** Returns          BOOLEAN
+**
+*******************************************************************************/
+BOOLEAN btc_rc_stack_pt_busy_peer(const BD_ADDR peer_addr)
+{
+#if (AVRC_CTLR_INCLUDED == TRUE)
+    btc_rc_cb_t *p_cb;
+
+    if (peer_addr == NULL) {
+        return FALSE;
+    }
+    p_cb = btc_rc_find_cb_by_addr(peer_addr);
+    if (p_cb == NULL || !(p_cb->rc_features & BTA_AV_FEAT_RCTG)) {
+        return FALSE;
+    }
+    return btc_rc_stack_pt_busy(p_cb);
+#else
+    UNUSED(peer_addr);
+    return FALSE;
+#endif
+}
+
 /*******************************************************************************
 **
 ** Function         btc_rc_pause_peer
@@ -1466,9 +1534,14 @@ BOOLEAN btc_rc_pause_peer(const BD_ADDR peer_addr)
     if (p_cb == NULL || !(p_cb->rc_features & BTA_AV_FEAT_RCTG)) {
         return FALSE;
     }
-    /* Labels 14/15 are reserved for the stack; application APIs only accept 0-13. */
-    BTA_AvRemoteCmd(p_cb->rc_handle, ESP_AVRC_TRANS_LABEL_MAX - 1, BTA_AV_RC_PAUSE, BTA_AV_STATE_PRESS);
-    BTA_AvRemoteCmd(p_cb->rc_handle, ESP_AVRC_TRANS_LABEL_MAX, BTA_AV_RC_PAUSE, BTA_AV_STATE_RELEASE);
+    if (btc_rc_stack_pt_busy(p_cb)) {
+        BTC_TRACE_DEBUG("stack Play/Pause still outstanding, skip pause");
+        return FALSE;
+    }
+
+    btc_rc_stack_pt_mark(p_cb);
+    BTA_AvRemoteCmd(p_cb->rc_handle, ESP_AVRC_PAUSE_PRESSED_LABEL, BTA_AV_RC_PAUSE, BTA_AV_STATE_PRESS);
+    BTA_AvRemoteCmd(p_cb->rc_handle, ESP_AVRC_PAUSE_RELEASED_LABEL, BTA_AV_RC_PAUSE, BTA_AV_STATE_RELEASE);
     return TRUE;
 #else
     UNUSED(peer_addr);
@@ -1498,9 +1571,14 @@ BOOLEAN btc_rc_play_peer(const BD_ADDR peer_addr)
     if (p_cb == NULL || !(p_cb->rc_features & BTA_AV_FEAT_RCTG)) {
         return FALSE;
     }
+    if (btc_rc_stack_pt_busy(p_cb)) {
+        BTC_TRACE_DEBUG("stack Play/Pause still outstanding, skip play");
+        return FALSE;
+    }
     /* Labels 14/15 are reserved for the stack; application APIs only accept 0-13. */
-    BTA_AvRemoteCmd(p_cb->rc_handle, ESP_AVRC_TRANS_LABEL_MAX - 1, BTA_AV_RC_PLAY, BTA_AV_STATE_PRESS);
-    BTA_AvRemoteCmd(p_cb->rc_handle, ESP_AVRC_TRANS_LABEL_MAX, BTA_AV_RC_PLAY, BTA_AV_STATE_RELEASE);
+    btc_rc_stack_pt_mark(p_cb);
+    BTA_AvRemoteCmd(p_cb->rc_handle, ESP_AVRC_PLAY_PRESSED_LABEL, BTA_AV_RC_PLAY, BTA_AV_STATE_PRESS);
+    BTA_AvRemoteCmd(p_cb->rc_handle, ESP_AVRC_PLAY_RELEASED_LABEL, BTA_AV_RC_PLAY, BTA_AV_STATE_RELEASE);
     return TRUE;
 #else
     UNUSED(peer_addr);
