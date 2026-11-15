@@ -261,6 +261,17 @@ void bta_av_co_init(tBTC_AV_CODEC_INFO *codec_caps);
 
 /*******************************************************************************
  **
+ ** Function         bta_av_co_clear_peer
+ **
+ ** Description      Clear codec-coordination state for one connection
+ **
+ ** Returns          Nothing
+ **
+ *******************************************************************************/
+void bta_av_co_clear_peer(tBTA_AV_HNDL hndl);
+
+/*******************************************************************************
+ **
  ** Function         bta_av_co_peer_cp_supported
  **
  ** Description      Checks if the peer supports CP
@@ -308,9 +319,8 @@ void bta_av_co_get_cur_codec_info(tBTC_AV_CODEC_INFO *cur_codec_info);
  ** Function         bta_av_co_get_codec_info_by_hndl
  **
  ** Description      Get the codec info a single connection was configured with.
- **                  Falls back to the global configuration when the connection
- **                  has not negotiated one yet.
- **
+ **                  id is set to BTC_AV_CODEC_NONE when this connection has not
+ **                  negotiated a codec.
  *******************************************************************************/
 void bta_av_co_get_codec_info_by_hndl(tBTA_AV_HNDL hndl, tBTC_AV_CODEC_INFO *cur_codec_info);
 

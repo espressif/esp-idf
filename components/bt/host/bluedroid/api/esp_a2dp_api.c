@@ -529,14 +529,18 @@ esp_err_t esp_a2d_source_connect(esp_bd_addr_t remote_bda)
     }
 
     btc_msg_t msg = {0};
+    bt_status_t stat;
+    btc_av_args_t arg;
+
     msg.sig = BTC_SIG_API_CALL;
     msg.pid = BTC_PID_A2DP;
     msg.act = BTC_AV_SRC_API_CONNECT_EVT;
 
-    btc_av_args_t arg = {0};
-    memcpy(&(arg.src_connect), remote_bda, sizeof(bt_bdaddr_t));
+    memset(&arg, 0, sizeof(btc_av_args_t));
 
-    bt_status_t stat = btc_transfer_context(&msg, &arg, sizeof(btc_av_args_t), NULL, NULL);
+    /* Switch to BTC context */
+    memcpy(&(arg.src_connect), remote_bda, sizeof(bt_bdaddr_t));
+    stat = btc_transfer_context(&msg, &arg, sizeof(btc_av_args_t), NULL, NULL);
     return (stat == BT_STATUS_SUCCESS) ? ESP_OK : ESP_FAIL;
 }
 
