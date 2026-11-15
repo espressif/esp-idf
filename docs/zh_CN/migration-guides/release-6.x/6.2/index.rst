@@ -11,3 +11,4 @@
     security
     system
     tools
+    :SOC_WIFI_SUPPORTED: wifi

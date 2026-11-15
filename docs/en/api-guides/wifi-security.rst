@@ -84,7 +84,7 @@ The following EAP methods are supported:
 
 - **PEAP**
 
-  A Protected EAP method requiring a username and password.
+  A Protected EAP method requiring a username and password. Phase 2 authentication inside the tunnel is EAP-MSCHAPv2 (``ESP_EAP_PHASE2_MSCHAPV2``) or EAP-GTC (``ESP_EAP_PHASE2_GTC``). EAP-GTC sends the static password configured with ``esp_eap_client_set_password()`` and does not prompt for a token or OTP.
 
 - **EAP-TTLS**
 
@@ -94,10 +94,13 @@ The following EAP methods are supported:
   - CHAP: Challenge Handshake Authentication Protocol
   - MSCHAP
   - MSCHAP-V2
+  - EAP-GTC: Generic Token Card, tunneled. ESP-IDF sends the static password from ``esp_eap_client_set_password()``
 
 - **EAP-FAST**
 
   An authentication method based on Protected Access Credentials (PAC), requiring an identity and password. To use EAP-FAST, :menuitem:`CONFIG_ESP_WIFI_MBEDTLS_TLS_CLIENT` must be **disabled**.
+
+``esp_eap_client_set_phase2_method()`` selects the phase 2 method for EAP-PEAP and EAP-TTLS.
 
 Examples
 ++++++++++

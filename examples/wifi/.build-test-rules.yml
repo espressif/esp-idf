@@ -159,3 +159,8 @@ examples/wifi/wifi_aware/usd_subscriber:
   <<: *wifi_depends_default
   disable:
     - if: SOC_WIFI_SUPPORTED != 1
+
+examples/wifi/wifi_enterprise:
+  <<: *wifi_depends_default
+  disable:
+    - if: SOC_WIFI_SUPPORTED != 1

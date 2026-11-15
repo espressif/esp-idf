@@ -1,6 +1,6 @@
 /*
  * SPDX-FileCopyrightText: 2006-2016 ARM Limited
- * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -77,9 +77,9 @@ extern uint8_t client_key_start[] asm("_binary_client_key_start");
 extern uint8_t client_key_end[]   asm("_binary_client_key_end");
 #endif /* CONFIG_EXAMPLE_EAP_METHOD_TLS */
 
-#if defined CONFIG_EXAMPLE_EAP_METHOD_TTLS
-esp_eap_ttls_phase2_types TTLS_PHASE2_METHOD = CONFIG_EXAMPLE_EAP_METHOD_TTLS_PHASE_2;
-#endif /* CONFIG_EXAMPLE_EAP_METHOD_TTLS */
+#if defined(CONFIG_EXAMPLE_EAP_METHOD_PEAP) || defined(CONFIG_EXAMPLE_EAP_METHOD_TTLS)
+esp_eap_phase2_types PHASE2_METHOD = CONFIG_EXAMPLE_EAP_METHOD_PHASE_2;
+#endif
 
 static void event_handler(void* arg, esp_event_base_t event_base,
                                 int32_t event_id, void* event_data)
@@ -149,10 +149,11 @@ static void initialise_wifi(void)
 #endif /* CONFIG_EXAMPLE_EAP_METHOD_PEAP || CONFIG_EXAMPLE_EAP_METHOD_TTLS */
 
 #if defined CONFIG_EXAMPLE_EAP_METHOD_TTLS
-    ESP_ERROR_CHECK(esp_eap_client_set_ttls_phase2_method(TTLS_PHASE2_METHOD) );
+    ESP_ERROR_CHECK(esp_eap_client_set_phase2_method(PHASE2_METHOD));
     eap_methods = ESP_EAP_TYPE_TTLS;
 #endif /* CONFIG_EXAMPLE_EAP_METHOD_TTLS */
 #if defined (CONFIG_EXAMPLE_EAP_METHOD_PEAP)
+    ESP_ERROR_CHECK(esp_eap_client_set_phase2_method(PHASE2_METHOD));
     eap_methods = ESP_EAP_TYPE_PEAP;
 #endif /* CONFIG_EXAMPLE_EAP_METHOD_PEAP */
 

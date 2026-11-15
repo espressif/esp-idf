@@ -59,7 +59,7 @@ u8 *g_wpa_password;
 int g_wpa_password_len;
 u8 *g_wpa_new_password;
 int g_wpa_new_password_len;
-const char *g_wpa_ttls_phase2_type;
+const char *g_eap_phase2_type;
 char *g_wpa_phase1_options;
 u8 *g_wpa_pac_file;
 int g_wpa_pac_file_len;
@@ -313,6 +313,11 @@ int eap_peer_register_methods(void)
 		ret = eap_peer_peap_register();
 #endif
 
+#ifdef EAP_GTC
+	if (ret == 0)
+		ret = eap_peer_gtc_register();
+#endif
+
 #ifdef EAP_TTLS
 	if (ret == 0)
 		ret = eap_peer_ttls_register();
@@ -491,8 +496,9 @@ struct wpabuf * eap_sm_build_nak(struct eap_sm *sm, EapType type, u8 id)
 	}
 
 	for (m = methods; m; m = m->next) {
-		//do not propose insecure unencapsulated MSCHAPv2 as Phase 1 Method
-		if(m->vendor == EAP_VENDOR_IETF && m->method == EAP_TYPE_MSCHAPV2)
+		//do not propose insecure unencapsulated MSCHAPv2 or cleartext GTC as a Phase 1 method
+		if(m->vendor == EAP_VENDOR_IETF &&
+		   (m->method == EAP_TYPE_MSCHAPV2 || m->method == EAP_TYPE_GTC))
 			continue;
 
 		//do not propose EAP_TYPE_TLS if no client cert/key are configured
@@ -583,8 +589,8 @@ int eap_peer_config_init(
 			  sm->config.new_password_len);
 	}
 
-	if (g_wpa_ttls_phase2_type) {
-		sm->config.phase2 = g_wpa_ttls_phase2_type;
+	if (g_eap_phase2_type) {
+		sm->config.phase2 = g_eap_phase2_type;
 	} else {
 		/* set default config phase2 mode as MSCHAPV2 */
 		sm->config.phase2 = "auth=MSCHAPV2";
