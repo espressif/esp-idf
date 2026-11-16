@@ -735,6 +735,7 @@ esp_err_t uart_pattern_queue_reset(uart_port_t uart_num, int queue_length)
 {
     ESP_RETURN_ON_FALSE((uart_num < UART_NUM_MAX), ESP_FAIL, UART_TAG, "uart_num error");
     ESP_RETURN_ON_FALSE((p_uart_obj[uart_num]), ESP_ERR_INVALID_STATE, UART_TAG, "uart driver error");
+    ESP_RETURN_ON_FALSE((queue_length > 0 && (size_t)queue_length <= SIZE_MAX / sizeof(int)), ESP_ERR_INVALID_ARG, UART_TAG, "queue_length error");
 
     int *pdata = (int *)heap_caps_malloc(queue_length * sizeof(int), UART_MALLOC_CAPS);
     if (pdata == NULL) {
