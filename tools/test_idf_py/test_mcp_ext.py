@@ -357,11 +357,84 @@ class TestBuildProject:
         tools, _ = _start_server(mcp_ext, mock_mcp, str(proj))
 
         with mock.patch('subprocess.run') as mock_run:
-            mock_run.return_value = mock.Mock(returncode=1, stderr='cmake error')
+            mock_run.return_value = mock.Mock(returncode=1, stdout='', stderr='cmake error')
             result = tools['build_project']()
 
         assert 'Build failed' in result
         assert 'cmake error' in result
+
+    def test_build_failure_includes_compiler_error_from_stdout(
+        self, tmp_path: Path, mcp_ext: tuple[types.ModuleType, _MockMCPServer], monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        # idf.py reports only a summary on stderr; the compiler error is on stdout.
+        mod, mock_mcp = mcp_ext
+        proj = _make_valid_project(tmp_path / 'proj')
+        monkeypatch.setenv('IDF_MCP_WORKSPACE_FOLDER', '')
+        monkeypatch.setenv('IDF_PATH', str(tmp_path))
+        tools, _ = _start_server(mcp_ext, mock_mcp, str(proj))
+
+        stdout = (
+            '[1/2] Building C object main.c.obj\n'
+            "main.c:1:31: error: 'undefined_symbol' undeclared\n"
+            'ninja: build stopped: subcommand failed.\n'
+        )
+        with mock.patch('subprocess.run') as mock_run:
+            mock_run.return_value = mock.Mock(
+                returncode=2, stdout=stdout, stderr='ERROR: ninja failed with exit code 1'
+            )
+            result = tools['build_project']()
+
+        assert 'ninja failed with exit code 1' in result
+        assert "error: 'undefined_symbol' undeclared" in result
+
+    def test_build_failure_truncates_long_stdout(
+        self, tmp_path: Path, mcp_ext: tuple[types.ModuleType, _MockMCPServer], monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        mod, mock_mcp = mcp_ext
+        proj = _make_valid_project(tmp_path / 'proj')
+        monkeypatch.setenv('IDF_MCP_WORKSPACE_FOLDER', '')
+        monkeypatch.setenv('IDF_PATH', str(tmp_path))
+        tools, _ = _start_server(mcp_ext, mock_mcp, str(proj))
+
+        stdout = 'early build line\n' + 'x' * (2 * mod.IDF_PY_FAILURE_TAIL_CHARS) + '\nmain.c:1:1: error: last line\n'
+        with mock.patch('subprocess.run') as mock_run:
+            mock_run.return_value = mock.Mock(returncode=2, stdout=stdout, stderr='')
+            result = tools['build_project']()
+
+        assert 'error: last line' in result
+        assert 'early build line' not in result
+        assert '[...truncated...]' in result
+        assert len(result) < mod.IDF_PY_FAILURE_TAIL_CHARS + 200
+
+
+@pytest.mark.parametrize(
+    'tool, call_args, prefix',
+    [
+        ('set_target', ('esp32s3',), 'Failed to set target'),
+        ('flash_project', (), 'Flash failed'),
+        ('clean_project', (), 'Clean failed'),
+    ],
+)
+def test_idf_py_failure_includes_stdout(
+    tool: str,
+    call_args: tuple[str, ...],
+    prefix: str,
+    tmp_path: Path,
+    mcp_ext: tuple[types.ModuleType, _MockMCPServer],
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    mod, mock_mcp = mcp_ext
+    proj = _make_valid_project(tmp_path / 'proj')
+    monkeypatch.setenv('IDF_MCP_WORKSPACE_FOLDER', '')
+    monkeypatch.setenv('IDF_PATH', str(tmp_path))
+    tools, _ = _start_server(mcp_ext, mock_mcp, str(proj))
+
+    with mock.patch('subprocess.run') as mock_run:
+        mock_run.return_value = mock.Mock(returncode=2, stdout='CMake Error at CMakeLists.txt:3', stderr='')
+        result = tools[tool](*call_args)
+
+    assert result.startswith(prefix)
+    assert 'CMake Error at CMakeLists.txt:3' in result
 
 
 class TestSetTarget:

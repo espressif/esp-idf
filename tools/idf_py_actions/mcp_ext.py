@@ -77,6 +77,10 @@ MONITOR_SCRIPT_COMMANDS = frozenset({'expect', 'send', 'sleep', 'reset', 'bootlo
 # Size limit for text embedded directly in a tool result, in characters. Serial
 # output belongs in the log file, not in the agent's context.
 MONITOR_TAIL_CHARS = 1500
+# Size limit for the idf.py stdout tail returned when a build, flash, clean or
+# set-target call fails. Compiler and CMake errors are printed on stdout, often
+# followed by the lines of other jobs ninja was still finishing.
+IDF_PY_FAILURE_TAIL_CHARS = 4000
 
 
 def _is_valid_project_dir(directory: str) -> bool:
@@ -386,6 +390,23 @@ def tail(text: str, limit: int) -> str:
     return f'[...truncated...]\n{text[-limit:]}'
 
 
+def failure_output(result: subprocess.CompletedProcess[str]) -> str:
+    """Describe a failed idf.py run: its stderr plus the tail of its stdout.
+
+    idf.py prints only a summary on stderr (for example 'ninja failed with exit
+    code 1' and the paths of its log files); the compiler or CMake error itself
+    is on stdout, so stderr alone does not say what went wrong.
+    """
+    parts = []
+    stderr = decode_stream(result.stderr).strip()
+    if stderr:
+        parts.append(stderr)
+    stdout_tail = tail(decode_stream(result.stdout), IDF_PY_FAILURE_TAIL_CHARS)
+    if stdout_tail:
+        parts.append(f'Last output:\n{stdout_tail}')
+    return '\n'.join(parts)
+
+
 def action_extensions(base_actions: dict, project_path: str) -> dict:
     """ESP-IDF MCP Server Extension"""
 
@@ -461,8 +482,9 @@ def action_extensions(base_actions: dict, project_path: str) -> dict:
                     log.note('Build successful')
                     return 'Successfully built project'
                 else:
-                    log.err(f'Build failed: {result.stderr}')
-                    return f'Build failed: {result.stderr}'
+                    output = failure_output(result)
+                    log.err(f'Build failed: {output}')
+                    return f'Build failed: {output}'
             except Exception as e:
                 log.err(f'Build failed: {e}')
                 return f'Build failed: {str(e)}'
@@ -502,8 +524,9 @@ def action_extensions(base_actions: dict, project_path: str) -> dict:
                     log.note(f'Target set to: {target}')
                     return f'Target set to: {target}'
                 else:
-                    log.err(f'Failed to set target: {result.stderr}')
-                    return f'Failed to set target: {result.stderr}'
+                    output = failure_output(result)
+                    log.err(f'Failed to set target: {output}')
+                    return f'Failed to set target: {output}'
             except Exception as e:
                 log.err(f'Failed to set target: {e}')
                 return f'Error setting target: {str(e)}'
@@ -545,8 +568,9 @@ def action_extensions(base_actions: dict, project_path: str) -> dict:
                     log.note('Flash successful')
                     return f'Successfully flashed project{" to port " + port if port else ""}'
                 else:
-                    log.err(f'Flash failed: {result.stderr}')
-                    return f'Flash failed: {result.stderr}'
+                    output = failure_output(result)
+                    log.err(f'Flash failed: {output}')
+                    return f'Flash failed: {output}'
             except Exception as e:
                 log.err(f'Flash failed: {e}')
                 return f'Error flashing: {str(e)}'
@@ -741,8 +765,9 @@ def action_extensions(base_actions: dict, project_path: str) -> dict:
                     log.note('Project cleaned successfully')
                     return 'Project cleaned successfully'
                 else:
-                    log.err(f'Clean failed: {result.stderr}')
-                    return f'Clean failed: {result.stderr}'
+                    output = failure_output(result)
+                    log.err(f'Clean failed: {output}')
+                    return f'Clean failed: {output}'
             except Exception as e:
                 log.err(f'Error cleaning: {e}')
                 return f'Error cleaning: {str(e)}'
