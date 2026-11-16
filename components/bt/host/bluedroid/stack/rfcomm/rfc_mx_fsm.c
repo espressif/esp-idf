@@ -70,7 +70,7 @@ static void rfc_mx_sm_state_wait_sabme (tRFC_MCB *p_mcb, UINT16 event, void *p_d
 static void rfc_mx_sm_state_connected (tRFC_MCB *p_mcb, UINT16 event, void *p_data);
 static void rfc_mx_sm_state_disc_wait_ua (tRFC_MCB *p_mcb, UINT16 event, void *p_data);
 
-static void rfc_mx_send_config_req (tRFC_MCB *p_mcb);
+static BOOLEAN rfc_mx_send_config_req (tRFC_MCB *p_mcb);
 static void rfc_mx_conf_ind (tRFC_MCB *p_mcb, tL2CAP_CFG_INFO *p_cfg);
 static void rfc_mx_conf_cnf (tRFC_MCB *p_mcb, tL2CAP_CFG_INFO *p_cfg);
 
@@ -175,7 +175,9 @@ void rfc_mx_sm_state_idle (tRFC_MCB *p_mcb, UINT16 event, void *p_data)
         ertm_opt = rfc_cb.port.enable_l2cap_ertm ? &rfc_l2c_etm_opt : NULL;
         L2CA_ErtmConnectRsp (p_mcb->bd_addr, *((UINT8 *)p_data), p_mcb->lcid, L2CAP_CONN_OK, 0, ertm_opt);
 
-        rfc_mx_send_config_req (p_mcb);
+        if (!rfc_mx_send_config_req (p_mcb)) {
+            return;
+        }
 
         p_mcb->state = RFC_MX_STATE_CONFIGURE;
         return;
@@ -230,8 +232,10 @@ void rfc_mx_sm_state_wait_conn_cnf (tRFC_MCB *p_mcb, UINT16 event, void *p_data)
             PORT_StartCnf (p_mcb, *((UINT16 *)p_data));
             return;
         }
+        if (!rfc_mx_send_config_req (p_mcb)) {
+            return;
+        }
         p_mcb->state = RFC_MX_STATE_CONFIGURE;
-        rfc_mx_send_config_req (p_mcb);
         return;
 
     case RFC_MX_EVENT_DISC_IND:
@@ -423,6 +427,10 @@ void rfc_mx_sm_state_wait_sabme (tRFC_MCB *p_mcb, UINT16 event, void *p_data)
     case RFC_MX_EVENT_START_RSP:
         if (*((UINT16 *)p_data) != RFCOMM_SUCCESS) {
             rfc_send_dm (p_mcb, RFCOMM_MX_DLCI, TRUE);
+            p_mcb->state = RFC_MX_STATE_IDLE;
+            L2CA_DisconnectReq (p_mcb->lcid);
+            PORT_CloseInd (p_mcb);
+        return;
         } else {
             rfc_send_ua (p_mcb, RFCOMM_MX_DLCI);
 
@@ -516,6 +524,9 @@ void rfc_mx_sm_state_disc_wait_ua (tRFC_MCB *p_mcb, UINT16 event, void *p_data)
 
             if (p_mcb->lcid == 0) {
                 PORT_StartCnf (p_mcb, RFCOMM_ERROR);
+                if (p_mcb->state != RFC_MX_STATE_IDLE) {
+                    rfc_release_multiplexer_channel (p_mcb);
+                }
                 return;
             }
             /* Save entry for quicker access to mcb based on the LCID */
@@ -575,9 +586,10 @@ void rfc_mx_sm_state_disc_wait_ua (tRFC_MCB *p_mcb, UINT16 event, void *p_data)
 **                  L2CAP.  Accept connection.
 **
 *******************************************************************************/
-static void rfc_mx_send_config_req (tRFC_MCB *p_mcb)
+static BOOLEAN rfc_mx_send_config_req (tRFC_MCB *p_mcb)
 {
     tL2CAP_CFG_INFO cfg;
+    BOOLEAN sent;
 
     RFCOMM_TRACE_EVENT ("rfc_mx_send_config_req");
 
@@ -599,7 +611,32 @@ static void rfc_mx_send_config_req (tRFC_MCB *p_mcb)
         cfg.fcs_present      = FALSE;
         cfg.fcs              = N/A when fcs_present is FALSE;
     */
-    L2CA_ConfigReq (p_mcb->lcid, &cfg);
+    sent = L2CA_ConfigReq (p_mcb->lcid, &cfg);
+    if (!sent && cfg.fcr_present && cfg.fcr.mode != L2CAP_FCR_BASIC_MODE) {
+        /* ERTM options rejected locally; retry without FCR (basic mode) */
+        cfg.fcr_present = FALSE;
+        cfg.fcr.mode = L2CAP_FCR_BASIC_MODE;
+        sent = L2CA_ConfigReq (p_mcb->lcid, &cfg);
+    }
+
+    if (!sent) {
+        UINT16 lcid = p_mcb->lcid;
+
+        RFCOMM_TRACE_ERROR ("rfc_mx_send_config_req failed, lcid:0x%x", lcid);
+        L2CA_DisconnectReq (lcid);
+        if (p_mcb->is_initiator) {
+            PORT_StartCnf (p_mcb, RFCOMM_ERROR);
+            /* PORT_StartCnf already released MCB if any port was attached */
+            if (p_mcb->lcid == 0) {
+                rfc_release_multiplexer_channel (p_mcb);
+            }
+        } else {
+            rfc_release_multiplexer_channel (p_mcb);
+        }
+        return FALSE;
+    }
+
+    return TRUE;
 }
 
 
@@ -616,13 +653,19 @@ static void rfc_mx_send_config_req (tRFC_MCB *p_mcb)
 static void rfc_mx_conf_cnf (tRFC_MCB *p_mcb, tL2CAP_CFG_INFO *p_cfg)
 {
     // RFCOMM_TRACE_EVENT ("rfc_mx_conf_cnf p_cfg:%08x res:%d ", p_cfg, (p_cfg) ? p_cfg->result : 0);
+    UINT16 lcid = p_mcb->lcid;
 
     if (p_cfg->result != L2CAP_CFG_OK) {
+        L2CA_DisconnectReq(lcid);
         if (p_mcb->is_initiator) {
-            PORT_StartCnf (p_mcb, p_cfg->result);
-            L2CA_DisconnectReq (p_mcb->lcid);
+            PORT_StartCnf(p_mcb, p_cfg->result);
+            /* PORT_StartCnf already released MCB if any port was attached */
+            if (p_mcb->lcid != 0) {
+                rfc_release_multiplexer_channel(p_mcb);
+            }
+        } else {
+            rfc_release_multiplexer_channel(p_mcb);
         }
-        rfc_release_multiplexer_channel (p_mcb);
         return;
     }
 
