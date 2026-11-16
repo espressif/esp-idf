@@ -52,7 +52,7 @@ For easy interaction with IDF Monitor, use the keyboard shortcuts given in the t
      - Discard all incoming serial data while activated. Allows to quickly pause and examine log output without quitting the monitor.
    * - * Ctrl + L
      - Stop/resume log output saved to file
-     - Create a file in the project directory and the output is written to that file until this is disabled with the same keyboard shortcut (or IDF Monitor exits).
+     - Create a file in the current working directory and the output is written to that file until this is disabled with the same keyboard shortcut (or IDF Monitor exits).
    * - * Ctrl + I (or I)
      - Stop/resume printing timestamps
      - IDF Monitor can print a timestamp in the beginning of each line. The timestamp format can be changed by the ``--timestamp-format`` command line argument.
