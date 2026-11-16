@@ -57,6 +57,7 @@ struct esp_lcd_i80_bus_t {
     portMUX_TYPE spinlock; // spinlock used to protect i80 bus members(hal, device_list, cur_trans)
     lcd_hal_context_t hal; // Hal object
     size_t bus_width;      // Number of data lines
+    gpio_num_t dc_gpio_num; // GPIO used for D/C line, or -1 if unused
     intr_handle_t intr;    // LCD peripheral interrupt handle
 #if CONFIG_PM_ENABLE
     esp_pm_lock_handle_t pm_lock; // Power management lock
@@ -138,6 +139,7 @@ esp_err_t esp_lcd_new_i80_bus(const esp_lcd_i80_bus_config_t *bus_config, esp_lc
     bus = heap_caps_calloc(1, sizeof(esp_lcd_i80_bus_t), LCD_I80_MEM_ALLOC_CAPS);
     ESP_GOTO_ON_FALSE(bus, ESP_ERR_NO_MEM, err, TAG, "no mem for i80 bus");
     bus->bus_width = bus_config->bus_width;
+    bus->dc_gpio_num = bus_config->dc_gpio_num;
     bus->bus_id = -1;
     bus->clk_src = SOC_MOD_CLK_INVALID;
     // allocate the format buffer from internal memory, with DMA capability
@@ -505,6 +507,8 @@ static esp_err_t panel_io_i80_tx_param(esp_lcd_panel_io_t *io, int lcd_cmd, cons
     esp_lcd_i80_bus_t *bus = next_device->bus;
     lcd_panel_io_i80_t *cur_device = bus->cur_device;
     lcd_i80_trans_descriptor_t *trans_desc = NULL;
+    ESP_RETURN_ON_FALSE(lcd_cmd == -1 || bus->dc_gpio_num >= 0, ESP_ERR_INVALID_STATE, TAG,
+                        "can't send command without D/C line");
     ESP_RETURN_ON_FALSE(param_size <= bus->max_transfer_bytes, ESP_ERR_INVALID_ARG, TAG,
                         "parameter bytes too long, enlarge max_transfer_bytes");
     ESP_RETURN_ON_FALSE(param_size <= LCD_I80_IO_FORMAT_BUF_SIZE, ESP_ERR_INVALID_ARG, TAG,
@@ -580,6 +584,8 @@ static esp_err_t panel_io_i80_tx_color(esp_lcd_panel_io_t *io, int lcd_cmd, cons
     lcd_panel_io_i80_t *i80_device = __containerof(io, lcd_panel_io_i80_t, base);
     esp_lcd_i80_bus_t *bus = i80_device->bus;
     lcd_i80_trans_descriptor_t *trans_desc = NULL;
+    ESP_RETURN_ON_FALSE(lcd_cmd == -1 || bus->dc_gpio_num >= 0, ESP_ERR_INVALID_STATE, TAG,
+                        "can't send command without D/C line");
     ESP_RETURN_ON_FALSE(color_size <= bus->max_transfer_bytes, ESP_ERR_INVALID_ARG, TAG,
                         "color bytes too long, enlarge max_transfer_bytes");
     if (esp_cache_get_line_size_by_addr(color) > 0) {
@@ -736,7 +742,7 @@ static esp_err_t lcd_i80_bus_configure_gpio(esp_lcd_i80_bus_handle_t bus, const 
 {
     int bus_id = bus->bus_id;
     // check validation of GPIO number
-    bool valid_gpio = (bus_config->wr_gpio_num >= 0) && (bus_config->dc_gpio_num >= 0);
+    bool valid_gpio = bus_config->wr_gpio_num >= 0;
     for (size_t i = 0; i < bus_config->bus_width; i++) {
         valid_gpio = valid_gpio && (bus_config->data_gpio_nums[i] >= 0);
     }
@@ -752,9 +758,11 @@ static esp_err_t lcd_i80_bus_configure_gpio(esp_lcd_i80_bus_handle_t bus, const 
         // the esp_rom_gpio_connect_out_signal function will also help enable the output path properly
         esp_rom_gpio_connect_out_signal(bus_config->data_gpio_nums[i], soc_lcd_i80_signals[bus_id].data_sigs[i], false, false);
     }
-    // D/C signal
-    gpio_func_sel(bus_config->dc_gpio_num, PIN_FUNC_GPIO);
-    esp_rom_gpio_connect_out_signal(bus_config->dc_gpio_num, soc_lcd_i80_signals[bus_id].dc_sig, false, false);
+    // D/C signal is optional for data-only transfers
+    if (bus_config->dc_gpio_num >= 0) {
+        gpio_func_sel(bus_config->dc_gpio_num, PIN_FUNC_GPIO);
+        esp_rom_gpio_connect_out_signal(bus_config->dc_gpio_num, soc_lcd_i80_signals[bus_id].dc_sig, false, false);
+    }
     // WR signal (PCLK)
     gpio_func_sel(bus_config->wr_gpio_num, PIN_FUNC_GPIO);
     esp_rom_gpio_connect_out_signal(bus_config->wr_gpio_num, soc_lcd_i80_signals[bus_id].wr_sig, false, false);
