@@ -100,7 +100,9 @@ static esp_err_t handle_session_command0(session_t *cur_session,
         sec2_new_session(cur_session, session_id);
     }
 
-    if (in->sc0->client_pubkey.len != PUBLIC_KEY_LEN) {
+    /* The client public key is a big-endian value modulo N, so it is shorter
+     * than PUBLIC_KEY_LEN when its leading byte(s) are zero */
+    if (in->sc0->client_pubkey.len == 0 || in->sc0->client_pubkey.len > PUBLIC_KEY_LEN) {
         ESP_LOGE(TAG, "Invalid public key length");
         if (esp_event_post(PROTOCOMM_SECURITY_SESSION_EVENT, PROTOCOMM_SECURITY_SESSION_INVALID_SECURITY_PARAMS, NULL, 0, portMAX_DELAY) != ESP_OK) {
             ESP_LOGE(TAG, "Failed to post secure session invalid security params event");
@@ -125,7 +127,7 @@ static esp_err_t handle_session_command0(session_t *cur_session,
     ESP_LOGD(TAG, "Username: %.*s", in->sc0->client_username.len, in->sc0->client_username.data);
 
 
-    hexdump("Client Public Key", (char *) in->sc0->client_pubkey.data, PUBLIC_KEY_LEN);
+    hexdump("Client Public Key", (char *) in->sc0->client_pubkey.data, in->sc0->client_pubkey.len);
 
     /* Initialize mu srp context */
     cur_session->srp_hd = esp_srp_init(ESP_NG_3072);
@@ -160,7 +162,7 @@ static esp_err_t handle_session_command0(session_t *cur_session,
     }
 
     hexdump("Device Public Key", device_pubkey, device_pubkey_len);
-    if (esp_srp_get_session_key(cur_session->srp_hd, (char *) in->sc0->client_pubkey.data, PUBLIC_KEY_LEN,
+    if (esp_srp_get_session_key(cur_session->srp_hd, (char *) in->sc0->client_pubkey.data, in->sc0->client_pubkey.len,
                                 &cur_session->session_key, &cur_session->session_key_len) != ESP_OK) {
         ESP_LOGE(TAG, "Failed to generate device session key!");
         esp_srp_free(cur_session->srp_hd);
