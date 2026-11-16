@@ -940,7 +940,11 @@ static UINT8 *add_attr (UINT8 *p, UINT8 *p_end, tSDP_DISCOVERY_DB *p_db, tSDP_DI
 
     nest_level &= ~(SDP_ADDITIONAL_LIST_MASK);
 
+    if (p >= p_end) {
+        return NULL;
+    }
     type = *p++;
+
     p = sdpu_get_len_from_type (p, p_end, type, &attr_len);
     if ((p == NULL) || (p > p_end) || ((UINT32)(p_end - p) < attr_len)) {
         SDP_TRACE_WARNING ("SDP - Bad len in attr_rsp %d\n", attr_len);
