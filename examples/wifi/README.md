@@ -43,7 +43,7 @@ The ESP32-P4-Function-EV-Board is used here as a demonstration on how to run a W
 
 On this board,
 
-* The ESP32-P4 is connected with the on-board ESP32-C6 (co-processor) using SDIO communication bus. See this ESP-Hosted ESP32-P4 EV Board [documentation](https://github.com/espressif/esp-hosted-mcu/blob/main/docs/esp32_p4_function_ev_board.md) for more information.
+* The ESP32-P4 is connected with the on-board ESP32-C6 (co-processor) using SDIO communication bus. See this ESP-Hosted ESP32-P4 EV Board [documentation](https://github.com/espressif/esp-hosted-mcu/blob/main/docs/getting-started-mcu.md#esp32-p4-function-ev-board-host-pin-mapping) for more information.
 * The ESP32-C6 on the ESP32-P4 EV Board is pre-flashed with ESP-Hosted co-processor (slave) software.
 * Only the example code needs to be built & flashed on the Host using the steps below.
 
@@ -75,7 +75,7 @@ idf.py -p <host serial port> flash monitor
 
 **(Optional, but recommended)**
 
-The ESP32-C6 on the ESP32-P4 EV Board is already pre-flashed with ESP-Hosted co-processor software. Host software on the ESP-Hosted component is backward compatible with this co-processor software. It is recommended to upgrade to the latest software via [simplified co-processor OTA](https://github.com/espressif/esp-hosted-mcu/blob/main/docs/esp32_p4_function_ev_board.md#51-ota-updates) or by [manual flashing with ESP-Prog](https://github.com/espressif/esp-hosted-mcu/blob/main/docs/esp32_p4_function_ev_board.md#52-using-esp-prog).
+The ESP32-C6 on the ESP32-P4 EV Board is already pre-flashed with ESP-Hosted co-processor software. Host software on the ESP-Hosted component is backward compatible with this co-processor software. It is recommended to upgrade to the latest software via [simplified co-processor OTA](https://github.com/espressif/esp-hosted-mcu/blob/main/examples/ota/coprocessor_ota/README.md) or by [manual flashing](https://github.com/espressif/esp-hosted-mcu/blob/main/docs/getting-started-mcu.md#12-configure-and-flash-the-co-processor).
 
 ### Troubleshooting
 
