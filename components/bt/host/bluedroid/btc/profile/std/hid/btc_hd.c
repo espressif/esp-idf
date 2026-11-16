@@ -109,6 +109,7 @@ static void bte_hd_arg_deep_copy(btc_msg_t *msg, void *p_dst, void *p_src)
             p_dst_data->set_report.p_data = osi_malloc(p_src_data->set_report.len);
             if (p_dst_data->set_report.p_data == NULL) {
                 BTC_TRACE_ERROR("%s malloc set_report data failed!", __func__);
+                p_dst_data->set_report.len = 0;
                 break;
             }
             memcpy(p_dst_data->set_report.p_data, src_data, p_src_data->set_report.len);
@@ -121,6 +122,7 @@ static void bte_hd_arg_deep_copy(btc_msg_t *msg, void *p_dst, void *p_src)
             p_dst_data->intr_data.p_data = osi_malloc(p_src_data->intr_data.len);
             if (p_dst_data->intr_data.p_data == NULL) {
                 BTC_TRACE_ERROR("%s malloc intr_data data failed!", __func__);
+                p_dst_data->intr_data.len = 0;
                 break;
             }
             memcpy(p_dst_data->intr_data.p_data, src_data, p_src_data->intr_data.len);
