@@ -931,7 +931,7 @@ SM_STATE(EAP, INITIATE_RECEIVED)
 		if (hmac_sha256(erp->rIK, erp->rIK_len, hdr,
 				end - hdr - hash_len, hash) < 0)
 			goto fail;
-		if (os_memcmp(end - hash_len, hash, hash_len) != 0) {
+		if (os_memcmp_const(end - hash_len, hash, hash_len) != 0) {
 			wpa_printf(MSG_DEBUG,
 				   "EAP: Authentication Tag mismatch");
 			goto fail;
@@ -944,7 +944,7 @@ SM_STATE(EAP, INITIATE_RECEIVED)
 		if (hmac_sha256(erp->rIK, erp->rIK_len, hdr,
 				end - hdr - 32, hash) < 0)
 			goto fail;
-		if (os_memcmp(end - 32, hash, 32) == 0) {
+		if (os_memcmp_const(end - 32, hash, 32) == 0) {
 			wpa_printf(MSG_DEBUG,
 				   "EAP: Authentication Tag match using HMAC-SHA256-256");
 			hash_len = 32;
@@ -956,7 +956,7 @@ SM_STATE(EAP, INITIATE_RECEIVED)
 		if (hmac_sha256(erp->rIK, erp->rIK_len, hdr,
 				end - hdr - 16, hash) < 0)
 			goto fail;
-		if (os_memcmp(end - 16, hash, 16) == 0) {
+		if (os_memcmp_const(end - 16, hash, 16) == 0) {
 			wpa_printf(MSG_DEBUG,
 				   "EAP: Authentication Tag match using HMAC-SHA256-128");
 			hash_len = 16;
