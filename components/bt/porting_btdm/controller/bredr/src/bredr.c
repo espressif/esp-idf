@@ -53,6 +53,7 @@
 #include "btdm_osal.h"
 #include "btdm_endian.h"
 #include "btdm_external.h"
+#include "bredr_mempool.h"
 #if CONFIG_BT_SMP_CRYPTO_STACK_MBEDTLS
 #include "psa/crypto.h"
 #endif
@@ -641,20 +642,6 @@ const char *bredr_controller_get_compile_version(void)
     return co_orca_get_git_version_str();
 }
 
-orca_mempool_t tlsf_create_with_pool(void *mem, size_t pool_bytes, size_t max_bytes);
-void tlsf_destroy(orca_mempool_t tlsf);
-void *tlsf_malloc(orca_mempool_t tlsf, size_t size);
-void tlsf_free(orca_mempool_t tlsf, void *ptr);
-size_t tlsf_block_size(void *ptr);
-size_t tlsf_alloc_overhead(void);
-
-struct orca_mempool_ops s_orca_mempool_ops = {
-    .create_with_pool = tlsf_create_with_pool,
-    .destroy = NULL,
-    .malloc = tlsf_malloc,
-    .free = tlsf_free,
-};
-
 static int bredr_ctrl_setup_callback(void)
 {
     int ret = 0;
@@ -978,7 +965,7 @@ int esp_bredr_controller_init(esp_bt_controller_config_t *cfg)
     bredr_register_ext_dep_callback(bredr_ctrl_ext_dep_callback);
 
     cfg->bredr.mempool_size = 1024 * (cfg->bredr.max_acl_conn + 2);
-    cfg->bredr.mempool_ops = &s_orca_mempool_ops;
+    cfg->bredr.mempool_ops = bredr_mempool_ops_get();
 
     uint32_t bredr_btdm_version = 0;
     uint32_t bredr_btdm_size = 0;

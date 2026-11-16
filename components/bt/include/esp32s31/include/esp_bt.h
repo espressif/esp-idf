@@ -300,6 +300,14 @@ esp_err_t esp_bredr_acl_dft_tx_power_range_set(int8_t min_power, int8_t max_powe
  */
 esp_err_t esp_bredr_acl_dft_tx_power_range_get(int8_t *min_power, int8_t *max_power);
 #endif // UC_BR_EDR_DYNAMIC_TX_PWR_EN
+
+/**
+ * @brief Dump BR/EDR controller mempool usage.
+ *
+ * @note For internal debugging only; not intended for customer use.
+ *       No-op if tracing is disabled.
+ */
+void esp_bredr_mempool_dump_stats(void);
 #endif // (UC_BT_CTRL_BR_EDR_IS_ENABLE)
 
 /** @brief esp_vhci_host_callback
