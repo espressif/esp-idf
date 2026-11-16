@@ -165,6 +165,170 @@ TEST_CASE("test MPI multiplication", "[bignum]")
                      0);
 }
 
+/* Multiplications whose larger operand is below a per-target constant are sent
+   to a software path instead of to the hardware unit. Both paths must give the
+   same answer, including in the cases this port handles itself: an output that
+   aliases either or both inputs, and negative operands, whose sign is applied
+   after the magnitude has been written.
+
+   The reference is a shift-and-add multiply built only from mbedtls_mpi_add_abs()
+   and mbedtls_mpi_shift_l(). Neither is replaced by this port, so the reference is
+   independent of the code under test. It is deliberately NOT built on
+   mbedtls_mpi_mul_int(), which this port implements by calling mbedtls_mpi_mul_mpi()
+   and which would therefore test the routing against itself.
+
+   Operand sizes sweep past every constant the port can choose, so both sides of
+   the threshold are exercised whatever its value on this target. */
+static void mpi_mul_ref_abs(mbedtls_mpi *R, const mbedtls_mpi *A, const mbedtls_mpi *B)
+{
+    mbedtls_mpi T;
+    mbedtls_mpi_init(&T);
+
+    TEST_ASSERT_EQUAL_INT(0, mbedtls_mpi_lset(R, 0));
+    TEST_ASSERT_EQUAL_INT(0, mbedtls_mpi_copy(&T, A));
+    T.MBEDTLS_PRIVATE(s) = 1;
+
+    size_t nbits = mbedtls_mpi_bitlen(B);
+    for (size_t i = 0; i < nbits; i++) {
+        if (mbedtls_mpi_get_bit(B, i)) {
+            TEST_ASSERT_EQUAL_INT(0, mbedtls_mpi_add_abs(R, R, &T));
+        }
+        TEST_ASSERT_EQUAL_INT(0, mbedtls_mpi_shift_l(&T, 1));
+    }
+
+    mbedtls_mpi_free(&T);
+}
+
+/* A reproducible operand of exactly `bits` significant bits. The top bit is
+   forced, because the routing decision is made on mbedtls_mpi_bitlen() of the
+   value and a short operand would silently test a different case. */
+static void mpi_fill_bits(mbedtls_mpi *X, size_t bits, uint32_t seed)
+{
+    uint32_t s = seed;
+
+    TEST_ASSERT_EQUAL_INT(0, mbedtls_mpi_lset(X, 0));
+    for (size_t i = 0; i < bits; i++) {
+        s = s * 1103515245u + 12345u;
+        TEST_ASSERT_EQUAL_INT(0, mbedtls_mpi_set_bit(X, i, (s >> 16) & 1));
+    }
+    TEST_ASSERT_EQUAL_INT(0, mbedtls_mpi_set_bit(X, bits - 1, 1));
+}
+
+/* Assert mbedtls_mpi_mul_mpi() agrees with the reference for one combination of
+   aliasing and signs. `alias`: 0 none, 1 Z == X, 2 Z == Y. Squaring is
+   mpi_mul_square_check() below, because it varies over neither B nor its sign. */
+static void mpi_mul_check(const mbedtls_mpi *A, const mbedtls_mpi *B,
+                          const mbedtls_mpi *ref_ab, int a_neg, int b_neg, int alias)
+{
+    mbedtls_mpi X, Y, Z, expect;
+    char msg[96];
+
+    mbedtls_mpi_init(&X);
+    mbedtls_mpi_init(&Y);
+    mbedtls_mpi_init(&Z);
+    mbedtls_mpi_init(&expect);
+
+    TEST_ASSERT_EQUAL_INT(0, mbedtls_mpi_copy(&X, A));
+    TEST_ASSERT_EQUAL_INT(0, mbedtls_mpi_copy(&Y, B));
+    X.MBEDTLS_PRIVATE(s) = a_neg ? -1 : 1;
+    Y.MBEDTLS_PRIVATE(s) = b_neg ? -1 : 1;
+
+    TEST_ASSERT_EQUAL_INT(0, mbedtls_mpi_copy(&expect, ref_ab));
+    expect.MBEDTLS_PRIVATE(s) = (a_neg != b_neg) ? -1 : 1;
+
+    switch (alias) {
+    case 0:
+        TEST_ASSERT_EQUAL_INT(0, mbedtls_mpi_mul_mpi(&Z, &X, &Y));
+        break;
+    case 1:
+        TEST_ASSERT_EQUAL_INT(0, mbedtls_mpi_copy(&Z, &X));
+        TEST_ASSERT_EQUAL_INT(0, mbedtls_mpi_mul_mpi(&Z, &Z, &Y));
+        break;
+    default:
+        TEST_ASSERT_EQUAL_INT(0, mbedtls_mpi_copy(&Z, &Y));
+        TEST_ASSERT_EQUAL_INT(0, mbedtls_mpi_mul_mpi(&Z, &X, &Z));
+        break;
+    }
+
+    snprintf(msg, sizeof(msg), "%u x %u bits, alias %d, signs %c%c",
+             (unsigned)mbedtls_mpi_bitlen(&X), (unsigned)mbedtls_mpi_bitlen(&Y),
+             alias, a_neg ? '-' : '+', b_neg ? '-' : '+');
+    TEST_ASSERT_EQUAL_INT_MESSAGE(0, mbedtls_mpi_cmp_mpi(&Z, &expect), msg);
+
+    mbedtls_mpi_free(&X);
+    mbedtls_mpi_free(&Y);
+    mbedtls_mpi_free(&Z);
+    mbedtls_mpi_free(&expect);
+}
+
+/* Z == X == Y. Both operands are the same MPI, so the result is A*A and its
+   sign is positive whatever the sign of A. Kept separate from the loops above
+   so it runs once per size and sign instead of once per (B, sign of B) pair,
+   where every repeat would be identical. */
+static void mpi_mul_square_check(const mbedtls_mpi *A, const mbedtls_mpi *ref_aa, int a_neg)
+{
+    mbedtls_mpi Z, expect;
+    char msg[96];
+
+    mbedtls_mpi_init(&Z);
+    mbedtls_mpi_init(&expect);
+
+    TEST_ASSERT_EQUAL_INT(0, mbedtls_mpi_copy(&Z, A));
+    Z.MBEDTLS_PRIVATE(s) = a_neg ? -1 : 1;
+    TEST_ASSERT_EQUAL_INT(0, mbedtls_mpi_mul_mpi(&Z, &Z, &Z));
+
+    TEST_ASSERT_EQUAL_INT(0, mbedtls_mpi_copy(&expect, ref_aa));
+    expect.MBEDTLS_PRIVATE(s) = 1;
+
+    snprintf(msg, sizeof(msg), "%u bits squared, Z==X==Y, sign %c",
+             (unsigned)mbedtls_mpi_bitlen(A), a_neg ? '-' : '+');
+    TEST_ASSERT_EQUAL_INT_MESSAGE(0, mbedtls_mpi_cmp_mpi(&Z, &expect), msg);
+
+    mbedtls_mpi_free(&Z);
+    mbedtls_mpi_free(&expect);
+}
+
+TEST_CASE("test MPI multiplication across the hardware routing threshold", "[bignum]")
+{
+    mbedtls_mpi A, B, ref_ab, ref_aa;
+
+    mbedtls_mpi_init(&A);
+    mbedtls_mpi_init(&B);
+    mbedtls_mpi_init(&ref_ab);
+    mbedtls_mpi_init(&ref_aa);
+
+    for (size_t bits = 224; bits <= 576; bits += 32) {
+        mpi_fill_bits(&A, bits, (uint32_t)bits * 7u + 1u);
+
+        mpi_mul_ref_abs(&ref_aa, &A, &A);
+        for (int a_neg = 0; a_neg < 2; a_neg++) {
+            mpi_mul_square_check(&A, &ref_aa, a_neg);
+        }
+
+        /* mixed == 1 pairs a large operand with a small one. The routing test
+           looks at the LARGER of the two, so this is the case that sends a
+           64-bit operand to the hardware unit -- what RSA does with the small
+           intermediates of its modular arithmetic. */
+        for (int mixed = 0; mixed < 2; mixed++) {
+            mpi_fill_bits(&B, mixed ? 64 : bits, (uint32_t)bits * 13u + 5u);
+            mpi_mul_ref_abs(&ref_ab, &A, &B);
+
+            for (int alias = 0; alias < 3; alias++) {
+                for (int a_neg = 0; a_neg < 2; a_neg++) {
+                    for (int b_neg = 0; b_neg < 2; b_neg++) {
+                        mpi_mul_check(&A, &B, &ref_ab, a_neg, b_neg, alias);
+                    }
+                }
+            }
+        }
+    }
+
+    mbedtls_mpi_free(&A);
+    mbedtls_mpi_free(&B);
+    mbedtls_mpi_free(&ref_ab);
+    mbedtls_mpi_free(&ref_aa);
+}
+
 static bool test_bignum_modexp(const char *z_str, const char *x_str, const char *y_str, const char *m_str, int ret_error)
 {
     mbedtls_mpi Z = {0}; // Z is non-initialized (the sign Z.s=0)
