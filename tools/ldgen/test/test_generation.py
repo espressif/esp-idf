@@ -224,6 +224,57 @@ entries:
         self.test_rule_generation_default()
 
 
+class ExcludedArchiveTest(GenerationTest):
+    def setUp(self):
+        super().setUp()
+        self.generation = Generation(excluded_archives=['libfreertos.a'])
+        fragment_file = parse_fragment_file('data/base.lf', self.sdkconfig)
+        self.generation.add_fragments_from_file(fragment_file)
+
+    def test_archive_entry(self):
+        # Archive level entries do not need the archive contents.
+        mapping = """
+[mapping:test]
+archive: libfreertos.a
+entries:
+    * (noflash)
+"""
+        self.add_fragments(mapping)
+        self.generation.generate(self.entities, False)
+
+    def test_object_entry(self):
+        mapping = """
+[mapping:test]
+archive: libfreertos.a
+entries:
+    croutine (noflash)
+"""
+        self.add_fragments(mapping)
+        with self.assertRaises(GenerationException):
+            self.generation.generate(self.entities, False)
+
+    def test_symbol_entry(self):
+        mapping = """
+[mapping:test]
+archive: libfreertos.a
+entries:
+    croutine:prvCheckPendingReadyList (noflash)
+"""
+        self.add_fragments(mapping)
+        with self.assertRaises(GenerationException):
+            self.generation.generate(self.entities, False)
+
+    def test_object_entry_other_archive(self):
+        mapping = """
+[mapping:test]
+archive: libsoc.a
+entries:
+    temperature_sensor_periph (noflash)
+"""
+        self.add_fragments(mapping)
+        self.generation.generate(self.entities, False)
+
+
 class MutableMappingTest(GenerationTest):
     # Collection of tests for mutable library mappings
 
