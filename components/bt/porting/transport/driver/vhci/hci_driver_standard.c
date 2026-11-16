@@ -151,6 +151,10 @@ esp_vhci_host_send_packet(uint8_t *data, uint16_t len)
         return;
     }
 
+    if (data == NULL || len == 0) {
+        return;
+    }
+
     hci_driver_vhci_tx(data[0], data, len, HCI_DRIVER_DIR_H2C);
 }
 
