@@ -140,8 +140,23 @@ if(CONFIG_OPENTHREAD_ENABLED OR CONFIG_OPENTHREAD_SPINEL_ONLY)
             idf_component_get_property(openthread_br_lib openthread_br COMPONENT_LIB)
             target_link_libraries(${COMPONENT_LIB} PUBLIC $<TARGET_FILE:${openthread_br_lib}>)
         else()
+            # libopenthread_br.a calls the mDNS API, so mDNS must be linked after it.
+            # Accept both the managed component name and a local "mdns" component.
+            idf_build_get_property(build_components BUILD_COMPONENTS)
+            set(br_mdns_req "")
+            foreach(req espressif__mdns mdns)
+                if(req IN_LIST build_components)
+                    set(br_mdns_req ${req})
+                    break()
+                endif()
+            endforeach()
+            if(NOT br_mdns_req)
+                message(FATAL_ERROR "CONFIG_OPENTHREAD_BORDER_ROUTER requires the mDNS component. "
+                                    "Add 'espressif/mdns' to your project's idf_component.yml.")
+            endif()
             add_prebuilt_library(openthread_br "${CMAKE_CURRENT_SOURCE_DIR}/lib/${idf_target}/libopenthread_br.a"
-                                 REQUIRES openthread)
+                                 REQUIRES openthread
+                                 PRIV_REQUIRES ${br_mdns_req})
             target_link_libraries(${COMPONENT_LIB} INTERFACE openthread_br)
         endif()
     endif()
