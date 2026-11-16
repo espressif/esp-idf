@@ -613,6 +613,36 @@ config WIFI_RMT_NAN_PAIRING
         secure pairing using bootstrapping methods like PIN code.
         Requires PASN in wpa_supplicant (WIFI_RMT_PASN_SUPPORT)
 
+config WIFI_RMT_NAN_HANDSHAKE_FRAME_LOG
+    bool "Retain and dump NDP handshake frames on failure (debug only)"
+    depends on WIFI_RMT_NAN_SECURITY
+    default n
+    help
+        Retain the M1-M4 frame bodies of the current secured-NDP handshake
+        and print them, decoded by attribute plus a raw hex dump, when the
+        NDP fails. Lets a vendor-interop failure be cross-checked against
+        the Wi-Fi Aware spec from the DUT log alone, with no sniffer.
+
+        Costs a static buffer of four retained frames and copies each
+        handshake frame as it is sent or received. Enable only on debug
+        builds while triaging NAN interop issues; keep disabled in
+        production. The failure cause, NDL state and nonces are logged
+        either way.
+
+config WIFI_RMT_NAN_SECURITY_KEY_LOG
+    bool "Log NAN security keys on console (debug only)"
+    depends on WIFI_RMT_NAN_HANDSHAKE_FRAME_LOG
+    default n
+    help
+        Print NAN key material on the console: the PASN NM-TK when pairing
+        completes, and the NM-TK and ND-PTK (KCK/KEK/TK) in the secured-NDP
+        failure dump. The NM-TK can decrypt the protected NDP handshake in a
+        sniffer capture; the KCK allows recomputing handshake MICs offline.
+
+        This exposes secret keys in the log output. Enable only on debug
+        builds while triaging NAN interop issues; keep disabled in
+        production.
+
 config WIFI_RMT_MBEDTLS_CRYPTO
     bool "Use MbedTLS crypto APIs"
     default y

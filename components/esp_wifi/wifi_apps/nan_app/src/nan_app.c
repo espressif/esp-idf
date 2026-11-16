@@ -165,6 +165,8 @@ static struct nan_paired_peer *nan_app_alloc_paired_slot_locked(const uint8_t *p
             oldest = i;
         }
     }
+    ESP_LOGW(TAG, "Paired-peer cache full - evicting oldest peer "MACSTR"; its secured NDPs will fail until re-pairing",
+             MAC2STR(s_nan_ctx.paired_peers[oldest].peer_nmi));
     return &s_nan_ctx.paired_peers[oldest];
 }
 
@@ -221,19 +223,27 @@ void nan_app_remove_paired_peer(const uint8_t *peer_nmi)
     if (p) {
         forced_memzero(p->nd_pmk, sizeof(p->nd_pmk));
         memset(p, 0, sizeof(*p));
+        ESP_LOGW(TAG, "Paired peer "MACSTR" removed - cached ND-PMK destroyed, secured NDPs with this peer will fail until re-pairing",
+                 MAC2STR(peer_nmi));
     }
     NAN_DATA_UNLOCK();
 }
 
 void nan_app_clear_paired_peers(void)
 {
+    int cleared = 0;
+
     NAN_DATA_LOCK();
     for (int i = 0; i < ESP_WIFI_NAN_DATAPATH_MAX_PEERS; i++) {
+        cleared += s_nan_ctx.paired_peers[i].valid ? 1 : 0;
         forced_memzero(s_nan_ctx.paired_peers[i].nd_pmk,
                        sizeof(s_nan_ctx.paired_peers[i].nd_pmk));
     }
     memset(s_nan_ctx.paired_peers, 0, sizeof(s_nan_ctx.paired_peers));
     NAN_DATA_UNLOCK();
+    if (cleared) {
+        ESP_LOGI(TAG, "Cleared %d paired peer(s) on NAN stop - ND-PMKs destroyed, re-pairing needed for secured NDPs", cleared);
+    }
 }
 #endif /* CONFIG_ESP_WIFI_NAN_SECURITY */
 
@@ -560,6 +570,9 @@ static void nan_reset_ndl(uint8_t ndp_id, bool reset_all)
     struct ndl_info *ndl = NULL;
 
     if (reset_all) {
+#if CONFIG_ESP_WIFI_NAN_HANDSHAKE_FRAME_LOG
+        nan_security_clear_handshake_log(0, NULL, true);
+#endif
         memset(s_nan_ctx.ndl, 0, sizeof(struct ndl_info) * ESP_WIFI_NAN_DATAPATH_MAX_PEERS);
 #ifdef CONFIG_ESP_WIFI_NAN_SECURITY
         nan_sec_ndp_clear_sa(0);
@@ -581,6 +594,9 @@ static void nan_reset_ndl(uint8_t ndp_id, bool reset_all)
             if (ndl->ptk_set) {
                 nan_sec_ndp_clear_sa(ndl->ndp_id);
             }
+#endif
+#if CONFIG_ESP_WIFI_NAN_HANDSHAKE_FRAME_LOG
+            nan_security_clear_handshake_log(ndp_id, ndl->peer_nmi, false);
 #endif
             memset(ndl, 0, sizeof(struct ndl_info));
             break;
@@ -1416,7 +1432,12 @@ static void nan_app_ndp_confirm_cb(uint8_t status, struct ndp_cb_peer_info *peer
     }
 
     if (status == NDP_STATUS_REJECTED) {
-        ESP_LOGE(TAG, "NDP request to Peer "MACSTR" rejected [NDP ID - %d]", MAC2STR(peer_nmi), ndp_id);
+        ESP_LOGE(TAG, "NAN_NDP_FAIL peer="MACSTR" ndp_id=%d role=%s: NDP setup did not complete (peer reject or firmware handshake timeout - no M3/Confirm)",
+                 MAC2STR(peer_nmi), ndp_id,
+                 ndl->own_role == ESP_WIFI_NDP_ROLE_INITIATOR ? "initiator" : "responder");
+#ifdef CONFIG_ESP_WIFI_NAN_SECURITY
+        nan_security_record_handshake_failure(ndp_id, peer_nmi, "NDP setup rejected/timed out");
+#endif
         nan_reset_ndl(ndp_id, false);
         os_event_group_set_bits(nan_event_group, NDP_REJECTED);
         goto done;
@@ -1431,7 +1452,8 @@ static void nan_app_ndp_confirm_cb(uint8_t status, struct ndp_cb_peer_info *peer
 #ifdef CONFIG_ESP_WIFI_NAN_SECURITY
     if (ndl->security_ctx.type == WIFI_NAN_SECURITY_ENCRYPTED) {
         if (!ndl->ptk_set || ndl->tk_len < NAN_NCS_SK_128_TK_LEN) {
-            ESP_LOGE(TAG, "NDP confirm: encrypted datapath but TK is not ready (ndp_id=%d)", ndp_id);
+            ESP_LOGE(TAG, "NAN_NDP_FAIL peer="MACSTR" ndp_id=%d: encrypted datapath confirmed but TK is not ready - tearing down", MAC2STR(peer_nmi), ndp_id);
+            nan_security_record_handshake_failure(ndp_id, peer_nmi, "TK not ready at NDP confirm");
             nan_ndp_confirm_teardown(peer_nmi, ndp_id);
             goto done;
         }
@@ -1441,8 +1463,9 @@ static void nan_app_ndp_confirm_cb(uint8_t status, struct ndp_cb_peer_info *peer
          * or was skipped — do not install the TK on a possibly tampered handshake. */
         if (ndl->own_role == ESP_WIFI_NDP_ROLE_INITIATOR &&
             ndl->handshake_state != NAN_HANDSHAKE_COMPLETE) {
-            ESP_LOGE(TAG, "NDP confirm (initiator): handshake_state=%d (not COMPLETE); skipping TK install",
-                     ndl->handshake_state);
+            ESP_LOGE(TAG, "NAN_NDP_FAIL peer="MACSTR" ndp_id=%d: M4 MIC verify failed or skipped (handshake_state=%d, not COMPLETE) - refusing TK install",
+                     MAC2STR(peer_nmi), ndp_id, ndl->handshake_state);
+            nan_security_record_handshake_failure(ndp_id, peer_nmi, "handshake not COMPLETE at TK install");
             nan_ndp_confirm_teardown(peer_nmi, ndp_id);
             goto done;
         }
@@ -1560,7 +1583,7 @@ static void nan_app_ndp_confirm_cb(uint8_t status, struct ndp_cb_peer_info *peer
             if (gret != 0) {
                 ESP_LOGW(TAG, "NDP confirm: own GTK (TX) install failed (ndp_id=%d, ret=%d)", ndp_id, gret);
             } else {
-                ESP_LOGI(TAG, "NDP confirm: own GTK (TX) installed (keyid=%d)", ndl->own_gtk_keyid);
+                ESP_LOGD(TAG, "NDP confirm: own GTK (TX) installed (keyid=%d)", ndl->own_gtk_keyid);
             }
             ESP_LOG_BUFFER_HEXDUMP("ND-GTK", ndl->own_gtk, ndl->own_gtk_len, ESP_LOG_DEBUG);
         }
@@ -1573,7 +1596,7 @@ static void nan_app_ndp_confirm_cb(uint8_t status, struct ndp_cb_peer_info *peer
             if (gret != 0) {
                 ESP_LOGW(TAG, "NDP confirm: peer GTK (RX) install failed (ndp_id=%d, ret=%d)", ndp_id, gret);
             } else {
-                ESP_LOGI(TAG, "NDP confirm: peer GTK (RX) installed (keyid=%d)", ndl->gtk_keyid);
+                ESP_LOGD(TAG, "NDP confirm: peer GTK (RX) installed (keyid=%d)", ndl->gtk_keyid);
             }
         }
 
@@ -1596,7 +1619,7 @@ static void nan_app_ndp_confirm_cb(uint8_t status, struct ndp_cb_peer_info *peer
                 if (r != 0) {
                     ESP_LOGW(TAG, "NDP confirm: peer IGTK (RX) install failed, rc=0x%x (ndp_id=%d)", r, ndp_id);
                 } else {
-                    ESP_LOGI(TAG, "NDP confirm: peer IGTK (RX) installed (keyid=%d)", ndl->igtk_keyid);
+                    ESP_LOGD(TAG, "NDP confirm: peer IGTK (RX) installed (keyid=%d)", ndl->igtk_keyid);
                 }
                 /* Peer IGTK bytes for sniffer MIC cross-check vs the peer's multicast SDFs. */
                 ESP_LOG_BUFFER_HEXDUMP("PEER ND-IGTK", ndl->igtk, ndl->igtk_len, ESP_LOG_DEBUG);
@@ -1615,7 +1638,7 @@ static void nan_app_ndp_confirm_cb(uint8_t status, struct ndp_cb_peer_info *peer
                 if (r != 0) {
                     ESP_LOGW(TAG, "NDP confirm: peer BIGTK (RX) install failed, rc=0x%x (ndp_id=%d)", r, ndp_id);
                 } else {
-                    ESP_LOGI(TAG, "NDP confirm: peer BIGTK (RX) installed (keyid=%d)", ndl->bigtk_keyid);
+                    ESP_LOGD(TAG, "NDP confirm: peer BIGTK (RX) installed (keyid=%d)", ndl->bigtk_keyid);
                 }
                 /* Peer BIGTK bytes for sniffer MIC cross-check vs the peer's protected Beacons. */
                 ESP_LOG_BUFFER_HEXDUMP("PEER ND-BIGTK", ndl->bigtk, ndl->bigtk_len, ESP_LOG_DEBUG);
@@ -1673,6 +1696,9 @@ static void nan_app_ndp_confirm_cb(uint8_t status, struct ndp_cb_peer_info *peer
 
 done:
     NAN_DATA_UNLOCK();
+#if CONFIG_ESP_WIFI_NAN_HANDSHAKE_FRAME_LOG
+    nan_security_print_pending_frames();
+#endif
     return;
 }
 
@@ -1748,6 +1774,9 @@ static void esp_nan_ndp_tx_done_cb(uint8_t ndp_id, const uint8_t *peer_nmi, uint
         ndl->handshake_state = NAN_HANDSHAKE_M2_SENT;
     } else if (msg_type == 4 && ndl->handshake_state == NAN_HANDSHAKE_M3_RCVD) {
         ndl->handshake_state = NAN_HANDSHAKE_COMPLETE;
+#if CONFIG_ESP_WIFI_NAN_HANDSHAKE_FRAME_LOG
+        nan_security_clear_handshake_log(ndp_id, peer_nmi, false);
+#endif
     }
 #endif /* CONFIG_ESP_WIFI_NAN_SECURITY */
 

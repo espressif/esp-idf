@@ -41,6 +41,9 @@ struct nan_data;
 #ifndef NAN_PASN_KEK_MAX_LEN
 #define NAN_PASN_KEK_MAX_LEN 32
 #endif
+#ifndef NAN_PASN_TK_MAX_LEN
+#define NAN_PASN_TK_MAX_LEN 32
+#endif
 #ifndef NAN_PASN_NIK_LEN
 #define NAN_PASN_NIK_LEN 16
 #endif
@@ -98,6 +101,8 @@ struct nan_pasn_key_material {
     uint8_t ptk_blob[NAN_PASN_GLOBAL_PTK_BLOB_MAX];
     size_t kek_len;
     uint8_t kek[NAN_PASN_KEK_MAX_LEN];
+    size_t tk_len;
+    uint8_t tk[NAN_PASN_TK_MAX_LEN]; /* NM-TK — decrypts NMI-addressed NDP/mgmt frames */
 };
 
 /**
