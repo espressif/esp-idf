@@ -427,7 +427,7 @@ static void spp_arm_tx_resume_under_lock(void)
         return;
     }
     if (!spp_local_param.tx_resume_alarm) {
-        spp_local_param.tx_resume_alarm = osi_alarm_new("spp_tx_resume", spp_tx_resume_cb, NULL, SPP_TX_RESUME_TO);
+        spp_local_param.tx_resume_alarm = osi_alarm_new("spp_tx_resume", spp_tx_resume_cb, NULL, NULL);
         if (!spp_local_param.tx_resume_alarm) {
             BTC_TRACE_ERROR("%s create tx_resume_alarm failed\n", __func__);
             return;
