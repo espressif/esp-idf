@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2017-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -287,7 +287,7 @@ static void bt_hidd_init_qos(void)
 {
     uint32_t value_len = 0;
     value_len =
-        get_value_len_by_type_protocol(s_hidd_param.dev, ESP_HID_REPORT_TYPE_INPUT, s_hidd_param.dev->protocol_mode);
+        get_value_len_by_type_protocol(s_hidd_param.dev, ESP_HID_REPORT_TYPE_OUTPUT, s_hidd_param.dev->protocol_mode);
     build_default_in_qos(&s_hidd_param.in_qos, value_len);
 
     value_len =
