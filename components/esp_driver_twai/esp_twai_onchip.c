@@ -68,6 +68,7 @@ typedef struct {
 
     atomic_bool hw_busy;
     atomic_bool rx_isr;
+    portMUX_TYPE spinlock;
     const twai_frame_t *p_curr_tx[TWAI_HAL_TX_BUFFER_SLOT_NUM];
     twai_hal_frame_t rcv_buff;
 } twai_onchip_ctx_t;
@@ -217,6 +218,11 @@ static void _node_isr_main(void *arg)
 {
     BaseType_t do_yield = pdFALSE;
     twai_onchip_ctx_t *twai_ctx = arg;
+    /* Keep TX state transitions serialized with task-side submissions. User
+     * callbacks may call twai_node_transmit() from the ISR; drop this lock
+     * around callbacks so the transmit path can acquire it without deadlock.
+     */
+    portENTER_CRITICAL_ISR(&twai_ctx->spinlock);
     uint32_t events = twai_hal_get_events(twai_ctx->hal);    //Get the events that triggered the interrupt
 
 #if TWAI_LL_HAS_RX_FRAME_ISSUE || TWAI_LL_HAS_RX_FIFO_ISSUE
@@ -239,7 +245,9 @@ static void _node_isr_main(void *arg)
         };
         twai_ctx->history.bus_err_num ++;
         if (twai_ctx->cbs.on_error) {
+            portEXIT_CRITICAL_ISR(&twai_ctx->spinlock);
             do_yield |= twai_ctx->cbs.on_error(&twai_ctx->api_base, &e_data, twai_ctx->user_data);
+            portENTER_CRITICAL_ISR(&twai_ctx->spinlock);
         }
     }
 
@@ -253,11 +261,23 @@ static void _node_isr_main(void *arg)
             .new_sta = curr_sta,
         };
         atomic_store(&twai_ctx->state, e_data.new_sta);
-        if (twai_ctx->cbs.on_state_change) {
-            do_yield |= twai_ctx->cbs.on_state_change(&twai_ctx->api_base, &e_data, twai_ctx->user_data);
+        bool recovered_from_bus_off = (e_data.old_sta == TWAI_ERROR_BUS_OFF) &&
+                                      (e_data.new_sta == TWAI_ERROR_ACTIVE);
+        if (recovered_from_bus_off) {
+            /* Reserve TX ownership until recovery has restarted the queued
+             * frames. The callback (or another core) can submit a frame while
+             * the spinlock is released: it must enqueue instead of starting
+             * hardware that the recovery path could subsequently overwrite.
+             */
+            atomic_store(&twai_ctx->hw_busy, true);
         }
-        // node recover from busoff, restart remain tx transaction
-        if ((e_data.old_sta == TWAI_ERROR_BUS_OFF) && (e_data.new_sta == TWAI_ERROR_ACTIVE)) {
+        if (twai_ctx->cbs.on_state_change) {
+            portEXIT_CRITICAL_ISR(&twai_ctx->spinlock);
+            do_yield |= twai_ctx->cbs.on_state_change(&twai_ctx->api_base, &e_data, twai_ctx->user_data);
+            portENTER_CRITICAL_ISR(&twai_ctx->spinlock);
+        }
+        // Resume queued transmissions before releasing the TX reservation.
+        if (recovered_from_bus_off) {
             if (_node_start_tx_batch_from_isr(twai_ctx, &do_yield)) {
                 atomic_store(&twai_ctx->hw_busy, true);
             } else {
@@ -280,7 +300,9 @@ static void _node_isr_main(void *arg)
                 if (twai_ctx->cbs.on_rx_done) {
                     atomic_store(&twai_ctx->rx_isr, true);  //todo: using compare_exchange to avoid intr from 2nd core
                     twai_rx_done_event_data_t rx_ev = {};
+                    portEXIT_CRITICAL_ISR(&twai_ctx->spinlock);
                     do_yield |= twai_ctx->cbs.on_rx_done(&twai_ctx->api_base, &rx_ev, twai_ctx->user_data);
+                    portENTER_CRITICAL_ISR(&twai_ctx->spinlock);
                     atomic_store(&twai_ctx->rx_isr, false);
                 }
             } else {    // failed to read from RX fifo because message is overrun
@@ -304,7 +326,9 @@ static void _node_isr_main(void *arg)
                     .is_tx_success = (events & TWAI_HAL_EVENT_TX_SUCC_SLOT(tx_idx)),  // find 'on_error_cb' if not success
                     .done_tx_frame = twai_ctx->p_curr_tx[tx_idx],
                 };
+                portEXIT_CRITICAL_ISR(&twai_ctx->spinlock);
                 do_yield |= twai_ctx->cbs.on_tx_done(&twai_ctx->api_base, &tx_ev, twai_ctx->user_data);
+                portENTER_CRITICAL_ISR(&twai_ctx->spinlock);
             }
             twai_ctx->p_curr_tx[tx_idx] = NULL;
             tx_done_events &= ~slot_event;
@@ -318,6 +342,8 @@ static void _node_isr_main(void *arg)
             }
         }
     }
+
+    portEXIT_CRITICAL_ISR(&twai_ctx->spinlock);
 
     if (do_yield) {
         portYIELD_FROM_ISR();
@@ -498,6 +524,7 @@ static esp_err_t _node_enable(twai_node_handle_t node)
     twai_error_state_t hw_state = twai_hal_get_err_state(twai_ctx->hal);
     atomic_store(&twai_ctx->state, hw_state);
     // continuing the transaction if there be
+    portENTER_CRITICAL(&twai_ctx->spinlock);
     if (atomic_load(&twai_ctx->hw_busy) && hw_state != TWAI_ERROR_BUS_OFF) {
         for (uint8_t tx_idx = 0; tx_idx < twai_ctx->tx_slot_num; tx_idx++) {
             if (twai_ctx->p_curr_tx[tx_idx]) {
@@ -505,6 +532,7 @@ static esp_err_t _node_enable(twai_node_handle_t node)
             }
         }
     }
+    portEXIT_CRITICAL(&twai_ctx->spinlock);
     ESP_RETURN_ON_ERROR(esp_intr_enable(twai_ctx->intr_hdl), TAG, "enable interrupt failed");
     return ESP_OK;
 }
@@ -581,8 +609,10 @@ static esp_err_t _node_recover(twai_node_handle_t node)
 
     // After recover command, the hardware require 128 consecutive occurrences of 11 recessive bits received, so that it can be active again!
     // Checking `twai_node_status_t::state` Or waiting `on_state_change` callback can know if recover is finish
+    portENTER_CRITICAL(&twai_ctx->spinlock);
     twai_hal_start_bus_recovery(twai_ctx->hal);
     twai_ctx->history.bus_err_num = 0;
+    portEXIT_CRITICAL(&twai_ctx->spinlock);
     return ESP_OK;
 }
 
@@ -621,15 +651,21 @@ static esp_err_t _node_queue_tx(twai_node_handle_t node, const twai_frame_t *fra
 
     xEventGroupClearBits(twai_ctx->event_group, TWAI_IDLE_EVENT_BIT); //going to send, clear the idle event
     bool false_var = false;
-    if (atomic_compare_exchange_strong(&twai_ctx->hw_busy, &false_var, true)) {
+    portENTER_CRITICAL_SAFE(&twai_ctx->spinlock);
+    bool started = atomic_compare_exchange_strong(&twai_ctx->hw_busy, &false_var, true);
+    if (started) {
         twai_ctx->p_curr_tx[0] = frame; // here only has one frame, using slot 0
         _node_start_trans(twai_ctx, 0);
-    } else {
-        // Hardware busy, need to queue the frame
+    }
+    portEXIT_CRITICAL_SAFE(&twai_ctx->spinlock);
+
+    if (!started) {
+        // Hardware busy, need to queue the frame. This can block, so keep it outside the node spinlock.
         ESP_RETURN_ON_ERROR_ISR(twai_frame_queue_push_safe(twai_ctx->tx_queue, frame, frame->tx_queue_priority, timeout), TAG, "tx queue full");
 
-        // Second chance check for hardware availability
+        // Second chance check for hardware availability. Serialize the dequeue-or-start hand-off with the ISR.
         false_var = false;
+        portENTER_CRITICAL_SAFE(&twai_ctx->spinlock);
         if (atomic_compare_exchange_strong(&twai_ctx->hw_busy, &false_var, true)) {
             if (twai_frame_queue_pop_safe(twai_ctx->tx_queue, &twai_ctx->p_curr_tx[0]) == ESP_OK) {
                 _node_start_trans(twai_ctx, 0);
@@ -638,6 +674,7 @@ static esp_err_t _node_queue_tx(twai_node_handle_t node, const twai_frame_t *fra
                 atomic_store(&twai_ctx->hw_busy, false);
             }
         }
+        portEXIT_CRITICAL_SAFE(&twai_ctx->spinlock);
     }
     return ESP_OK;
 }
@@ -701,6 +738,7 @@ esp_err_t twai_new_node_onchip(const twai_onchip_node_config_t *node_config, twa
     twai_onchip_ctx_t *node = heap_caps_calloc(1, sizeof(twai_onchip_ctx_t) + twai_hal_get_mem_requirment(), MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT);
     ESP_RETURN_ON_FALSE(node, ESP_ERR_NO_MEM, TAG, "No mem");
     node->ctrlr_id = -1;
+    portMUX_INITIALIZE(&node->spinlock);
     // Acquire controller
     int ctrlr_id = _ctrlr_acquire(node);
     ESP_GOTO_ON_FALSE(ctrlr_id != -1, ESP_ERR_NOT_FOUND, err, TAG, "Controller not available");
