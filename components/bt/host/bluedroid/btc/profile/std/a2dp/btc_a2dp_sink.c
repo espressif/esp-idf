@@ -49,6 +49,8 @@ enum {
     BTC_MEDIA_FLUSH_AA_RX,
     BTC_MEDIA_AUDIO_SINK_CFG_UPDATE,
     BTC_MEDIA_AUDIO_SINK_CLEAR_TRACK,
+    BTC_MEDIA_AUDIO_STATS_RESET,
+    BTC_MEDIA_AUDIO_STATS_STOP,
 };
 
 enum {
@@ -160,6 +162,22 @@ static inline void btc_a2d_cb_to_app(esp_a2d_cb_event_t event, esp_a2d_cb_param_
  **  BTC ADAPTATION
  *****************************************************************************/
 
+static void btc_a2dp_sink_handle_audio_stats_reset(void *param)
+{
+    if (param == NULL) {
+        return;
+    }
+    btc_a2dp_audio_stats_reset(*(esp_a2d_conn_hdl_t *)param);
+}
+
+static void btc_a2dp_sink_handle_audio_stats_stop(void *param)
+{
+    if (param == NULL) {
+        return;
+    }
+    btc_a2dp_audio_stats_stop(*(esp_a2d_conn_hdl_t *)param);
+}
+
 static bool btc_a2dp_sink_ctrl(uint32_t sig, void *param)
 {
     switch (sig) {
@@ -178,6 +196,12 @@ static bool btc_a2dp_sink_ctrl(uint32_t sig, void *param)
     case BTC_MEDIA_FLUSH_AA_RX:
         btc_a2dp_sink_rx_flush();
         break;
+    case BTC_MEDIA_AUDIO_STATS_RESET:
+        btc_a2dp_sink_handle_audio_stats_reset(param);
+        break;
+    case BTC_MEDIA_AUDIO_STATS_STOP:
+        btc_a2dp_sink_handle_audio_stats_stop(param);
+        break;
     default:
         APPL_TRACE_WARNING("media task unhandled evt: 0x%x\n", sig);
     }
@@ -187,6 +211,27 @@ static bool btc_a2dp_sink_ctrl(uint32_t sig, void *param)
     }
 
     return true;
+}
+
+static void btc_a2dp_sink_audio_stats_post(uint32_t sig, esp_a2d_conn_hdl_t conn_hdl)
+{
+    esp_a2d_conn_hdl_t *param = (esp_a2d_conn_hdl_t *)osi_malloc(sizeof(esp_a2d_conn_hdl_t));
+    if (param == NULL) {
+        return;
+    }
+
+    *param = conn_hdl;
+    btc_a2dp_sink_ctrl(sig, param);
+}
+
+void btc_a2dp_sink_audio_stats_reset(esp_a2d_conn_hdl_t conn_hdl)
+{
+    btc_a2dp_sink_audio_stats_post(BTC_MEDIA_AUDIO_STATS_RESET, conn_hdl);
+}
+
+void btc_a2dp_sink_audio_stats_stop(esp_a2d_conn_hdl_t conn_hdl)
+{
+    btc_a2dp_sink_audio_stats_post(BTC_MEDIA_AUDIO_STATS_STOP, conn_hdl);
 }
 
 bool btc_a2dp_sink_startup(void)
@@ -534,6 +579,7 @@ static void btc_a2dp_sink_handle_inc_media(BT_HDR *p_msg)
     OI_STATUS status;
     int num_sbc_frames;
     UINT32 sbc_frame_len;
+    UINT16 conn_hdl = btc_a2d_conn_handle_get();
 
     if (p_msg->len < 1) {
         osi_free(p_msg);
@@ -565,10 +611,16 @@ static void btc_a2dp_sink_handle_inc_media(BT_HDR *p_msg)
             APPL_TRACE_WARNING("Sequence numbers error, recv:0x%x, expect:0x%x, recount:0x%x",
                                 p_msg->layer_specific, a2dp_sink_local_param.media_pkt_seq_num.expected_seq_num,
                                 a2dp_sink_local_param.media_pkt_seq_num.seq_num_recount);
+            /* Only a forward gap counts as loss; a backward jump or repeat does not. */
+            int16_t gap = (int16_t)(p_msg->layer_specific - a2dp_sink_local_param.media_pkt_seq_num.expected_seq_num);
+            if (gap > 0) {
+                btc_a2dp_audio_stats_on_lost(conn_hdl, (uint16_t)gap);
+            }
         }
     }
     a2dp_sink_local_param.media_pkt_seq_num.expected_seq_num  = p_msg->layer_specific + 1;
     a2dp_sink_local_param.media_pkt_seq_num.seq_num_recount = false;
+    btc_a2dp_audio_stats_on_handled(conn_hdl);
 
     APPL_TRACE_DEBUG("Number of sbc frames %d, frame_len %d\n", num_sbc_frames, sbc_frame_len);
 
