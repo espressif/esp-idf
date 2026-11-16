@@ -558,6 +558,17 @@ static void l2cap_btu_exec(void *ctx)
     free(cmd);
 }
 
+/* Drain does not run l2cap_btu_exec(). A queued SEND still owns its SDU. */
+static void l2cap_btu_cmd_free(void *ctx)
+{
+    struct l2cap_btu_cmd *cmd = (struct l2cap_btu_cmd *)ctx;
+
+    if (cmd->type == BTU_L2CAP_CMD_SEND) {
+        osi_free(cmd->send.p_buf);
+    }
+    free(cmd);
+}
+
 /* Post cmd to BTU fire-and-forget. Returns 0 on success, -EIO if BTU is
  * unavailable (cmd is freed on failure). Never blocks. No self-delivery check is
  * needed - unlike the sync invoke, posting to our own queue cannot deadlock. */
@@ -567,7 +578,7 @@ static int l2cap_btu_post(struct l2cap_btu_cmd *cmd)
 
     cmd->sync = false;
 
-    if (btu == NULL || !osi_thread_post(btu, l2cap_btu_exec, cmd, 0, 0)) {
+    if (btu == NULL || !osi_thread_post(btu, l2cap_btu_exec, cmd, l2cap_btu_cmd_free, 0, 0)) {
         LOG_ERR("[B]L2capBtuPostFail[%u]", cmd->type);
         free(cmd);
         return -EIO;
@@ -704,7 +715,7 @@ static int l2cap_btu_invoke(struct l2cap_btu_cmd *cmd)
 
     k_sem_reset(&btu_cmd_done);
 
-    if (btu == NULL || !osi_thread_post(btu, l2cap_btu_exec, cmd, 0, 0)) {
+    if (btu == NULL || !osi_thread_post(btu, l2cap_btu_exec, cmd, l2cap_btu_cmd_free, 0, 0)) {
         LOG_WRN("[B]L2capBtuUnavailable[%u]", cmd->type);
         l2cap_btu_exec(cmd);
         k_sem_take(&btu_cmd_done, 0);
