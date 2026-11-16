@@ -58,7 +58,6 @@ bool ble_log_prph_init(size_t trans_cnt)
     usb_serial_jtag_driver_config_t cfg = {
         .tx_buffer_size = CONFIG_BLE_LOG_USJ_TX_BUFSIZE,
         .rx_buffer_size = BLE_LOG_USJ_RX_BUFSIZE,
-        .intr_priority = 0,
     };
     if (usb_serial_jtag_driver_install(&cfg) != ESP_OK) {
         return false;
