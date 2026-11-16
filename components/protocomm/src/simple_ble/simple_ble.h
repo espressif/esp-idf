@@ -71,6 +71,10 @@ typedef struct {
     uint8_t *ble_addr;
     /**  Flag to keep BLE on */
     unsigned keep_ble_on:1;
+    /**  Skip controller/Bluedroid init and enable when the application has
+     *   already brought them up. See protocomm_ble_config_t::reuse_ble_stack
+     *   for the scope this does and does not cover. */
+    unsigned reuse_ble_stack:1;
 
 } simple_ble_cfg_t;
 
