@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -8,7 +8,23 @@
 #include "unity.h"
 #include "esp_cam_ctlr_dvp.h"
 #include "esp_private/esp_cam_dvp.h"
+#include "esp_private/periph_ctrl.h"
 #include "esp_cam_ctlr.h"
+
+static uint8_t get_lcd_cam_ref_count(void)
+{
+    uint8_t count = 0;
+
+    // Take and return one reference only to read the count, without touching the bus clock
+    PERIPH_RCC_ACQUIRE_ATOMIC(PERIPH_LCD_CAM_MODULE, ref_count) {
+        count = ref_count;
+    }
+    PERIPH_RCC_RELEASE_ATOMIC(PERIPH_LCD_CAM_MODULE, ref_count) {
+        (void)ref_count;
+    }
+
+    return count;
+}
 
 TEST_CASE("TEST DVP driver allocation", "[DVP]")
 {
@@ -186,4 +202,16 @@ TEST_CASE("TEST DVP driver only output xclk signal", "[DVP]")
     TEST_ESP_OK(esp_cam_ctlr_dvp_start_clock(0, 15, CAM_CLK_SRC_PLL240M, 24000000));
     TEST_ESP_OK(esp_cam_ctlr_dvp_deinit(0));
 #endif
+}
+
+TEST_CASE("TEST DVP driver deinit releases LCD_CAM bus reference", "[DVP]")
+{
+    uint8_t ref_count = get_lcd_cam_ref_count();
+
+    for (int i = 0; i < 3; i++) {
+        TEST_ESP_OK(esp_cam_ctlr_dvp_start_clock(0, GPIO_NUM_NC, CAM_CLK_SRC_DEFAULT, 20000000));
+        TEST_ASSERT_EQUAL_UINT8(ref_count + 1, get_lcd_cam_ref_count());
+        TEST_ESP_OK(esp_cam_ctlr_dvp_deinit(0));
+        TEST_ASSERT_EQUAL_UINT8(ref_count, get_lcd_cam_ref_count());
+    }
 }
