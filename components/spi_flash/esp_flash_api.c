@@ -931,7 +931,7 @@ esp_err_t esp_flash_read(esp_flash_t *chip, void *buffer, uint32_t address, uint
 {
     esp_err_t err = rom_spiflash_api_funcs->chip_check(&chip);
     VERIFY_CHIP_OP(read);
-    if (buffer == NULL || address > chip->size || address+length > chip->size) {
+    if (buffer == NULL || address > chip->size || length > chip->size - address) {
         return ESP_ERR_INVALID_ARG;
     }
     if (length == 0) {
@@ -1253,7 +1253,7 @@ esp_err_t esp_flash_read_encrypted(esp_flash_t *chip, uint32_t address, void *ou
 {
     esp_err_t err = rom_spiflash_api_funcs->chip_check(&chip);
     if (err != ESP_OK) return err;
-    if (address + length > g_rom_flashchip.chip_size) {
+    if (address > g_rom_flashchip.chip_size || length > g_rom_flashchip.chip_size - address) {
         return ESP_ERR_INVALID_SIZE;
     }
     if (length == 0) {
