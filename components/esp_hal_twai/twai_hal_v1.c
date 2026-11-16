@@ -212,9 +212,19 @@ static inline uint32_t twai_hal_decode_interrupt(twai_hal_context_t *hal_ctx)
     uint32_t events = 0;
     uint32_t interrupts = twai_ll_get_and_clear_intrs(hal_ctx->dev);
     uint32_t status = twai_ll_get_status(hal_ctx->dev);
+    uint32_t state_flags = hal_ctx->state_flags;
+#if TWAI_LL_HAS_INTR_LOST_ISSUE
+    // Errata workaround: The transmission is about to be reported from the transmit buffer status bit (see below).
+    // If it completed after the interrupts were read, its transmit interrupt is set by now. Read the interrupts again,
+    // otherwise that interrupt would report the same transmission a second time on the next ISR entry.
+    if (!(interrupts & TWAI_LL_INTR_TI) && (state_flags & TWAI_HAL_STATE_FLAG_TX_BUFF_OCCUPIED) &&
+            (status & TWAI_LL_STATUS_TBS)) {
+        interrupts |= twai_ll_get_and_clear_intrs(hal_ctx->dev);
+        status = twai_ll_get_status(hal_ctx->dev);
+    }
+#endif
     uint32_t tec = twai_ll_get_tec(hal_ctx->dev);
     uint32_t rec = twai_ll_get_rec(hal_ctx->dev);
-    uint32_t state_flags = hal_ctx->state_flags;
 
     //Error Warning Interrupt set whenever Error or Bus Status bit changes
     if (interrupts & TWAI_LL_INTR_EI) {
