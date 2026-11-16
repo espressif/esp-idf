@@ -1,8 +1,9 @@
-# SPDX-FileCopyrightText: 2021-2024 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2021-2026 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
 """
 This file is used in CI generate binary files for different kinds of apps
 """
+
 import argparse
 import os
 import sys
@@ -29,6 +30,21 @@ CI_ENV_VARS = {
     'LDGEN_CHECK_MAPPING': '1',
     'IDF_CI_BUILD': '1',
 }
+
+
+def _file_type(mode: str):  # type: ignore
+    """Open files for argparse arguments (argparse's own file factory is deprecated in Python 3.15)."""
+
+    def _open(path: str):  # type: ignore
+        if path == '-':
+            stream = sys.stdin if 'r' in mode else sys.stdout
+            return stream.buffer if 'b' in mode else stream
+        try:
+            return open(path, mode, encoding=None if 'b' in mode else 'utf-8')
+        except OSError as e:
+            raise argparse.ArgumentTypeError(f"can't open '{path}': {e}")
+
+    return _open
 
 
 def main(args: argparse.Namespace) -> None:
@@ -148,7 +164,7 @@ if __name__ == '__main__':
     parser.add_argument(
         '--ignore-warning-file',
         default=DEFAULT_IGNORE_WARNING_FILEPATH,
-        type=argparse.FileType('r'),
+        type=_file_type('r'),
         help='Ignore the warning strings in the specified file. Each line should be a regex string.',
     )
     parser.add_argument(

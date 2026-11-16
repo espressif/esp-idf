@@ -1,11 +1,12 @@
 #!/usr/bin/env python
-# SPDX-FileCopyrightText: 2016-2024 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2016-2026 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
 #
 # esp32ulp_mapgen utility converts a symbol list provided by nm into an export script
 # for the linker and a header file.
 import argparse
 import os
+import sys
 import textwrap
 import typing
 
@@ -13,15 +14,18 @@ UTIL = os.path.basename(__file__)
 
 
 def gen_ld_h_from_sym(f_sym: typing.TextIO, f_ld: typing.TextIO, f_h: typing.TextIO, base_addr: int) -> None:
-    f_ld.write(textwrap.dedent(
-        f"""
+    f_ld.write(
+        textwrap.dedent(
+            f"""
         /* ULP variable definitions for the linker.
          * This file is generated automatically by {UTIL} utility.
          */
         """
-    ))
-    f_h.write(textwrap.dedent(
-        f"""
+        )
+    )
+    f_h.write(
+        textwrap.dedent(
+            f"""
         /* ULP variable definitions for the compiler.
          * This file is generated automatically by {UTIL} utility.
          */
@@ -30,7 +34,8 @@ def gen_ld_h_from_sym(f_sym: typing.TextIO, f_ld: typing.TextIO, f_h: typing.Tex
         extern "C" {{
         #endif
         """
-    ))
+        )
+    )
 
     for line in f_sym:
         # NM "posix" format output has the following structure:
@@ -38,31 +43,56 @@ def gen_ld_h_from_sym(f_sym: typing.TextIO, f_ld: typing.TextIO, f_h: typing.Tex
         parts = line.split()
         name = parts[0]
         addr = int(parts[2], 16) + base_addr
-        f_h.write('extern uint32_t ulp_{0};\n'.format(name))
-        f_ld.write('PROVIDE ( ulp_{0} = 0x{1:08x} );\n'.format(name, addr))
+        f_h.write(f'extern uint32_t ulp_{name};\n')
+        f_ld.write(f'PROVIDE ( ulp_{name} = 0x{addr:08x} );\n')
 
-    f_h.write(textwrap.dedent(
-        """
+    f_h.write(
+        textwrap.dedent(
+            """
         #ifdef __cplusplus
         }
         #endif
         """
-    ))
+        )
+    )
+
+
+def _file_type(mode: str):  # type: ignore
+    """Open files for argparse arguments (argparse's own file factory is deprecated in Python 3.15)."""
+
+    def _open(path: str):  # type: ignore
+        if path == '-':
+            stream = sys.stdin if 'r' in mode else sys.stdout
+            return stream.buffer if 'b' in mode else stream
+        try:
+            return open(path, mode, encoding=None if 'b' in mode else 'utf-8')
+        except OSError as e:
+            raise argparse.ArgumentTypeError(f"can't open '{path}': {e}")
+
+    return _open
 
 
 def main() -> None:
-    description = ('This application generates .h and .ld files for symbols defined in input file. '
-                   'The input symbols file can be generated using nm utility like this: '
-                   '<PREFIX>nm -g -f posix <elf_file> > <symbols_file>')
+    description = (
+        'This application generates .h and .ld files for symbols defined in input file. '
+        'The input symbols file can be generated using nm utility like this: '
+        '<PREFIX>nm -g -f posix <elf_file> > <symbols_file>'
+    )
 
     parser = argparse.ArgumentParser(description=description)
-    parser.add_argument('-s', '--symfile', required=True, help='symbols file name', metavar='SYMFILE', type=argparse.FileType('r'))
-    parser.add_argument('-o', '--outputfile', required=True, help='destination .h and .ld files name prefix', metavar='OUTFILE')
+    parser.add_argument(
+        '-s', '--symfile', required=True, help='symbols file name', metavar='SYMFILE', type=_file_type('r')
+    )
+    parser.add_argument(
+        '-o', '--outputfile', required=True, help='destination .h and .ld files name prefix', metavar='OUTFILE'
+    )
     parser.add_argument('--base-addr', required=True, help='base address of the ULP memory, to be added to each symbol')
 
     args = parser.parse_args()
 
-    with open(args.outputfile + '.h', 'w', encoding='utf-8') as f_h, open(args.outputfile + '.ld', 'w', encoding='utf-8') as f_ld:
+    with open(args.outputfile + '.h', 'w', encoding='utf-8') as f_h, open(
+        args.outputfile + '.ld', 'w', encoding='utf-8'
+    ) as f_ld:
         gen_ld_h_from_sym(args.symfile, f_ld, f_h, int(args.base_addr, 0))
 
 
