@@ -7,8 +7,10 @@
 # See https://docs.espressif.com/projects/esp-idf/en/latest/api-guides/partition-tables.html
 # for explanation of partition table structure and uses.
 #
-# SPDX-FileCopyrightText: 2016-2025 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2016-2026 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
+# ruff: noqa: UP031  # legacy file, kept as is in the backport
+
 import argparse
 import binascii
 import codecs
@@ -153,7 +155,7 @@ def add_extra_subtypes(csv):
                     raise ValueError('Found duplicate value in partition subtype')
             SUBTYPES[TYPES[fields[0]]][fields[1]] = int(fields[2], 16)
         except InputError as err:
-            raise InputError('Error parsing custom subtypes: %s' % err)
+            raise InputError(f'Error parsing custom subtypes: {err}')
 
 
 quiet = False
@@ -193,7 +195,7 @@ def get_encoding(first_bytes):
 
 class PartitionTable(list):
     def __init__(self):
-        super(PartitionTable, self).__init__(self)
+        super().__init__(self)
 
     @classmethod
     def from_file(cls, f):
@@ -216,7 +218,7 @@ class PartitionTable(list):
             f = os.path.expandvars(f)
             m = re.match(r'(?<!\\)\$([A-Za-z_][A-Za-z0-9_]*)', f)
             if m:
-                raise InputError("unknown variable '%s'" % m.group(1))
+                raise InputError(f"unknown variable '{m.group(1)}'")
             return f
 
         for line_no in range(len(lines)):
@@ -272,9 +274,9 @@ class PartitionTable(list):
             for x in self:
                 if x.name == item:
                     return x
-            raise ValueError("No partition entry named '%s'" % item)
+            raise ValueError(f"No partition entry named '{item}'")
         else:
-            return super(PartitionTable, self).__getitem__(item)
+            return super().__getitem__(item)
 
     def find_by_type(self, ptype, subtype):
         """Return a partition by type & subtype, returns
@@ -308,7 +310,7 @@ class PartitionTable(list):
             critical('A list of partitions that have the same name:')
             for p in sorted(self, key=lambda x: x.name):
                 if len(duplicates.intersection([p.name])) != 0:
-                    critical('%s' % (p.to_csv()))
+                    critical(f'{p.to_csv()}')
             raise InputError('Partition names must be unique')
 
         # check for overlaps
@@ -319,11 +321,11 @@ class PartitionTable(list):
                 is_primary_partition_table = p.type == PARTITION_TABLE_TYPE and p.subtype == SUBTYPES[p.type]['primary']
                 if not (is_primary_bootloader or is_primary_partition_table):
                     raise InputError(
-                        'Partition offset 0x%x is below 0x%x' % (p.offset, offset_part_table + PARTITION_TABLE_SIZE)
+                        f'Partition offset 0x{p.offset:x} is below 0x{offset_part_table + PARTITION_TABLE_SIZE:x}'
                     )
             if last is not None and p.offset < last.offset + last.size:
                 raise InputError(
-                    'Partition at 0x%x overlaps 0x%x-0x%x' % (p.offset, last.offset, last.offset + last.size - 1)
+                    f'Partition at 0x{p.offset:x} overlaps 0x{last.offset:x}-0x{last.offset + last.size - 1:x}'
                 )
             last = p
 
@@ -331,7 +333,7 @@ class PartitionTable(list):
         otadata_duplicates = [p for p in self if p.type == TYPES['data'] and p.subtype == SUBTYPES[DATA_TYPE]['ota']]
         if len(otadata_duplicates) > 1:
             for p in otadata_duplicates:
-                critical('%s' % (p.to_csv()))
+                critical(f'{p.to_csv()}')
             raise InputError(
                 'Found multiple otadata partitions. Only one partition can be defined with '
                 'type="data"(1) and subtype="ota"(0).'
@@ -339,7 +341,7 @@ class PartitionTable(list):
 
         if len(otadata_duplicates) == 1 and otadata_duplicates[0].size != 0x2000:
             p = otadata_duplicates[0]
-            critical('%s' % (p.to_csv()))
+            critical(f'{p.to_csv()}')
             raise InputError('otadata partition must have size = 0x2000')
 
         # Above checks but for TEE otadata
@@ -348,7 +350,7 @@ class PartitionTable(list):
         ]
         if len(otadata_duplicates) > 1:
             for p in otadata_duplicates:
-                critical('%s' % (p.to_csv()))
+                critical(f'{p.to_csv()}')
             raise InputError(
                 'Found multiple TEE otadata partitions. Only one partition can be defined with '
                 'type="data"(1) and subtype="tee_ota"(0x90).'
@@ -356,7 +358,7 @@ class PartitionTable(list):
 
         if len(otadata_duplicates) == 1 and otadata_duplicates[0].size != 0x2000:
             p = otadata_duplicates[0]
-            critical('%s' % (p.to_csv()))
+            critical(f'{p.to_csv()}')
             raise InputError('TEE otadata partition must have size = 0x2000')
 
     def flash_size(self):
@@ -397,8 +399,8 @@ class PartitionTable(list):
                     continue  # the next iteration will check for the end marker
                 else:
                     raise InputError(
-                        "MD5 checksums don't match! (computed: 0x%s, parsed: 0x%s)"
-                        % (md5.hexdigest(), binascii.hexlify(data[16:]))
+                        f"MD5 checksums don't match! (computed: 0x{md5.hexdigest()}, "
+                        f'parsed: 0x{binascii.hexlify(data[16:])})'
                     )
             else:
                 md5.update(data)
@@ -420,7 +422,7 @@ class PartitionTable(list):
         return '\n'.join(rows) + '\n'
 
 
-class PartitionDefinition(object):
+class PartitionDefinition:
     MAGIC_BYTES = b'\xaa\x50'
 
     # dictionary maps flag name (as used in CSV flags list, property name)
@@ -465,7 +467,7 @@ class PartitionDefinition(object):
             if flag in cls.FLAGS:
                 setattr(res, flag, True)
             elif len(flag) > 0:
-                raise InputError("CSV flag column contains unknown flag '%s'" % (flag))
+                raise InputError(f"CSV flag column contains unknown flag '{flag}'")
 
         return res
 
@@ -480,14 +482,11 @@ class PartitionDefinition(object):
 
     def __repr__(self):
         def maybe_hex(x):
-            return '0x%x' % x if x is not None else 'None'
+            return f'0x{x:x}' if x is not None else 'None'
 
-        return "PartitionDefinition('%s', 0x%x, 0x%x, %s, %s)" % (
-            self.name,
-            self.type,
-            self.subtype or 0,
-            maybe_hex(self.offset),
-            maybe_hex(self.size),
+        return (
+            f"PartitionDefinition('{self.name}', 0x{self.type:x}, "
+            f'0x{self.subtype or 0:x}, {maybe_hex(self.offset)}, {maybe_hex(self.size)})'
         )
 
     def __str__(self):
@@ -566,42 +565,42 @@ class PartitionDefinition(object):
             raise ValidationError(self, 'Size field is not set')
         offset_align = get_alignment_offset_for_type(self.type)
         if self.offset % offset_align:
-            raise ValidationError(self, 'Offset 0x%x is not aligned to 0x%x' % (self.offset, offset_align))
+            raise ValidationError(self, f'Offset 0x{self.offset:x} is not aligned to 0x{offset_align:x}')
         if self.type == APP_TYPE:
             size_align = get_alignment_size_for_type(self.type)
             if self.size % size_align:
-                raise ValidationError(self, 'Size 0x%x is not aligned to 0x%x' % (self.size, size_align))
+                raise ValidationError(self, f'Size 0x{self.size:x} is not aligned to 0x{size_align:x}')
 
         if self.name in TYPES and TYPES.get(self.name, '') != self.type:
             critical(
-                "WARNING: Partition has name '%s' which is a partition type, but does not match this partition's "
-                'type (0x%x). Mistake in partition table?' % (self.name, self.type)
+                f"WARNING: Partition has name '{self.name}' which is a "
+                "partition type, but does not match this partition's "
+                f'type (0x{self.type:x}). Mistake in partition table?'
             )
         all_subtype_names = []
         for names in (t.keys() for t in SUBTYPES.values()):
             all_subtype_names += names
         if self.name in all_subtype_names and SUBTYPES.get(self.type, {}).get(self.name, '') != self.subtype:
             critical(
-                "WARNING: Partition has name '%s' which is a partition subtype, but this partition has "
-                'non-matching type 0x%x and subtype 0x%x. Mistake in partition table?'
-                % (self.name, self.type, self.subtype)
+                f"WARNING: Partition has name '{self.name}' which is a partition subtype, but this partition has "
+                f'non-matching type 0x{self.type:x} and subtype 0x{self.subtype:x}. Mistake in partition table?'
             )
 
         always_rw_data_subtypes = [SUBTYPES[DATA_TYPE]['ota'], SUBTYPES[DATA_TYPE]['coredump']]
         if self.type == TYPES['data'] and self.subtype in always_rw_data_subtypes and self.readonly is True:
             raise ValidationError(
                 self,
-                "'%s' partition of type %s and subtype %s is always read-write and cannot be read-only"
-                % (self.name, self.type, self.subtype),
+                f"'{self.name}' partition of type {self.type} and subtype "
+                f'{self.subtype} is always read-write and cannot be read-only',
             )
 
         if self.type == TYPES['data'] and self.subtype == SUBTYPES[DATA_TYPE]['nvs']:
             if self.size < NVS_RW_MIN_PARTITION_SIZE and self.readonly is False:
                 raise ValidationError(
                     self,
-                    """'%s' partition of type %s and subtype %s of this size (0x%x) must be flagged as 'readonly' \
-(the size of read/write NVS has to be at least 0x%x)"""
-                    % (self.name, self.type, self.subtype, self.size, NVS_RW_MIN_PARTITION_SIZE),
+                    f"'{self.name}' partition of type {self.type} and subtype {self.subtype} "
+                    f"of this size (0x{self.size:x}) must be flagged as 'readonly' "
+                    f'(the size of read/write NVS has to be at least 0x{NVS_RW_MIN_PARTITION_SIZE:x})',
                 )
 
     STRUCT_FORMAT = b'<2sBBLL16sL'
@@ -616,13 +615,13 @@ class PartitionDefinition(object):
             res.name = res.name[: res.name.index(b'\x00')]
         res.name = res.name.decode()
         if magic != cls.MAGIC_BYTES:
-            raise InputError('Invalid magic bytes (%r) for partition definition' % magic)
+            raise InputError(f'Invalid magic bytes ({magic!r}) for partition definition')
         for flag, bit in cls.FLAGS.items():
             if flags & (1 << bit):
                 setattr(res, flag, True)
                 flags &= ~(1 << bit)
         if flags != 0:
-            critical('WARNING: Partition definition had unknown flag(s) 0x%08x. Newer binary format?' % flags)
+            critical(f'WARNING: Partition definition had unknown flag(s) 0x{flags:08x}. Newer binary format?')
         return res
 
     def get_flags_list(self):
@@ -647,7 +646,7 @@ class PartitionDefinition(object):
                 for val, suffix in [(0x100000, 'M'), (0x400, 'K')]:
                     if a % val == 0:
                         return '%d%s' % (a // val, suffix)
-            return '0x%x' % a
+            return f'0x{a:x}'
 
         def lookup_keyword(t, keywords):
             for k, v in keywords.items():
@@ -682,11 +681,26 @@ def parse_int(v, keywords={}):
         return int(v, 0)
     except ValueError:
         if len(keywords) == 0:
-            raise InputError('Invalid field value %s' % v)
+            raise InputError(f'Invalid field value {v}')
         try:
             return keywords[v.lower()]
         except KeyError:
-            raise InputError("Value '%s' is not valid. Known keywords: %s" % (v, ', '.join(keywords)))
+            raise InputError("Value '{}' is not valid. Known keywords: {}".format(v, ', '.join(keywords)))
+
+
+def _file_type(mode: str):  # type: ignore
+    """Open files for argparse arguments (argparse's own file factory is deprecated in Python 3.15)."""
+
+    def _open(path: str):  # type: ignore
+        if path == '-':
+            stream = sys.stdin if 'r' in mode else sys.stdout
+            return stream.buffer if 'b' in mode else stream
+        try:
+            return open(path, mode, encoding=None if 'b' in mode else 'utf-8')
+        except OSError as e:
+            raise argparse.ArgumentTypeError(f"can't open '{path}': {e}")
+
+    return _open
 
 
 def main():
@@ -727,7 +741,7 @@ def main():
         choices=[SECURE_V1, SECURE_V2],
     )
     parser.add_argument('--extra-partition-subtypes', help='Extra partition subtype entries', nargs='*')
-    parser.add_argument('input', help='Path to CSV or binary file to parse.', type=argparse.FileType('rb'))
+    parser.add_argument('input', help='Path to CSV or binary file to parse.', type=_file_type('rb'))
     parser.add_argument(
         'output',
         help='Path to output converted binary or CSV file. Will use stdout if omitted.',
@@ -789,12 +803,12 @@ def main():
 
 class InputError(RuntimeError):
     def __init__(self, e):
-        super(InputError, self).__init__(e)
+        super().__init__(e)
 
 
 class ValidationError(InputError):
     def __init__(self, partition, message):
-        super(ValidationError, self).__init__('Partition %s invalid: %s' % (partition.name, message))
+        super().__init__(f'Partition {partition.name} invalid: {message}')
 
 
 if __name__ == '__main__':

@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 #
-# SPDX-FileCopyrightText: 2019-2025 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2019-2026 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
 
 
@@ -87,7 +87,6 @@ def main() -> None:
 
     parser.add_argument(
         '--env-file',
-        type=argparse.FileType('r'),
         help='Optional file to load environment variables from. Contents '
         'should be a JSON object where each key/value pair is a variable.',
     )
@@ -110,7 +109,12 @@ def main() -> None:
         sys.exit(1)
 
     if args.env_file is not None:
-        env.update(json.load(args.env_file))
+        try:
+            with open(args.env_file, encoding='utf-8') as f:
+                env.update(json.load(f))
+        except (OSError, json.JSONDecodeError) as e:
+            print(f'Cannot read --env-file {args.env_file}: {e}')
+            sys.exit(1)
 
     list_separator = ';' if args.list_separator == 'semicolon' else ' '
 
