@@ -45,12 +45,16 @@ psa_status_t esp_sha256_driver_clone(const esp_sha256_context *source_ctx, esp_s
         return PSA_ERROR_INVALID_ARGUMENT;
     }
     memcpy(target_ctx, source_ctx, sizeof(esp_sha256_context));
+#ifdef MBEDTLS_PSA_ACCEL_ALG_SHA_256
     // If the source context is in hardware mode, we need to read the digest state
     // from the hardware engine to ensure the target context has the correct state
     if (source_ctx->operation_mode == ESP_SHA_MODE_HARDWARE) {
         esp_sha_read_digest_state(SHA2_256, target_ctx->state);
         target_ctx->operation_mode = ESP_SHA_MODE_SOFTWARE; // Cloned context operates in software mode
     }
+#else
+    target_ctx->operation_mode = ESP_SHA_MODE_SOFTWARE;
+#endif // MBEDTLS_PSA_ACCEL_ALG_SHA_256
     return PSA_SUCCESS;
 }
 
@@ -83,9 +87,11 @@ psa_status_t esp_sha256_starts(esp_sha256_context *ctx, int mode)
     }
 
     ctx->mode = mode;
+#ifdef MBEDTLS_PSA_ACCEL_ALG_SHA_256
     if (ctx->operation_mode == ESP_SHA_MODE_HARDWARE) {
         esp_sha_unlock_engine(SHA2_256);
     }
+#endif // MBEDTLS_PSA_ACCEL_ALG_SHA_256
     ctx->operation_mode = ESP_SHA_MODE_UNUSED;
     return PSA_SUCCESS;
 }
@@ -196,6 +202,7 @@ static void esp_sha256_software_process(esp_sha256_context *ctx, const unsigned 
 }
 static int esp_internal_sha256_parallel_engine_process(esp_sha256_context *ctx, const unsigned char data[64], bool read_digest)
 {
+#ifdef MBEDTLS_PSA_ACCEL_ALG_SHA_256
     bool first_block = false;
 
     if (ctx->operation_mode == ESP_SHA_MODE_UNUSED) {
@@ -220,7 +227,9 @@ static int esp_internal_sha256_parallel_engine_process(esp_sha256_context *ctx, 
     } else {
         esp_sha256_software_process(ctx, data);
     }
-
+#else
+    esp_sha256_software_process(ctx, data);
+#endif // MBEDTLS_PSA_ACCEL_ALG_SHA_256
     return 0;
 }
 
@@ -229,8 +238,8 @@ int esp_internal_sha256_process( esp_sha256_context *ctx, const unsigned char da
     return esp_internal_sha256_parallel_engine_process(ctx, data, true);
 }
 
-static int esp_sha256_update(esp_sha256_context *ctx, const unsigned char *input,
-                               size_t ilen)
+int esp_sha256_update(esp_sha256_context *ctx, const unsigned char *input,
+                      size_t ilen)
 {
     int ret = -1;
     size_t fill;
@@ -271,9 +280,11 @@ static int esp_sha256_update(esp_sha256_context *ctx, const unsigned char *input
         ilen  -= 64;
     }
 
+#ifdef MBEDTLS_PSA_ACCEL_ALG_SHA_256
     if (ctx->operation_mode == ESP_SHA_MODE_HARDWARE) {
         esp_sha_read_digest_state(SHA2_256, ctx->state);
     }
+#endif // MBEDTLS_PSA_ACCEL_ALG_SHA_256
 
     if ( ilen > 0 ) {
         memcpy( (void *) (ctx->buffer + left), input, ilen );
@@ -289,7 +300,7 @@ static const unsigned char sha256_padding[64] = {
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
 };
 
-static int esp_sha256_finish(esp_sha256_context *ctx, unsigned char *output)
+int esp_sha256_finish(esp_sha256_context *ctx, unsigned char *output)
 {
     int ret = -1;
     uint32_t last, padn;
@@ -314,9 +325,11 @@ static int esp_sha256_finish(esp_sha256_context *ctx, unsigned char *output)
         goto out;
     }
 
+#ifdef MBEDTLS_PSA_ACCEL_ALG_SHA_256
     if (ctx->operation_mode == ESP_SHA_MODE_HARDWARE) {
         esp_sha_read_digest_state(SHA2_256, ctx->state);
     }
+#endif // MBEDTLS_PSA_ACCEL_ALG_SHA_256
 
     PUT_UINT32_BE( ctx->state[0], output,  0 );
     PUT_UINT32_BE( ctx->state[1], output,  4 );
@@ -340,10 +353,12 @@ static int esp_sha256_finish(esp_sha256_context *ctx, unsigned char *output)
 
 
 out:
+#ifdef MBEDTLS_PSA_ACCEL_ALG_SHA_256
     if (ctx->operation_mode == ESP_SHA_MODE_HARDWARE) {
         esp_sha_unlock_engine(SHA2_256);
         ctx->operation_mode = ESP_SHA_MODE_SOFTWARE;
     }
+#endif // MBEDTLS_PSA_ACCEL_ALG_SHA_256
     return ret;
 }
 
@@ -448,11 +463,13 @@ psa_status_t esp_sha256_driver_abort(esp_sha256_context *ctx)
     if (!ctx) {
         return PSA_ERROR_INVALID_ARGUMENT;
     }
+#ifdef MBEDTLS_PSA_ACCEL_ALG_SHA_256
     // Also unlock the hardware engine if it was in use
     if (ctx->operation_mode == ESP_SHA_MODE_HARDWARE) {
         esp_sha_unlock_engine(SHA2_256);
         ctx->operation_mode = ESP_SHA_MODE_SOFTWARE;
     }
+#endif // MBEDTLS_PSA_ACCEL_ALG_SHA_256
     mbedtls_platform_zeroize(ctx, sizeof(esp_sha256_context));
     return PSA_SUCCESS;
 }
