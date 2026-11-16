@@ -954,6 +954,29 @@ void vPortAbortIfTaskPieBlacklisted(StaticTask_t *task, void *frame)
 }
 #endif /* CONFIG_FREERTOS_DEBUG_TASK_PIE_BLACKLIST */
 
+#if SOC_CPU_HAS_PIE
+/**
+ * @brief Abort if the given task uses the PIE coprocessor while its stack is not in SIMD-capable memory.
+ *
+ * Only internal DRAM and external RAM support the PIE data accesses, RTC RAM and SPM do not.
+ *
+ * Called from the PIE illegal-instruction path on the task's first PIE use, so this must not
+ * trigger another exception via abort().
+ */
+void vPortAbortIfPieStackNotSimdCapable(StaticTask_t *task, void *frame)
+{
+    const intptr_t stack = (intptr_t) task->pxDummy6;
+    const bool simd_capable = esp_ptr_in_dram((const void *) stack) ||
+                              (stack >= SOC_EXTRAM_LOW && stack < SOC_EXTRAM_HIGH);
+    if (!simd_capable) {
+        g_panic_abort = true;
+        g_panic_abort_details = (char *) "ERROR: Task used PIE but its stack is not in SIMD-capable memory "
+                                "(e.g., it is in RTC RAM or SPM)! Allocate the stack with MALLOC_CAP_SIMD.\n";
+        xt_unhandled_exception(frame);
+    }
+}
+#endif /* SOC_CPU_HAS_PIE */
+
 #if CONFIG_IDF_TARGET_ESP32S31
 /* On the ESP32-S31, the PIE is only available on core 1, so we need to perform a few checks when core 0 uses a PIE instruction.
  * the functions here will help us with that. */

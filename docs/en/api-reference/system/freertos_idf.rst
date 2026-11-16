@@ -460,6 +460,8 @@ Misc
 
             Because of this migration, tasks must **not** use the PIE coprocessor within a critical section or ISR, as doing so will cause a runtime abort.
 
+    A task that uses the PIE coprocessor must have its stack in SIMD-capable memory (:c:macro:`MALLOC_CAP_SIMD`). The PIE context is saved on the task's stack, and libraries such as ESP-DSP and ESP-DL also keep PIE data on the stack. Memories such as RTC RAM and SPM do not support the PIE data accesses, which either fault or silently access the wrong data. A task whose stack is not in SIMD-capable memory therefore aborts on its first PIE instruction. :cpp:func:`xTaskCreate` can place a task stack in such memory once the other internal memory is exhausted. To guarantee a SIMD-capable stack for a task that uses the PIE coprocessor, allocate the stack with :c:macro:`MALLOC_CAP_SIMD` and create the task with :cpp:func:`xTaskCreateStatic` or :cpp:func:`xTaskCreateWithCaps`.
+
     Accidental PIE use (for example from a deep call stack that pulls in a PIE helper) can pin a task that was not meant to run on the PIE core. Enable :menuitem:`CONFIG_FREERTOS_DEBUG_TASK_PIE_BLACKLIST` and call :cpp:func:`vTaskSetPieBlacklisted` on tasks that must not execute PIE. The flag is consulted only inside the coprocessor trap. PIE stays enabled while its owner keeps running, so instructions issued before that task is switched out do not trap. After the task is switched out, PIE is disabled and the next PIE instruction traps. A blacklisted task aborts on that trap even if it is still the coprocessor owner, instead of being silently pinned.
 
     .. code-block:: c

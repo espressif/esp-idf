@@ -54,6 +54,12 @@ void pie_load_q_regs(const uint32_t src[32]);
  */
 void pie_store_q_regs(uint32_t dst[32]);
 
+#if CONFIG_IDF_TARGET_ESP32S31
+#define TEST_PIE_CORE   1   // Only core 1 has the PIE on the ESP32-S31
+#else
+#define TEST_PIE_CORE   0
+#endif
+
 /* ------------------------------------------------------------------------------------------------------------------ */
 
 typedef struct {
@@ -397,12 +403,6 @@ Expected:
 
 #define TEST_PSRAM_STACK_NUM_ITERS      20
 
-#if CONFIG_IDF_TARGET_ESP32S31
-#define TEST_PIE_CORE   1   // Only core 1 has the PIE on the ESP32-S31
-#else
-#define TEST_PIE_CORE   0
-#endif
-
 typedef struct {
     uint32_t id;
     TaskHandle_t main;
@@ -478,6 +478,72 @@ TEST_CASE("PIE: Context switch between tasks with stacks in PSRAM", "[freertos]"
 }
 
 #endif /* CONFIG_SPIRAM && CONFIG_FREERTOS_TASK_CREATE_ALLOW_EXT_MEM */
+
+/*
+Test that a task using the PIE aborts if its stack is not in SIMD-capable memory
+
+Purpose:
+    - The PIE data accesses fault or silently access the wrong words on memories such as RTC RAM and SPM. The kernel
+      saves the PIE context on the task's stack, so a task using the PIE must have a SIMD-capable stack.
+Procedure:
+    - Create a task with its stack in RTC RAM or SPM. The task uses PIE instructions on buffers in internal RAM, so
+      only the stack is in the memory under test
+Expected:
+    - The task aborts on its first PIE instruction
+*/
+
+static void check_pie_panic_reset(void)
+{
+    TEST_ASSERT_EQUAL(ESP_RST_PANIC, esp_reset_reason());
+}
+
+static int32_t s_non_simd_a[4] __attribute__((aligned(16))) = { 0, 1, 2, 3 };
+static int32_t s_non_simd_b[4] __attribute__((aligned(16))) = { 1, 2, 3, 4 };
+static int32_t s_non_simd_dst[4] __attribute__((aligned(16)));
+
+static void pie_non_simd_stack_task(void *arg)
+{
+    pie_vector_signed_add(s_non_simd_a, s_non_simd_b, s_non_simd_dst);
+    xTaskNotifyGive((TaskHandle_t)arg);
+    vTaskSuspend(NULL);
+}
+
+static void pie_task_with_stack_in(uint32_t caps)
+{
+    static StaticTask_t tcb;
+    const uint32_t stack_size = 2048;
+    StackType_t *stack = heap_caps_aligned_alloc(16, stack_size, caps);
+    TEST_ASSERT_NOT_NULL(stack);
+    TEST_ASSERT_NOT_NULL(xTaskCreateStaticPinnedToCore(pie_non_simd_stack_task, "pie_stack", stack_size,
+                                                       xTaskGetCurrentTaskHandle(), UNITY_FREERTOS_PRIORITY + 1,
+                                                       stack, &tcb, TEST_PIE_CORE));
+    ulTaskNotifyTake(pdTRUE, pdMS_TO_TICKS(1000));
+    TEST_FAIL_MESSAGE("task with a non SIMD-capable stack used PIE without rebooting");
+}
+
+#if CONFIG_ESP_SYSTEM_ALLOW_RTC_FAST_MEM_AS_HEAP
+static void pie_task_with_stack_in_rtc_ram(void)
+{
+    pie_task_with_stack_in(MALLOC_CAP_RTCRAM);
+}
+
+TEST_CASE_MULTIPLE_STAGES("PIE: Task with stack in RTC RAM aborts on PIE use",
+                          "[freertos][reset=SW_CPU_RESET]",
+                          pie_task_with_stack_in_rtc_ram,
+                          check_pie_panic_reset);
+#endif /* CONFIG_ESP_SYSTEM_ALLOW_RTC_FAST_MEM_AS_HEAP */
+
+#if SOC_MEM_SPM_SUPPORTED
+static void pie_task_with_stack_in_spm(void)
+{
+    pie_task_with_stack_in(MALLOC_CAP_SPM);
+}
+
+TEST_CASE_MULTIPLE_STAGES("PIE: Task with stack in SPM aborts on PIE use",
+                          "[freertos][reset=SW_CPU_RESET]",
+                          pie_task_with_stack_in_spm,
+                          check_pie_panic_reset);
+#endif /* SOC_MEM_SPM_SUPPORTED */
 
 #if CONFIG_FREERTOS_DEBUG_TASK_PIE_BLACKLIST
 
@@ -575,15 +641,10 @@ static void pie_blacklisted_task_executes_pie(void)
     TEST_FAIL_MESSAGE("blacklisted task executed PIE without rebooting");
 }
 
-static void check_pie_blacklist_panic_reset(void)
-{
-    TEST_ASSERT_EQUAL(ESP_RST_PANIC, esp_reset_reason());
-}
-
 TEST_CASE_MULTIPLE_STAGES("PIE: Blacklisted task aborts on PIE use",
                           "[freertos][reset=SW_CPU_RESET]",
                           pie_blacklisted_task_executes_pie,
-                          check_pie_blacklist_panic_reset);
+                          check_pie_panic_reset);
 
 static void pie_blacklisted_owner_after_yield(void)
 {
@@ -603,7 +664,7 @@ static void pie_blacklisted_owner_after_yield(void)
 TEST_CASE_MULTIPLE_STAGES("PIE: Blacklisted owner aborts after yield",
                           "[freertos][reset=SW_CPU_RESET]",
                           pie_blacklisted_owner_after_yield,
-                          check_pie_blacklist_panic_reset);
+                          check_pie_panic_reset);
 
 #endif /* CONFIG_FREERTOS_DEBUG_TASK_PIE_BLACKLIST */
 
