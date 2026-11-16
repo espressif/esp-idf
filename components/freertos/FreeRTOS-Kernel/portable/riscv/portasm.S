@@ -115,13 +115,32 @@ rtos_save_\name\()_coproc_nosave:
     sw    a2, RV_COPROC_ENABLE(a0)
     /* Check if the former coprocessor enable bit was set */
     andi  a2, a1, 1 << \coproc_idx
+#if SOC_CPU_HAS_PIE
+    .if \coproc_idx == PIE_COPROC_IDX
+    /* The enable bit is never cleared for the PIE, so this is the task's first PIE use */
+    beqz  a2, rtos_save_\name\()_coproc_first_use
+    .else
     beqz  a2, rtos_save_\name\()_coproc_norestore
+    .endif
+#else
+    beqz  a2, rtos_save_\name\()_coproc_norestore
+#endif /* SOC_CPU_HAS_PIE */
     /* Enable bit was set, restore the coprocessor context */
     lw    a0, RV_COPROC_SA+\coproc_idx*4(a0)      /* a0 = RvCoprocSaveArea->sa_coprocs[\coproc_idx] */
     \restore_coproc_regs a0
 rtos_save_\name\()_coproc_norestore:
     /* Return from routine via s0, instead of ra */
     jr    s0
+#if SOC_CPU_HAS_PIE
+    .if \coproc_idx == PIE_COPROC_IDX
+rtos_save_\name\()_coproc_first_use:
+    /* Abort before the task executes its first PIE instruction if its stack does not support PIE data accesses */
+    mv    a0, s1
+    mv    a1, sp
+    call  vPortAbortIfPieStackNotSimdCapable
+    jr    s0
+    .endif
+#endif /* SOC_CPU_HAS_PIE */
     .size rtos_save_\name\()_coproc, .-rtos_save_\name\()_coproc
 
 .endm
