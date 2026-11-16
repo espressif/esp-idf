@@ -988,10 +988,15 @@ UINT8 SDP_GetNumDiRecords( tSDP_DISCOVERY_DB *p_db )
 *******************************************************************************/
 static void SDP_AttrStringCopy(char *dst, tSDP_DISC_ATTR *p_attr, UINT16 dst_size)
 {
+    UINT16 attr_type = NULL_DESC_TYPE;
+
     if ( dst == NULL ) {
         return;
     }
     if ( p_attr ) {
+        attr_type = SDP_DISC_ATTR_TYPE(p_attr->attr_len_type);
+    }
+    if ( attr_type == TEXT_STR_DESC_TYPE || attr_type == URL_DESC_TYPE ) {
         UINT16 len = SDP_DISC_ATTR_LEN(p_attr->attr_len_type);
         if ( len > dst_size - 1 ) {
             len = dst_size - 1;
