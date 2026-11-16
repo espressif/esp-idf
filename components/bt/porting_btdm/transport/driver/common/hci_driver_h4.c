@@ -149,6 +149,9 @@ hci_h4_sm_w4_header(struct hci_h4_sm *h4sm, struct hci_h4_input_buffer *ib)
 #if UC_BT_CTRL_BR_EDR_IS_ENABLE
         if (HCI_INTERNAL_ACL_IS_BREDR_BCAST(handle_flags) || HCI_INTERNAL_CONN_IS_BREDR(conn_handle)) {
             h4sm->exp_len = btdm_get_le16(&h4sm->hdr[2]) + 4;
+            if (h4sm->exp_len < 4) {
+                return HCI_H4_ERR_SYNC_LOSS;
+            }
             h4sm->pkt = h4sm->allocs->bredr_acl(conn_handle);
             if (!h4sm->pkt) {
                 return HCI_H4_ERR_MEM;
@@ -171,6 +174,9 @@ hci_h4_sm_w4_header(struct hci_h4_sm *h4sm, struct hci_h4_input_buffer *ib)
                 return HCI_H4_ERR_MEM;
             }
             h4sm->exp_len = btdm_get_le16(&h4sm->hdr[2]) + 4;
+            if (h4sm->exp_len < 4) {
+                return HCI_H4_ERR_SYNC_LOSS;
+            }
             break;
         }
 #endif // UC_BT_CTRL_BLE_IS_ENABLE
