@@ -1152,11 +1152,12 @@ void vApplicationSleep( TickType_t xExpectedIdleTime )
         sleep_time_us -= (esp_cpu_get_cycle_count() - cycle) / (esp_clk_cpu_freq() / 1000000ULL);
 #endif
         if (sleep_time_us >= configEXPECTED_IDLE_TIME_BEFORE_SLEEP * portTICK_PERIOD_MS * 1000LL) {
-            esp_sleep_enable_timer_wakeup(sleep_time_us - TICKLESS_IDLE_EARLY_WAKEUP_US);
+            int64_t timer_wakeup_us = sleep_time_us - TICKLESS_IDLE_EARLY_WAKEUP_US;
+            esp_sleep_enable_timer_wakeup(timer_wakeup_us);
             /* Enter sleep */
             ESP_PM_TRACE_ENTER(SLEEP, core_id);
             int64_t sleep_start = esp_timer_get_time();
-            esp_err_t err = esp_light_sleep_start();
+            esp_err_t err = esp_light_sleep_start_with_iwdt_deadline(sleep_start + timer_wakeup_us);
             slept_us = esp_timer_get_time() - sleep_start;
             ESP_PM_TRACE_EXIT(SLEEP, core_id);
             // If the sleep request was rejected, the SYSTIMER_COUNTER_OS_TICK remains accurate.
