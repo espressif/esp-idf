@@ -72,6 +72,66 @@ choice BT_CTRL_HCI_MODE_CHOICE
             choose this option.
 endchoice
 
+menu "HCI UART(H4) Options"
+    visible if BT_CTRL_HCI_MODE_UART_H4
+
+    config BT_CTRL_HCI_UART_INIT_BY_CONTROLLER
+        bool "Provide the HCI UART transport in the Bluetooth controller"
+        depends on BT_CTRL_HCI_MODE_UART_H4
+        default n
+        help
+            If enabled, the controller configures the HCI UART with the settings in this menu
+            and installs its own UHCI based transport.
+
+
+    if BT_CTRL_HCI_UART_INIT_BY_CONTROLLER
+        config BT_CTRL_HCI_UART_PORT
+            int "UART port for HCI"
+            range 0 1 if (SOC_UART_HP_NUM <= 2)
+            range 0 2 if (SOC_UART_HP_NUM <= 3)
+            default 1
+            help
+                UART port number used for HCI transport.
+
+        config BT_CTRL_HCI_UART_DTM_MODE
+            bool "Configure HCI UART for DTM"
+            default n
+            help
+                Configure HCI UART for DTM (no hardware flow control).
+
+        config BT_CTRL_HCI_UART_BAUDRATE
+            int "UART baudrate for HCI"
+            range 115200 921600
+            default 115200
+            help
+                UART baudrate for HCI. Please use standard baudrate.
+
+        config BT_CTRL_HCI_UART_FLOW_CTRL_EN
+            depends on !BT_CTRL_HCI_UART_DTM_MODE
+            bool "Enable UART flow control"
+            default y
+
+        config BT_CTRL_HCI_UART_TX_PIN
+            int "HCI UART TX pin"
+            default 4
+
+        config BT_CTRL_HCI_UART_RX_PIN
+            int "HCI UART RX pin"
+            default 5
+
+        if BT_CTRL_HCI_UART_FLOW_CTRL_EN && !BT_CTRL_HCI_UART_DTM_MODE
+            config BT_CTRL_HCI_UART_RTS_PIN
+                int "HCI UART RTS pin"
+                default 6
+
+            config BT_CTRL_HCI_UART_CTS_PIN
+                int "HCI UART CTS pin"
+                default 7
+        endif
+    endif
+
+endmenu
+
 config BT_CTRL_HCI_TL
     int
     default 0 if BT_CTRL_HCI_MODE_UART_H4
