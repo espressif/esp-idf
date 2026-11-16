@@ -49,7 +49,7 @@ BLE_LOG_SPI_MASTER_DMA_CB_ATTR BLE_LOG_STATIC void spi_master_dma_pre_tx_cb(spi_
 {
     (void)spi_trans;
     /* SPI slave performance issue workaround */
-    while ((esp_timer_get_time() - last_tx_done_ts) < BLE_LOG_SPI_TRANS_ITVL_MIN_US) {}
+    while (((uint32_t)esp_timer_get_time() - last_tx_done_ts) < BLE_LOG_SPI_TRANS_ITVL_MIN_US) {}
 }
 
 /* INTERFACE */
