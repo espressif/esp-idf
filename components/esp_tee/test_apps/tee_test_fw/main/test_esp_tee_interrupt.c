@@ -6,6 +6,8 @@
 #include "esp_log.h"
 #include "esp_intr_alloc.h"
 #include "driver/gptimer.h"
+#include "riscv/rv_utils.h"
+#include "soc/soc_caps.h"
 
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
@@ -18,13 +20,12 @@
 #include "unity.h"
 
 #define TEST_TIMER_RESOLUTION_HZ  (1000000ULL) // 1MHz, 1 tick = 1us
-#define TIMER_ALARM_PERIOD_S      (0.25f)      // 250ms @ resolution 1MHz
+#define TIMER_ALARM_PERIOD_S      (0.025f)     // 25ms @ resolution 1MHz
+#define TEST_INTR_LEVEL           (2)
 
 static const char __attribute__((unused)) *TAG = "test_esp_tee_intr";
 
 /* ---------------------------------------------------- Utility functions ---------------------------------------------------- */
-
-static gptimer_handle_t gptimer = NULL;
 
 static bool IRAM_ATTR test_timer_on_alarm_cb(gptimer_handle_t timer, const gptimer_alarm_event_data_t *edata, void *user_data)
 {
@@ -34,13 +35,16 @@ static bool IRAM_ATTR test_timer_on_alarm_cb(gptimer_handle_t timer, const gptim
     return true;
 }
 
-static void test_timer_init_with_cb(gptimer_alarm_cb_t on_alarm, void *arg)
+static gptimer_handle_t test_timer_init_with_cb(gptimer_alarm_cb_t on_alarm, void *arg, int intr_priority)
 {
+    gptimer_handle_t gptimer = NULL;
+
     /* Select and initialize basic parameters of the timer */
     gptimer_config_t timer_config = {
         .clk_src = GPTIMER_CLK_SRC_DEFAULT,
         .direction = GPTIMER_COUNT_UP,
         .resolution_hz = TEST_TIMER_RESOLUTION_HZ,
+        .intr_priority = intr_priority,
     };
     ESP_ERROR_CHECK(gptimer_new_timer(&timer_config, &gptimer));
 
@@ -58,14 +62,15 @@ static void test_timer_init_with_cb(gptimer_alarm_cb_t on_alarm, void *arg)
     };
     ESP_ERROR_CHECK(gptimer_set_alarm_action(gptimer, &alarm_config2));
     ESP_ERROR_CHECK(gptimer_start(gptimer));
+    return gptimer;
 }
 
-static void test_timer_init(volatile uint32_t *arg)
+static gptimer_handle_t test_timer_init(volatile uint32_t *arg)
 {
-    test_timer_init_with_cb(test_timer_on_alarm_cb, (void *)arg);
+    return test_timer_init_with_cb(test_timer_on_alarm_cb, (void *)arg, 0);
 }
 
-static void test_timer_deinit(void)
+static void test_timer_deinit(gptimer_handle_t gptimer)
 {
     ESP_ERROR_CHECK(gptimer_stop(gptimer));
     ESP_ERROR_CHECK(gptimer_disable(gptimer));
@@ -92,11 +97,11 @@ TEST_CASE("Test REE interrupt in REE", "[basic]")
     TEST_ASSERT_MESSAGE((mode == ESP_CPU_NS_MODE), "Incorrect privilege mode!");
 
     volatile uint32_t ree_intr_count = 0;
-    test_timer_init(&ree_intr_count);
+    gptimer_handle_t timer = test_timer_init(&ree_intr_count);
     while (ree_intr_count < ESP_TEE_TEST_INTR_ITER) {
         vTaskDelay(pdMS_TO_TICKS(250));
     }
-    test_timer_deinit();
+    test_timer_deinit(timer);
 }
 
 TEST_CASE("Test REE interrupt in TEE", "[basic]")
@@ -107,12 +112,12 @@ TEST_CASE("Test REE interrupt in TEE", "[basic]")
     volatile uint32_t ree_intr_count = 0;
     volatile uint32_t *volatile ree_intr_count_ptr = &ree_intr_count;
 
-    test_timer_init(ree_intr_count_ptr);
+    gptimer_handle_t timer = test_timer_init(ree_intr_count_ptr);
 
     uint32_t val = esp_tee_service_call(2, SS_ESP_TEE_TEST_REE_INTR_IN_TEE, ree_intr_count_ptr);
     TEST_ASSERT_EQUAL_UINT32(0, val);
 
-    test_timer_deinit();
+    test_timer_deinit(timer);
 
     mode = esp_cpu_get_curr_privilege_level();
     TEST_ASSERT_MESSAGE((mode == ESP_CPU_NS_MODE), "Incorrect privilege mode!");
@@ -147,13 +152,13 @@ TEST_CASE("Test nested secure service call from an REE interrupt", "[basic]")
     ctx.intr_count = 0;
     ctx.accepted_count = 0;
 
-    test_timer_init_with_cb(test_nested_svc_call_cb, &ctx);
+    gptimer_handle_t timer = test_timer_init_with_cb(test_nested_svc_call_cb, &ctx, 0);
 
     /* Runs in the TEE until the ISR above has fired ESP_TEE_TEST_INTR_ITER times */
     uint32_t val = esp_tee_service_call(2, SS_ESP_TEE_TEST_REE_INTR_IN_TEE, &ctx.intr_count);
     TEST_ASSERT_EQUAL_UINT32(0, val);
 
-    test_timer_deinit();
+    test_timer_deinit(timer);
 
     /* Every call made from the ISR should have been rejected by the TEE */
     TEST_ASSERT_EQUAL_UINT32(0, ctx.accepted_count);
@@ -194,3 +199,44 @@ TEST_CASE("Test TEE interrupt in REE", "[basic]")
     mode = esp_cpu_get_curr_privilege_level();
     TEST_ASSERT_MESSAGE((mode == ESP_CPU_NS_MODE), "Incorrect privilege mode!");
 }
+
+#if SOC_INT_CLIC_SUPPORTED
+typedef struct {
+    volatile uint32_t intr_count;
+    volatile uint32_t intr_level;
+} test_intr_level_ctx_t;
+
+static bool IRAM_ATTR test_intr_level_cb(gptimer_handle_t timer, const gptimer_alarm_event_data_t *edata, void *user_data)
+{
+    test_intr_level_ctx_t *ctx = (test_intr_level_ctx_t *)user_data;
+    ctx->intr_level = rv_utils_get_interrupt_level();
+    ctx->intr_count = ctx->intr_count + 1;
+    return true;
+}
+
+TEST_CASE("Test REE interrupt level restored after REE interrupt in TEE", "[basic]")
+{
+    TEST_ASSERT_EQUAL(ESP_CPU_NS_MODE, esp_cpu_get_curr_privilege_level());
+
+    static test_intr_level_ctx_t ctx;
+    ctx.intr_count = 0;
+    ctx.intr_level = 0;
+
+    gptimer_handle_t timer = test_timer_init_with_cb(test_intr_level_cb, &ctx, TEST_INTR_LEVEL);
+
+    /* An REE interrupt taken in the REE runs at its own level */
+    while (ctx.intr_count == 0) {
+        vTaskDelay(pdMS_TO_TICKS(250));
+    }
+    TEST_ASSERT_EQUAL_UINT32(TEST_INTR_LEVEL, ctx.intr_level);
+
+    /* Plant a stale UPIL - an REE interrupt forwarded by the TEE must not restore it on return */
+    ctx.intr_count = 0;
+    RV_SET_CSR(ucause, UCAUSE_UPIL_V << UCAUSE_UPIL_S);
+    uint32_t val = esp_tee_service_call(2, SS_ESP_TEE_TEST_REE_INTR_IN_TEE, &ctx.intr_count);
+    TEST_ASSERT_EQUAL_UINT32(0, val);
+    TEST_ASSERT_EQUAL_UINT32(0, rv_utils_get_interrupt_level());
+
+    test_timer_deinit(timer);
+}
+#endif

@@ -9,6 +9,7 @@
 #include "soc/clic_reg.h"
 
 #include "riscv/encoding.h"
+#include "riscv/csr_clic.h"
 #include "riscv/rvruntime-frames.h"
 #include "esp_private/vectors_const.h"
 
@@ -23,10 +24,7 @@
     .equ RTNVAL, 0xc0de
     .equ ECALL_U_MODE, 0x8
     .equ ECALL_M_MODE, 0xb
-    .equ CSR_UINTTHRESH, 0x047
-    .equ CSR_MINTTHRESH, 0x347
     .equ MCAUSE_EXCCODE_SHIFT, 20
-    .equ MSTATUS_MPP_SHIFT, 11
 
     .global esp_tee_global_interrupt_handler
     .global esp_tee_service_dispatcher
@@ -190,9 +188,9 @@ _1:
     lw      t1, 0(t0)
     beqz    t1, _skip_thresh_restore     # if saved threshold == 0, skip
 
-    /* Restore CSR_MINTTHRESH */
+    /* Restore MINTTHRESH_CSR */
     sw      zero, 0(t0)
-    csrw    CSR_MINTTHRESH, t1
+    csrw    MINTTHRESH_CSR, t1
 
 _skip_thresh_restore:
     STACK_GUARD_PRE_SWITCH t3 0
@@ -247,14 +245,20 @@ _svc_call_enter:
     SVC_LOCK_ACQUIRE t0, _svc_call_reject
 
     # Check if REE is in a critical section
-    csrr    t0, CSR_UINTTHRESH      # t0 = current UINTTHRESH
+    csrr    t0, UINTTHRESH_CSR      # t0 = current UINTTHRESH
+    /* NOTE: REE level = max(UINTTHRESH, UIL): an REE ISR taken in U-mode runs at UIL with UINTTHRESH 0 */
+    csrr    t1, UINTSTATUS_CSR
+    andi    t1, t1, UINTSTATUS_UIL_V
+    bgeu    t0, t1, 1f
+    mv      t0, t1
+1:
     beqz    t0, _process_ecall      # if threshold == 0 -> continue
 
     # Save current MINTTHRESH and mirror UINTTHRESH into MINTTHRESH
-    csrr    t1, CSR_MINTTHRESH      # t1 = current MINTTHRESH
+    csrr    t1, MINTTHRESH_CSR      # t1 = current MINTTHRESH
     la      t2, _s_intr_thresh
     sw      t1, 0(t2)               # save old MINTTHRESH
-    csrw    CSR_MINTTHRESH, t0      # set MINTTHRESH = UINTTHRESH
+    csrw    MINTTHRESH_CSR, t0      # set MINTTHRESH = UINTTHRESH
 
 _process_ecall:
     /* Save the U-mode (i.e. REE) stack pointer */
@@ -394,9 +398,15 @@ _found_intr:
 
     /* Update ucause */
     csrr    t0, ucause
-    li      t1, VECTORS_MCAUSE_REASON_MASK
-    not     t1, t1
+    /* Clear the cause and UPIL fields */
+    li      t1, ~(VECTORS_MCAUSE_REASON_MASK | (UCAUSE_UPIL_V << UCAUSE_UPIL_S))
     and     t0, t0, t1
+    /* Set UPIL to the current REE interrupt level (uil), restored by uret on ISR exit */
+    csrr    t1, UINTSTATUS_CSR
+    andi    t1, t1, UINTSTATUS_UIL_V
+    slli    t1, t1, UCAUSE_UPIL_S
+    or      t0, t0, t1
+    /* Set the interrupt ID as the cause, along with the interrupt bit */
     or      t0, t0, t6
     li      t1, VECTORS_MCAUSE_INTBIT_MASK
     or      t0, t0, t1
@@ -409,7 +419,7 @@ _found_intr:
     lw      t2, 0(t1)
     fence
     srli    t2, t2, CLIC_INT_CTL_S
-    csrw    CSR_UINTTHRESH, t2
+    csrw    UINTTHRESH_CSR, t2
 
     /* Enable the U-mode interrupt delegation */
     li      t0, INTMTX_SIG_IDX_ASSERT_IN_SEC_REG
