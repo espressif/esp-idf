@@ -1,5 +1,5 @@
 idf_component_register(SRC_DIRS "."
-                        PRIV_REQUIRES test_utils esp-tls unity
+                        PRIV_REQUIRES test_utils esp-tls esp_netif unity
                         WHOLE_ARCHIVE)
 
 # Expose esp-tls private headers for internal component tests
