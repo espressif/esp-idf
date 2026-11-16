@@ -145,6 +145,23 @@ menu "Power Management"
             Increasing this value can reduce the average power consumption, but when the external environment changes
             drastically and the chip RTC_FAST/SLOW oscillator frequency drifts, it may cause system instability.
 
+    config PM_LIGHTSLEEP_RTC_OSC_CAL_AFTER_WAKEUP
+        bool "Calibrate the internal RTC_SLOW oscillator after light sleep wakeup"
+        default n
+        depends on PM_ENABLE && !ESP_SYSTEM_RTC_EXT_XTAL && !ESP_SYSTEM_RTC_EXT_OSC
+        depends on !(IDF_TARGET_ESP32S2 && RTC_CLK_SRC_INT_RC)
+        help
+            By default, RTC_SLOW is calibrated at light sleep entry, while the chip is still warm. The internal
+            oscillator frequency changes as the chip cools during sleep, so esp_timer and RTC time drift from
+            real time. On ESP32-C6 they run faster than the firmware expects and wakeups happen earlier than
+            they should: the clock error can be 300-800 ppm, depending on the active time before each sleep,
+            so a 60 s sleep ends about 18-48 ms early.
+
+            If enabled, the calibration is done right after waking up from a light sleep, at the sleep
+            temperature, and is used for the next sleep. The number of calibrations does not change.
+            Non-timer wakeups (GPIO, UART, ...) are handled 10 RTC_SLOW cycles later (about 70-300 us,
+            depending on the clock source).
+
     config PM_POWER_DOWN_CPU_IN_LIGHT_SLEEP
         bool "Power down CPU in light sleep"
         depends on SOC_PM_SUPPORT_CPU_PD && !ESP32P4_SELECTS_REV_LESS_V3
