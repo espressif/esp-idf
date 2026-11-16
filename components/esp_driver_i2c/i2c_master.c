@@ -1485,6 +1485,8 @@ esp_err_t i2c_master_execute_defined_operations(i2c_master_dev_handle_t i2c_dev,
 #if CONFIG_I2C_ISR_IRAM_SAFE
             ESP_RETURN_ON_FALSE(esp_ptr_internal(i2c_operation[i].read.data), ESP_ERR_INVALID_ARG, TAG, "read buffer not in internal RAM");
 #endif
+            ESP_RETURN_ON_FALSE(i2c_operation[i].read.ack_value != I2C_NACK_VAL || i2c_operation[i].read.total_bytes == 1,
+                                ESP_ERR_INVALID_ARG, TAG, "NACK read must contain exactly one byte");
             i2c_ops[i].hw_cmd.op_code = I2C_LL_CMD_READ;
             i2c_ops[i].hw_cmd.ack_val = i2c_operation[i].read.ack_value;
             i2c_ops[i].data = i2c_operation[i].read.data;

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -373,6 +373,22 @@ static void _test_i2c_del_bus_device(i2c_master_bus_handle_t bus_handle, i2c_mas
 {
     TEST_ESP_OK(i2c_master_bus_rm_device(dev_handle));
     TEST_ESP_OK(i2c_del_master_bus(bus_handle));
+}
+
+TEST_CASE("I2C master rejects multi-byte NACK read operation", "[i2c]")
+{
+    uint8_t data_rd[2];
+    i2c_operation_job_t i2c_ops[] = {
+        { .command = I2C_MASTER_CMD_START, .write = {} },
+        { .command = I2C_MASTER_CMD_READ, .read = { .ack_value = I2C_NACK_VAL, .data = data_rd, .total_bytes = sizeof(data_rd) } },
+        { .command = I2C_MASTER_CMD_STOP, .write = {} },
+    };
+
+    i2c_master_bus_handle_t bus_handle;
+    i2c_master_dev_handle_t dev_handle;
+    _test_i2c_new_bus_device(&bus_handle, &dev_handle);
+    TEST_ESP_ERR(ESP_ERR_INVALID_ARG, i2c_master_execute_defined_operations(dev_handle, i2c_ops, sizeof(i2c_ops) / sizeof(i2c_operation_job_t), -1));
+    _test_i2c_del_bus_device(bus_handle, dev_handle);
 }
 
 TEST_CASE("I2C master transaction transmit check nack return value", "[i2c]")
