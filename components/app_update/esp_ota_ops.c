@@ -745,7 +745,8 @@ static uint32_t compute_ota_seq_for_target_slot(uint32_t current_seq, uint32_t o
 uint8_t esp_ota_get_app_partition_count(void)
 {
     uint16_t ota_app_count = 0;
-    while (esp_partition_find_first(ESP_PARTITION_TYPE_APP, ESP_PARTITION_SUBTYPE_APP_OTA_MIN + ota_app_count, NULL) != NULL) {
+    while (ota_app_count < 16
+           && esp_partition_find_first(ESP_PARTITION_TYPE_APP, ESP_PARTITION_SUBTYPE_APP_OTA_MIN + ota_app_count, NULL) != NULL) {
             assert(ota_app_count < 16 && "must erase the partition before writing to it");
             ota_app_count++;
     }
