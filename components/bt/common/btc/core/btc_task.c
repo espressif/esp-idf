@@ -319,22 +319,36 @@ static void btc_thread_handler(void *arg)
 {
     struct btc_msg_ctx *ctx = (struct btc_msg_ctx *)arg;
     btc_msg_t *msg = &ctx->msg;
+    bool handled = false;
 
     BTC_TRACE_DEBUG("%s msg %u %u %u %p\n", __func__, msg->sig, msg->pid, msg->act, msg->arg);
     /* msg->pid is validated at btc_transfer_context() entry; any message that
      * reaches this handler is guaranteed to carry a valid pid. */
     switch (msg->sig) {
     case BTC_SIG_API_CALL:
-        profile_tab[msg->pid].btc_call(msg);
+        if (profile_tab[msg->pid].btc_call) {
+            profile_tab[msg->pid].btc_call(msg);
+            handled = true;
+        } else {
+            BTC_TRACE_WARNING("%s no call handler, pid %u\n", __func__, msg->pid);
+        }
         break;
     case BTC_SIG_API_CB:
-        profile_tab[msg->pid].btc_cb(msg);
+        if (profile_tab[msg->pid].btc_cb) {
+            profile_tab[msg->pid].btc_cb(msg);
+            handled = true;
+        } else {
+            BTC_TRACE_WARNING("%s no cb handler, pid %u\n", __func__, msg->pid);
+        }
         break;
     default:
         break;
     }
 
-    /* Profile handler releases any deep copy. Drop the block only. */
+    /* No profile handler ran, so release the deep copy here. */
+    if (!handled && ctx->free_func) {
+        ctx->free_func(&ctx->msg);
+    }
     osi_free(ctx);
 }
 
@@ -420,15 +434,21 @@ bt_status_t btc_transfer_context_nb(btc_msg_t *msg, void *arg, int arg_len, btc_
  */
 bt_status_t btc_inter_profile_call(btc_msg_t *msg)
 {
-    if (msg == NULL) {
+    if (msg == NULL || msg->pid >= BTC_PID_NUM) {
         return BT_STATUS_PARM_INVALID;
     }
 
     switch (msg->sig) {
     case BTC_SIG_API_CALL:
+        if (profile_tab[msg->pid].btc_call == NULL) {
+            return BT_STATUS_UNSUPPORTED;
+        }
         profile_tab[msg->pid].btc_call(msg);
         break;
     case BTC_SIG_API_CB:
+        if (profile_tab[msg->pid].btc_cb == NULL) {
+            return BT_STATUS_UNSUPPORTED;
+        }
         profile_tab[msg->pid].btc_cb(msg);
         break;
     default:
