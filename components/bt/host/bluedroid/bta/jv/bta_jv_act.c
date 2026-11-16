@@ -1007,7 +1007,8 @@ static void bta_jv_start_discovery_cback(UINT16 result, void *user_data)
                 APPL_TRACE_DEBUG("p_sdp_rec:%p", p_sdp_rec);
                 if (p_sdp_rec && SDP_FindProtocolListElemInRec(p_sdp_rec, UUID_PROTOCOL_RFCOMM, &pe)){
                     dcomp.scn[dcomp.scn_num] = (UINT8) pe.params[0];
-                    if ((p_attr = SDP_FindAttributeInRec(p_sdp_rec, ATTR_ID_SERVICE_NAME)) != NULL) {
+                    if ((p_attr = SDP_FindAttributeInRec(p_sdp_rec, ATTR_ID_SERVICE_NAME)) != NULL &&
+                            SDP_DISC_ATTR_TYPE(p_attr->attr_len_type) == TEXT_STR_DESC_TYPE) {
                         dcomp.service_name[dcomp.scn_num] = (char *)p_attr->attr_value.v.array;
                     } else {
                         dcomp.service_name[dcomp.scn_num] = NULL;
