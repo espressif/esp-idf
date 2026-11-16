@@ -211,14 +211,14 @@ static void btu_ble_periodic_adv_sync_trans_recv(UINT8 *p);
 #if (BLE_FEAT_ISO_EN == TRUE)
 
 #if (BLE_FEAT_ISO_BIG_BROADCASTER_EN == TRUE)
-void btu_ble_create_big_cmd_status(UINT8 status);
+void btu_ble_create_big_cmd_status(UINT8 status, UINT8 big_handle);
 static void btu_ble_big_create_complete_evt(UINT8 *p, UINT8 evt_len);
-void btu_ble_big_terminate_cmd_status(UINT8 status);
+void btu_ble_big_terminate_cmd_status(UINT8 status, UINT8 big_handle);
 static void btu_ble_big_terminate_complete_evt(UINT8 *p);
 #endif // #if (BLE_FEAT_ISO_BIG_BROADCASTER_EN == TRUE)
 
 #if (BLE_FEAT_ISO_BIG_SYNCER_EN == TRUE)
-static void btu_ble_create_big_sync_cmd_status(UINT8 status);
+static void btu_ble_create_big_sync_cmd_status(UINT8 status, UINT8 big_handle);
 static void btu_ble_big_sync_establish_evt(UINT8 *p, UINT8 evt_len);
 static void btu_ble_big_sync_lost_evt(UINT8 *p);
 static void btu_ble_biginfo_adv_report_evt(UINT8 *p);
@@ -1708,15 +1708,15 @@ static void btu_hcif_hdl_command_status (UINT16 opcode, UINT8 status, UINT8 *p_c
 #if (BLE_FEAT_ISO_BIG_BROADCASTER_EN == TRUE)
     case HCI_BLE_CREATE_BIG:
     case HCI_BLE_CREATE_BIG_TEST:
-        btu_ble_create_big_cmd_status(status);
+        btu_ble_create_big_cmd_status(status, p_cmd[1]);
         break;
     case HCI_BLE_TERMINATE_BIG:
-        btu_ble_big_terminate_cmd_status(status);
+        btu_ble_big_terminate_cmd_status(status, p_cmd[1]);
         break;
 #endif // #if (BLE_FEAT_ISO_BIG_BROADCASTER_EN == TRUE)
 #if (BLE_FEAT_ISO_BIG_SYNCER_EN == TRUE)
     case HCI_BLE_BIG_CREATE_SYNC:
-        btu_ble_create_big_sync_cmd_status(status);
+        btu_ble_create_big_sync_cmd_status(status, p_cmd[1]);
         break;
 #endif // #if (BLE_FEAT_ISO_BIG_SYNCER_EN == TRUE)
 #if (BLE_FEAT_ISO_CIG_CENTRAL_EN == TRUE)
@@ -3122,11 +3122,12 @@ static void btu_ble_cis_request_evt(UINT8 *p)
 #endif // #if (BLE_FEAT_ISO_CIG_PERIPHERAL_EN == TRUE)
 
 #if (BLE_FEAT_ISO_BIG_BROADCASTER_EN == TRUE)
-void btu_ble_create_big_cmd_status(UINT8 status)
+void btu_ble_create_big_cmd_status(UINT8 status, UINT8 big_handle)
 {
     if (status != HCI_SUCCESS) {
         tBTM_BLE_BIG_CREATE_CMPL big_cmpl = {0};
         big_cmpl.status = status;
+        big_cmpl.big_handle = big_handle;
         btm_ble_big_create_cmpl_evt(&big_cmpl);
     }
 }
@@ -3184,11 +3185,12 @@ static void btu_ble_big_create_complete_evt(UINT8 *p, UINT8 evt_len)
     btm_ble_big_create_cmpl_evt(&big_cmpl);
 }
 
-void btu_ble_big_terminate_cmd_status(UINT8 status)
+void btu_ble_big_terminate_cmd_status(UINT8 status, UINT8 big_handle)
 {
     if (status != HCI_SUCCESS) {
         tBTM_BLE_BIG_TERMINATE_CMPL big_term = {0};
         big_term.status = (status | BTM_HCI_ERROR);
+        big_term.big_handle = big_handle;
         btm_ble_big_terminate_cmpl_evt(&big_term);
     }
 }
@@ -3211,11 +3213,12 @@ static void btu_ble_big_terminate_complete_evt(UINT8 *p)
 #endif // #if (BLE_FEAT_ISO_BIG_BROADCASTER_EN == TRUE)
 
 #if (BLE_FEAT_ISO_BIG_SYNCER_EN == TRUE)
-void btu_ble_create_big_sync_cmd_status(UINT8 status)
+void btu_ble_create_big_sync_cmd_status(UINT8 status, UINT8 big_handle)
 {
     if (status != HCI_SUCCESS) {
         tBTM_BLE_BIG_SYNC_ESTAB_CMPL big_estb = {0};
         big_estb.status = status;
+        big_estb.big_handle = big_handle;
         btm_ble_big_sync_estab_evt(&big_estb);
     }
 }
