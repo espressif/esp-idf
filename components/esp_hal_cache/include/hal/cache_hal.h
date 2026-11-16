@@ -113,6 +113,20 @@ bool cache_hal_invalidate_addr(uint32_t vaddr, uint32_t size);
 bool cache_hal_writeback_addr(uint32_t vaddr, uint32_t size);
 #endif  //#if SOC_CACHE_WRITEBACK_SUPPORTED
 
+#if SOC_CACHE_WRITEBACK_INVALIDATE_SUPPORTED
+/**
+ * @brief Writeback and invalidate the DCache items of an addr range in one pass
+ *
+ * Dirty lines written while the operation runs, such as the caller's stack, are not lost.
+ *
+ * @param vaddr  Start address of the region
+ * @param size   Size of the region
+ *
+ * @return       True for valid address. No operation if invalid
+ */
+bool cache_hal_writeback_invalidate_addr(uint32_t vaddr, uint32_t size);
+#endif  //#if SOC_CACHE_WRITEBACK_INVALIDATE_SUPPORTED
+
 #if SOC_CACHE_FREEZE_SUPPORTED
 /**
  * @brief Freeze Cache

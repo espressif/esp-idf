@@ -300,6 +300,22 @@ bool cache_hal_writeback_addr(uint32_t vaddr, uint32_t size)
 }
 #endif  //#if SOC_CACHE_WRITEBACK_SUPPORTED
 
+#if SOC_CACHE_WRITEBACK_INVALIDATE_SUPPORTED
+bool cache_hal_writeback_invalidate_addr(uint32_t vaddr, uint32_t size)
+{
+    bool valid = false;
+    uint32_t cache_level = 0;
+    uint32_t cache_id = 0;
+
+    valid = cache_hal_vaddr_to_cache_level_id(vaddr, size, &cache_level, &cache_id);
+    if (valid) {
+        cache_ll_writeback_invalidate_addr(cache_level, cache_id, vaddr, size);
+    }
+
+    return valid;
+}
+#endif  //#if SOC_CACHE_WRITEBACK_INVALIDATE_SUPPORTED
+
 #if SOC_CACHE_FREEZE_SUPPORTED
 void cache_hal_freeze(uint32_t cache_level, cache_type_t type)
 {

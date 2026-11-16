@@ -177,6 +177,20 @@ static inline void cache_ll_writeback_addr(uint32_t cache_level, cache_type_t ty
 }
 
 /**
+ * @brief Writeback and invalidate cache supported addr in one pass
+ *
+ * @param cache_level  level of the cache
+ * @param cache_id     id of the cache in this type and level
+ * @param vaddr        start address of the region
+ * @param size         size of the region
+ */
+__attribute__((always_inline))
+static inline void cache_ll_writeback_invalidate_addr(uint32_t cache_level, uint32_t cache_id, uint32_t vaddr, uint32_t size)
+{
+    Cache_WriteBack_Invalidate_Addr(vaddr, size);
+}
+
+/**
  * @brief Freeze Cache
  *
  * @param cache_level  level of the cache

@@ -154,6 +154,7 @@
 
 /*-------------------------- CACHE CAPS --------------------------------------*/
 #define SOC_CACHE_WRITEBACK_SUPPORTED           1
+#define SOC_CACHE_WRITEBACK_INVALIDATE_SUPPORTED 1  //Writeback and invalidate an addr range in one pass
 #define SOC_CACHE_FREEZE_SUPPORTED              1
 #define SOC_CACHE_CNT_SUPPORTED                 1
 #define SOC_CACHE_CNT_UNITS_NUM                 4   //Number of cache profile counter units
