@@ -47,10 +47,10 @@ Now you are ready to prepare your application for {IDF_TARGET_NAME}. You can sta
 
 Copy the project :example:`get-started/hello_world` to ``~/esp`` directory:
 
-.. code-block:: batch
+.. code-block:: powershell
 
-    cd %userprofile%\esp
-    xcopy /e /i %IDF_PATH%\examples\get-started\hello_world hello_world
+    cd $env:USERPROFILE\esp
+    xcopy /e /i $env:IDF_PATH\examples\get-started\hello_world hello_world
 
 .. note:: There is a range of example projects in the :idf:`examples` directory in ESP-IDF. You can copy any project in the same way as presented above and run it. It is also possible to build examples in-place without copying them first.
 
@@ -79,9 +79,9 @@ Navigate to your ``hello_world`` directory, set {IDF_TARGET_NAME} as the target,
 Windows
 ~~~~~~~
 
-.. code-block:: batch
+.. code-block:: powershell
 
-    cd %userprofile%\esp\hello_world
+    cd $env:USERPROFILE\esp\hello_world
     idf.py set-target {IDF_TARGET_PATH_NAME}
     idf.py menuconfig
 
