@@ -1720,6 +1720,16 @@ void avdt_msg_ind(tAVDT_CCB *p_ccb, BT_HDR *p_buf)
         }
     }
 
+    /* match rsp or rej to the in-flight command before choosing the parse buffer */
+    if (ok && !gen_rej && ((msg_type == AVDT_MSG_TYPE_RSP) || (msg_type == AVDT_MSG_TYPE_REJ))) {
+        if ((p_ccb->p_curr_cmd == NULL) ||
+                (p_ccb->p_curr_cmd->event != sig) ||
+                (AVDT_LAYERSPEC_LABEL(p_ccb->p_curr_cmd->layer_specific) != label)) {
+            ok = FALSE;
+            AVDT_TRACE_WARNING("Cmd not found for rsp sig=%d label=%d\n", sig, label);
+        }
+    }
+
     if (ok && !gen_rej) {
         /* skip over header (msg length already verified during reassembly) */
         p_buf->len -= AVDT_LEN_TYPE_SINGLE;
