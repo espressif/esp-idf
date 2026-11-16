@@ -1829,11 +1829,6 @@ void l2cu_release_ccb (tL2C_CCB *p_ccb)
         l2ble_update_att_acl_pkt_num(L2CA_BUFF_FREE, NULL);
     }
 #endif
-#if (SDP_INCLUDED == TRUE)
-    if (p_rcb && (p_rcb->psm != p_rcb->real_psm)) {
-        btm_sec_clr_service_by_psm(p_rcb->psm);
-    }
-#endif  ///SMP_INCLUDED == TRUE
     if (p_ccb->should_free_rcb) {
         osi_free(p_rcb);
         p_ccb->p_rcb = NULL;
@@ -1996,6 +1991,10 @@ tL2C_RCB *l2cu_allocate_ble_rcb (UINT16 psm)
 *******************************************************************************/
 void l2cu_release_rcb (tL2C_RCB *p_rcb)
 {
+#if (SDP_INCLUDED == TRUE)
+    /* Security records follow the registration, not the channel. */
+    btm_sec_clr_service_by_psm(p_rcb->psm);
+#endif
     p_rcb->in_use = FALSE;
     p_rcb->psm    = 0;
 }
