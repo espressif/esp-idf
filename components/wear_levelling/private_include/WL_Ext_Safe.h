@@ -17,7 +17,7 @@ public:
     ~WL_Ext_Safe() override;
 
     esp_err_t config(WL_Config_s *cfg, Flash_Access *partition) override;
-    esp_err_t init() override;
+    esp_err_t init(bool allow_formatting) override;
 
     size_t get_flash_size() override;
 
@@ -28,7 +28,7 @@ protected:
     uint32_t dump_addr;            // dump buffer address
     uint32_t buff_trans_state_addr;// sector address where state of buffer transaction will be stored
 
-    esp_err_t recover();
+    esp_err_t recover(bool allow_formatting);
 };
 
 #endif // _WL_Ext_Safe_H_
