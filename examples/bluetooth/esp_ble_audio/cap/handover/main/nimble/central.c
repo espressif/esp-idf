@@ -134,3 +134,8 @@ void security_failed_recover(uint16_t conn_handle, uint8_t status)
 
     ble_gap_terminate(conn_handle, BLE_ERR_REM_USER_CONN_TERM);
 }
+
+int conn_disconnect(uint16_t conn_handle)
+{
+    return ble_gap_terminate(conn_handle, BLE_ERR_REM_USER_CONN_TERM);
+}

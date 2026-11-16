@@ -105,6 +105,8 @@ int bt_le_iso_tx(struct bt_iso_chan *chan,
                  uint32_t time_stamp,
                  bool ts_valid);
 
+void bt_le_iso_tx_sdu_flush(struct bt_iso_chan *chan);
+
 int bt_le_iso_rx(const uint8_t *data, uint16_t len, void *arg);
 
 int bt_le_iso_disconnect(uint16_t conn_handle, uint8_t reason);

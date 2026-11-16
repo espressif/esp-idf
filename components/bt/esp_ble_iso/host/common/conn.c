@@ -160,6 +160,29 @@ static enum bt_conn_state conn_internal_to_public_state(bt_conn_state_t state)
     }
 }
 
+static uint32_t conn_interval_us_get(const struct bt_conn *conn)
+{
+    uint32_t interval_us = 0;
+
+    /* Read from the stack on demand: no adapter forwards connection parameter updates */
+    if (conn->state == BT_CONN_CONNECTED) {
+#if CONFIG_BT_BLUEDROID_ENABLED
+        interval_us = bt_le_bluedroid_gap_conn_interval_us_get(&conn->le.dst);
+#else
+        interval_us = bt_le_nimble_gap_conn_interval_us_get(conn->handle);
+#endif
+    }
+
+    /* Retry paths schedule K_USEC(interval_us), and 0 is K_NO_WAIT here, which runs
+     * the handler again inline
+     */
+    if (interval_us == 0U) {
+        interval_us = BT_CONN_INTERVAL_TO_US(BT_GAP_INIT_CONN_INT_MIN);
+    }
+
+    return interval_us;
+}
+
 _LIB_ONLY
 int bt_conn_get_info(const struct bt_conn *conn, struct bt_conn_info *info)
 {
@@ -173,7 +196,7 @@ int bt_conn_get_info(const struct bt_conn *conn, struct bt_conn_info *info)
     info->id = conn->id;
     info->state = conn_internal_to_public_state(conn->state);
     info->le.dst = &conn->le.dst;
-    info->le.interval_us = conn->le.interval_us;
+    info->le.interval_us = conn_interval_us_get(conn);
 
     if (conn->encrypt) {
         /* Currently the flags is updated for lib usage.

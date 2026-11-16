@@ -20,12 +20,14 @@
  * @{
  */
 
+#include <errno.h>
 #include <stdint.h>
 #include <stddef.h>
 #include <string.h>
 
 #include <sys/types.h>
 
+#include <zephyr/sys/atomic.h>
 #include <zephyr/sys/slist.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/bluetooth/conn.h>
@@ -562,7 +564,12 @@ struct bt_gatt_cpf {
  *  @return 0 in case of success or negative value in case of error.
  *  @return -EAGAIN if ``bt_init()`` has been called but ``settings_load()`` hasn't yet.
  */
+/* The lib build redirects this name to idf_ext_funcs with a macro, which would rewrite
+ * the prototype; the same applies to the guards below.
+ */
+#ifndef BLE_AUDIO_LIB_BUILD
 int bt_gatt_service_register(struct bt_gatt_service *svc);
+#endif /* BLE_AUDIO_LIB_BUILD */
 
 /** @brief Unregister GATT service.
  *
@@ -570,7 +577,9 @@ int bt_gatt_service_register(struct bt_gatt_service *svc);
  *
  *  @return 0 in case of success or negative value in case of error.
  */
+#ifndef BLE_AUDIO_LIB_BUILD
 int bt_gatt_service_unregister(struct bt_gatt_service *svc);
+#endif /* BLE_AUDIO_LIB_BUILD */
 
 /** @brief to be used as return values for @ref bt_gatt_attr_func_t and @ref bt_gatt_read_func_t
  *  type callbacks.
@@ -607,11 +616,13 @@ typedef uint8_t (*bt_gatt_attr_func_t)(const struct bt_gatt_attr *attr,
  *  @param func Callback function.
  *  @param user_data Data to pass to the callback.
  */
+#ifndef BLE_AUDIO_LIB_BUILD
 void bt_gatt_foreach_attr_type(uint16_t start_handle, uint16_t end_handle,
                                const struct bt_uuid *uuid,
                                const void *attr_data, uint16_t num_matches,
                                bt_gatt_attr_func_t func,
                                void *user_data);
+#endif /* BLE_AUDIO_LIB_BUILD */
 
 /** @brief Attribute iterator.
  *
@@ -654,9 +665,11 @@ struct bt_gatt_attr *bt_gatt_attr_next(const struct bt_gatt_attr *attr);
  *                     Set to 0 to search until the end.
  *  @param uuid        UUID to match.
  */
+#ifndef BLE_AUDIO_LIB_BUILD
 struct bt_gatt_attr *bt_gatt_find_by_uuid(const struct bt_gatt_attr *attr,
                                           uint16_t attr_count,
                                           const struct bt_uuid *uuid);
+#endif /* BLE_AUDIO_LIB_BUILD */
 
 /** @brief Get Attribute handle.
  *
@@ -679,7 +692,9 @@ uint16_t bt_gatt_attr_get_handle(const struct bt_gatt_attr *attr);
  *         be zero (the invalid handle) if @p attr was not a characteristic
  *         attribute.
  */
+#ifndef BLE_AUDIO_LIB_BUILD
 uint16_t bt_gatt_attr_value_handle(const struct bt_gatt_attr *attr);
+#endif /* BLE_AUDIO_LIB_BUILD */
 
 /** @brief Generic Read Attribute value helper.
  *
@@ -696,9 +711,11 @@ uint16_t bt_gatt_attr_value_handle(const struct bt_gatt_attr *attr);
  *  @return number of bytes read in case of success or negative values in
  *          case of error.
  */
+#ifndef BLE_AUDIO_LIB_BUILD
 ssize_t bt_gatt_attr_read(struct bt_conn *conn, const struct bt_gatt_attr *attr,
                           void *buf, uint16_t buf_len, uint16_t offset,
                           const void *value, uint16_t value_len);
+#endif /* BLE_AUDIO_LIB_BUILD */
 
 /** @brief Read Service Attribute helper.
  *
@@ -1242,8 +1259,10 @@ struct bt_gatt_notify_params {
  *
  *  @return 0 in case of success or negative value in case of error.
  */
+#ifndef BLE_AUDIO_LIB_BUILD
 int bt_gatt_notify_cb(struct bt_conn *conn,
                       struct bt_gatt_notify_params *params);
+#endif /* BLE_AUDIO_LIB_BUILD */
 
 /** @brief Notify attribute value change.
  *
@@ -1264,6 +1283,7 @@ int bt_gatt_notify_cb(struct bt_conn *conn,
  *
  *  @return 0 in case of success or negative value in case of error.
  */
+#ifndef BLE_AUDIO_LIB_BUILD
 static inline int bt_gatt_notify(struct bt_conn *conn,
                                  const struct bt_gatt_attr *attr,
                                  const void *data, uint16_t len)
@@ -1279,6 +1299,7 @@ static inline int bt_gatt_notify(struct bt_conn *conn,
 
     return bt_gatt_notify_cb(conn, &params);
 }
+#endif /* BLE_AUDIO_LIB_BUILD */
 
 /** @brief Notify attribute value change by UUID.
  *
@@ -1299,6 +1320,7 @@ static inline int bt_gatt_notify(struct bt_conn *conn,
  *
  *  @return 0 in case of success or negative value in case of error.
  */
+#ifndef BLE_AUDIO_LIB_BUILD
 static inline int bt_gatt_notify_uuid(struct bt_conn *conn,
                                       const struct bt_uuid *uuid,
                                       const struct bt_gatt_attr *attr,
@@ -1316,6 +1338,7 @@ static inline int bt_gatt_notify_uuid(struct bt_conn *conn,
 
     return bt_gatt_notify_cb(conn, &params);
 }
+#endif /* BLE_AUDIO_LIB_BUILD */
 
 /* Forward declaration of the bt_gatt_indicate_params structure */
 struct bt_gatt_indicate_params;
@@ -1384,8 +1407,10 @@ struct bt_gatt_indicate_params {
  *
  *  @return 0 in case of success or negative value in case of error.
  */
+#ifndef BLE_AUDIO_LIB_BUILD
 int bt_gatt_indicate(struct bt_conn *conn,
                      struct bt_gatt_indicate_params *params);
+#endif /* BLE_AUDIO_LIB_BUILD */
 
 /** @brief Check if connection have subscribed to attribute
  *
@@ -1405,8 +1430,10 @@ int bt_gatt_indicate(struct bt_conn *conn,
  *
  *  @return true if the attribute object has been subscribed.
  */
+#ifndef BLE_AUDIO_LIB_BUILD
 bool bt_gatt_is_subscribed(struct bt_conn *conn,
                            const struct bt_gatt_attr *attr, uint16_t ccc_type);
+#endif /* BLE_AUDIO_LIB_BUILD */
 
 /** @brief Get ATT MTU for a connection
  *
@@ -1417,7 +1444,32 @@ bool bt_gatt_is_subscribed(struct bt_conn *conn,
  *
  *  @return MTU in bytes
  */
+#ifndef BLE_AUDIO_LIB_BUILD
 uint16_t bt_gatt_get_mtu(struct bt_conn *conn);
+#endif /* BLE_AUDIO_LIB_BUILD */
+
+/* Stands in for the host API added in Zephyr v4.5.0. There is no EATT in this
+ * port, so every bearer has the ATT_MTU that bt_gatt_get_mtu() reports.
+ */
+static inline int bt_att_get_max_notify_size(struct bt_conn *conn, enum bt_att_chan_opt chan_opt)
+{
+    /* opcode (1) + handle (2) */
+    const uint16_t att_ntf_header_size = 3U;
+    uint16_t mtu;
+
+    ARG_UNUSED(chan_opt);
+
+    if (conn == NULL) {
+        return -EINVAL;
+    }
+
+    mtu = bt_gatt_get_mtu(conn);
+    if (mtu <= att_ntf_header_size) {
+        return -ENOTCONN;
+    }
+
+    return mtu - att_ntf_header_size;
+}
 
 /** @} */
 
@@ -1637,8 +1689,10 @@ struct bt_gatt_discover_params {
  *  from a separate thread to get blocking behavior. Queue size is controlled
  *  by @kconfig{CONFIG_BT_ATT_TX_COUNT}.
  */
+#ifndef BLE_AUDIO_LIB_BUILD
 int bt_gatt_discover(struct bt_conn *conn,
                      struct bt_gatt_discover_params *params);
+#endif /* BLE_AUDIO_LIB_BUILD */
 
 struct bt_gatt_read_params;
 
@@ -1769,7 +1823,9 @@ struct bt_gatt_read_params {
  *  from a separate thread to get blocking behavior. Queue size is controlled
  *  by @kconfig{CONFIG_BT_ATT_TX_COUNT}.
  */
+#ifndef BLE_AUDIO_LIB_BUILD
 int bt_gatt_read(struct bt_conn *conn, struct bt_gatt_read_params *params);
+#endif /* BLE_AUDIO_LIB_BUILD */
 
 struct bt_gatt_write_params;
 
@@ -1816,7 +1872,9 @@ struct bt_gatt_write_params {
  *  from a separate thread to get blocking behavior. Queue size is controlled
  *  by @kconfig{CONFIG_BT_ATT_TX_COUNT}.
  */
+#ifndef BLE_AUDIO_LIB_BUILD
 int bt_gatt_write(struct bt_conn *conn, struct bt_gatt_write_params *params);
+#endif /* BLE_AUDIO_LIB_BUILD */
 
 /** @brief Write Attribute Value by handle without response with callback.
  *
@@ -1843,10 +1901,12 @@ int bt_gatt_write(struct bt_conn *conn, struct bt_gatt_write_params *params);
  *  from a separate thread to get blocking behavior. Queue size is controlled
  *  by @kconfig{CONFIG_BT_ATT_TX_COUNT}.
  */
+#ifndef BLE_AUDIO_LIB_BUILD
 int bt_gatt_write_without_response_cb(struct bt_conn *conn, uint16_t handle,
                                       const void *data, uint16_t length,
                                       bool sign, bt_gatt_complete_func_t func,
                                       void *user_data);
+#endif /* BLE_AUDIO_LIB_BUILD */
 
 /** @brief Write Attribute Value by handle without response
  *
@@ -1866,6 +1926,7 @@ int bt_gatt_write_without_response_cb(struct bt_conn *conn, uint16_t handle,
  *  from a separate thread to get blocking behavior. Queue size is controlled
  *  by @kconfig{CONFIG_BT_ATT_TX_COUNT}.
  */
+#ifndef BLE_AUDIO_LIB_BUILD
 static inline int bt_gatt_write_without_response(struct bt_conn *conn,
                                                  uint16_t handle, const void *data,
                                                  uint16_t length, bool sign)
@@ -1873,6 +1934,7 @@ static inline int bt_gatt_write_without_response(struct bt_conn *conn,
     return bt_gatt_write_without_response_cb(conn, handle, data, length,
                                              sign, NULL, NULL);
 }
+#endif /* BLE_AUDIO_LIB_BUILD */
 
 struct bt_gatt_subscribe_params;
 
@@ -2018,8 +2080,10 @@ struct bt_gatt_subscribe_params {
  *  @retval -EBUSY if @p params.ccc_handle is 0 and @kconfig{CONFIG_BT_GATT_AUTO_DISCOVER_CCC} is
  *  enabled and discovery for the @p params is already in progress.
  */
+#ifndef BLE_AUDIO_LIB_BUILD
 int bt_gatt_subscribe(struct bt_conn *conn,
                       struct bt_gatt_subscribe_params *params);
+#endif /* BLE_AUDIO_LIB_BUILD */
 
 /** @brief Unsubscribe Attribute Value Notification
  *
@@ -2043,8 +2107,10 @@ int bt_gatt_subscribe(struct bt_conn *conn,
  *  from a separate thread to get blocking behavior. Queue size is controlled
  *  by @kconfig{CONFIG_BT_ATT_TX_COUNT}.
  */
+#ifndef BLE_AUDIO_LIB_BUILD
 int bt_gatt_unsubscribe(struct bt_conn *conn,
                         struct bt_gatt_subscribe_params *params);
+#endif /* BLE_AUDIO_LIB_BUILD */
 
 /** @} */
 

@@ -53,12 +53,13 @@ if BT_ASCS
     config BT_ASCS_ISO_DISCONNECT_DELAY
         int "Milliseconds of delay before ASCS disconnects ISO after stream stop"
         range 0 5000
-        default 500
+        default 0
         help
             The number of milliseconds ASCS will wait before disconnecting the ISO
             of a stopped stream. The delay is added as it is the Unicast Client's
             responsibility, but this is a failsafe to ensure that ISO channel is
             being properly disconnected.
+            0 means the server disconnects the ISO immediately after the stream stops.
 
     config BT_ASCS_ASE_BUF_TIMEOUT
         int "Milliseconds of timeout when handle concurrent access to the long read ASE buffer"

@@ -521,6 +521,30 @@ esp_err_t esp_ble_audio_cap_handover_broadcast_to_unicast(
     const esp_ble_audio_cap_handover_broadcast_to_unicast_param_t *param);
 
 /**
+ * @brief   Cancel any current Common Audio Profile Handover procedure.
+ *
+ * This will stop the current procedure from continuing and making it possible to run a new
+ * Common Audio Profile procedure.
+ *
+ * It is recommended to do this if any existing procedure takes longer time than expected,
+ * which could indicate a missing response from the Common Audio Profile Acceptor.
+ *
+ * This does not send any requests to any Common Audio Profile Acceptors involved with the
+ * current procedure, and thus notifications from the Common Audio Profile Acceptors may
+ * arrive after this has been called. It is thus recommended to either only use this if a
+ * procedure has stalled, or wait a short while before starting any new Common Audio Profile
+ * procedure after this has been called to avoid getting notifications from the cancelled
+ * procedure. The wait time depends on the connection interval, the number of devices in the
+ * previous procedure and the behavior of the Common Audio Profile Acceptors.
+ *
+ * The respective callbacks of the procedure will be called as part of this with the
+ * connection pointer set to NULL and the err value set to -ECANCELED.
+ *
+ * @return  ESP_OK on success, or an error code on failure.
+ */
+esp_err_t esp_ble_audio_cap_handover_cancel(void);
+
+/**
  * @brief   Register Common Audio Profile Commander callbacks.
  *
  * @param   cb  The callback structure. Shall remain static.

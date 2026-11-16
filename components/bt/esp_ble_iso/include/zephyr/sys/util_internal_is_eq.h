@@ -6,12 +6,18 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+/**
+ * @file
+ * @brief Internal helper macros backing Z_IS_EQ().
+ */
+
+#ifndef ZEPHYR_INCLUDE_SYS_UTIL_INTERNAL_IS_EQ_H_
+#define ZEPHYR_INCLUDE_SYS_UTIL_INTERNAL_IS_EQ_H_
+
 #ifndef ZEPHYR_INCLUDE_SYS_UTIL_INTERNAL_H_
 #error "This header should not be used directly, please include util_internal.h instead"
 #endif /* ZEPHYR_INCLUDE_SYS_UTIL_INTERNAL_H_ */
 
-#ifndef ZEPHYR_INCLUDE_SYS_UTIL_INTERNAL_IS_EQ_H_
-#define ZEPHYR_INCLUDE_SYS_UTIL_INTERNAL_IS_EQ_H_
 
 #define Z_IS_0_EQ_0(...)   \,
 #define Z_IS_0U_EQ_0(...)  \,

@@ -725,12 +725,16 @@ esp_err_t esp_ble_audio_media_proxy_pl_register(esp_ble_audio_media_proxy_pl_cal
 /**
  * @brief   Initialize player.
  *
+ * Requires CONFIG_BT_MCTL_LOCAL_PLAYER_CONTROL and CONFIG_BT_MPL (the sample media player).
+ *
  * @return  ESP_OK on success, or an error code on failure.
  */
 esp_err_t esp_ble_audio_media_proxy_pl_init(void);
 
 /**
  * @brief   Set the local player name and notify it.
+ *
+ * Requires CONFIG_BT_MCTL_LOCAL_PLAYER_CONTROL and CONFIG_BT_MPL (the sample media player).
  *
  * @param   name    New player name. Copied internally; may be freed after the call returns.
  *
@@ -740,6 +744,8 @@ esp_err_t esp_ble_audio_media_proxy_pl_set_player_name(char *name);
 
 /**
  * @brief   Set the current track title and notify it.
+ *
+ * Requires CONFIG_BT_MCTL_LOCAL_PLAYER_CONTROL and CONFIG_BT_MPL (the sample media player).
  *
  * @param   title   New track title. Copied internally; may be freed after the call returns.
  *

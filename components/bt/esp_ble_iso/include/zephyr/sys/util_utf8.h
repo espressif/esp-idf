@@ -11,8 +11,8 @@
  * Misc UTF-8 utilities.
  */
 
-#ifndef ZEPHYR_INCLUDE_SYS_UTIL_UFT8_H_
-#define ZEPHYR_INCLUDE_SYS_UTIL_UFT8_H_
+#ifndef ZEPHYR_INCLUDE_SYS_UTIL_UTF8_H_
+#define ZEPHYR_INCLUDE_SYS_UTIL_UTF8_H_
 
 #include <stddef.h>
 
@@ -50,7 +50,12 @@ extern "C" {
  *
  * @return Pointer to the @p utf8_str
  */
+/* The lib build redirects this name to idf_ext_funcs with a macro, which would rewrite
+ * the prototype; the same applies to the guards below.
+ */
+#ifndef BLE_AUDIO_LIB_BUILD
 char *utf8_trunc(char *utf8_str);
+#endif /* BLE_AUDIO_LIB_BUILD */
 
 /**
  * @brief Copies a UTF-8 encoded string from @p src to @p dst
@@ -66,7 +71,9 @@ char *utf8_trunc(char *utf8_str);
  *
  * @return Pointer to the @p dst
  */
+#ifndef BLE_AUDIO_LIB_BUILD
 char *utf8_lcpy(char *dst, const char *src, size_t n);
+#endif /* BLE_AUDIO_LIB_BUILD */
 
 /**
  * @brief Counts the characters in a UTF-8 encoded string @p s
@@ -80,7 +87,9 @@ char *utf8_lcpy(char *dst, const char *src, size_t n);
  * @return Number of UTF-8 characters in @p s on success or (negative) error code
  *  otherwise.
  */
+#ifndef BLE_AUDIO_LIB_BUILD
 int utf8_count_chars(const char *s);
+#endif /* BLE_AUDIO_LIB_BUILD */
 
 #ifdef __cplusplus
 }
@@ -90,4 +99,4 @@ int utf8_count_chars(const char *s);
  * @}
  */
 
-#endif /* ZEPHYR_INCLUDE_SYS_UTIL_UFT8_H_ */
+#endif /* ZEPHYR_INCLUDE_SYS_UTIL_UTF8_H_ */

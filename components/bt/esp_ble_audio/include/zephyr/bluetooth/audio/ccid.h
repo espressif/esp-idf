@@ -33,9 +33,9 @@ extern "C" {
 #endif
 
 /** Minimum CCID value */
-#define BT_CCID_MIN 0
+#define BT_CCID_MIN 0U
 /** Maximum CCID value */
-#define BT_CCID_MAX 255
+#define BT_CCID_MAX 255U
 
 /**
  * @brief Allocates a CCID value.

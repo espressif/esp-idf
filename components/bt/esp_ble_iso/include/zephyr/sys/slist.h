@@ -6,7 +6,12 @@
 
 /**
  * @file
+  * @brief Header file for the single-linked list API.
+  * @ingroup single-linked-list_apis
+  *
  * @defgroup single-linked-list_apis Single-linked list
+  * @since 1.2
+  * @version 1.0.0
  * @ingroup datastructure_apis
  *
  * @brief Single-linked list implementation.

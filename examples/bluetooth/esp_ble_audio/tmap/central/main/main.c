@@ -241,6 +241,7 @@ static void ext_scan_recv(esp_ble_audio_gap_app_event_t *event)
         return;
     }
 
+    /* Needed by internal regression tests: do not change this log. */
     ESP_LOGI(TAG, "Found peer %zu/%u (TMAS UMR%s)", member_count + 1, TMAP_CEN_PEER_COUNT,
              match.rsi_present ? ", set member" : "");
 
@@ -273,6 +274,7 @@ static void acl_connect(esp_ble_audio_gap_app_event_t *event)
         return;
     }
 
+    /* Needed by internal regression tests: do not change this log. */
     ESP_LOGI(TAG, "Connected: handle %u role %u peer %02x:%02x:%02x:%02x:%02x:%02x",
              event->acl_connect.conn_handle, event->acl_connect.role,
              EXAMPLE_BT_ADDR_PRINT_ARGS(event->acl_connect.dst.val));
@@ -539,6 +541,7 @@ void set_member_discovered(uint16_t conn_handle, int err)
         }
     }
 
+    /* Needed by internal regression tests: do not change this log. */
     ESP_LOGI(TAG, "All %zu peer(s) ready", member_count);
 
     set_members_sort_by_rank();
@@ -562,6 +565,7 @@ void set_lock_complete(int err)
 {
     /* A set that cannot be locked may still be operated on. */
     if (err && lock_pending) {
+        /* Needed by internal regression tests: do not change this log. */
         ESP_LOGW(TAG, "Proceeding without the set lock, err %d", err);
     }
 

@@ -146,6 +146,7 @@ static int pa_sync_req_cb(esp_ble_conn_t *conn,
     uint8_t addr[6];
     int err;
 
+    /* Needed by internal regression tests: do not change this log. */
     ESP_LOGI(TAG, "Assistant requests PA sync to 0x%06lx (PAST %savailable)",
              (unsigned long)recv_state->broadcast_id,
              past_available ? "" : "not ");
@@ -188,6 +189,7 @@ static int pa_sync_req_cb(esp_ble_conn_t *conn,
             return -EIO;
         }
 
+        /* Needed by internal regression tests: do not change this log. */
         ESP_LOGI(TAG, "Waiting for SyncInfo transfer...");
         goto pending;
     }
@@ -349,6 +351,7 @@ static void base_recv_cb(esp_ble_audio_bap_broadcast_sink_t *sink,
         return;
     }
 
+    /* Needed by internal regression tests: do not change this log. */
     ESP_LOGI(TAG, "BASE received (%d subgroup(s))", base_subgroup_count);
 
     err = esp_ble_audio_bap_base_get_bis_indexes(base, &base_bis_index_bitfield);
@@ -394,6 +397,7 @@ static void syncable_cb(esp_ble_audio_bap_broadcast_sink_t *sink,
         }
     }
 
+    /* Needed by internal regression tests: do not change this log. */
     ESP_LOGI(TAG, "Syncing to broadcast: BIS mask 0x%08x (%u stream(s))",
              sync_bitfield, stream_count);
 
@@ -466,6 +470,7 @@ static void stream_started_cb(esp_ble_audio_bap_stream_t *stream)
                                                              struct broadcast_sink_stream,
                                                              stream);
 
+    /* Needed by internal regression tests: do not change this log. */
     ESP_LOGI(TAG, "[SNK #%d] Stream started (%u/%u)",
              stream_index(stream), stream_count_started, stream_count);
 
@@ -620,6 +625,7 @@ static void pa_sync(esp_ble_audio_gap_app_event_t *event)
 
     sync_handle = event->pa_sync.sync_handle;
 
+    /* Needed by internal regression tests: do not change this log. */
     ESP_LOGI(TAG, "Broadcast source PA synced, creating Broadcast Sink");
 
     /* BASE / BIGInfo arrive over the PA channel from here on. A transferred
@@ -693,6 +699,7 @@ static void acl_connect(esp_ble_audio_gap_app_event_t *event)
         return;
     }
 
+    /* Needed by internal regression tests: do not change this log. */
     ESP_LOGI(TAG, "Broadcast Assistant connected: handle %u",
              event->acl_connect.conn_handle);
 

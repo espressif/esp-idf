@@ -31,6 +31,15 @@ static int gap_event_cb(struct ble_gap_event *event, void *arg)
     case BLE_GAP_EVENT_PERIODIC_SYNC_LOST:
         esp_ble_audio_gap_app_post_event(event->type, event);
         break;
+#if CONFIG_EXAMPLE_PAST
+    /* The sync an Assistant transferred: what "Waiting for SyncInfo
+     * transfer..." waits for, delivered to the callback given to
+     * ble_gap_periodic_adv_sync_receive() - this one. */
+    case BLE_GAP_EVENT_PERIODIC_TRANSFER:
+    case BLE_GAP_EVENT_PERIODIC_TRANSFER_V2:
+        esp_ble_audio_gap_app_post_event(event->type, event);
+        break;
+#endif /* CONFIG_EXAMPLE_PAST */
 #if CONFIG_EXAMPLE_SCAN_OFFLOAD
     case BLE_GAP_EVENT_CONNECT:
     case BLE_GAP_EVENT_DISCONNECT:

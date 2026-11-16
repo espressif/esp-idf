@@ -529,6 +529,11 @@ static int gattc_nrp_subscribe_cb_safe(uint16_t conn_handle,
         }
 #endif
 
+        /* The CCC was not turned on, so let the next subscribe write it again */
+        if (sub_params->value != 0) {
+            bt_le_nimble_gattc_db_ccc_disabled(conn_handle, sub_params->ccc_handle);
+        }
+
         rc = error->status;
         break;
     }
@@ -992,6 +997,11 @@ int bt_le_nimble_gatt_nrp_remove(struct bt_conn *conn, uint8_t type, void *param
             rc = gattc_nrp_subscribe(conn, nrp_head->subscribe.params);
             if (rc) {
                 LOG_ERR("[N]GattcNrpSubFail[%d]", rc);
+
+                if (nrp_head->subscribe.params->value != 0) {
+                    bt_le_nimble_gattc_db_ccc_disabled(conn->handle,
+                                                       nrp_head->subscribe.params->ccc_handle);
+                }
             }
         } else if (nrp_head->type == GATTS_NRP_INDICATE) {
             rc = gatts_nrp_indicate(conn, nrp_head->indicate.params);

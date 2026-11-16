@@ -16,6 +16,11 @@
 /* 1.25 ms units. The real interval, not "unknown": the Acceptor's PA sync needs it. */
 #define HANDOVER_PA_INTERVAL    ((PER_ADV_INTERVAL_MS * 1000) / 1250)
 
+/* CAP procedures have no timeout: one waiting for an Acceptor that never notifies
+ * stays active until the link drops, and the audio with it.
+ */
+#define HANDOVER_TIMEOUT_US     (10 * 1000 * 1000)
+
 /* Must stay valid until the procedure completes, so not on the stack. */
 static esp_ble_audio_cap_initiator_broadcast_stream_param_t bcast_stream_params[SINK_STREAM_COUNT];
 static esp_ble_audio_cap_initiator_broadcast_subgroup_param_t bcast_subgroup_param;
@@ -226,6 +231,7 @@ static int handover_unicast_to_broadcast(void)
     }
 
     if (count == 0) {
+        /* Needed by internal regression tests: do not change this log. */
         ESP_LOGW(TAG, "No streaming sink stream to hand over");
         return -ENODEV;
     }
@@ -278,6 +284,7 @@ static int handover_unicast_to_broadcast(void)
     param.broadcast_id = LOCAL_BROADCAST_ID;
     param.broadcast_create_param = &bcast_create_param;
 
+    /* Needed by internal regression tests: do not change this log. */
     ESP_LOGI(TAG, "Handover: unicast -> broadcast (%u stream(s))", (unsigned)count);
 
     cap_handover_diag_sample("u2b-pre", true);
@@ -287,6 +294,15 @@ static int handover_unicast_to_broadcast(void)
         ESP_LOGE(TAG, "Failed to hand over to broadcast, err %d", err);
         return err;
     }
+
+    /* Stop feeding the CISes now, not from the stream callbacks: the procedure
+     * disables them ~150 ms later, and SDUs sent in between queue up in the ISO
+     * layer, then fail against a CIS that is gone and leave a backlog behind.
+     * Pause instead of unregistering: this is the esp_timer task, and the TX
+     * state belongs to the iso_task. The stream callbacks unregister the CISes,
+     * and the broadcast streams register from their own started callback.
+     */
+    cap_handover_tx_pause();
 
     return 0;
 }
@@ -298,6 +314,7 @@ static int handover_broadcast_to_unicast(void)
     int err;
 
     if (recv_state_valid == false) {
+        /* Needed by internal regression tests: do not change this log. */
         ESP_LOGW(TAG, "Acceptor has no receive state for our broadcast");
         return -ENODEV;
     }
@@ -324,6 +341,7 @@ static int handover_broadcast_to_unicast(void)
     }
 
     if (count == 0) {
+        /* Needed by internal regression tests: do not change this log. */
         ESP_LOGW(TAG, "No endpoint to hand back to unicast");
         return -ENODEV;
     }
@@ -356,6 +374,7 @@ static int handover_broadcast_to_unicast(void)
     param.unicast_group_param = &uni_group_param;
     param.unicast_start_param = &uni_start_param;
 
+    /* Needed by internal regression tests: do not change this log. */
     ESP_LOGI(TAG, "Handover: broadcast -> unicast (%u stream(s))", (unsigned)count);
 
     cap_handover_diag_sample("b2u-pre", true);
@@ -369,12 +388,10 @@ static int handover_broadcast_to_unicast(void)
     /* Stop feeding the broadcast now, not from the stream callbacks: the ISO
      * channel goes down with the BIG terminate, but the disconnected callback
      * trails the controller's event by ~100 ms and every SDU in between is
-     * rejected. Unicast re-registers from its own started callback. The other
-     * direction does not need this - ASCS delivers CIS callbacks promptly.
+     * rejected. Paused as in the other direction. Unicast re-registers from its
+     * own started callback, and sends once the handover completed.
      */
-    for (size_t i = 0; i < ARRAY_SIZE(peer.sink_streams); i++) {
-        (void)cap_handover_tx_unregister_stream(&peer.sink_streams[i]);
-    }
+    cap_handover_tx_pause();
 
     return 0;
 }
@@ -384,8 +401,14 @@ static void switch_timer_cb(void *arg)
     int err;
 
     if (proc_active) {
-        /* CAP runs one procedure at a time; retry on the next tick. */
-        switch_timer_arm();
+        /* Its complete callback runs from here, with -ECANCELED, and re-arms. */
+        ESP_LOGW(TAG, "Handover not completed in %u s, cancelling",
+                 (unsigned)(HANDOVER_TIMEOUT_US / 1000000));
+        err = esp_ble_audio_cap_handover_cancel();
+        if (err) {
+            ESP_LOGE(TAG, "Failed to cancel handover, err %d", err);
+            switch_timer_arm();
+        }
         return;
     }
 
@@ -394,6 +417,12 @@ static void switch_timer_cb(void *arg)
     }
 
     proc_active = true;
+
+    /* Before starting: the complete callback re-arms the timer for the next handover. */
+    err = esp_timer_start_once(switch_timer, HANDOVER_TIMEOUT_US);
+    if (err != ESP_OK) {
+        ESP_LOGE(TAG, "Failed to arm handover timeout, err %d", err);
+    }
 
     err = on_broadcast ? handover_broadcast_to_unicast()
           : handover_unicast_to_broadcast();
@@ -431,20 +460,30 @@ static void unicast_to_broadcast_complete_cb(int err, esp_ble_conn_t *conn,
     unicast_group_set(group);
     broadcast_source = source;
     proc_active = false;
+    cap_handover_tx_resume();
 
     if (err) {
         ESP_LOGE(TAG, "Handover to broadcast failed, err %d", err);
 
-        /* The group is already gone, so a failure leaves us broadcasting to
-         * nobody. The stop callback deletes the source and restores unicast.
-         */
-        if (source != NULL &&
-                esp_ble_audio_cap_initiator_broadcast_audio_stop(source) != 0) {
-            ESP_LOGE(TAG, "Failed to stop broadcast source");
+        if (source != NULL) {
+            /* The group is already gone, so a failure leaves us broadcasting to
+             * nobody. The stop callback deletes the source and restores unicast.
+             */
+            if (esp_ble_audio_cap_initiator_broadcast_audio_stop(source) != 0) {
+                ESP_LOGE(TAG, "Failed to stop broadcast source");
+            }
+        } else if (peer.conn != NULL) {
+            /* Ended before the source existed, e.g. cancelled while the Acceptor
+             * was releasing the ASEs. Their state is unknown, and a group whose
+             * streams are not idle cannot be deleted: reconnect to start over.
+             */
+            ESP_LOGW(TAG, "No broadcast source after the failed handover, disconnecting");
+            (void)conn_disconnect(peer.conn_handle);
         }
     } else {
         on_broadcast = true;
 
+        /* Needed by internal regression tests: do not change this log. */
         ESP_LOGI(TAG, "Handover to broadcast completed");
 
         /* BIG terms are readable now; its timestamp is not, until the first
@@ -464,6 +503,7 @@ static void broadcast_to_unicast_complete_cb(int err, esp_ble_conn_t *conn,
     unicast_group_set(group);
     broadcast_source = source;
     proc_active = false;
+    cap_handover_tx_resume();
 
     if (err) {
         ESP_LOGE(TAG, "Handover to unicast failed, err %d", err);
@@ -477,6 +517,7 @@ static void broadcast_to_unicast_complete_cb(int err, esp_ble_conn_t *conn,
             ESP_LOGW(TAG, "Failed to stop advertising after handover");
         }
 
+        /* Needed by internal regression tests: do not change this log. */
         ESP_LOGI(TAG, "Handover to unicast completed");
 
         /* Mirror of the above: CIS terms readable, timestamp not yet. */
@@ -569,6 +610,7 @@ static void assistant_recv_state_cb(esp_ble_conn_t *conn, int err,
         bis_sync |= state->subgroups[i].bis_sync;
     }
 
+    /* Needed by internal regression tests: do not change this log. */
     ESP_LOGI(TAG, "Acceptor receive state: src_id %u pa_sync %u bis_sync 0x%08lx",
              state->src_id, state->pa_sync_state, (unsigned long)bis_sync);
 
@@ -680,6 +722,7 @@ void cap_handover_proc_reset(void)
     on_broadcast = false;
     recv_state_valid = false;
     recv_state_sweeping = false;
+    cap_handover_tx_resume();
 }
 
 int cap_handover_proc_init(void)

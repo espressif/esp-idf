@@ -233,6 +233,7 @@ int cap_initiator_tx_register_stream(esp_ble_audio_cap_stream_t *cap_stream, boo
             tx_streams[i].tx_count = (example_audio_tx_count_t){0};
             tx_stream_count++;
 
+            /* Needed by internal regression tests: do not change this log. */
             ESP_LOGI(TAG, "[%s #%zu] Started TX %s timestamps (SDU %u, interval %u us)",
                      label, i, IS_ENABLED(CONFIG_EXAMPLE_AUDIO_TX_TIMESTAMP) ? "with" : "without",
                      cap_stream->bap_stream.qos->sdu,

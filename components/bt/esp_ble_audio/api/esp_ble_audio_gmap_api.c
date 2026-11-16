@@ -202,10 +202,12 @@ static bool valid_gmap_features(esp_ble_audio_gmap_role_t role,
         }
 
         /* If the device supports both the UGT and BGT roles, then it needs
-         * have the same support for multiplexing for both roles.
+         * have the same support for multiplexing for both roles
+         * (only when UGT Sink is supported, GMAP Table 3.4 C.4 / 3.6 C.1).
          */
         if ((role & ESP_BLE_AUDIO_GMAP_ROLE_BGR) != 0 &&
                 IS_ENABLED(CONFIG_BT_GMAP_BGR_SUPPORTED) &&
+                (ugt_feat & ESP_BLE_AUDIO_GMAP_UGT_FEAT_SINK) != 0 &&
                 !!(ugt_feat & ESP_BLE_AUDIO_GMAP_UGT_FEAT_MULTIPLEX) !=
                 !!(bgr_feat & ESP_BLE_AUDIO_GMAP_BGR_FEAT_MULTIPLEX)) {
             /* Device shall support ESP_BLE_AUDIO_GMAP_UGT_FEAT_MULTIPLEX if

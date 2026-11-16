@@ -79,6 +79,7 @@ static void stream_started_cb(esp_ble_audio_bap_stream_t *stream)
     int idx = stream_index(stream);
     esp_err_t err;
 
+    /* Needed by internal regression tests: do not change this log. */
     ESP_LOGI(TAG, "[SRC #%d] Stream started", idx);
 
     if (source_stream->stream.qos == NULL || source_stream->stream.qos->sdu == 0) {
@@ -295,6 +296,7 @@ static void tx_scheduler_cb(void *arg)
 
 static void source_started_cb(esp_ble_audio_bap_broadcast_source_t *source)
 {
+    /* Needed by internal regression tests: do not change this log. */
     ESP_LOGI(TAG, "Broadcast source started");
 }
 

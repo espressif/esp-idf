@@ -125,6 +125,7 @@ static void base_recv_cb(esp_ble_audio_bap_broadcast_sink_t *sink,
         if (base_bis_index_bitfield & ESP_BLE_ISO_BIS_INDEX_BIT(index)) {
             bis_index_bitfield = ESP_BLE_ISO_BIS_INDEX_BIT(index);
 
+            /* Needed by internal regression tests: do not change this log. */
             ESP_LOGI(TAG, "BASE received: selected BIS bitmap 0x%08lx",
                      (unsigned long)bis_index_bitfield);
             return;
@@ -193,6 +194,9 @@ static void broadcast_sink_stopped_cb(esp_ble_audio_bap_broadcast_sink_t *sink,
     }
 }
 
+/* Nothing to handle: no Broadcast Assistant drives this sink. */
+static esp_ble_audio_bap_scan_delegator_cb_t scan_delegator_cbs;
+
 static esp_ble_audio_bap_broadcast_sink_cb_t broadcast_sink_cbs = {
     .base_recv = base_recv_cb,
     .syncable  = syncable_cb,
@@ -201,6 +205,7 @@ static esp_ble_audio_bap_broadcast_sink_cb_t broadcast_sink_cbs = {
 
 static void stream_started_cb(esp_ble_audio_bap_stream_t *stream)
 {
+    /* Needed by internal regression tests: do not change this log. */
     ESP_LOGI(TAG, "[SNK #0] Stream started");
 
     example_audio_rx_metrics_reset(&rx_metrics);
@@ -312,6 +317,7 @@ static void ext_scan_recv(esp_ble_audio_gap_app_event_t *event)
         return;
     }
 
+    /* Needed by internal regression tests: do not change this log. */
     ESP_LOGI(TAG, "Public source '%s': id 0x%06lx, features 0x%02x, peer "
              "%02x:%02x:%02x:%02x:%02x:%02x",
              sr.name[0] ? sr.name : "(unnamed)", (unsigned long)sr.broadcast_id,
@@ -346,6 +352,7 @@ static void pa_sync(esp_ble_audio_gap_app_event_t *event)
 
     sync_handle = event->pa_sync.sync_handle;
 
+    /* Needed by internal regression tests: do not change this log. */
     ESP_LOGI(TAG, "PA synced: handle %u, waiting for BASE and BIGInfo", sync_handle);
 
     err = ext_scan_stop();
@@ -462,6 +469,17 @@ static int pbp_sink_init(void)
     err = esp_ble_audio_bap_broadcast_sink_register_cb(&broadcast_sink_cbs);
     if (err) {
         ESP_LOGE(TAG, "Failed to register broadcast sink callbacks, err %d", err);
+        return err;
+    }
+
+    /* A CAP Acceptor's Broadcast Sink is a Scan Delegator too (that is what
+     * BT_CAP_ACCEPTOR depends on here), and the sink reports every PA and BIG
+     * sync as a BASS receive state. Unregistered, each sync fails to add one
+     * and the BIG sync finds none to update, a warning each time.
+     */
+    err = esp_ble_audio_bap_scan_delegator_register(&scan_delegator_cbs);
+    if (err) {
+        ESP_LOGE(TAG, "Failed to register scan delegator, err %d", err);
         return err;
     }
 

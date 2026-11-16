@@ -69,6 +69,7 @@ static void iso_connected_cb(esp_ble_iso_chan_t *chan)
     int chan_idx = bis_chan_index_get(chan);
     esp_err_t err;
 
+    /* Needed by internal regression tests: do not change this log. */
     ESP_LOGI(TAG, "[BIS #%d] Connected", chan_idx);
 
     err = esp_ble_iso_setup_data_path(chan, ESP_BLE_ISO_DATA_PATH_DIR_INPUT, &data_path);
@@ -95,6 +96,7 @@ static void iso_connected_cb(esp_ble_iso_chan_t *chan)
         return;
     }
 
+    /* Needed by internal regression tests: do not change this log. */
     ESP_LOGI(TAG, "All %u BIS channels connected, starting TX %s timestamps", BIS_ISO_CHAN_COUNT,
              IS_ENABLED(CONFIG_EXAMPLE_ISO_TX_TIMESTAMP) ? "with" : "without");
 

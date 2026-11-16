@@ -95,8 +95,12 @@ extern "C" {
 /** Out of Range */
 #define BT_ATT_ERR_OUT_OF_RANGE         0xff
 
-/* Version 5.2, Vol 3, Part F, 3.2.9 defines maximum attribute length to 512 */
+/* Version 5.2, Vol 3, Part F, 3.2.9 defines maximum attribute length to 512.
+ * The lib build takes the runtime value IDF passes in lib_ext_cfgs instead.
+ */
+#ifndef BLE_AUDIO_LIB_BUILD
 #define BT_ATT_MAX_ATTRIBUTE_LEN        512
+#endif /* BLE_AUDIO_LIB_BUILD */
 
 /* Handle 0x0000 is reserved for future use */
 #define BT_ATT_FIRST_ATTRIBUTE_HANDLE           0x0001
@@ -110,7 +114,12 @@ extern "C" {
  * @return The number of EATT channels connected.
  * Returns 0 if @p conn is NULL or not connected.
  */
+/* The lib build redirects this name to idf_ext_funcs with a macro, which would rewrite
+ * the prototype; the same applies to the guards below.
+ */
+#ifndef BLE_AUDIO_LIB_BUILD
 size_t bt_eatt_count(struct bt_conn *conn);
+#endif /* BLE_AUDIO_LIB_BUILD */
 
 /** @brief ATT channel option bit field values.
  * @note @ref BT_ATT_CHAN_OPT_UNENHANCED_ONLY and @ref BT_ATT_CHAN_OPT_ENHANCED_ONLY are mutually

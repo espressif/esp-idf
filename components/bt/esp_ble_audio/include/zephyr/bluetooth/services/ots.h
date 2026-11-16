@@ -10,6 +10,8 @@
 /**
  * @brief Object Transfer Service (OTS)
  * @defgroup bt_ots Object Transfer Service (OTS)
+ * @since 2.4
+ * @version 0.1.0
  * @ingroup bluetooth
  * @{
  *
@@ -149,7 +151,7 @@ enum {
 #define BT_OTS_OBJ_SET_PROP_PATCH(prop) \
     WRITE_BIT(prop, BT_OTS_OBJ_PROP_PATCH, 1)
 
-/** @brief Set @ref BT_OTS_OBJ_SET_PROP_MARKED property.
+/** @brief Set @ref BT_OTS_OBJ_PROP_MARKED property.
  *
  *  @param prop Object properties.
  */
@@ -263,7 +265,7 @@ enum bt_ots_oacp_write_op_mode {
     BT_OTS_OACP_WRITE_OP_MODE_TRUNCATE = BIT(1),
 };
 
-/** @brief Set @ref BT_OTS_OACP_SET_FEAT_CREATE feature.
+/** @brief Set @ref BT_OTS_OACP_FEAT_CREATE feature.
  *
  *  @param feat OTS features.
  */
@@ -771,7 +773,12 @@ struct bt_ots_init_param {
  *  @return ID of created object in case of success.
  *  @return negative value in case of error.
  */
+/* The lib build calls this through a macro of the same name onto idf_ext_funcs,
+ * which would rewrite the prototype; the same applies to the guards below.
+ */
+#ifndef BLE_AUDIO_LIB_BUILD
 int bt_ots_obj_add(struct bt_ots *ots, const struct bt_ots_obj_add_param *param);
+#endif /* BLE_AUDIO_LIB_BUILD */
 
 /** @brief Delete an object from the OTS instance.
  *
@@ -796,7 +803,9 @@ int bt_ots_obj_delete(struct bt_ots *ots, uint64_t id);
  *
  *  @return The first OTS attribute instance.
  */
+#ifndef BLE_AUDIO_LIB_BUILD
 void *bt_ots_svc_decl_get(struct bt_ots *ots);
+#endif /* BLE_AUDIO_LIB_BUILD */
 
 /** @brief Initialize the OTS instance.
  *
@@ -805,13 +814,17 @@ void *bt_ots_svc_decl_get(struct bt_ots *ots);
  *
  *  @return 0 in case of success or negative value in case of error.
  */
+#ifndef BLE_AUDIO_LIB_BUILD
 int bt_ots_init(struct bt_ots *ots, struct bt_ots_init_param *ots_init);
+#endif /* BLE_AUDIO_LIB_BUILD */
 
 /** @brief Get a free instance of OTS from the pool.
  *
  *  @return OTS instance in case of success or NULL in case of error.
  */
+#ifndef BLE_AUDIO_LIB_BUILD
 struct bt_ots *bt_ots_free_instance_get(void);
+#endif /* BLE_AUDIO_LIB_BUILD */
 
 #define BT_OTS_STOP                       0
 #define BT_OTS_CONTINUE                   1
@@ -924,6 +937,23 @@ struct bt_ots_client_cb {
      */
     void (*obj_checksum_calculated)(struct bt_ots_client *ots_inst, struct bt_conn *conn,
                                     int err, uint32_t checksum);
+
+    /** @brief Callback function when reading the data of the selected object fails.
+     *
+     *  IDF extension. Called when a read started with
+     *  bt_ots_client_read_object_data() ends before the last obj_data_read()
+     *  call: the OACP write fails, the server rejects the Read procedure, or
+     *  the L2CAP channel closes before the whole object is received. Not
+     *  called after obj_data_read() returned BT_OTS_STOP.
+     *
+     *  @param ots_inst  Pointer to the OTC instance.
+     *  @param conn      The connection to the peer device.
+     *  @param err       GATT error of the OACP write, -EIO if the server
+     *                   rejected the Read procedure, or -ECONNABORTED if the
+     *                   channel closed early.
+     */
+    void (*obj_data_read_failed)(struct bt_ots_client *ots_inst, struct bt_conn *conn,
+                                 int err);
 };
 
 /** @brief Register an Object Transfer Service Instance.
@@ -936,7 +966,9 @@ struct bt_ots_client_cb {
  *
  *  @return int               0 if success, ERRNO on failure.
  */
+#ifndef BLE_AUDIO_LIB_BUILD
 int bt_ots_client_register(struct bt_ots_client *ots_inst);
+#endif /* BLE_AUDIO_LIB_BUILD */
 
 /** @brief Unregister an Object Transfer Service Instance.
  *
@@ -960,9 +992,11 @@ int bt_ots_client_unregister(uint8_t index);
  *                      removed.
  *   @param length      Attribute value length.
  */
+#ifndef BLE_AUDIO_LIB_BUILD
 uint8_t bt_ots_client_indicate_handler(struct bt_conn *conn,
                                        struct bt_gatt_subscribe_params *params,
                                        const void *data, uint16_t length);
+#endif /* BLE_AUDIO_LIB_BUILD */
 
 /** @brief Read the OTS feature characteristic.
  *
@@ -1037,9 +1071,11 @@ int bt_ots_client_select_prev(struct bt_ots_client *otc_inst,
  *
  *  @return int         0 if success, ERRNO on failure.
  */
+#ifndef BLE_AUDIO_LIB_BUILD
 int bt_ots_client_read_object_metadata(struct bt_ots_client *otc_inst,
                                        struct bt_conn *conn,
                                        uint8_t metadata);
+#endif /* BLE_AUDIO_LIB_BUILD */
 
 /** @brief Read the data of the current selected object.
  *
@@ -1053,8 +1089,10 @@ int bt_ots_client_read_object_metadata(struct bt_ots_client *otc_inst,
  *
  *  @return int         0 if success, ERRNO on failure.
  */
+#ifndef BLE_AUDIO_LIB_BUILD
 int bt_ots_client_read_object_data(struct bt_ots_client *otc_inst,
                                    struct bt_conn *conn);
+#endif /* BLE_AUDIO_LIB_BUILD */
 
 /** @brief Write the data of the current selected object.
  *
@@ -1144,8 +1182,10 @@ static inline int bt_ots_obj_id_to_str(uint64_t obj_id, char *str, size_t len)
  * @param metadata Pointer to the first (or only) metadata in an array.
  * @param count    Number of metadata objects to display information of.
  */
+#ifndef BLE_AUDIO_LIB_BUILD
 void bt_ots_metadata_display(struct bt_ots_obj_metadata *metadata,
                              uint16_t count);
+#endif /* BLE_AUDIO_LIB_BUILD */
 
 /**
  * @brief  Generate IEEE conform CRC32 checksum.

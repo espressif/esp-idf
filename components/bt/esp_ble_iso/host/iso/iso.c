@@ -90,8 +90,14 @@ static void bt_iso_sent_cb(struct bt_conn *iso, void *user_data, int err)
 
     ops = chan->ops;
 
-    if (!err && ops != NULL && ops->sent != NULL) {
-        ops->sent(chan, user_data);
+    if (ops != NULL) {
+        if (err == 0 && ops->sent != NULL) {
+            ops->sent(chan, user_data);
+        } else if (err != 0 && ops->send_failed != NULL) {
+            ops->send_failed(chan, err);
+        } else {
+            /* no op */
+        }
     }
 #endif /* CONFIG_BT_ISO_TX */
 }
@@ -452,8 +458,16 @@ static void bt_iso_chan_disconnected(struct bt_iso_chan *chan, uint8_t reason)
 
     LOG_INF("IsoChanDisconnected[%02x]", reason);
 
+    /* Both states are set before the TX queue is emptied below: send_failed
+     * must not be able to queue an SDU again.
+     */
     bt_iso_chan_set_state(chan, BT_ISO_STATE_DISCONNECTED);
     bt_conn_set_state(chan->iso, BT_CONN_DISCONNECT_COMPLETE);
+
+#if defined(CONFIG_BT_ISO_TX)
+    /* What is still queued has not been sent */
+    bt_le_iso_tx_sdu_flush(chan);
+#endif /* CONFIG_BT_ISO_TX */
 
     /* Calling disconnected before final cleanup allows users to use bt_iso_chan_get_info in
      * the callback and to be more similar to the ACL disconnected callback. This also means
@@ -529,8 +543,7 @@ void bt_iso_disconnected(struct bt_conn *iso)
     bt_iso_chan_disconnected(chan, iso->err);
 }
 
-#if defined(CONFIG_BT_ISO_LOG_LEVEL_DBG)
-const char *bt_iso_chan_state_str(uint8_t state)
+const char *bt_iso_chan_state_str(enum bt_iso_state state)
 {
     switch (state) {
     case BT_ISO_STATE_DISCONNECTED:
@@ -546,6 +559,7 @@ const char *bt_iso_chan_state_str(uint8_t state)
     }
 }
 
+#if defined(CONFIG_BT_ISO_LOG_LEVEL_DBG)
 void bt_iso_chan_set_state_debug(struct bt_iso_chan *chan, enum bt_iso_state state,
                                  const char *func, int line)
 {
@@ -663,6 +677,13 @@ void bt_iso_recv(struct bt_conn *iso, struct net_buf *buf, uint8_t flags)
         len = sys_le16_to_cpu(hdr->slen);
         flags = bt_iso_pkt_flags(len);
         len = bt_iso_pkt_len(len);
+
+        /* For single fragments the packet length shall match the `buf->len` */
+        if (len != buf->len) {
+            LOG_ERR("UnexpIsoSingleLen[%u][%u]", len, buf->len);
+            return;
+        }
+
         pkt_seq_no = sys_le16_to_cpu(hdr->sn);
         iso_info.seq_num = pkt_seq_no;
         if (flags == BT_ISO_DATA_VALID) {
@@ -878,6 +899,33 @@ void bt_iso_cleanup_acl(struct bt_conn *iso)
 #endif /* CONFIG_BT_ISO_UNICAST */
 }
 
+static void log_cis_info(const struct bt_conn_iso *iso_conn)
+{
+    /* No locals: LOG_INF compiles to nothing below the info level */
+    LOG_INF("CisInfo[%p][%p][%p][%04x][%02x][%02x][%02x][%06x][%06x][%08x]",
+            iso_conn->chan,
+            (iso_conn->chan && iso_conn->chan->qos) ? iso_conn->chan->qos->tx : NULL,
+            (iso_conn->chan && iso_conn->chan->qos) ? iso_conn->chan->qos->rx : NULL,
+            iso_conn->info.iso_interval, iso_conn->info.max_subevent,
+            iso_conn->info.unicast.cig_id, iso_conn->info.unicast.cis_id,
+            iso_conn->info.unicast.cig_sync_delay, iso_conn->info.unicast.cis_sync_delay,
+            iso_conn->info.unicast.subinterval);
+
+    LOG_INF("CisInfoC2P[%06x][%06x][%04x][%02x][%02x][%04x][%06x]",
+            iso_conn->info.unicast.central.latency,
+            iso_conn->info.unicast.central.flush_timeout,
+            iso_conn->info.unicast.central.max_pdu, iso_conn->info.unicast.central.phy,
+            iso_conn->info.unicast.central.bn, iso_conn->info.unicast.central.max_sdu,
+            iso_conn->info.unicast.central.sdu_interval);
+
+    LOG_INF("CisInfoP2C[%06x][%06x][%04x][%02x][%02x][%04x][%06x]",
+            iso_conn->info.unicast.peripheral.latency,
+            iso_conn->info.unicast.peripheral.flush_timeout,
+            iso_conn->info.unicast.peripheral.max_pdu, iso_conn->info.unicast.peripheral.phy,
+            iso_conn->info.unicast.peripheral.bn, iso_conn->info.unicast.peripheral.max_sdu,
+            iso_conn->info.unicast.peripheral.sdu_interval);
+}
+
 static void store_cis_info(const struct bt_hci_evt_le_cis_established *evt, struct bt_conn *iso)
 {
     struct bt_conn_iso *iso_conn = &iso->iso;
@@ -900,8 +948,6 @@ static void store_cis_info(const struct bt_hci_evt_le_cis_established *evt, stru
 
     rx = chan->qos->rx;
     tx = chan->qos->tx;
-
-    LOG_DBG("StoreCisInfo[%p][%p][%p]", chan, tx, rx);
 
     if (iso->role == BT_HCI_ROLE_PERIPHERAL) {
         /* As of BT Core 6.0, we can only get the SDU size if the controller
@@ -1099,6 +1145,7 @@ void hci_le_cis_established(struct net_buf *buf)
 
     if (evt->status == BT_HCI_ERR_SUCCESS) {
         store_cis_info(evt, iso);
+        log_cis_info(&iso->iso);
         bt_conn_set_state(iso, BT_CONN_CONNECTED);
     } else if (iso->role == BT_HCI_ROLE_PERIPHERAL ||
                evt->status != BT_HCI_ERR_OP_CANCELLED_BY_HOST) {
@@ -1139,6 +1186,7 @@ void hci_le_cis_established_v2(struct net_buf *buf)
 
     if (evt->status == BT_HCI_ERR_SUCCESS) {
         store_cis_info_v2(evt, iso);
+        log_cis_info(&iso->iso);
         bt_conn_set_state(iso, BT_CONN_CONNECTED);
     } else if (iso->role == BT_HCI_ROLE_PERIPHERAL ||
                evt->status != BT_HCI_ERR_OP_CANCELLED_BY_HOST) {
@@ -2847,7 +2895,11 @@ static void store_bis_broadcaster_info(const struct bt_hci_evt_le_big_complete *
     info->can_send = true;
     info->can_recv = false;
 
-    LOG_INF("StoreBisInfo[%u]", broadcaster_info->pto);
+    LOG_INF("StoreBisInfo[%02x][%02x][%04x][%02x][%06x][%06x][%02x][%02x][%02x][%06x][%04x]",
+            broadcaster_info->big_handle, broadcaster_info->bis_number, info->iso_interval,
+            info->max_subevent, broadcaster_info->sync_delay, broadcaster_info->latency,
+            broadcaster_info->phy, broadcaster_info->bn, broadcaster_info->irc,
+            broadcaster_info->pto, broadcaster_info->max_pdu);
 }
 
 void hci_le_big_complete(struct net_buf *buf)
@@ -3080,7 +3132,10 @@ static void store_bis_sync_receiver_info(const struct bt_hci_evt_le_big_sync_est
     info->can_send = false;
     info->can_recv = true;
 
-    LOG_DBG("StoreBisInfo[%u]", receiver_info->pto);
+    LOG_INF("StoreBisInfo[%02x][%02x][%04x][%02x][%06x][%02x][%02x][%06x][%04x]",
+            receiver_info->big_handle, receiver_info->bis_number, info->iso_interval,
+            info->max_subevent, receiver_info->latency, receiver_info->bn, receiver_info->irc,
+            receiver_info->pto, receiver_info->max_pdu);
 }
 
 void hci_le_big_sync_established(struct net_buf *buf)

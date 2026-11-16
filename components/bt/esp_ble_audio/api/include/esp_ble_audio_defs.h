@@ -160,6 +160,27 @@ typedef enum bt_audio_parental_rating                   esp_ble_audio_parental_r
 /** Audio Active State defined by the Generic Audio assigned numbers */
 typedef enum bt_audio_active_state                      esp_ble_audio_active_state_t;
 
+/*!< 3G */
+#define ESP_BLE_AUDIO_BEARER_TECH_3G                    BT_BEARER_TECH_3G
+/*!< 4G */
+#define ESP_BLE_AUDIO_BEARER_TECH_4G                    BT_BEARER_TECH_4G
+/*!< Long-term evolution (LTE) */
+#define ESP_BLE_AUDIO_BEARER_TECH_LTE                   BT_BEARER_TECH_LTE
+/*!< Wifi */
+#define ESP_BLE_AUDIO_BEARER_TECH_WIFI                  BT_BEARER_TECH_WIFI
+/*!< 5G */
+#define ESP_BLE_AUDIO_BEARER_TECH_5G                    BT_BEARER_TECH_5G
+/*!< Global System for Mobile Communications (GSM) */
+#define ESP_BLE_AUDIO_BEARER_TECH_GSM                   BT_BEARER_TECH_GSM
+/*!< Code-Division Multiple Access (CDMA) */
+#define ESP_BLE_AUDIO_BEARER_TECH_CDMA                  BT_BEARER_TECH_CDMA
+/*!< 2G */
+#define ESP_BLE_AUDIO_BEARER_TECH_2G                    BT_BEARER_TECH_2G
+/*!< Wideband Code-Division Multiple Access (WCDMA) */
+#define ESP_BLE_AUDIO_BEARER_TECH_WCDMA                 BT_BEARER_TECH_WCDMA
+/** Bearer technology defined by the Generic Audio assigned numbers */
+typedef enum bt_bearer_tech                             esp_ble_audio_bearer_tech_t;
+
 /*!< Preferred audio context */
 #define ESP_BLE_AUDIO_METADATA_TYPE_PREF_CONTEXT                BT_AUDIO_METADATA_TYPE_PREF_CONTEXT
 /*!< Streaming audio context */

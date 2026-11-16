@@ -446,19 +446,9 @@ ssize_t bt_gatt_attr_read(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 #endif
 }
 
-_LIB_ONLY
-int bt_gatt_notify_cb(struct bt_conn *conn, struct bt_gatt_notify_params *params)
+static int gatts_notify_conn(struct bt_conn *conn, struct bt_gatt_notify_params *params)
 {
     int err;
-
-    BT_LE_ASSERT(params);
-
-    LOG_DBG("GattNtfCb[%u]", params->len);
-
-    if (conn && conn->state != BT_CONN_CONNECTED) {
-        LOG_ERR("GattNtfNotConn[%u][%u]", conn->handle, conn->state);
-        return -ENOTCONN;
-    }
 
 #if CONFIG_BT_BLUEDROID_ENABLED
     err = bt_le_bluedroid_gatts_notify(conn, params);
@@ -466,12 +456,95 @@ int bt_gatt_notify_cb(struct bt_conn *conn, struct bt_gatt_notify_params *params
     err = bt_le_nimble_gatts_notify(conn, params);
 #endif
 
-    /* Sync notify: complete cb only when conn is known (not broadcast-all). */
-    if (err == 0 && params->func != NULL && conn != NULL) {
+    /* Sync notify: the stack has taken the PDU, so complete it here */
+    if (err == 0 && params->func != NULL) {
         params->func(conn, params->user_data);
     }
 
     return err;
+}
+
+/* Neither stack checks the CCC before sending (NimBLE ble_gatts_notify_custom does not
+ * either). With BT_LE_GATT_NOTIFY_IGNORE_CCC set to 0 this does what Zephyr's host does:
+ * only subscribed clients get the value. Otherwise every connected client does.
+ */
+static bool gatts_notify_subscribed(struct bt_conn *conn,
+                                    const struct bt_gatt_notify_params *params)
+{
+#if BT_LE_GATT_NOTIFY_IGNORE_CCC
+    /* The CCC may not survive a restart, see common/gatt.h */
+    ARG_UNUSED(conn);
+    ARG_UNUSED(params);
+
+    return true;
+#else /* BT_LE_GATT_NOTIFY_IGNORE_CCC */
+    const struct bt_gatt_attr *attr = params->attr;
+
+    if (params->uuid != NULL) {
+        attr = bt_gatt_find_by_uuid(params->attr, 0, params->uuid);
+    }
+
+    /* Let the adapter report an attribute it cannot resolve either */
+    if (attr == NULL || attr->uuid == NULL) {
+        return true;
+    }
+
+    return bt_gatt_is_subscribed(conn, attr, BT_GATT_CCC_NOTIFY);
+#endif /* BT_LE_GATT_NOTIFY_IGNORE_CCC */
+}
+
+_LIB_ONLY
+int bt_gatt_notify_cb(struct bt_conn *conn, struct bt_gatt_notify_params *params)
+{
+    struct bt_conn *conns;
+    uint8_t conns_count;
+    int ret;
+    int err;
+
+    BT_LE_ASSERT(params);
+
+    LOG_DBG("GattNtfCb[%u]", params->len);
+
+    if (conn != NULL) {
+        if (conn->state != BT_CONN_CONNECTED) {
+            LOG_ERR("GattNtfNotConn[%u][%u]", conn->handle, conn->state);
+            return -ENOTCONN;
+        }
+
+        if (!gatts_notify_subscribed(conn, params)) {
+            LOG_DBG("GattNtfNotSub[%u]", conn->handle);
+            return -EINVAL;
+        }
+
+        return gatts_notify_conn(conn, params);
+    }
+
+    /* Same result as Zephyr: -ENOTCONN when no connected client gets the value */
+    ret = -ENOTCONN;
+
+    bt_conn_get_acl_conns(&conns, &conns_count);
+
+    for (size_t i = 0; i < conns_count; i++) {
+        if (conns[i].state != BT_CONN_CONNECTED ||
+                !gatts_notify_subscribed(&conns[i], params)) {
+            continue;
+        }
+
+        err = gatts_notify_conn(&conns[i], params);
+        if (err == -ENOTCONN) {
+            /* Link already down at the stack, but its disconnect event is still queued;
+             * stopping here would drop the value for the clients after it
+             */
+            continue;
+        }
+
+        ret = err;
+        if (err != 0) {
+            break;
+        }
+    }
+
+    return ret;
 }
 
 _LIB_IDF
@@ -1328,6 +1401,13 @@ int bt_gatt_subscribe(struct bt_conn *conn, struct bt_gatt_subscribe_params *par
                 tmp->value >= params->value) {
             LOG_INF("GattcSubAnotherExist[%04x]", tmp->value);
             has_subscription = true;
+
+            /* The CCC lookup below is skipped: take the handle from the existing
+             * subscription. The adapters' notify RX only matches resolved
+             * ccc_handles, and unsubscribing the last one writes the CCC there. */
+            if (params->ccc_handle == BT_GATT_AUTO_DISCOVER_CCC_HANDLE) {
+                params->ccc_handle = tmp->ccc_handle;
+            }
         }
     }
 
@@ -1353,9 +1433,14 @@ int bt_gatt_subscribe(struct bt_conn *conn, struct bt_gatt_subscribe_params *par
             }
         } else {
             /* Note:
-             * If the CCC handle is auto-discovered, and during the
-             * auto-discovery procedure, the indication/notification
-             * has already been enabled, no need to write CCC again.
+             * If the CCC handle is auto-discovered, and during the auto-discovery
+             * procedure, the indication/notification has already been enabled, no
+             * need to write CCC again.
+             *
+             * Neither adapter writes a resolved ccc_handle here, and Bluedroid
+             * does not register for its notifications either, so a resubscribe
+             * after an unsubscribe would not turn the CCC back on. The lib always
+             * subscribes with BT_GATT_AUTO_DISCOVER_CCC_HANDLE.
              */
         }
     }
@@ -1398,7 +1483,7 @@ int bt_gatt_unsubscribe(struct bt_conn *conn, struct bt_gatt_subscribe_params *p
 
     sub = gattc_sub_find(conn);
     if (sub == NULL) {
-        return -ENODEV;
+        return -EINVAL;
     }
 
     /* Lookup existing subscriptions */

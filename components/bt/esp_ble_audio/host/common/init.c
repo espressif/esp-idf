@@ -57,7 +57,8 @@
 #include "ots/adapter/l2cap.h"
 #endif
 
-#include "../../../lib/include/audio.h"
+#include "../../../lib/include/lib_abi.h"
+#include "../../../lib/include/lib_exports.h"
 
 #include "esp_ble_audio_common_api.h"
 
@@ -79,375 +80,6 @@ _Static_assert(offsetof(struct bt_le_audio_start_info, csis_insts) ==
 #if CONFIG_BT_OTS && !CONFIG_BT_OTS_SECONDARY_SVC
 _Static_assert(0, "Currently only support using OTS as Secondary Service");
 #endif /* CONFIG_BT_OTS && !CONFIG_BT_OTS_SECONDARY_SVC */
-
-static const uint16_t ext_structs[] = {
-    /* gatt.h */
-    sizeof(struct bt_gatt_attr),
-    sizeof(struct bt_gatt_ccc_managed_user_data),
-    sizeof(struct bt_gatt_notify_params),
-    sizeof(struct bt_gatt_indicate_params),
-    sizeof(struct bt_gatt_discover_params),
-    sizeof(struct bt_gatt_read_params),
-    sizeof(struct bt_gatt_write_params),
-    sizeof(struct bt_gatt_subscribe_params),
-    /* iso.h */
-    sizeof(struct bt_iso_chan),
-    sizeof(struct bt_iso_chan_io_qos),
-    sizeof(struct bt_iso_chan_qos),
-    sizeof(struct bt_iso_cig_param),
-    sizeof(struct bt_iso_big_create_param),
-    sizeof(struct bt_iso_big_sync_param),
-    sizeof(struct bt_iso_biginfo),
-    sizeof(struct bt_iso_chan_ops),
-    sizeof(struct bt_iso_server),
-    sizeof(struct bt_iso_unicast_info),
-    sizeof(struct bt_iso_info),
-    /* ots.h */
-    sizeof(struct bt_ots_obj_metadata),
-    sizeof(struct bt_ots_client),
-    /* aics.h */
-    sizeof(struct bt_aics_register_param),
-    sizeof(struct bt_aics_cb),
-    /* audio.h */
-    sizeof(struct bt_audio_codec_cap),
-    sizeof(struct bt_audio_codec_cfg),
-    /* bap.h */
-    sizeof(struct bt_bap_qos_cfg),
-    sizeof(struct bt_bap_qos_cfg_pref),
-    sizeof(struct bt_bap_ascs_rsp),
-    sizeof(struct bt_bap_bass_subgroup),
-    sizeof(struct bt_bap_scan_delegator_recv_state),
-    sizeof(struct bt_bap_scan_delegator_cb),
-    sizeof(struct bt_bap_ep_info),
-    sizeof(struct bt_bap_stream),
-    sizeof(struct bt_bap_stream_ops),
-    sizeof(struct bt_bap_unicast_server_cb),
-    sizeof(struct bt_bap_unicast_group_param),
-    sizeof(struct bt_bap_unicast_client_cb),
-    sizeof(struct bt_bap_broadcast_source_stream_param),
-    sizeof(struct bt_bap_broadcast_source_param),
-    sizeof(struct bt_bap_broadcast_sink_cb),
-    sizeof(struct bt_bap_scan_delegator_add_src_param),
-    sizeof(struct bt_bap_scan_delegator_mod_src_param),
-    sizeof(struct bt_bap_broadcast_assistant_cb),
-    sizeof(struct bt_bap_broadcast_assistant_add_src_param),
-    sizeof(struct bt_bap_broadcast_assistant_mod_src_param),
-    /* cap.h */
-    sizeof(struct bt_cap_initiator_cb),
-    sizeof(struct bt_cap_stream),
-    sizeof(struct bt_cap_unicast_audio_start_stream_param),
-    sizeof(struct bt_cap_initiator_broadcast_create_param),
-    sizeof(struct bt_cap_commander_cb),
-    sizeof(struct bt_cap_commander_broadcast_reception_start_member_param),
-    /* ccp.h */
-    sizeof(struct bt_ccp_call_control_client_bearers),
-    sizeof(struct bt_ccp_call_control_client_cb),
-    /* csip.h */
-    sizeof(struct bt_csip_set_member_register_param),
-    sizeof(struct bt_csip_set_coordinator_set_member),
-    /* mcc.h */
-    sizeof(struct bt_mcc_cb),
-    /* media_proxy.h */
-    sizeof(struct media_proxy_ctrl_cbs),
-    sizeof(struct media_proxy_pl_calls),
-    /* micp.h */
-    sizeof(struct bt_micp_mic_dev_register_param),
-    sizeof(struct bt_micp_mic_ctlr_cb),
-    /* tbs.h */
-    sizeof(struct bt_tbs_register_param),
-    sizeof(struct bt_tbs_client_cb),
-    /* vcp.h */
-    sizeof(struct bt_vcp_vol_rend_register_param),
-    sizeof(struct bt_vcp_vol_ctlr_cb),
-    /* vocs.h */
-    sizeof(struct bt_vocs_cb),
-    /* buf.h */
-    sizeof(struct net_buf),
-    sizeof(struct net_buf_simple),
-    sizeof(struct net_buf_pool),
-    /* Others */
-    sizeof(struct bt_dev),
-    sizeof(struct bt_le_ext_adv),
-    sizeof(struct bt_le_ext_adv_info),
-    sizeof(struct bt_le_per_adv_sync),
-    sizeof(struct bt_conn),
-    sizeof(struct k_work),
-    sizeof(struct k_mutex),
-    sizeof(struct bt_data),
-    sizeof(struct bt_le_per_adv_sync_synced_info),
-    sizeof(struct bt_le_per_adv_sync_term_info),
-    sizeof(struct bt_le_per_adv_sync_recv_info),
-    sizeof(struct bt_le_per_adv_sync_cb),
-    sizeof(struct bt_le_per_adv_sync_info),
-    sizeof(struct bt_le_scan_param),
-    sizeof(struct bt_le_scan_recv_info),
-    sizeof(struct bt_le_scan_cb),
-    sizeof(struct bt_bond_info),
-};
-
-#define LEA_VERSION     (0x20260905)
-
-struct lib_ext_cfgs {
-    /* BLE */
-    bool     config_past_sender;
-    bool     config_past_receiver;
-    bool     config_past_check;
-    uint8_t  config_max_conn;
-    uint8_t  config_max_paired;
-    uint16_t config_max_attr_len;
-    uint16_t config_l2cap_tx_mtu;
-    uint16_t config_l2cap_rx_mtu;
-
-    /* ISO */
-    bool     config_iso_test_params;
-    uint8_t  config_iso_max_chan;
-
-    /* Audio (Audio Profiles Related) */
-    bool     config_audio_tx;
-    bool     config_audio_rx;
-    uint16_t config_audio_notify_retry_delay;
-
-    /* AICS (Audio Input Control Service) */
-    bool     config_aics;
-    uint8_t  config_aics_max_instance_count;
-    uint16_t config_aics_max_input_description_size;
-    bool     config_aics_client;
-    uint8_t  config_aics_client_max_instance_count;
-
-    /* ASCS (Audio Stream Control Service) */
-    bool     config_ascs_ase_snk;
-    uint8_t  config_ascs_max_ase_snk_count;
-    bool     config_ascs_ase_src;
-    uint8_t  config_ascs_max_ase_src_count;
-    uint8_t  config_ascs_max_active_ases;
-    uint16_t config_ascs_iso_disconnect_delay;
-
-    /* BAP (Basic Audio Profile) */
-    bool     config_bap_unicast_server;
-    bool     config_bap_unicast_client;
-    uint8_t  config_bap_unicast_client_group_count;
-    uint8_t  config_bap_unicast_client_group_stream_count;
-    bool     config_bap_unicast_client_ase_snk;
-    uint8_t  config_bap_unicast_client_ase_snk_count;
-    bool     config_bap_unicast_client_ase_src;
-    uint8_t  config_bap_unicast_client_ase_src_count;
-    bool     config_bap_broadcast_sink;
-    uint8_t  config_bap_broadcast_snk_count;
-    uint8_t  config_bap_broadcast_snk_subgroup_count;
-    uint8_t  config_bap_broadcast_snk_stream_count;
-    bool     config_bap_broadcast_source;
-    uint8_t  config_bap_broadcast_src_count;
-    uint8_t  config_bap_broadcast_src_subgroup_count;
-    uint8_t  config_bap_broadcast_src_stream_count;
-    bool     config_bap_scan_delegator;
-    uint8_t  config_bap_scan_delegator_recv_state_count;
-    bool     config_bap_broadcast_assistant;
-    uint8_t  config_bap_broadcast_assistant_recv_state_count;
-    uint8_t  config_bap_bass_max_subgroups;
-    uint8_t  config_audio_codec_cfg_max_data_size;
-    uint8_t  config_audio_codec_cfg_max_metadata_size;
-    uint8_t  config_audio_codec_cap_max_data_size;
-    uint8_t  config_audio_codec_cap_max_metadata_size;
-    bool     config_bap_debug_stream_data;
-    bool     config_bap_debug_stream_seq_num;
-
-    /* CAP (Common Audio Profile) */
-    bool     config_cap_acceptor;
-    bool     config_cap_acceptor_set_member;
-    bool     config_cap_initiator;
-    bool     config_cap_initiator_unicast;
-    bool     config_cap_commander;
-    bool     config_cap_handover;
-
-    /* CCP (Call Control Profile) */
-    bool     config_ccp_call_control_client;
-    uint8_t  config_ccp_call_control_client_bearer_count;
-    bool     config_ccp_call_control_server;
-    uint8_t  config_ccp_call_control_server_bearer_count;
-    uint16_t config_ccp_call_control_server_provider_name_max_len;
-
-    /* CSIP (Coordinated Set Identification Profile) */
-    bool     config_csip_set_member;
-    uint8_t  config_csip_set_member_max_instance_count;
-    bool     config_csip_set_member_enc_sirk_support;
-    bool     config_csip_set_member_sirk_notifiable;
-    bool     config_csip_set_member_size_notifiable;
-    bool     config_csip_set_member_set_name_notifiable;
-    bool     config_csip_set_member_test_sample_data;
-    bool     config_csip_set_coordinator;
-    uint8_t  config_csip_set_coordinator_max_csis_instances;
-    bool     config_csip_set_coordinator_enc_sirk_support;
-    bool     config_csip_set_coordinator_test_sample_data;
-
-    /* GMAP (Gaming Audio Profile) */
-    bool     config_gmap;
-    bool     config_gmap_ugg_supported;
-    bool     config_gmap_ugt_supported;
-    bool     config_gmap_bgs_supported;
-    bool     config_gmap_bgr_supported;
-
-    /* HAS (Hearing Access Service) */
-    bool     config_has;
-    uint8_t  config_has_preset_count;
-    bool     config_has_features_notifiable;
-    bool     config_has_preset_support;
-    bool     config_has_preset_name_dynamic;
-    bool     config_has_preset_control_point_notifiable;
-    bool     config_has_active_preset_index;
-    bool     config_has_client;
-
-    /* MCS (Media Control Service) */
-    bool     config_mcs;
-    uint8_t  config_mcs_instance_count;
-    bool     config_mcc;
-    uint8_t  config_mcc_media_player_name_max;
-    uint8_t  config_mcc_icon_url_max;
-    uint8_t  config_mcc_track_title_max;
-    uint8_t  config_mcc_segment_name_max;
-    bool     config_mcc_ots;
-    uint16_t config_mcc_otc_obj_buf_size;
-    uint16_t config_mcc_total_obj_content_mem;
-    uint16_t config_mcc_track_segs_max_cnt;
-    uint16_t config_mcc_group_records_max;
-    bool     config_mcc_read_media_player_icon_url;
-    bool     config_mcc_read_track_title;
-    bool     config_mcc_read_track_title_enable_subscription;
-    bool     config_mcc_read_track_duration;
-    bool     config_mcc_read_track_position;
-    bool     config_mcc_set_track_position;
-    bool     config_mcc_read_playback_speed;
-    bool     config_mcc_set_playback_speed;
-    bool     config_mcc_read_seeking_speed;
-    bool     config_mcc_read_playing_order;
-    bool     config_mcc_set_playing_order;
-    bool     config_mcc_read_playing_order_supported;
-    bool     config_mcc_read_media_state;
-    bool     config_mcc_set_media_control_point;
-    bool     config_mcc_read_media_control_point_opcodes_supported;
-    bool     config_mcc_read_content_control_id;
-
-    /* MCTL (Media Control) */
-    bool     config_mctl;
-    bool     config_mctl_local_player_control;
-    bool     config_mctl_local_player_local_control;
-    bool     config_mctl_local_player_remote_control;
-    bool     config_mctl_remote_player_control;
-    bool     config_mctl_remote_player_control_objects;
-
-    /* MICP (Microphone Control Profile) */
-    bool     config_micp_mic_dev;
-    bool     config_micp_mic_dev_aics;
-    uint8_t  config_micp_mic_dev_aics_instance_count;
-    bool     config_micp_mic_ctlr;
-    bool     config_micp_mic_ctlr_aics;
-    uint8_t  config_micp_mic_ctlr_max_aics_inst;
-
-    /* MPL (Media player) */
-    bool     config_mpl;
-    char    *config_mpl_media_player_name;
-    uint8_t  config_mpl_media_player_name_max;
-    char    *config_mpl_icon_url;
-    uint8_t  config_mpl_icon_url_max;
-    uint8_t  config_mpl_track_title_max;
-    uint8_t  config_mpl_segment_name_max;
-    uint8_t  config_mpl_group_title_max;
-    bool     config_mpl_objects;
-    uint16_t config_mpl_max_obj_size;
-    uint16_t config_mpl_icon_bitmap_size;
-    uint16_t config_mpl_track_max_size;
-
-    /* PACS (Published Audio Capabilities Service) */
-    bool     config_pac_snk;
-    bool     config_pac_snk_notifiable;
-    bool     config_pac_snk_loc;
-    bool     config_pac_snk_loc_writeable;
-    bool     config_pac_snk_loc_notifiable;
-    bool     config_pac_src;
-    bool     config_pac_src_notifiable;
-    bool     config_pac_src_loc;
-    bool     config_pac_src_loc_writeable;
-    bool     config_pac_src_loc_notifiable;
-    bool     config_pacs_supported_context_notifiable;
-
-    /* PBP (Public Broadcast Profile) */
-    bool     config_pbp;
-
-    /* TBS (Telephone Bearer Service) */
-    bool     config_tbs;
-    uint8_t  config_tbs_supported_features;
-    uint8_t  config_tbs_max_calls;
-    uint8_t  config_tbs_bearer_count;
-    uint16_t config_tbs_max_scheme_list_length;
-    bool     config_tbs_client;
-    bool     config_tbs_client_gtbs;
-    bool     config_tbs_client_tbs;
-    uint8_t  config_tbs_client_max_calls;
-    uint8_t  config_tbs_client_max_tbs_instances;
-    bool     config_tbs_client_bearer_provider_name;
-    bool     config_tbs_client_bearer_uci;
-    bool     config_tbs_client_bearer_technology;
-    bool     config_tbs_client_bearer_uri_schemes_supported_list;
-    bool     config_tbs_client_bearer_signal_strength;
-    bool     config_tbs_client_read_bearer_signal_interval;
-    bool     config_tbs_client_set_bearer_signal_interval;
-    bool     config_tbs_client_bearer_list_current_calls;
-    bool     config_tbs_client_ccid;
-    bool     config_tbs_client_incoming_uri;
-    bool     config_tbs_client_status_flags;
-    bool     config_tbs_client_cp_procedures;
-    bool     config_tbs_client_accept_call;
-    bool     config_tbs_client_terminate_call;
-    bool     config_tbs_client_hold_call;
-    bool     config_tbs_client_retrieve_call;
-    bool     config_tbs_client_originate_call;
-    bool     config_tbs_client_join_calls;
-    bool     config_tbs_client_optional_opcodes;
-    bool     config_tbs_client_incoming_call;
-    bool     config_tbs_client_call_friendly_name;
-    uint8_t  config_tbs_max_uri_length;
-    uint16_t config_tbs_max_provider_name_length;
-    uint16_t config_tbs_max_friendly_name_length;
-
-    /* TMAP (Telephony and Media Audio Profile) */
-    bool     config_tmap_cg_supported;
-    bool     config_tmap_ct_supported;
-    bool     config_tmap_ums_supported;
-    bool     config_tmap_umr_supported;
-    bool     config_tmap_bms_supported;
-    bool     config_tmap_bmr_supported;
-    bool     config_tmap;
-
-    /* VCP (Volume Control Profile) */
-    bool     config_vcp_vol_rend;
-    bool     config_vcp_vol_rend_vocs;
-    uint8_t  config_vcp_vol_rend_vocs_instance_count;
-    bool     config_vcp_vol_rend_aics;
-    uint8_t  config_vcp_vol_rend_aics_instance_count;
-    bool     config_vcp_vol_rend_vol_flags_notifiable;
-    bool     config_vcp_vol_ctlr;
-    bool     config_vcp_vol_ctlr_vocs;
-    uint8_t  config_vcp_vol_ctlr_max_vocs_inst;
-    bool     config_vcp_vol_ctlr_aics;
-    uint8_t  config_vcp_vol_ctlr_max_aics_inst;
-
-    /* VOCS (Volume Control Service) */
-    bool     config_vocs;
-    uint8_t  config_vocs_max_instance_count;
-    uint16_t config_vocs_max_output_description_size;
-    bool     config_vocs_client;
-    uint8_t  config_vocs_client_max_instance_count;
-
-    /* OTS (Object Transfer Service) */
-    bool     config_ots;
-    bool     config_ots_client;
-    uint8_t  config_ots_obj_max_name_len;
-
-    /* PTS */
-    bool     config_pts_test_enable;
-
-    /* Version Check */
-    uint32_t config_version;
-};
 
 static const struct lib_ext_cfgs ext_cfgs = {
     /* BLE */
@@ -476,6 +108,7 @@ static const struct lib_ext_cfgs ext_cfgs = {
     .config_audio_rx = CONFIG_BT_AUDIO_RX,
 #endif /* CONFIG_BT_AUDIO_RX */
     .config_audio_notify_retry_delay = 20,
+    .config_audio_notify_ignore_ccc = BT_LE_GATT_NOTIFY_IGNORE_CCC,
 
     /* AICS (Audio Input Control Service) */
 #if CONFIG_BT_AICS
@@ -499,8 +132,7 @@ static const struct lib_ext_cfgs ext_cfgs = {
     .config_ascs_max_ase_src_count = CONFIG_BT_ASCS_MAX_ASE_SRC_COUNT,
 #endif /* CONFIG_BT_ASCS_ASE_SRC */
     .config_ascs_max_active_ases = CONFIG_BT_ASCS_MAX_ACTIVE_ASES,
-    /* .config_ascs_iso_disconnect_delay = CONFIG_BT_ASCS_ISO_DISCONNECT_DELAY, */
-    .config_ascs_iso_disconnect_delay = 0,
+    .config_ascs_iso_disconnect_delay = CONFIG_BT_ASCS_ISO_DISCONNECT_DELAY,
 #endif /* CONFIG_BT_ASCS */
 
     /* BAP (Basic Audio Profile) */
@@ -571,6 +203,9 @@ static const struct lib_ext_cfgs ext_cfgs = {
 #if CONFIG_BT_CAP_HANDOVER
     .config_cap_handover = CONFIG_BT_CAP_HANDOVER,
 #endif /* CONFIG_BT_CAP_HANDOVER */
+#if CONFIG_BT_CAP_SUBPROC_SUPPORT
+    .config_cap_subproc_support = CONFIG_BT_CAP_SUBPROC_SUPPORT,
+#endif /* CONFIG_BT_CAP_SUBPROC_SUPPORT */
 
     /* CCP (Call Control Profile) */
 #if CONFIG_BT_CCP_CALL_CONTROL_CLIENT
@@ -587,6 +222,9 @@ static const struct lib_ext_cfgs ext_cfgs = {
 #if CONFIG_BT_CCP_CALL_CONTROL_SERVER_PROVIDER_NAME_MAX_LEN
     .config_ccp_call_control_server_provider_name_max_len = CONFIG_BT_CCP_CALL_CONTROL_SERVER_PROVIDER_NAME_MAX_LEN,
 #endif /* CONFIG_BT_CCP_CALL_CONTROL_SERVER_PROVIDER_NAME_MAX_LEN */
+#if CONFIG_BT_CCP_CALL_CONTROL_SERVER_URI_SCHEMES_MAX_LEN
+    .config_ccp_call_control_server_uri_schemes_max_len = CONFIG_BT_CCP_CALL_CONTROL_SERVER_URI_SCHEMES_MAX_LEN,
+#endif /* CONFIG_BT_CCP_CALL_CONTROL_SERVER_URI_SCHEMES_MAX_LEN */
 #endif /* CONFIG_BT_CCP_CALL_CONTROL_SERVER */
 
     /* CSIP (Coordinated Set Identification Profile) */
@@ -597,9 +235,18 @@ static const struct lib_ext_cfgs ext_cfgs = {
 #if CONFIG_BT_CSIP_SET_MEMBER_SIRK_NOTIFIABLE
     .config_csip_set_member_sirk_notifiable = CONFIG_BT_CSIP_SET_MEMBER_SIRK_NOTIFIABLE,
 #endif /* CONFIG_BT_CSIP_SET_MEMBER_SIRK_NOTIFIABLE */
+#if CONFIG_BT_CSIP_SET_MEMBER_SIZE_SUPPORT
+    .config_csip_set_member_size_support = CONFIG_BT_CSIP_SET_MEMBER_SIZE_SUPPORT,
+#endif /* CONFIG_BT_CSIP_SET_MEMBER_SIZE_SUPPORT */
 #if CONFIG_BT_CSIP_SET_MEMBER_SIZE_NOTIFIABLE
     .config_csip_set_member_size_notifiable = CONFIG_BT_CSIP_SET_MEMBER_SIZE_NOTIFIABLE,
 #endif /* CONFIG_BT_CSIP_SET_MEMBER_SIZE_NOTIFIABLE */
+#if CONFIG_BT_CSIP_SET_MEMBER_LOCK_SUPPORT
+    .config_csip_set_member_lock_support = CONFIG_BT_CSIP_SET_MEMBER_LOCK_SUPPORT,
+#endif /* CONFIG_BT_CSIP_SET_MEMBER_LOCK_SUPPORT */
+#if CONFIG_BT_CSIP_SET_MEMBER_RANK_SUPPORT
+    .config_csip_set_member_rank_support = CONFIG_BT_CSIP_SET_MEMBER_RANK_SUPPORT,
+#endif /* CONFIG_BT_CSIP_SET_MEMBER_RANK_SUPPORT */
 #if CONFIG_BT_CSIP_SET_MEMBER_SET_NAME_NOTIFIABLE
     .config_csip_set_member_set_name_notifiable = CONFIG_BT_CSIP_SET_MEMBER_SET_NAME_NOTIFIABLE,
 #endif /* CONFIG_BT_CSIP_SET_MEMBER_SET_NAME_NOTIFIABLE */
@@ -987,168 +634,6 @@ static const struct lib_ext_cfgs ext_cfgs = {
     .config_version = LEA_VERSION,
 };
 
-struct lib_ext_funcs {
-    /* LOG */
-    void (*_log_dbg)(const char *format, ...);
-    void (*_log_inf)(const char *format, ...);
-    void (*_log_wrn)(const char *format, ...);
-    void (*_log_err)(const char *format, ...);
-
-    /* Fatal assert: log + abort with tag/info/file/line/func context.
-     * Mirrors lib-side lib_ext_funcs._assert in init.h. ABI must match.
-     */
-    void (*_assert)(const char *tag, size_t info,
-                    const char *file, int line, const char *func);
-
-    /* Memory */
-    void *(*_malloc)(size_t size);
-    void *(*_calloc)(size_t n, size_t size);
-    void (*_free)(void *ptr);
-
-    /* Crypto */
-    int (*_rand)(void *buf, size_t len);
-    int (*_encrypt_le)(const uint8_t key[16],
-                       const uint8_t plaintext[16],
-                       uint8_t enc_data[16]);
-    int (*_aes_cmac)(const uint8_t *key, const uint8_t *in,
-                     size_t len, uint8_t *out);
-
-    /* UTF8 */
-    char *(*_utf8_trunc)(char *utf8_str);
-    char *(*_utf8_lcpy)(char *dst, const char *src, size_t n);
-
-    /* Mutex */
-    void (*_mutex_create)(void *mutex);
-    void (*_mutex_delete)(void *mutex);
-    int (*_mutex_lock)(void *mutex, uint32_t timeout);
-    int (*_mutex_unlock)(void *mutex);
-    void (*_lock)(void);
-    void (*_unlock)(void);
-
-    /* Net buf */
-    void (*_buf_simple_init)(void *buf, size_t reserve_head);
-    void (*_buf_simple_init_with_data)(void *buf, void *data, size_t size);
-    void (*_buf_simple_reset)(void *buf);
-    void (*_buf_simple_clone)(const void *original, void *clone);
-    void *(*_buf_simple_add)(void *buf, size_t len);
-    void *(*_buf_simple_add_mem)(void *buf, const void *mem, size_t len);
-    uint8_t *(*_buf_simple_add_u8)(void *buf, uint8_t val);
-    void (*_buf_simple_add_le16)(void *buf, uint16_t val);
-    void (*_buf_simple_add_le24)(void *buf, uint32_t val);
-    void (*_buf_simple_add_le32)(void *buf, uint32_t val);
-    void (*_buf_simple_add_le48)(void *buf, uint64_t val);
-    void (*_buf_simple_add_le64)(void *buf, uint64_t val);
-    void *(*_buf_simple_pull)(void *buf, size_t len);
-    void *(*_buf_simple_pull_mem)(void *buf, size_t len);
-    uint8_t (*_buf_simple_pull_u8)(void *buf);
-    uint16_t (*_buf_simple_pull_le16)(void *buf);
-    uint32_t (*_buf_simple_pull_le24)(void *buf);
-    uint32_t (*_buf_simple_pull_le32)(void *buf);
-    uint64_t (*_buf_simple_pull_le48)(void *buf);
-    uint64_t (*_buf_simple_pull_le64)(void *buf);
-    size_t (*_buf_simple_headroom)(const void *buf);
-    size_t (*_buf_simple_tailroom)(void *buf);
-    void (*_buf_simple_save)(void *buf, void *state);
-    void (*_buf_simple_restore)(void *buf, void *state);
-    void *(*_buf_user_data)(void *buf);
-    size_t (*_buf_frags_len)(void *buf);
-
-    /* Timer */
-    int (*_dwork_init)(void *dwork, void *handler);
-    int (*_dwork_deinit)(void *dwork);
-    int (*_dwork_schedule)(void *dwork, uint32_t delay);
-    int (*_dwork_cancel)(void *dwork);
-    bool (*_dwork_cancel_sync)(void *dwork, void *sync);
-    uint32_t (*_dwork_remaining_get)(void *dwork);
-    bool (*_work_is_pending)(void *work);
-    int (*_work_submit)(void *work);
-    void *(*_dwork_from_work)(void *work);
-
-    /* BT_STR */
-    const char *(*_bt_hex)(const void *buf, size_t len);
-    const char *(*_bt_addr_str)(const bt_addr_t *addr);
-    const char *(*_bt_addr_le_str)(const bt_addr_le_t *addr);
-    int (*_bt_addr_le_to_str)(const bt_addr_le_t *addr, char *str, size_t len);
-    bool (*_bt_addr_le_eq)(const bt_addr_le_t *a, const bt_addr_le_t *b);
-    void (*_bt_addr_copy)(bt_addr_t *dst, const bt_addr_t *src);
-    void (*_bt_addr_le_copy)(bt_addr_le_t *dst, const bt_addr_le_t *src);
-    const char *(*_bt_uuid_str)(const struct bt_uuid *uuid);
-
-    /* UUID */
-    int (*_uuid_cmp)(const struct bt_uuid *u1, const struct bt_uuid *u2);
-    bool (*_uuid_create)(struct bt_uuid *uuid, const uint8_t *data, uint8_t data_len);
-    void (*_uuid_to_str)(const struct bt_uuid *uuid, char *str, size_t len);
-
-    /* SMP */
-    bool (*_bt_le_bond_exists)(uint8_t id, const bt_addr_le_t *addr);
-    void (*_bt_foreach_bond)(uint8_t id, void *func, void *user_data);
-
-    /* Scan */
-    int (*_scan_cb_register)(struct bt_le_scan_cb *cb);
-    void (*_scan_cb_unregister)(struct bt_le_scan_cb *cb);
-    int (*_pa_sync_cb_register)(struct bt_le_per_adv_sync_cb *cb);
-    int (*_pa_sync_cb_unregister)(struct bt_le_per_adv_sync_cb *cb);
-    int (*_pa_sync_get_info)(struct bt_le_per_adv_sync *per_adv_sync,
-                             struct bt_le_per_adv_sync_info *info);
-    struct bt_le_per_adv_sync *(*_pa_sync_lookup_addr)(const bt_addr_le_t *adv_addr, uint8_t sid);
-
-    /* Connection */
-    int (*_conn_cb_register)(struct bt_conn_cb *cb);
-    int (*_conn_cb_unregister)(struct bt_conn_cb *cb);
-    int (*_conn_auth_info_cb_register)(struct bt_conn_auth_info_cb *cb);
-    int (*_conn_auth_info_cb_unregister)(struct bt_conn_auth_info_cb *cb);
-    void (*_conn_foreach)(enum bt_conn_type type,
-                          void (*func)(struct bt_conn *conn, void *data),
-                          void *data);
-    int (*_conn_get_info)(const struct bt_conn *conn, struct bt_conn_info *info);
-    uint8_t (*_conn_index)(const struct bt_conn *conn);
-    struct bt_conn *(*_conn_lookup_index)(uint8_t index);
-    const bt_addr_le_t *(*_conn_get_dst)(const struct bt_conn *conn);
-    struct bt_conn *(*_conn_ref)(struct bt_conn *conn);
-    void (*_conn_unref)(struct bt_conn *conn);
-
-    /* GATT */
-    int (*_gatt_svc_register)(void *svc);
-    int (*_gatt_svc_unregister)(void *svc);
-    uint16_t (*_gatt_get_mtu)(void *conn);
-    size_t (*_gatt_eatt_count)(void *conn);
-    uint16_t (*_gatt_attr_value_handle)(const void *attr);
-    void (*_gatt_foreach_attr_type)(uint16_t start_handle, uint16_t end_handle,
-                                    const void *uuid, const void *attr_data,
-                                    uint16_t num_matches, void *func, void *user_data);
-    void *(*_gatt_find_by_uuid)(const void *attr, uint16_t attr_count, const void *uuid);
-    ssize_t (*_gatts_attr_read)(void *conn, const void *attr, void *buf, uint16_t buf_len,
-                                uint16_t offset, const void *value, uint16_t value_len);
-    int (*_gatts_notify_cb)(void *conn, void *params);
-    int (*_gatts_notify)(void *conn, const void *attr, const void *data, uint16_t len);
-    int (*_gatts_notify_uuid)(void *conn, const void *uuid, const void *attr,
-                              const void *data, uint16_t len);
-    int (*_gatts_indicate)(void *conn, void *params);
-    bool (*_gatts_is_subscribed)(void *conn, const void *attr, uint16_t ccc_type);
-    int (*_gattc_discover)(void *conn, void *params);
-    int (*_gattc_subscribe)(void *conn, void *params);
-    int (*_gattc_unsubscribe)(void *conn, void *params);
-    int (*_gattc_read)(void *conn, void *params);
-    int (*_gattc_write)(void *conn, void *params);
-    int (*_gattc_write_without_response_cb)(void *conn, uint16_t handle, const void *data,
-                                            uint16_t length, bool sign, void *func,
-                                            void *user_data);
-    int (*_gattc_write_without_response)(void *conn, uint16_t handle, const void *data,
-                                         uint16_t length, bool sign);
-
-    /* OTS */
-    int (*_ots_init)(void *ots, void *ots_init);
-    int (*_ots_obj_add)(void *ots, const void *param);
-    void *(*_ots_free_instance_get)(void);
-    void *(*_ots_svc_decl_get)(void *ots);
-    int (*_ots_client_register)(void *ots_inst);
-    uint8_t (*_ots_client_indicate_handler)(void *conn, void *params,
-                                            const void *data, uint16_t length);
-    int (*_ots_client_read_object_metadata)(void *otc_inst, void *conn, uint8_t metadata);
-    int (*_ots_client_read_object_data)(void *otc_inst, void *conn);
-    void (*_ots_metadata_display)(void *metadata, uint16_t count);
-};
-
 #define LEA_TAG     "LEA_LIB"
 
 static void log_debug(const char *format, ...)
@@ -1235,6 +720,7 @@ static const struct lib_ext_funcs ext_funcs = {
 
     ._utf8_trunc = (void *)utf8_trunc,
     ._utf8_lcpy = (void *)utf8_lcpy,
+    ._utf8_count_chars = (void *)utf8_count_chars,
 
     ._mutex_create = (void *)k_mutex_create,
     ._mutex_delete = (void *)k_mutex_delete,
@@ -1351,195 +837,6 @@ static const struct lib_ext_funcs ext_funcs = {
 #endif /* CONFIG_BT_OTS_CLIENT */
 };
 
-struct lib_int_funcs {
-    /* AICS Client */
-    int (*_aics_client_state_get)(struct bt_aics *inst);
-    int (*_aics_client_gain_setting_get)(struct bt_aics *inst);
-    int (*_aics_client_type_get)(struct bt_aics *inst);
-    int (*_aics_client_status_get)(struct bt_aics *inst);
-    int (*_aics_client_unmute)(struct bt_aics *inst);
-    int (*_aics_client_mute)(struct bt_aics *inst);
-    int (*_aics_client_manual_gain_set)(struct bt_aics *inst);
-    int (*_aics_client_automatic_gain_set)(struct bt_aics *inst);
-    int (*_aics_client_gain_set)(struct bt_aics *inst, int8_t gain);
-    int (*_aics_client_description_get)(struct bt_aics *inst);
-    int (*_aics_client_description_set)(struct bt_aics *inst, const char *description);
-
-    /* BAP Broadcast Sink */
-    bool (*_bap_broadcast_sink_has_ep)(const struct bt_bap_ep *ep);
-
-    /* BAP Broadcast Source */
-    bool (*_bap_broadcast_source_has_ep)(const struct bt_bap_ep *ep);
-
-    /* BAP Unicast Client */
-    bool (*_bap_unicast_client_has_ep)(const struct bt_bap_ep *ep);
-    struct bt_conn *(*_bap_unicast_client_ep_get_conn)(const struct bt_bap_ep *ep);
-    int (*_bap_unicast_client_register_cb)(struct bt_bap_unicast_client_cb *cb);
-    int (*_bap_unicast_client_config)(struct bt_bap_stream *stream,
-                                      const struct bt_audio_codec_cfg *codec_cfg);
-    int (*_bap_unicast_client_metadata)(struct bt_bap_stream *stream,
-                                        const uint8_t meta[], size_t meta_len);
-    int (*_bap_unicast_client_connect)(struct bt_bap_stream *stream);
-    int (*_bap_unicast_client_start)(struct bt_bap_stream *stream);
-    int (*_bap_unicast_client_disable)(struct bt_bap_stream *stream);
-    int (*_bap_unicast_client_release)(struct bt_bap_stream *stream);
-
-    /* BAP Unicast Server */
-    bool (*_bap_unicast_server_has_ep)(const struct bt_bap_ep *ep);
-    struct bt_conn *(*_bap_unicast_server_ep_get_conn)(const struct bt_bap_ep *ep);
-    int (*_bap_unicast_server_reconfig)(struct bt_bap_stream *stream,
-                                        const struct bt_audio_codec_cfg *codec_cfg);
-    int (*_bap_unicast_server_start)(struct bt_bap_stream *stream);
-    int (*_bap_unicast_server_metadata)(struct bt_bap_stream *stream,
-                                        const uint8_t meta[], size_t meta_len);
-    int (*_bap_unicast_server_disable)(struct bt_bap_stream *stream);
-    int (*_bap_unicast_server_release)(struct bt_bap_stream *stream);
-
-    /* CAP Acceptor */
-    bool (*_cap_acceptor_ccids_exist)(const struct bt_conn *conn, const uint8_t ccids[],
-                                      uint8_t ccid_cnt);
-
-    /* CAP Initiator */
-    void (*_cap_common_set_subproc)(enum bt_cap_common_subproc_type subproc_type);
-    bool (*_cap_common_proc_is_type)(enum bt_cap_common_proc_type proc_type);
-    bool (*_cap_common_subproc_is_type)(enum bt_cap_common_subproc_type subproc_type);
-    void (*_cap_initiator_cp_cb)(struct bt_cap_stream *cap_stream,
-                                 enum bt_bap_ascs_rsp_code rsp_code,
-                                 enum bt_bap_ascs_reason reason);
-    void (*_cap_initiator_codec_configured)(struct bt_cap_stream *cap_stream);
-    void (*_cap_initiator_qos_configured)(struct bt_cap_stream *cap_stream);
-    void (*_cap_initiator_enabled)(struct bt_cap_stream *cap_stream);
-    void (*_cap_initiator_connected)(struct bt_cap_stream *cap_stream);
-    void (*_cap_initiator_started)(struct bt_cap_stream *cap_stream);
-    void (*_cap_initiator_metadata_updated)(struct bt_cap_stream *cap_stream);
-    void (*_cap_initiator_disabled)(struct bt_cap_stream *cap_stream);
-    void (*_cap_initiator_stopped)(struct bt_cap_stream *cap_stream);
-    void (*_cap_initiator_released)(struct bt_cap_stream *cap_stream);
-
-    /* CAP Handover */
-    bool (*_cap_common_handover_is_active)(void);
-    bool (*_cap_handover_is_handover_broadcast_source)(const struct bt_cap_broadcast_source *cap_broadcast_source);
-    void (*_cap_handover_complete)(struct bt_cap_common_proc *active_proc);
-    void (*_cap_handover_unicast_proc_complete)(struct bt_cap_common_proc *active_proc);
-    void (*_cap_handover_broadcast_source_stopped)(uint8_t reason);
-    void (*_cap_handover_unicast_to_broadcast_reception_start)(void);
-    int (*_cap_handover_broadcast_reception_stopped)(struct bt_cap_common_proc *active_proc);
-    void (*_cap_handover_receive_state_updated)(const struct bt_conn *conn,
-                                                const struct bt_bap_scan_delegator_recv_state *state);
-
-    /* CAP Stream */
-    void (*_cap_stream_configured_cb)(struct bt_bap_stream *bap_stream,
-                                      const struct bt_bap_qos_cfg_pref *pref);
-    void (*_cap_stream_qos_set_cb)(struct bt_bap_stream *bap_stream);
-    void (*_cap_stream_enabled_cb)(struct bt_bap_stream *bap_stream);
-    void (*_cap_stream_metadata_updated_cb)(struct bt_bap_stream *bap_stream);
-    void (*_cap_stream_disabled_cb)(struct bt_bap_stream *bap_stream);
-    void (*_cap_stream_released_cb)(struct bt_bap_stream *bap_stream);
-    void (*_cap_stream_recv_cb)(struct bt_bap_stream *bap_stream,
-                                const struct bt_iso_recv_info *info,
-                                const uint8_t *data, uint16_t len);
-    void (*_cap_stream_sent_cb)(struct bt_bap_stream *bap_stream, void *user_data);
-
-    /* MCC */
-    void (*_mcc_on_obj_selected)(struct bt_ots_client *otc_inst,
-                                 struct bt_conn *conn, int result);
-    int (*_mcc_on_icon_content)(struct bt_ots_client *otc_inst,
-                                struct bt_conn *conn,
-                                uint32_t offset, uint32_t len,
-                                uint8_t *data_p, bool is_complete);
-    void (*_mcc_on_object_metadata)(struct bt_ots_client *otc_inst,
-                                    struct bt_conn *conn, int err,
-                                    uint8_t metadata_read);
-
-    /* MCS */
-    struct bt_ots *(*_mcs_get_ots)(void);
-    void (*_mcs_media_proxy_sctrl_current_track_id_cb)(uint64_t id);
-    void (*_mcs_media_proxy_sctrl_next_track_id_cb)(uint64_t id);
-    void (*_mcs_media_proxy_sctrl_parent_group_id_cb)(uint64_t id);
-    void (*_mcs_media_proxy_sctrl_current_group_id_cb)(uint64_t id);
-    void (*_mcs_media_proxy_sctrl_search_cb)(uint8_t result_code);
-    void (*_mcs_media_proxy_sctrl_search_results_id_cb)(uint64_t id);
-    void (*_mcs_svc_inc_init)(void);
-    void (*_mcs_chrc_icon_obj_id_init)(void);
-    void (*_mcs_chrc_track_segments_obj_id_init)(void);
-    void (*_mcs_chrc_current_track_obj_id_init)(void);
-    void (*_mcs_chrc_next_track_obj_id_init)(void);
-    void (*_mcs_chrc_parent_group_obj_id_init)(void);
-    void (*_mcs_chrc_current_group_obj_id_init)(void);
-    void (*_mcs_chrc_search_control_point_init)(void);
-    void (*_mcs_chrc_search_results_obj_id_init)(void);
-
-    /* Media Proxy */
-    uint64_t (*_media_proxy_sctrl_get_icon_id)(void);
-    uint64_t (*_media_proxy_sctrl_get_track_segments_id)(void);
-    uint64_t (*_media_proxy_sctrl_get_current_track_id)(void);
-    void (*_media_proxy_sctrl_set_current_track_id)(uint64_t id);
-    uint64_t (*_media_proxy_sctrl_get_next_track_id)(void);
-    void (*_media_proxy_sctrl_set_next_track_id)(uint64_t id);
-    uint64_t (*_media_proxy_sctrl_get_parent_group_id)(void);
-    uint64_t (*_media_proxy_sctrl_get_current_group_id)(void);
-    void (*_media_proxy_sctrl_set_current_group_id)(uint64_t id);
-    void (*_media_proxy_sctrl_send_search)(const struct mpl_search *search);
-    uint64_t (*_media_proxy_sctrl_get_search_results_id)(void);
-    void (*_media_proxy_pl_current_track_id_cb)(uint64_t id);
-    void (*_media_proxy_pl_next_track_id_cb)(uint64_t id);
-    void (*_media_proxy_pl_parent_group_id_cb)(uint64_t id);
-    void (*_media_proxy_pl_current_group_id_cb)(uint64_t id);
-    void (*_media_proxy_pl_search_cb)(uint8_t result_code);
-    void (*_media_proxy_pl_search_results_id_cb)(uint64_t id);
-
-    /* MICP Microphone Controller */
-    uint8_t (*_micp_discover_include_func)(struct bt_conn *conn,
-                                           const struct bt_gatt_attr *attr,
-                                           struct bt_gatt_discover_params *params);
-    int (*_micp_mic_ctrl_aics_init)(void);
-
-    /* MICP Microphone Device */
-    int (*_micp_mic_dev_prepare_aics_inst)(struct bt_micp_mic_dev_register_param *param);
-
-    /* MPL */
-    uint64_t (*_mpl_get_icon_id)(void);
-    uint64_t (*_mpl_get_track_segments_id)(void);
-    uint64_t (*_mpl_get_current_track_id)(void);
-    void (*_mpl_set_current_track_id)(uint64_t id);
-    uint64_t (*_mpl_get_next_track_id)(void);
-    void (*_mpl_set_next_track_id)(uint64_t id);
-    uint64_t (*_mpl_get_parent_group_id)(void);
-    uint64_t (*_mpl_get_current_group_id)(void);
-    void (*_mpl_set_current_group_id)(uint64_t id);
-    void (*_mpl_send_search)(const struct mpl_search *search);
-    uint64_t (*_mpl_get_search_results_id)(void);
-
-    /* TBS Client */
-    int (*_tbs_client_primary_discover_tbs)(struct bt_conn *conn);
-    int (*_tbs_client_primary_discover_gtbs)(struct bt_conn *conn);
-    struct bt_tbs_instance *(*_tbs_client_get_by_ccid)(const struct bt_conn *conn,
-                                                       uint8_t ccid);
-    struct bt_tbs_instance *(*_tbs_client_get_by_index)(const struct bt_conn *conn,
-                                                        uint8_t index);
-
-    /* VCP Volume Controller */
-    void (*_vcp_vol_ctlr_aics_init)(void);
-    void (*_vcp_vol_ctlr_vocs_init)(void);
-    uint8_t (*_vcp_vol_ctlr_vcs_discover_include_func)(struct bt_conn *conn,
-                                                       const struct bt_gatt_attr *attr,
-                                                       struct bt_gatt_discover_params *params);
-    int (*_vcp_vol_ctlr_included_get)(struct bt_vcp_vol_ctlr *vol_ctlr,
-                                      struct bt_vcp_included *included);
-
-    /* VCP Volume Renderer */
-    int (*_vcp_vol_rend_prepare_aics_inst)(struct bt_vcp_vol_rend_register_param *param);
-    int (*_vcp_vol_rend_prepare_vocs_inst)(struct bt_vcp_vol_rend_register_param *param);
-
-    /* VOCS Client */
-    int (*_vocs_client_state_get)(struct bt_vocs_client *inst);
-    int (*_vocs_client_state_set)(struct bt_vocs_client *inst, int16_t offset);
-    int (*_vocs_client_location_get)(struct bt_vocs_client *inst);
-    int (*_vocs_client_location_set)(struct bt_vocs_client *inst, uint32_t location);
-    int (*_vocs_client_description_get)(struct bt_vocs_client *inst);
-    int (*_vocs_client_description_set)(struct bt_vocs_client *inst, const char *description);
-};
-
 static const struct lib_int_funcs int_funcs = {
 #if CONFIG_BT_AICS_CLIENT
     ._aics_client_state_get = lib_aics_client_state_get,
@@ -1589,10 +886,21 @@ static const struct lib_int_funcs int_funcs = {
     ._cap_acceptor_ccids_exist = lib_cap_acceptor_ccids_exist,
 #endif /* CONFIG_BT_CAP_ACCEPTOR */
 
-#if CONFIG_BT_CAP_INITIATOR_UNICAST
+#if CONFIG_BT_CSIP_SET_COORDINATOR && (CONFIG_BT_CAP_INITIATOR_UNICAST || CONFIG_BT_CAP_COMMANDER)
+    ._cap_common_discover_csis = lib_cap_common_discover_csis,
+#endif /* CONFIG_BT_CSIP_SET_COORDINATOR && (CONFIG_BT_CAP_INITIATOR_UNICAST || CONFIG_BT_CAP_COMMANDER) */
+
+#if CONFIG_BT_CAP_COMMANDER
+    ._cap_commander_proc_complete = lib_cap_commander_proc_complete,
+#endif /* CONFIG_BT_CAP_COMMANDER */
+
+#if CONFIG_BT_CAP_SUBPROC_SUPPORT
     ._cap_common_set_subproc = lib_cap_common_set_subproc,
     ._cap_common_proc_is_type = lib_cap_common_proc_is_type,
     ._cap_common_subproc_is_type = lib_cap_common_subproc_is_type,
+#endif /* CONFIG_BT_CAP_SUBPROC_SUPPORT */
+
+#if CONFIG_BT_CAP_INITIATOR_UNICAST
     ._cap_initiator_cp_cb = lib_cap_initiator_cp_cb,
     ._cap_initiator_codec_configured = lib_cap_initiator_codec_configured,
     ._cap_initiator_qos_configured = lib_cap_initiator_qos_configured,
@@ -1603,22 +911,23 @@ static const struct lib_int_funcs int_funcs = {
     ._cap_initiator_disabled = lib_cap_initiator_disabled,
     ._cap_initiator_stopped = lib_cap_initiator_stopped,
     ._cap_initiator_released = lib_cap_initiator_released,
+    ._cap_initiator_unicast_audio_proc_complete = lib_cap_initiator_unicast_audio_proc_complete,
 #endif /* CONFIG_BT_CAP_INITIATOR_UNICAST */
 
 #if CONFIG_BT_CAP_HANDOVER
-    ._cap_common_handover_is_active = lib_cap_common_handover_is_active,
+    ._cap_common_active_proc_is_handover = lib_cap_common_active_proc_is_handover,
     ._cap_handover_is_handover_broadcast_source = lib_cap_handover_is_handover_broadcast_source,
     ._cap_handover_complete = lib_cap_handover_complete,
     ._cap_handover_unicast_proc_complete = lib_cap_handover_unicast_proc_complete,
     ._cap_handover_broadcast_source_stopped = lib_cap_handover_broadcast_source_stopped,
     ._cap_handover_unicast_to_broadcast_reception_start = lib_cap_handover_unicast_to_broadcast_reception_start,
     ._cap_handover_broadcast_reception_stopped = lib_cap_handover_broadcast_reception_stopped,
-    ._cap_handover_receive_state_updated = lib_cap_handover_receive_state_updated,
+    ._cap_handover_commander_proc_complete = lib_cap_handover_commander_proc_complete,
 #endif /* CONFIG_BT_CAP_HANDOVER */
 
 #if CONFIG_BT_CAP && CONFIG_BT_BAP_UNICAST
-    ._cap_stream_configured_cb = lib_cap_stream_configured_cb,
-    ._cap_stream_qos_set_cb = lib_cap_stream_qos_set_cb,
+    ._cap_stream_codec_configured_cb = lib_cap_stream_codec_configured_cb,
+    ._cap_stream_qos_configured_cb = lib_cap_stream_qos_configured_cb,
     ._cap_stream_enabled_cb = lib_cap_stream_enabled_cb,
     ._cap_stream_metadata_updated_cb = lib_cap_stream_metadata_updated_cb,
     ._cap_stream_disabled_cb = lib_cap_stream_disabled_cb,
@@ -1637,6 +946,7 @@ static const struct lib_int_funcs int_funcs = {
     ._mcc_on_obj_selected = lib_mcc_on_obj_selected,
     ._mcc_on_icon_content = lib_mcc_on_icon_content,
     ._mcc_on_object_metadata = lib_mcc_on_object_metadata,
+    ._mcc_on_obj_data_read_failed = lib_mcc_on_obj_data_read_failed,
 #endif /* CONFIG_BT_MCC_OTS */
 
 #if CONFIG_BT_MCS && CONFIG_BT_OTS
@@ -1658,7 +968,12 @@ static const struct lib_int_funcs int_funcs = {
     ._mcs_chrc_search_results_obj_id_init = lib_mcs_chrc_search_results_obj_id_init,
 #endif /* CONFIG_BT_MCS && CONFIG_BT_OTS */
 
-#if CONFIG_BT_MPL_OBJECTS
+#if CONFIG_BT_MPL && CONFIG_BT_MCS
+    ._mcs_svc_init = lib_mcs_svc_init,
+#endif /* CONFIG_BT_MPL && CONFIG_BT_MCS */
+
+/* MCS calls these for its object characteristics with any local player, not only MPL */
+#if CONFIG_BT_MCS && CONFIG_BT_OTS
     ._media_proxy_sctrl_get_icon_id = lib_media_proxy_sctrl_get_icon_id,
     ._media_proxy_sctrl_get_track_segments_id = lib_media_proxy_sctrl_get_track_segments_id,
     ._media_proxy_sctrl_get_current_track_id = lib_media_proxy_sctrl_get_current_track_id,
@@ -1676,7 +991,7 @@ static const struct lib_int_funcs int_funcs = {
     ._media_proxy_pl_current_group_id_cb = lib_media_proxy_pl_current_group_id_cb,
     ._media_proxy_pl_search_cb = lib_media_proxy_pl_search_cb,
     ._media_proxy_pl_search_results_id_cb = lib_media_proxy_pl_search_results_id_cb,
-#endif /* CONFIG_BT_MPL_OBJECTS */
+#endif /* CONFIG_BT_MCS && CONFIG_BT_OTS */
 
 #if CONFIG_BT_MICP_MIC_CTLR_AICS
     ._micp_discover_include_func = lib_micp_discover_include_func,
@@ -2337,25 +1652,19 @@ int bt_le_audio_init(void)
 {
     int err;
 
-    err = lib_audio_ext_structs_check(ext_structs, sizeof(ext_structs));
-    if (err) {
-        LOG_ERR("LibExtStructsCheckFail");
-        return err;
-    }
-
-    err = lib_audio_ext_cfgs_set(&ext_cfgs, sizeof(ext_cfgs));
+    err = lib_audio_ext_cfgs_set(&ext_cfgs);
     if (err) {
         LOG_ERR("LibExtCfgsSetFail");
         return err;
     }
 
-    err = lib_audio_ext_funcs_set(&ext_funcs, sizeof(ext_funcs));
+    err = lib_audio_ext_funcs_set(&ext_funcs);
     if (err) {
         LOG_ERR("LibExtFuncsSetFail");
         return err;
     }
 
-    err = lib_audio_int_funcs_set(&int_funcs, sizeof(int_funcs));
+    err = lib_audio_int_funcs_set(&int_funcs);
     if (err) {
         LOG_ERR("LibIntFuncsSetFail");
         return err;

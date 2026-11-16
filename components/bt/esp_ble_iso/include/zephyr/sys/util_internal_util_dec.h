@@ -7,15 +7,21 @@
  */
 
 /**
+ * @file
+ * @brief Internal lookup table backing UTIL_DEC().
+ */
+
+/**
  * @cond INTERNAL_HIDDEN
  */
+
+#ifndef ZEPHYR_INCLUDE_SYS_UTIL_INTERNAL_UTIL_DEC_H_
+#define ZEPHYR_INCLUDE_SYS_UTIL_INTERNAL_UTIL_DEC_H_
 
 #ifndef ZEPHYR_INCLUDE_SYS_UTIL_INTERNAL_H_
 #error "This header should not be used directly, please include util_internal.h instead"
 #endif /* ZEPHYR_INCLUDE_SYS_UTIL_INTERNAL_H_ */
 
-#ifndef ZEPHYR_INCLUDE_SYS_UTIL_INTERNAL_UTIL_DEC_H_
-#define ZEPHYR_INCLUDE_SYS_UTIL_INTERNAL_UTIL_DEC_H_
 
 #define Z_UTIL_DEC_0 0
 #define Z_UTIL_DEC_1 0
