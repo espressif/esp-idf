@@ -110,6 +110,7 @@ static void btdm_lp_soc_etm_set_enable(bool enable);
  * Static Function Definitions
  ***************************************************************************************************
  */
+#if !CONFIG_IDF_ENV_FPGA
 static void
 btdm_lp_rtc_slow_clk_select(uint8_t slow_clk_src)
 {
@@ -159,15 +160,33 @@ btdm_lp_rtc_slow_clk_select(uint8_t slow_clk_src)
             break;
     }
 }
+#endif /* !CONFIG_IDF_ENV_FPGA */
 
 static void
 btdm_lp_timer_clk_init(esp_bt_ctrl_btdm_config_t *cfg)
 {
+    (void)cfg;
+#if CONFIG_IDF_ENV_FPGA
+    if (s_bt_lpclk_src == MODEM_CLOCK_LPCLK_SRC_INVALID) {
+        /* FPGA uses the 32 kHz RC. The modem LP clock mux is left unchanged. */
+        s_bt_lpclk_src = MODEM_CLOCK_LPCLK_SRC_RC32K;
+        s_bt_lpclk_freq = 32000;
+    }
+#else
     if (s_bt_lpclk_src == MODEM_CLOCK_LPCLK_SRC_INVALID) {
 #if CONFIG_BT_CTRL_LP_CLK_SRC_MAIN_XTAL
         s_bt_lpclk_src = MODEM_CLOCK_LPCLK_SRC_MAIN_XTAL;
         s_bt_lpclk_freq = s_bt_xtal_lpclk_freq;
-#else
+#elif UC_BT_CTRL_BR_EDR_IS_ENABLE
+        /* sleep_en defaults to the Kconfig value, but the application may clear it before init. */
+        if (!cfg->sleep_en) {
+            s_bt_lpclk_src = MODEM_CLOCK_LPCLK_SRC_MAIN_XTAL;
+            s_bt_lpclk_freq = s_bt_xtal_lpclk_freq;
+        }
+#endif
+    }
+
+    if (s_bt_lpclk_src == MODEM_CLOCK_LPCLK_SRC_INVALID) {
 #if CONFIG_RTC_CLK_SRC_INT_RC
         s_bt_lpclk_src = MODEM_CLOCK_LPCLK_SRC_RC_SLOW;
         s_bt_lpclk_freq = esp_clk_tree_lp_slow_get_freq_hz(ESP_CLK_TREE_SRC_FREQ_PRECISION_CACHED) / 5;
@@ -193,10 +212,10 @@ btdm_lp_timer_clk_init(esp_bt_ctrl_btdm_config_t *cfg)
         ESP_LOGE(BTDM_LOG_TAG, "Unsupported clock source");
         assert(0);
 #endif
-#endif /* CONFIG_BT_CTRL_LP_CLK_SRC_MAIN_XTAL */
     }
 
     btdm_lp_rtc_slow_clk_select(s_bt_lpclk_src);
+#endif /* CONFIG_IDF_ENV_FPGA */
 }
 
 modem_clock_lpclk_src_t btdm_lp_get_lpclk_src(void)
@@ -246,7 +265,10 @@ void btdm_lp_set_lpclk_freq(uint32_t clk_freq)
 static void
 btdm_lp_timer_clk_deinit(void)
 {
+    /* FPGA init leaves the modem LP clock mux unchanged, so do not deselect it here. */
+#if !CONFIG_IDF_ENV_FPGA
     modem_clock_deselect_lp_clock_source(PERIPH_BT_MODULE);
+#endif
 }
 
 void
