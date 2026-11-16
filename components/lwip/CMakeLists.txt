@@ -41,67 +41,59 @@ if(CONFIG_LWIP_ENABLE)
         "lwip/src/core/netif.c"
         "lwip/src/core/pbuf.c"
         "lwip/src/core/raw.c"
-        "lwip/src/core/stats.c"
         "lwip/src/core/sys.c"
         "lwip/src/core/tcp.c"
         "lwip/src/core/tcp_in.c"
         "lwip/src/core/tcp_out.c"
         "lwip/src/core/timeouts.c"
         "lwip/src/core/udp.c"
-        "lwip/src/core/ipv4/autoip.c"
         "lwip/src/core/ipv4/dhcp.c"
         "lwip/src/core/ipv4/etharp.c"
         "lwip/src/core/ipv4/icmp.c"
         "lwip/src/core/ipv4/igmp.c"
         "lwip/src/core/ipv4/ip4.c"
-        "lwip/src/core/ipv4/ip4_napt.c"
         "lwip/src/core/ipv4/ip4_addr.c"
         "lwip/src/core/ipv4/ip4_frag.c"
-        "lwip/src/core/ipv6/dhcp6.c"
-        "lwip/src/core/ipv6/ethip6.c"
-        "lwip/src/core/ipv6/icmp6.c"
-        "lwip/src/core/ipv6/inet6.c"
-        "lwip/src/core/ipv6/ip6.c"
-        "lwip/src/core/ipv6/ip6_addr.c"
-        "lwip/src/core/ipv6/ip6_frag.c"
-        "lwip/src/core/ipv6/mld6.c"
-        "lwip/src/core/ipv6/nd6.c"
         "lwip/src/netif/ethernet.c"
         "lwip/src/netif/bridgeif.c"
         "lwip/src/netif/bridgeif_fdb.c"
         "lwip/src/netif/slipif.c"
-        "lwip/src/netif/slipif.c"
-        "lwip/src/netif/ppp/auth.c"
-        "lwip/src/netif/ppp/ccp.c"
-        "lwip/src/netif/ppp/chap-md5.c"
-        "lwip/src/netif/ppp/chap-new.c"
-        "lwip/src/netif/ppp/chap_ms.c"
-        "lwip/src/netif/ppp/demand.c"
-        "lwip/src/netif/ppp/eap.c"
-        "lwip/src/netif/ppp/ecp.c"
-        "lwip/src/netif/ppp/eui64.c"
-        "lwip/src/netif/ppp/fsm.c"
-        "lwip/src/netif/ppp/ipcp.c"
-        "lwip/src/netif/ppp/ipv6cp.c"
-        "lwip/src/netif/ppp/lcp.c"
-        "lwip/src/netif/ppp/magic.c"
-        "lwip/src/netif/ppp/mppe.c"
-        "lwip/src/netif/ppp/multilink.c"
-        "lwip/src/netif/ppp/ppp.c"
-        "lwip/src/netif/ppp/pppapi.c"
-        "lwip/src/netif/ppp/pppcrypt.c"
-        "lwip/src/netif/ppp/pppoe.c"
-        "lwip/src/netif/ppp/pppol2tp.c"
-        "lwip/src/netif/ppp/pppos.c"
-        "lwip/src/netif/ppp/upap.c"
-        "lwip/src/netif/ppp/utils.c"
-        "lwip/src/netif/ppp/vj.c"
         "port/hooks/tcp_isn_default.c"
         "port/hooks/lwip_default_hooks.c"
         "port/debug/lwip_debug.c"
         "port/sockets_ext.c"
         "port/freertos/sys_arch.c"
         "port/if_index.c")
+
+    # Sources whose own #if guard compiles them to empty objects when the
+    # option is off, so they are only built when it is on.
+    if(CONFIG_LWIP_STATS)
+        list(APPEND srcs "lwip/src/core/stats.c")
+    endif()
+
+    if(CONFIG_LWIP_AUTOIP)
+        list(APPEND srcs "lwip/src/core/ipv4/autoip.c")
+    endif()
+
+    if(CONFIG_LWIP_IPV4_NAPT)
+        list(APPEND srcs "lwip/src/core/ipv4/ip4_napt.c")
+    endif()
+
+    if(CONFIG_LWIP_IPV6)
+        list(APPEND srcs
+            "lwip/src/core/ipv6/ethip6.c"
+            "lwip/src/core/ipv6/icmp6.c"
+            "lwip/src/core/ipv6/inet6.c"
+            "lwip/src/core/ipv6/ip6.c"
+            "lwip/src/core/ipv6/ip6_addr.c"
+            "lwip/src/core/ipv6/ip6_frag.c"
+            "lwip/src/core/ipv6/mld6.c"
+            "lwip/src/core/ipv6/nd6.c")
+
+        if(CONFIG_LWIP_IPV6_DHCP6)
+            list(APPEND srcs "lwip/src/core/ipv6/dhcp6.c")
+        endif()
+    endif()
 
     if(CONFIG_LWIP_PPP_SUPPORT)
         list(APPEND srcs
@@ -130,6 +122,15 @@ if(CONFIG_LWIP_ENABLE)
             "lwip/src/netif/ppp/upap.c"
             "lwip/src/netif/ppp/utils.c"
             "lwip/src/netif/ppp/vj.c")
+
+        if(NOT CONFIG_LWIP_USE_EXTERNAL_MBEDTLS)
+            list(APPEND srcs
+                "lwip/src/netif/ppp/polarssl/arc4.c"
+                "lwip/src/netif/ppp/polarssl/des.c"
+                "lwip/src/netif/ppp/polarssl/md4.c"
+                "lwip/src/netif/ppp/polarssl/md5.c"
+                "lwip/src/netif/ppp/polarssl/sha1.c")
+        endif()
     endif()
 
     if(CONFIG_LWIP_DHCP_DOES_ARP_CHECK)
@@ -156,15 +157,6 @@ if(CONFIG_LWIP_ENABLE)
     if(CONFIG_LWIP_ICMP)
         list(APPEND srcs
             "apps/ping/ping_sock.c")
-    endif()
-
-    if(NOT CONFIG_LWIP_USE_EXTERNAL_MBEDTLS)
-        list(APPEND srcs
-                "lwip/src/netif/ppp/polarssl/arc4.c"
-                "lwip/src/netif/ppp/polarssl/des.c"
-                "lwip/src/netif/ppp/polarssl/md4.c"
-                "lwip/src/netif/ppp/polarssl/md5.c"
-                "lwip/src/netif/ppp/polarssl/sha1.c")
     endif()
 
     if(CONFIG_LWIP_DHCPS)
