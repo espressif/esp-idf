@@ -8,6 +8,7 @@
 
 #include <stdint.h>
 
+#define LP_SLEEP_ADC_CHANNELS       8
 #define LP_SLEEP_I2C_ADDR           0x28
 #define LP_SLEEP_I2C_LEN            8
 #define LP_SLEEP_SPI_LEN            8

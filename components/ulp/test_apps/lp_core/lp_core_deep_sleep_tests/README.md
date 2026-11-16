@@ -3,17 +3,19 @@
 
 # LP Core Deep Sleep Tests
 
-Multi-device tests for LP-I2C, LP-SPI, LP-UART, and LP-GPIO while the HP core is in deep sleep.
+Tests for LP-ADC, LP-I2C, LP-SPI, LP-UART, and LP-GPIO while the HP core is in deep sleep.
 
 The LP core is stalled across sleep entry, so each case arms an LP wakeup source and does the work in LP `main()` after HP is asleep:
 
-- **LP timer** (about 500 ms) for transfers that must happen during sleep: I2C read/write, SPI full-duplex master and slave, UART TX/RX/print/FIFO, GPIO input/output, GPIO interrupt
+- **LP timer** (about 500 ms) for work that must happen during sleep: ADC multi-channel reads, I2C read/write, SPI full-duplex master and slave, UART TX/RX/print/FIFO, GPIO input/output, GPIO interrupt
 - **LP UART character sequence** (`he**o`, stimulus `hello`) to wake the LP core from deep sleep
 - **LP IO falling edge** to wake the LP core from deep sleep
 
-Each transfer case runs a second sleep cycle without calling `lp_core_i2c_master_init`, `lp_core_lp_spi_bus_add_device`, `lp_core_lp_spi_slave_initialize`, `lp_core_uart_init`, or `rtc_gpio_init` again, and checks that the programmed register value is unchanged.
+Each retained-state case runs a second sleep cycle without initializing its peripheral again and checks that the programmed configuration is unchanged.
 
-DUT 0 is the sleeper. DUT 1 is the peer. Both boards run this app.
+The LP-ADC cases use one ESP32-P4. ADC1 channels 0–7 (GPIO16–GPIO23) use internal pull-downs and pull-ups, so they need no external wiring. One case verifies all eight channels and retained attenuation across two sleep cycles. Another keeps the temperature sensor enabled while LP-ADC samples in both sleep cycles, checks its reading after each wakeup, and disables it after the final check.
+
+The other cases use two boards. DUT 0 is the sleeper and DUT 1 is the peer. Both boards run this app.
 
 ## Hardware setup
 
@@ -31,6 +33,16 @@ On ESP32-C5, GPIO2 is both LP I2C SDA and the GPIO test pin. The cases run one a
 Internal pull-ups are enabled on the I2C pins. LP I2C runs at 100 kHz. LP SPI is mode 0 at 10 kHz, full duplex, 8 bytes. The peer uses the HP SPI driver on the same pins.
 
 ## Running locally
+
+LP-ADC on ESP32-P4:
+
+```bash
+cd components/ulp/test_apps/lp_core/lp_core_deep_sleep_tests
+idf.py set-target esp32p4
+pytest --target esp32p4 -m generic -k lp_adc
+```
+
+Two-board cases:
 
 ```bash
 cd components/ulp/test_apps/lp_core/lp_core_deep_sleep_tests
