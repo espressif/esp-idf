@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -266,7 +266,11 @@ esp_err_t esp_blufi_host_init(void)
     /* XXX Need to have template for store */
     ble_store_config_init();
 
-    esp_blufi_btc_init();
+    err = esp_blufi_btc_init();
+    if (err != ESP_OK) {
+        BLUFI_ERROR("%s btc init failed: %s\n", __func__, esp_err_to_name(err));
+        return err;
+    }
 
     err = esp_nimble_enable(bleprph_host_task);
     if (err) {

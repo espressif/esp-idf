@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2017-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2017-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -27,6 +27,11 @@ union ble_store_key;
 /* 16 Bit Proximity Sensor Service Characteristic UUIDs */
 #define BLE_SVC_PROX_CHR_UUID16_ALERT_LVL                   0x2A06
 #define BLE_SVC_PROX_CHR_UUID16_TX_PWR_LVL                  0x2A07
+
+/* Alert Level characteristic (UUID 0x2A06) values */
+#define BLE_SVC_PROX_ALERT_NONE                             0
+#define BLE_SVC_PROX_ALERT_MILD                             1
+#define BLE_SVC_PROX_ALERT_HIGH                             2
 
 #define BLE_ADDR_LEN                                        6
 

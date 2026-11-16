@@ -316,6 +316,11 @@ static void btc_thread_handler(void *arg)
 
 static bt_status_t btc_task_post(btc_msg_t *msg, uint32_t timeout)
 {
+    if (btc_thread == NULL) {
+        BTC_TRACE_WARNING("%s btc_thread is NULL\n", __func__);
+        return BT_STATUS_NOT_READY;
+    }
+
     if (osi_thread_post(btc_thread, btc_thread_handler, msg, 0, timeout) == false) {
         return BT_STATUS_BUSY;
     }

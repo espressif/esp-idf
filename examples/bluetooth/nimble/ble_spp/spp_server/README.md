@@ -99,7 +99,7 @@ This is the console output on successful connection:
 
 ```
 I (...) NimBLE: BLE server UART_task started
-I (...) NimBLE: BLE Host Task Started
+I (...) NimBLE_SPP_SERVER: BLE Host Task Started
 I (...) NimBLE: GAP procedure initiated: stop advertising.
 I (...) NimBLE: Device Address:
 I (...) NimBLE: xx:xx:xx:xx:xx:xx
