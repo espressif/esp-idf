@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2022-2026 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
 # NOTE: unittest is by default sorting tests based on their names,
 # so the order if which the tests are started may be different from
@@ -15,7 +15,6 @@ import subprocess
 import sys
 import tempfile
 import unittest
-from typing import List  # noqa: F401
 
 try:
     import idf_tools
@@ -54,7 +53,7 @@ def tearDownModule():  # type: () -> None
 
 
 class BasePythonInstall(unittest.TestCase):
-    def run_tool(self, cmd):  # type: (List[str]) -> str
+    def run_tool(self, cmd):  # type: (list[str]) -> str
         ret = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, timeout=600)
         decoded_output = ret.stdout.decode('utf-8', 'ignore')
         with open(os.path.join(IDF_PATH, 'tools', 'test_idf_tools', 'test_python_env_logs.txt'), 'a+') as w:
@@ -63,11 +62,11 @@ class BasePythonInstall(unittest.TestCase):
             w.write(decoded_output)
         return decoded_output
 
-    def run_idf_tools(self, args):  # type: (List[str]) -> str
+    def run_idf_tools(self, args):  # type: (list[str]) -> str
         cmd = [sys.executable, '../idf_tools.py'] + args
         return self.run_tool(cmd)
 
-    def run_in_venv(self, args):  # type: (List[str]) -> str
+    def run_in_venv(self, args):  # type: (list[str]) -> str
         _, _, python_venv, _ = idf_tools.get_python_env_path()
         cmd = [python_venv] + args
         return self.run_tool(cmd)
@@ -243,6 +242,22 @@ class TestCustomPythonPathInstall(BasePythonInstall):
 
         output = self.run_idf_tools(['check-python-dependencies'])
         self.assertIn(self.CUSTOM_PYTHON_DIR, output)
+
+    def test_nonexistent_dir(self):  # type: () -> None
+        # A name not matching the default template, with a missing parent, is created by venv
+        env_dir = os.path.join(self.CUSTOM_PYTHON_DIR, 'parent', 'custom_env')
+        os.environ['IDF_PYTHON_ENV_PATH'] = env_dir
+
+        output = self.run_idf_tools(['install-python-env'])
+        self.assertIn(env_dir, output)
+        self.assertNotIn('Traceback', output)
+
+        # --reinstall removes the directory before the venv is created again
+        output = self.run_idf_tools(['install-python-env', '--reinstall'])
+        self.assertNotIn('Traceback', output)
+
+        output = self.run_idf_tools(['check-python-dependencies'])
+        self.assertIn(REQ_SATISFIED, output)
 
 
 class TestCheckPythonDependencies(BasePythonInstall):
