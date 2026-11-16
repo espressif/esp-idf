@@ -111,6 +111,16 @@ typedef struct {
 esp_err_t esp_partition_table_verify(const esp_partition_info_t *partition_table, bool log_errors, int *num_partitions);
 
 /**
+ * @brief Get the partition table offset.
+ *
+ * Taken from a bootloader description: the bootloader uses its own, an application reads the one of the
+ * bootloader that booted it once, or uses CONFIG_PARTITION_TABLE_OFFSET_LEGACY_BOOTLOADER if none is recorded.
+ *
+ * @return Partition table offset in flash.
+ */
+uint32_t esp_partition_table_get_offset(void);
+
+/**
  * Check whether the region on the main flash is not read-only.
  *
  * @param addr Start address of the region
