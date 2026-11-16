@@ -327,6 +327,10 @@ ESP-IDF 的 MCP（Model Context Protocol，模型上下文协议）服务器可�
 
     MCP 服务器需要通过 EIM 安装器来安装 ``mcp`` 功能。有关如何安装特定功能，请参见 `EIM 文档 ＞ CLI 配置 - 全局功能 <https://docs.espressif.com/projects/idf-im-ui/en/latest/cli_configuration.html#global-features-all-versions>`_。
 
+.. note::
+
+    ``mcp-server`` 使用 stdout 作为 MCP JSON-RPC 传输通道。使用该命令时， ``idf.py`` 不会打印通常的信息（例如 ``Executing action:``）。为避免其他输出写入 stdout，该命令不能与其他 ``idf.py`` 命令组合使用。
+
 可用工具与资源
 ^^^^^^^^^^^^^^
 
