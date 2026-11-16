@@ -90,6 +90,13 @@ static int esp_tls_connect_async(esp_transport_handle_t t, const char *host, int
                 ssl->sockfd = INVALID_SOCKET;
                 return -1;
             }
+        } else if (progress != ESP_TLS_ERR_SSL_WANT_READ && progress != ESP_TLS_ERR_SSL_WANT_WRITE) {
+            /* Fatal error: destroy tls so it is not leaked; next connect will create a new one */
+            esp_tls_conn_destroy(ssl->tls);
+            ssl->tls = NULL;
+            ssl->conn_state = TRANS_SSL_INIT;
+            ssl->ssl_initialized = false;
+            ssl->sockfd = INVALID_SOCKET;
         }
         return progress;
 
