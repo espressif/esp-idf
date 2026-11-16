@@ -223,6 +223,8 @@ VFS 对文件路径长度没有限制，但文件系统路径前缀受 ``ESP_VFS
 - 标志中没有 ``EFD_CLOEXEC``、``EFD_NONBLOCK`` 和 ``EFD_SEMAPHORE`` 选项；
 - ``EFD_SUPPORT_ISR`` 选项已经被添加到标志中。在中断处理程序中读取和写入 eventfd 需要这个标志。
 
+与 Linux 相同，``eventfd()``、``eventfd_t``、``eventfd_read()`` 和 ``eventfd_write()`` 也在 ``sys/eventfd.h`` 中声明。
+
 注意，用 ``EFD_SUPPORT_ISR`` 创建 eventfd 将导致在读取、写入文件时，以及在设置这个文件的 ``select()`` 开始和结束时，暂时禁用中断。
 
 
