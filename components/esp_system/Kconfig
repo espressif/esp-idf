@@ -268,6 +268,35 @@ menu "ESP System Settings"
             Minimal value of size, in bytes, accepted to execute a expression
             with shared stack.
 
+    config ESP_SYSTEM_SHUTDOWN_HANDLER_TIMEOUT_MS
+        int "Shutdown handler timeout (ms)"
+        depends on SOC_RTC_WDT_SUPPORTED
+        range 0 120000
+        default 30000
+        help
+            If a shutdown handler, or multiple shutdown handlers collectively,
+            block longer than this, the RTC watchdog resets the chip and
+            esp_reset_reason() reports ESP_RST_WDT. The watchdog is armed once
+            before the handlers invoked by esp_restart() and is not restarted
+            between them (stage 0: system reset, stage 1: RTC reset). Handlers
+            that finish in time are unaffected: esp_restart() then re-arms the
+            RTC watchdog to 1 second, and a normal restart still reports
+            ESP_RST_SW.
+
+            Set to 0 to disable this guard.
+
+            Light sleep pauses this watchdog unless
+            CONFIG_ESP_SLEEP_ENABLE_RTC_WDT_IN_SLEEP is enabled, so time spent
+            asleep does not count toward the timeout.
+
+            If CONFIG_BOOTLOADER_WDT_DISABLE_IN_USER_CODE is enabled, the application
+            already owns the RTC watchdog. This timeout replaces that configuration
+            for the shutdown window. A task that keeps feeding the RTC watchdog can
+            still prevent the reset.
+
+            The timeout is counted in RTC slow-clock ticks and saturates at 2^32
+            ticks (about 28000 seconds when the slow clock is 150 kHz).
+
     config ESP_INT_WDT
         bool "Interrupt watchdog"
         depends on SOC_WDT_SUPPORTED

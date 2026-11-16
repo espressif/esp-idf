@@ -54,7 +54,6 @@ Code Size Impact
 
 Enabling application rollback with automatic confirmation by default adds a small amount of code compared to the previous default (rollback disabled). Measured on :example:`system/ota/native_ota_example` for ESP32, the bootloader grows by approximately 80 bytes, and the application by approximately 350 bytes. The exact numbers depend on the target and application configuration.
 
-
 SPIRAM DMA Reserve Pool
 -----------------------
 
@@ -66,3 +65,12 @@ When ``CONFIG_SPIRAM_MALLOC_RESERVE_INTERNAL`` is enabled, the reserved pool's c
 ``heap_caps_malloc(MALLOC_CAP_INTERNAL)`` no longer preferentially uses the reserve pool. Explicit ``MALLOC_CAP_DMA`` requests still do.
 
 With a non-zero ``CONFIG_SPIRAM_MALLOC_ALWAYSINTERNAL``, the internal-first attempt of ``malloc()`` now skips heaps that provide ``MALLOC_CAP_DEFAULT`` only at low priority (the reserve pool, and on some targets RTC RAM and SPM). These heaps are used only after PSRAM is exhausted.
+
+Software Restart
+----------------
+
+If a shutdown handler, or multiple shutdown handlers collectively, block longer than :ref:`CONFIG_ESP_SYSTEM_SHUTDOWN_HANDLER_TIMEOUT_MS <CONFIG_ESP_SYSTEM_SHUTDOWN_HANDLER_TIMEOUT_MS>` (30 seconds by default), the RTC watchdog resets the chip and the reset reason is ``ESP_RST_WDT``. Set it to 0 to keep the previous behavior, where a handler that never returns never resets the chip.
+
+Handlers that finish in time are unchanged: the RTC watchdog is re-armed to 1 second for the final reset, and the reset reason stays ``ESP_RST_SW``.
+
+If :ref:`CONFIG_BOOTLOADER_WDT_DISABLE_IN_USER_CODE <CONFIG_BOOTLOADER_WDT_DISABLE_IN_USER_CODE>` is enabled, the application already owns the RTC watchdog. The shutdown timeout replaces that configuration for the shutdown window. A task that keeps feeding the RTC watchdog can still prevent the reset.

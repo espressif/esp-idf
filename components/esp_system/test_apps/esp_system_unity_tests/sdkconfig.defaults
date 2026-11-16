@@ -1,6 +1,9 @@
 # This "default" configuration is appended to all other configurations
 # The contents of "sdkconfig.debug_helpers" is also appended to all other configurations (see CMakeLists.txt)
 CONFIG_ESP_TASK_WDT_INIT=n
+# Short enough that the hung shutdown-handler reset test finishes inside the
+# per-case pytest timeout. The product default stays at 30000 ms.
+CONFIG_ESP_SYSTEM_SHUTDOWN_HANDLER_TIMEOUT_MS=2000
 # esp_sleep_enable_gpio_switch() has the change to break UART RX during light sleep stress tests
 # Remove this when IDF-4897 is fixed
 CONFIG_ESP_SLEEP_GPIO_RESET_WORKAROUND=n

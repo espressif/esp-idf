@@ -6,7 +6,8 @@ set(requires "unity"
              "esp_timer"
              "nvs_flash"
              "esp_psram"
-             "esp_hal_cache")
+             "esp_hal_cache"
+             "esp_pm")
 
 set(SRC  "test_app_main.c"
           "test_backtrace.c"

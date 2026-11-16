@@ -13,6 +13,10 @@
 
 函数 :cpp:func:`esp_register_shutdown_handler` 用于注册复位前会自动调用的例程（复位过程由 :cpp:func:`esp_restart` 函数触发），这与 ``atexit`` POSIX 函数的功能类似。
 
+如果某个关闭处理函数，或多个关闭处理函数合计，阻塞时间超过 :menuitem:`CONFIG_ESP_SYSTEM_SHUTDOWN_HANDLER_TIMEOUT_MS` （默认 30 秒），RTC 看门狗会复位芯片，:cpp:func:`esp_reset_reason` 报告 ``ESP_RST_WDT``。将该选项设为 0 可关闭此保护。及时返回的处理函数不受影响：RTC 看门狗会在最终复位前重新配置为 1 秒，复位原因仍为 ``ESP_RST_SW``。除非启用 :menuitem:`CONFIG_ESP_SLEEP_ENABLE_RTC_WDT_IN_SLEEP`，否则浅睡眠会暂停该看门狗，睡眠时间不计入超时。
+
+若启用了 :menuitem:`CONFIG_BOOTLOADER_WDT_DISABLE_IN_USER_CODE`，该超时会在关闭窗口内替换应用程序自己的 RTC 看门狗配置。持续喂狗的任务仍可能阻止这次复位。
+
 复位原因
 ------------
 

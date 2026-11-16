@@ -51,6 +51,8 @@ The app's behaviour can be adjusted so the RTC Watchdog remains enabled after ap
 
 If RTC_WDT is not reset/disabled in time, the chip will be automatically reset. See :ref:`RTC-Watchdog-Timeout` for more information.
 
+If a shutdown handler, or multiple shutdown handlers collectively, block longer than :menuitem:`CONFIG_ESP_SYSTEM_SHUTDOWN_HANDLER_TIMEOUT_MS`, the RTC watchdog resets the chip and the reset reason is ``ESP_RST_WDT``. This includes a handler that blocks (for example inside ``esp_wifi_stop``) and would otherwise never reset the chip, because the task watchdog does not expire while the restarting task is blocked and the idle tasks keep feeding it. Light sleep pauses this watchdog unless :menuitem:`CONFIG_ESP_SLEEP_ENABLE_RTC_WDT_IN_SLEEP` is enabled. See :doc:`Miscellaneous System APIs <misc_system_api>` for the interaction with :menuitem:`CONFIG_BOOTLOADER_WDT_DISABLE_IN_USER_CODE`.
+
 Interrupt Watchdog Timer (IWDT)
 -------------------------------
 
