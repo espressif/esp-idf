@@ -20,7 +20,7 @@
 
 #include "esp_tee_sec_storage.h"
 
-#include "cJSON.h"
+#include "json_parser.h"
 #include "unity.h"
 
 #include "test_esp_tee_att_data.h"
@@ -141,6 +141,33 @@ cleanup:
     return (ret);
 }
 
+/* Feed the text of the named object member, exactly as it appears in the
+ * token, to the running hash. The TEE hashes the header, eat and public_key
+ * objects as it generated them and splices the same text into the token, so
+ * the bytes are taken verbatim rather than re-serialized. */
+static void hash_token_object(jparse_ctx_t *jctx, const char *name, psa_hash_operation_t *operation)
+{
+    int len = 0;
+    TEST_ASSERT_EQUAL(OS_SUCCESS, json_obj_get_object_strlen(jctx, name, &len));
+    char *str = calloc(1, len + 1);
+    TEST_ASSERT_NOT_NULL(str);
+    TEST_ASSERT_EQUAL(OS_SUCCESS, json_obj_get_object_str(jctx, name, str, len + 1));
+    TEST_ASSERT_PSA_OK(psa_hash_update(operation, (const unsigned char *)str, len));
+    free(str);
+}
+
+/* The named string member of the current object, decoded, in a buffer the
+ * caller frees */
+static char *fetch_token_string(jparse_ctx_t *jctx, const char *name)
+{
+    int len = 0;
+    TEST_ASSERT_EQUAL(OS_SUCCESS, json_obj_get_strlen(jctx, name, &len));
+    char *str = calloc(1, len + 1);
+    TEST_ASSERT_NOT_NULL(str);
+    TEST_ASSERT_EQUAL(OS_SUCCESS, json_obj_get_string(jctx, name, str, len + 1));
+    return str;
+}
+
 static void prehash_token_data(const char *token_json, uint8_t *digest, size_t len)
 {
     TEST_ASSERT_NOT_NULL(token_json);
@@ -148,36 +175,19 @@ static void prehash_token_data(const char *token_json, uint8_t *digest, size_t l
     TEST_ASSERT_NOT_EQUAL(0, len);
 
     // Parse JSON string
-    cJSON *root = cJSON_Parse(token_json);
-    TEST_ASSERT_NOT_NULL(root);
+    jparse_ctx_t jctx;
+    TEST_ASSERT_EQUAL(OS_SUCCESS, json_parse_start(&jctx, token_json, strlen(token_json)));
 
-    // Fetching the data to be verified
-    cJSON *header = cJSON_GetObjectItemCaseSensitive(root, "header");
-    TEST_ASSERT_NOT_NULL(header);
-
-    cJSON *eat = cJSON_GetObjectItemCaseSensitive(root, "eat");
-    TEST_ASSERT_NOT_NULL(eat);
-
-    cJSON *public_key = cJSON_GetObjectItemCaseSensitive(root, "public_key");
-    TEST_ASSERT_NOT_NULL(public_key);
-
-    char *header_str = cJSON_PrintUnformatted(header);
-    char *eat_str = cJSON_PrintUnformatted(eat);
-    char *public_key_str = cJSON_PrintUnformatted(public_key);
-
+    // Hashing the data to be verified
     psa_hash_operation_t operation = PSA_HASH_OPERATION_INIT;
     TEST_ASSERT_PSA_OK(psa_hash_setup(&operation, PSA_ALG_SHA_256));
+    hash_token_object(&jctx, "header", &operation);
+    hash_token_object(&jctx, "eat", &operation);
+    hash_token_object(&jctx, "public_key", &operation);
     size_t digest_len = 0;
-    TEST_ASSERT_PSA_OK(psa_hash_update(&operation, (const unsigned char *)header_str, strlen(header_str)));
-    TEST_ASSERT_PSA_OK(psa_hash_update(&operation, (const unsigned char *)eat_str, strlen(eat_str)));
-    TEST_ASSERT_PSA_OK(psa_hash_update(&operation, (const unsigned char *)public_key_str, strlen(public_key_str)));
     TEST_ASSERT_PSA_OK(psa_hash_finish(&operation, digest, SHA256_DIGEST_SZ, &digest_len));
 
-    free(public_key_str);
-    free(eat_str);
-    free(header_str);
-
-    cJSON_Delete(root);
+    json_parse_end(&jctx);
 }
 
 static void fetch_pubkey(const char *token_json, esp_tee_sec_storage_ecdsa_pubkey_t *pubkey_ctx)
@@ -186,18 +196,17 @@ static void fetch_pubkey(const char *token_json, esp_tee_sec_storage_ecdsa_pubke
     TEST_ASSERT_NOT_NULL(pubkey_ctx);
 
     // Parse JSON string
-    cJSON *root = cJSON_Parse(token_json);
-    TEST_ASSERT_NOT_NULL(root);
-
-    cJSON *public_key = cJSON_GetObjectItemCaseSensitive(root, "public_key");
-    TEST_ASSERT_NOT_NULL(token_json);
-
-    cJSON *compressed = cJSON_GetObjectItemCaseSensitive(public_key, "compressed");
-    TEST_ASSERT_NOT_NULL(compressed);
+    jparse_ctx_t jctx;
+    TEST_ASSERT_EQUAL(OS_SUCCESS, json_parse_start(&jctx, token_json, strlen(token_json)));
+    TEST_ASSERT_EQUAL(OS_SUCCESS, json_obj_get_object(&jctx, "public_key"));
+    char *compressed = fetch_token_string(&jctx, "compressed");
+    json_obj_leave_object(&jctx);
+    json_parse_end(&jctx);
 
     uint8_t *pubkey_buf = NULL;
     size_t pubkey_buf_sz = 0;
-    hexstr_to_bytes(compressed->valuestring, &pubkey_buf, &pubkey_buf_sz);
+    hexstr_to_bytes(compressed, &pubkey_buf, &pubkey_buf_sz);
+    free(compressed);
 
     mbedtls_ecp_keypair keypair;
     mbedtls_ecp_keypair_init(&keypair);
@@ -209,7 +218,6 @@ static void fetch_pubkey(const char *token_json, esp_tee_sec_storage_ecdsa_pubke
     mbedtls_ecp_keypair_free(&keypair);
 
     free(pubkey_buf);
-    cJSON_Delete(root);
 }
 
 static void fetch_signature(const char *token_json, esp_tee_sec_storage_ecdsa_sign_t *sign_ctx)
@@ -218,31 +226,27 @@ static void fetch_signature(const char *token_json, esp_tee_sec_storage_ecdsa_si
     TEST_ASSERT_NOT_NULL(sign_ctx);
 
     // Parse JSON string
-    cJSON *root = cJSON_Parse(token_json);
-    TEST_ASSERT_NOT_NULL(root);
-
-    cJSON *sign = cJSON_GetObjectItemCaseSensitive(root, "sign");
-    TEST_ASSERT_NOT_NULL(sign);
-
-    cJSON *sign_r = cJSON_GetObjectItemCaseSensitive(sign, "r");
-    TEST_ASSERT_NOT_NULL(sign_r);
-
-    cJSON *sign_s = cJSON_GetObjectItemCaseSensitive(sign, "s");
-    TEST_ASSERT_NOT_NULL(sign_s);
+    jparse_ctx_t jctx;
+    TEST_ASSERT_EQUAL(OS_SUCCESS, json_parse_start(&jctx, token_json, strlen(token_json)));
+    TEST_ASSERT_EQUAL(OS_SUCCESS, json_obj_get_object(&jctx, "sign"));
+    char *sign_r = fetch_token_string(&jctx, "r");
+    char *sign_s = fetch_token_string(&jctx, "s");
+    json_obj_leave_object(&jctx);
+    json_parse_end(&jctx);
 
     uint8_t *sign_r_buf = NULL;
     size_t sign_r_buf_sz = 0;
-    hexstr_to_bytes(sign_r->valuestring, &sign_r_buf, &sign_r_buf_sz);
+    hexstr_to_bytes(sign_r, &sign_r_buf, &sign_r_buf_sz);
     memcpy(sign_ctx->signature, sign_r_buf, sign_r_buf_sz);
     free(sign_r_buf);
+    free(sign_r);
 
     uint8_t *sign_s_buf = NULL;
     size_t sign_s_buf_sz = 0;
-    hexstr_to_bytes(sign_s->valuestring, &sign_s_buf, &sign_s_buf_sz);
+    hexstr_to_bytes(sign_s, &sign_s_buf, &sign_s_buf_sz);
     memcpy(sign_ctx->signature + sign_r_buf_sz, sign_s_buf, sign_s_buf_sz);
     free(sign_s_buf);
-
-    cJSON_Delete(root);
+    free(sign_s);
 }
 
 static void verify_attestation_token(const uint8_t *token_buf, size_t token_len)
