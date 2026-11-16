@@ -54,6 +54,11 @@ extern "C" {
  */
 #define HAL_CONFIG_CHIP_SUPPORT_MIN_REV CONFIG_ESP_REV_MIN_FULL
 
+/**
+ * @brief Key Manager is owned by the TEE and fenced off from the REE
+ */
+#define HAL_CONFIG_KEY_MGR_TEE_OWNED (CONFIG_SECURE_ENABLE_TEE && !ESP_TEE_BUILD)
+
 #ifdef __cplusplus
 }
 #endif

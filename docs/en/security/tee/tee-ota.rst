@@ -40,12 +40,16 @@ OTA Process: Boot-up Flow and Image Rollback
 --------------------------------------------
 
 #. The new TEE application is successfully downloaded over the appropriate interface (Wi-Fi, Bluetooth, Ethernet, etc.). The REE app will download the TEE OTA update. Since it does not have permission to write to the TEE flash region directly, it will issue the appropriate service calls to write the new firmware to the flash.
-#. The new firmware is written to the passive TEE partition and set as the bootable partition with the state ``NEW``. This means that the application is new and should be monitored during its first boot. The system is then rebooted.
+#. The new firmware is written to the passive TEE partition and set as the bootable partition with the state ``NEW``. This means that the application is new and should be monitored during its first boot. The system is then rebooted by the TEE itself, i.e., :cpp:func:`esp_tee_ota_end` does not return on success.
 #. The bootloader will verify the magic and the CRC of the first sector in the ``tee_otadata`` partition. If invalid, the second sector will be used.
 #. If the application state is ``PENDING_VERIFY``, it will be overwritten to ``INVALID``. The bootloader will not select any image marked as ``INVALID`` for booting.
 #. If the application state is ``NEW``, it will be overwritten to ``PENDING_VERIFY``. This means that the application requires a confirmation to be considered as operable. If this does not happen and a reboot occurs, the state will be overwritten to ``INVALID`` and this application will no longer be able to boot, i.e., there will be a rollback to the previous working application.
 #. The new TEE application starts executing, but it needs a self-test to confirm its operability. As we reach the point of entry of the non-secure app, we consider the rollback self-test to be successful. The application is then marked as valid (state ``VALID``) and selected across further reboots if there are no updates to the device.
 #. If the self-test fails - the device did not reach the non-secure app entry point as there was some issue with the TEE image. This is considered as a critical exception and the device will reboot.
+
+.. note::
+
+    Resets triggered by the TEE (after a successful TEE OTA update or on a TEE/REE panic) also reset the RTC domain.
 
   .. note::
 
