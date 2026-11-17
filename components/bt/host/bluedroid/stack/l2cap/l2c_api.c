@@ -2485,11 +2485,29 @@ UINT16 L2CA_FlushChannel (UINT16 lcid, UINT16 num_to_flush)
 **
 *******************************************************************************/
 #if BLE_INCLUDED == TRUE
+/* In-flight no-response ATT PDUs that are not yet in an L2CAP queue, per GATT
+ * tcb index. Indexed rather than global so one connection's pending count does
+ * not shrink every other connection's esp_ble_get_cur_sendable_packets_num().
+ * Not cleared when the TCB is freed: a message already counted may still be
+ * dequeued and decremented, and zeroing early would let that decrement hit the
+ * next connection that reuses the index. */
+static INT16 att_btc_pending[GATT_MAX_PHY_CHANNEL];
+static INT16 att_btu_pending[GATT_MAX_PHY_CHANNEL];
+
+static BOOLEAN l2c_att_pending_index(UINT16 tcb_idx, INT16 **btc, INT16 **btu)
+{
+    if (tcb_idx >= GATT_MAX_PHY_CHANNEL) {
+        L2CAP_TRACE_ERROR("att pending: tcb_idx %u out of range", tcb_idx);
+        return FALSE;
+    }
+    *btc = &att_btc_pending[tcb_idx];
+    *btu = &att_btu_pending[tcb_idx];
+    return TRUE;
+}
+
 void l2ble_update_att_acl_pkt_num(UINT8 type, tl2c_buff_param_t *param)
 {
     static SemaphoreHandle_t buff_semaphore = NULL ;
-    static INT16 btc_buf;
-    static INT16 btu_buf;
 
     if(buff_semaphore == NULL && type != L2CA_BUFF_INI){
         L2CAP_TRACE_ERROR("%s buff_semaphore not init", __func__);
@@ -2497,27 +2515,24 @@ void l2ble_update_att_acl_pkt_num(UINT8 type, tl2c_buff_param_t *param)
     }
     switch (type)
     {
-    case L2CA_ADD_BTC_NUM:{
+    case L2CA_ADD_BTC_NUM:
+    case L2CA_DECREASE_BTC_NUM:
+    case L2CA_ADD_BTU_NUM:
+    case L2CA_DECREASE_BTU_NUM: {
+        INT16 *btc = NULL;
+        INT16 *btu = NULL;
+        INT16 delta = (type == L2CA_ADD_BTC_NUM || type == L2CA_ADD_BTU_NUM) ? 1 : -1;
+        BOOLEAN is_btc = (type == L2CA_ADD_BTC_NUM || type == L2CA_DECREASE_BTC_NUM);
+
+        if (param == NULL || !l2c_att_pending_index(param->conn_id, &btc, &btu)) {
+            break;
+        }
         xSemaphoreTake(buff_semaphore, portMAX_DELAY);
-        btc_buf ++;
-        xSemaphoreGive(buff_semaphore);
-        break;
-    }
-    case L2CA_DECREASE_BTC_NUM:{
-        xSemaphoreTake(buff_semaphore, portMAX_DELAY);
-        btc_buf --;
-        xSemaphoreGive(buff_semaphore);
-        break;
-    }
-    case L2CA_ADD_BTU_NUM:{
-        xSemaphoreTake(buff_semaphore, portMAX_DELAY);
-        btu_buf ++;
-        xSemaphoreGive(buff_semaphore);
-        break;
-    }
-    case L2CA_DECREASE_BTU_NUM:{
-        xSemaphoreTake(buff_semaphore, portMAX_DELAY);
-        btu_buf --;
+        if (is_btc) {
+            *btc = (INT16)(*btc + delta);
+        } else {
+            *btu = (INT16)(*btu + delta);
+        }
         xSemaphoreGive(buff_semaphore);
         break;
     }
@@ -2562,9 +2577,19 @@ void l2ble_update_att_acl_pkt_num(UINT8 type, tl2c_buff_param_t *param)
             break;
         }
         att_acl_pkt_num = fixed_queue_length(queue);
+        /* Count only this connection. Floor at zero so a negative balance can
+         * never inflate the reported headroom. */
+        INT16 att_pending = 0;
+        if (p_tcb->tcb_idx < GATT_MAX_PHY_CHANNEL) {
+            att_pending = (INT16)(att_btc_pending[p_tcb->tcb_idx] +
+                                  att_btu_pending[p_tcb->tcb_idx]);
+        }
+        if (att_pending < 0) {
+            att_pending = 0;
+        }
         if(att_acl_pkt_num < att_max_num){
-            if(btc_buf + btu_buf < att_max_num - att_acl_pkt_num){
-                *(param->get_num) = att_max_num - att_acl_pkt_num - (btc_buf + btu_buf);
+            if(att_pending < att_max_num - att_acl_pkt_num){
+                *(param->get_num) = att_max_num - att_acl_pkt_num - att_pending;
             }
         }
 
@@ -2582,7 +2607,7 @@ void l2ble_update_att_acl_pkt_num(UINT8 type, tl2c_buff_param_t *param)
          * shares this counter for both, so the answer has to bound both paths. */
         UINT16 eatt_num = 0;
         if (gatt_eatt_get_sendable_num(p_tcb->peer_bda, &eatt_num)) {
-            INT16 eatt_avail = (INT16)eatt_num - (btc_buf + btu_buf);
+            INT16 eatt_avail = (INT16)eatt_num - att_pending;
 
             if (eatt_avail < 0) {
                 eatt_avail = 0;
@@ -2596,8 +2621,8 @@ void l2ble_update_att_acl_pkt_num(UINT8 type, tl2c_buff_param_t *param)
         break;
     }
     case L2CA_BUFF_INI:{
-        btc_buf = 0;
-        btu_buf = 0;
+        memset(att_btc_pending, 0, sizeof(att_btc_pending));
+        memset(att_btu_pending, 0, sizeof(att_btu_pending));
         buff_semaphore = xSemaphoreCreateBinary();
         if (buff_semaphore == NULL) {
             L2CAP_TRACE_ERROR("%s NO MEMORY", __func__);
@@ -2608,8 +2633,8 @@ void l2ble_update_att_acl_pkt_num(UINT8 type, tl2c_buff_param_t *param)
     }
     case L2CA_BUFF_DEINIT:{
         xSemaphoreTake(buff_semaphore, portMAX_DELAY);
-        btc_buf = 0;
-        btu_buf = 0;
+        memset(att_btc_pending, 0, sizeof(att_btc_pending));
+        memset(att_btu_pending, 0, sizeof(att_btu_pending));
         xSemaphoreGive(buff_semaphore);
         vSemaphoreDelete(buff_semaphore);
         buff_semaphore = NULL;

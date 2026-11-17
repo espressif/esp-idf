@@ -17,6 +17,7 @@
 #include "esp_gattc_api.h"
 #include "btc/btc_storage.h"
 #include "common/bt_defs.h"
+#include "stack/l2c_api.h"
 
 #if (GATTC_INCLUDED == TRUE)
 static inline void btc_gattc_cb_to_app(esp_gattc_cb_event_t event, esp_gatt_if_t gattc_if, esp_ble_gattc_cb_param_t *param)
@@ -657,6 +658,13 @@ static void btc_gattc_read_by_type(btc_ble_gattc_args_t *arg)
 
 static void btc_gattc_write_char(btc_ble_gattc_args_t *arg)
 {
+    if (arg->write_char.write_type == ESP_GATT_WRITE_TYPE_NO_RSP) {
+        tl2c_buff_param_t pending = {
+            .conn_id = BTC_GATT_GET_CONN_ID(arg->write_char.conn_id),
+            .get_num = NULL,
+        };
+        l2ble_update_att_acl_pkt_num(L2CA_DECREASE_BTC_NUM, &pending);
+    }
     BTA_GATTC_WriteCharValue(arg->write_char.conn_id,
                              arg->write_char.handle,
                              arg->write_char.write_type,
@@ -672,6 +680,13 @@ static void btc_gattc_write_char_descr(btc_ble_gattc_args_t *arg)
     descr_val.len = arg->write_descr.value_len;
     descr_val.p_value = arg->write_descr.value;
 
+    if (arg->write_descr.write_type == ESP_GATT_WRITE_TYPE_NO_RSP) {
+        tl2c_buff_param_t pending = {
+            .conn_id = BTC_GATT_GET_CONN_ID(arg->write_descr.conn_id),
+            .get_num = NULL,
+        };
+        l2ble_update_att_acl_pkt_num(L2CA_DECREASE_BTC_NUM, &pending);
+    }
     BTA_GATTC_WriteCharDescr(arg->write_descr.conn_id,
                              arg->write_descr.handle,
                              arg->write_descr.write_type, &descr_val,

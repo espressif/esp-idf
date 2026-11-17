@@ -2106,6 +2106,17 @@ menu "Bluedroid L2CAP CoC"
             K-frames than this window; prefer automatic credit mode or a larger
             MPS when using large MTUs.
 
+    config BT_BLE_L2CAP_COC_MAX_XMIT_SDU
+        int "Maximum queued TX SDUs per LE CoC channel"
+        depends on BT_BLE_L2CAP_COC_ENABLED
+        range 5 64
+        default 8
+        help
+            Maximum number of outgoing SDUs held in a single LE CoC channel's
+            transmission queue (including any SDU currently being fragmented).
+            Bounds the heap an unresponsive peer can pin by withholding credits.
+            Must remain above the EATT control-PDU reserve (4 SDUs).
+
     config BT_BLE_L2CAP_ENHANCED_COC
         bool "Enable Enhanced Credit Based Flow Control (ECFC)"
         depends on BT_BLE_L2CAP_COC_ENABLED

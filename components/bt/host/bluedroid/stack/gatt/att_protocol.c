@@ -31,6 +31,9 @@
 #include "stack/l2c_api.h"
 #if (BLE_EATT_INCLUDED == TRUE)
 #include "gatt_eatt_int.h"
+#if (BLE_L2CAP_COC_INCLUDED == TRUE)
+#include "l2c_int.h"
+#endif
 #endif
 
 #define GATT_HDR_FIND_TYPE_VALUE_LEN    21
@@ -438,7 +441,26 @@ tGATT_STATUS attp_send_msg_to_l2cap(tGATT_TCB *p_tcb, BT_HDR *p_toL2CAP)
     } else {
 #if (BLE_L2CAP_COC_INCLUDED == TRUE) && (BLE_EATT_INCLUDED == TRUE)
         if (gatt_eatt_is_bearer(lcid)) {
+            /* L2CAP's per-channel cap refuses any SDU once the queue is full,
+             * and callers of a response, indication, or confirmation have no
+             * retry path. Keep GATT_EATT_CTRL_RESERVE slots free for those
+             * PDUs and reject notifications with GATT_BUSY (matching the
+             * congested fixed channel path above). */
+            if ((op_code == GATT_HANDLE_VALUE_NOTIF || op_code == GATT_HANDLE_MULTI_VALUE_NOTIF) &&
+                l2c_ble_le_coc_tx_slots(lcid) <= GATT_EATT_CTRL_RESERVE) {
+                GATT_TRACE_WARNING("EATT bearer 0x%04x queue full, drop notification", lcid);
+                osi_free(p_toL2CAP);
+#if (BLE_EATT_SERVER_INCLUDED == TRUE)
+                /* Credits may still be non-zero, so L2CAP will not callback.
+                 * Latch congestion from the reserve threshold directly. */
+                gatt_eatt_recheck_congestion(p_tcb->peer_bda);
+#endif
+                return GATT_BUSY;
+            }
             l2cap_ret = L2CA_LECocDataWrite(lcid, p_toL2CAP);
+#if (BLE_EATT_SERVER_INCLUDED == TRUE)
+            gatt_eatt_recheck_congestion(p_tcb->peer_bda);
+#endif
         } else
 #endif
 #if (CLASSIC_BT_INCLUDED == TRUE)

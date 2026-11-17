@@ -848,11 +848,18 @@ esp_err_t esp_ble_gattc_write_char(esp_gatt_if_t gattc_if,
     arg.write_char.value = value;
     arg.write_char.write_type = write_type;
     arg.write_char.auth_req = auth_req;
+    tl2c_buff_param_t pending = { .conn_id = conn_id, .get_num = NULL };
     if(write_type == ESP_GATT_WRITE_TYPE_NO_RSP){
-        l2ble_update_att_acl_pkt_num(L2CA_ADD_BTC_NUM, NULL);
+        l2ble_update_att_acl_pkt_num(L2CA_ADD_BTC_NUM, &pending);
     }
-    return (btc_transfer_context(&msg, &arg, sizeof(btc_ble_gattc_args_t), btc_gattc_arg_deep_copy,
-                btc_gattc_arg_deep_free) == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
+    if (btc_transfer_context(&msg, &arg, sizeof(btc_ble_gattc_args_t), btc_gattc_arg_deep_copy,
+                btc_gattc_arg_deep_free) != BT_STATUS_SUCCESS) {
+        if (write_type == ESP_GATT_WRITE_TYPE_NO_RSP) {
+            l2ble_update_att_acl_pkt_num(L2CA_DECREASE_BTC_NUM, &pending);
+        }
+        return ESP_FAIL;
+    }
+    return ESP_OK;
 }
 
 esp_err_t esp_ble_gattc_write_char_descr (esp_gatt_if_t gattc_if,
@@ -896,11 +903,18 @@ esp_err_t esp_ble_gattc_write_char_descr (esp_gatt_if_t gattc_if,
     arg.write_descr.value = value;
     arg.write_descr.write_type = write_type;
     arg.write_descr.auth_req = auth_req;
+    tl2c_buff_param_t pending = { .conn_id = conn_id, .get_num = NULL };
     if(write_type == ESP_GATT_WRITE_TYPE_NO_RSP){
-        l2ble_update_att_acl_pkt_num(L2CA_ADD_BTC_NUM, NULL);
+        l2ble_update_att_acl_pkt_num(L2CA_ADD_BTC_NUM, &pending);
     }
-    return (btc_transfer_context(&msg, &arg, sizeof(btc_ble_gattc_args_t), btc_gattc_arg_deep_copy,
-                btc_gattc_arg_deep_free) == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
+    if (btc_transfer_context(&msg, &arg, sizeof(btc_ble_gattc_args_t), btc_gattc_arg_deep_copy,
+                btc_gattc_arg_deep_free) != BT_STATUS_SUCCESS) {
+        if (write_type == ESP_GATT_WRITE_TYPE_NO_RSP) {
+            l2ble_update_att_acl_pkt_num(L2CA_DECREASE_BTC_NUM, &pending);
+        }
+        return ESP_FAIL;
+    }
+    return ESP_OK;
 }
 
 esp_err_t esp_ble_gattc_prepare_write(esp_gatt_if_t gattc_if,

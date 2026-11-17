@@ -572,14 +572,22 @@ void gatt_notify_app_congestion(tGATT_TCB *p_tcb, BOOLEAN congested)
 
 static void gatt_channel_congestion(tGATT_TCB *p_tcb, BOOLEAN congested)
 {
+    if (p_tcb == NULL) {
+        return;
+    }
 #if (GATTC_INCLUDED == TRUE)
     /* if uncongested, check to see if there is any more pending data */
-    if (p_tcb != NULL && congested == FALSE) {
+    if (congested == FALSE) {
         gatt_cl_send_next_cmd_inq(p_tcb);
     }
 #endif  ///GATTC_INCLUDED == TRUE
+    p_tcb->fixed_congested = congested;
     /* notifying all applications for the connection up event */
-    gatt_notify_app_congestion(p_tcb, congested);
+    gatt_notify_app_congestion(p_tcb, congested
+#if (BLE_EATT_SERVER_INCLUDED == TRUE)
+                               || p_tcb->eatt_congested
+#endif
+                               );
 }
 
 /*******************************************************************************

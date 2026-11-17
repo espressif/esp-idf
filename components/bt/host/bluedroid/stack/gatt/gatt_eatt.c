@@ -170,10 +170,11 @@ static tGATT_EATT_BEARER *gatt_eatt_alloc_bearer(tGATT_EATT_CONN *ec, UINT16 lci
 }
 
 #if (BLE_EATT_SERVER_INCLUDED == TRUE)
-static void gatt_eatt_relax_congestion(tGATT_EATT_CONN *ec);
+static void gatt_eatt_update_congestion(tGATT_EATT_CONN *ec);
+static void gatt_eatt_relax_congestion(tGATT_EATT_CONN *ec, BOOLEAN tearing_down);
 #endif
 
-static void gatt_eatt_free_bearer(tGATT_EATT_CONN *ec, tGATT_EATT_BEARER *b)
+static void gatt_eatt_free_bearer_ex(tGATT_EATT_CONN *ec, tGATT_EATT_BEARER *b, BOOLEAN tearing_down)
 {
     BD_ADDR peer_bda;
     UINT16  freed_lcid;
@@ -230,11 +231,14 @@ static void gatt_eatt_free_bearer(tGATT_EATT_CONN *ec, tGATT_EATT_BEARER *b)
         }
     }
 #if (BLE_EATT_SERVER_INCLUDED == TRUE)
-    /* Losing a bearer frees up the connection's aggregate TX headroom. Without
-     * this, a bearer that congested and then disconnected would leave the
-     * applications throttled for the rest of the connection. */
-    gatt_eatt_relax_congestion(ec);
+    /* Losing a bearer changes the connection's aggregate TX headroom. */
+    gatt_eatt_relax_congestion(ec, tearing_down);
 #endif
+}
+
+static void gatt_eatt_free_bearer(tGATT_EATT_CONN *ec, tGATT_EATT_BEARER *b)
+{
+    gatt_eatt_free_bearer_ex(ec, b, FALSE);
 }
 
 static void gatt_eatt_free_conn(tGATT_EATT_CONN *ec)
@@ -246,7 +250,7 @@ static void gatt_eatt_free_conn(tGATT_EATT_CONN *ec)
     GATT_EATT_TRACE_DEBUG("free_conn conn_id=%u bearer_count=%u", ec->conn_id, ec->bearer_count);
     for (int i = 0; i < GATT_EATT_MAX_CHAN; i++) {
         if (ec->bearers[i].in_use) {
-            gatt_eatt_free_bearer(ec, &ec->bearers[i]);
+            gatt_eatt_free_bearer_ex(ec, &ec->bearers[i], TRUE);
         }
     }
     memset(ec, 0, sizeof(*ec));
@@ -785,6 +789,12 @@ static void gatt_eatt_connect_cfm(UINT16 lcid, UINT16 result)
     gatt_eatt_update_tcb_mtu(p_ccb->p_lcb->remote_bd_addr, lcid);
     b->reported = TRUE;
     gatt_eatt_report_evt(ec->conn_id, 0, lcid);
+#if (BLE_EATT_SERVER_INCLUDED == TRUE)
+    /* The bearer is CST_OPEN here and carries the peer's initial credits, so
+     * re-evaluate: a connection latched congested must be reported decongested
+     * once usable headroom is added. */
+    gatt_eatt_update_congestion(ec);
+#endif
 
     gatt_eatt_setup_mark_done(ec);
 }
@@ -830,6 +840,19 @@ static void gatt_eatt_disconnect_ind(UINT16 lcid, BOOLEAN local_init)
 }
 
 #if (BLE_EATT_SERVER_INCLUDED == TRUE)
+/* Notification headroom on one EATT bearer, excluding GATT_EATT_CTRL_RESERVE
+ * slots kept free for ATT responses, indications, client commands, and
+ * indication confirmations. */
+static UINT16 gatt_eatt_bearer_sendable_num(UINT16 lcid)
+{
+    UINT16 slots = l2c_ble_le_coc_get_sendable_num(lcid);
+
+    if (slots <= GATT_EATT_CTRL_RESERVE) {
+        return 0;
+    }
+    return (UINT16)(slots - GATT_EATT_CTRL_RESERVE);
+}
+
 /* Sum the TX headroom of the bearers a server-initiated PDU can actually reach.
  * Mirrors gatt_eatt_get_server_tx_bearer's bearer choice without advancing its
  * round-robin cursor, so this stays a pure query. */
@@ -838,12 +861,12 @@ static UINT16 gatt_eatt_sendable_num(tGATT_EATT_CONN *ec)
     UINT32 num = 0;
 
     if (ec->default_lcid != 0 && gatt_eatt_find_bearer(ec, ec->default_lcid) != NULL) {
-        return l2c_ble_le_coc_get_sendable_num(ec->default_lcid);
+        return gatt_eatt_bearer_sendable_num(ec->default_lcid);
     }
 
     for (int i = 0; i < GATT_EATT_MAX_CHAN; i++) {
         if (ec->bearers[i].in_use) {
-            num += l2c_ble_le_coc_get_sendable_num(ec->bearers[i].lcid);
+            num += gatt_eatt_bearer_sendable_num(ec->bearers[i].lcid);
         }
     }
     return (num > 0xFFFF) ? 0xFFFF : (UINT16)num;
@@ -876,8 +899,9 @@ static void gatt_eatt_report_congestion(tGATT_EATT_CONN *ec, BOOLEAN congested)
     }
 
     ec->congested = congested;
+    p_tcb->eatt_congested = congested;
     GATT_EATT_TRACE_DEBUG("congestion conn_id=%u congested=%u", ec->conn_id, congested);
-    gatt_notify_app_congestion(p_tcb, congested);
+    gatt_notify_app_congestion(p_tcb, congested || p_tcb->fixed_congested);
 }
 
 static void gatt_eatt_update_congestion(tGATT_EATT_CONN *ec)
@@ -894,17 +918,31 @@ static void gatt_eatt_update_congestion(tGATT_EATT_CONN *ec)
                                     (gatt_eatt_sendable_num(ec) == 0));
 }
 
-/* Losing a bearer may only clear congestion, never assert it. A bearer going
- * away is not backpressure, and the bearers that remain raise their own
- * callback once they genuinely run out of credits. Asserting from here would
- * also fire while a connection is being torn down, since free_conn releases the
- * bearers one by one and disconnect_ind runs per bearer when the ACL drops: the
- * intermediate steps see the already-released CCBs as having no headroom, so the
- * applications would be left latched on a congested state that no later event
- * on this connection can ever clear. */
-static void gatt_eatt_relax_congestion(tGATT_EATT_CONN *ec)
+void gatt_eatt_recheck_congestion(BD_ADDR bd_addr)
 {
-    if (ec == NULL || !ec->in_use || !ec->congested) {
+    if (bd_addr == NULL) {
+        return;
+    }
+    gatt_eatt_update_congestion(gatt_eatt_find_conn_by_bda(bd_addr));
+}
+
+/* A bearer leaving changes the aggregate in both directions: it can free
+ * headroom (report FALSE), or it can take away the last bearer that still had
+ * room and leave the connection with none (report TRUE). Only the teardown
+ * cascade (gatt_eatt_free_conn) stays clear-only so intermediate loop steps
+ * do not report a closing connection as congested. */
+static void gatt_eatt_relax_congestion(tGATT_EATT_CONN *ec, BOOLEAN tearing_down)
+{
+    if (ec == NULL || !ec->in_use) {
+        return;
+    }
+
+    if (!tearing_down) {
+        gatt_eatt_update_congestion(ec);
+        return;
+    }
+
+    if (!ec->congested) {
         return;
     }
 
@@ -1178,6 +1216,18 @@ void gatt_eatt_on_encrypted(BD_ADDR bd_addr)
     }
 }
 
+#if (BLE_EATT_CLIENT_INCLUDED == TRUE)
+static BOOLEAN gatt_eatt_bearer_cmd_slot(UINT16 lcid)
+{
+#if (BLE_L2CAP_COC_INCLUDED == TRUE)
+    return l2c_ble_le_coc_tx_slots(lcid) >= GATT_EATT_CTRL_RESERVE;
+#else
+    UNUSED(lcid);
+    return TRUE;
+#endif
+}
+#endif
+
 BOOLEAN gatt_eatt_is_bearer(UINT16 lcid)
 {
     tL2C_CCB *p_ccb = l2cu_find_ccb_by_cid(NULL, lcid);
@@ -1199,16 +1249,22 @@ UINT16 gatt_eatt_get_available_bearer(BD_ADDR bd_addr, UINT8 op)
         return L2CAP_ATT_CID;
     }
 
+    /* Leave GATT_EATT_CTRL_RESERVE slots on the bearer. A command that would
+     * consume them (including a discovery retry whose first SDU is still
+     * queued) falls through to another bearer, or to the ATT fixed channel,
+     * instead of failing the procedure or displacing a response. */
     if (ec->default_lcid != 0) {
         b = gatt_eatt_find_bearer(ec, ec->default_lcid);
-        if (b != NULL && b->client_op == 0) {
+        if (b != NULL && b->client_op == 0 &&
+            gatt_eatt_bearer_cmd_slot(b->lcid)) {
             GATT_EATT_TRACE_DEBUG("get_available_bearer op=0x%02x -> default lcid=0x%04x", op, ec->default_lcid);
             return ec->default_lcid;
         }
     }
 
     for (int i = 0; i < GATT_EATT_MAX_CHAN; i++) {
-        if (ec->bearers[i].in_use && ec->bearers[i].client_op == 0) {
+        if (ec->bearers[i].in_use && ec->bearers[i].client_op == 0 &&
+            gatt_eatt_bearer_cmd_slot(ec->bearers[i].lcid)) {
             GATT_EATT_TRACE_DEBUG("get_available_bearer op=0x%02x -> lcid=0x%04x", op, ec->bearers[i].lcid);
             return ec->bearers[i].lcid;
         }
@@ -1238,12 +1294,20 @@ UINT16 gatt_eatt_get_server_tx_bearer(BD_ADDR bd_addr)
 
     /* Round-robin across in-use bearers so server-initiated notifications and
      * indications are spread over all EATT channels rather than serialized on
-     * a single one. */
-    for (int n = 0; n < GATT_EATT_MAX_CHAN; n++) {
-        int i = (ec->tx_rr + n) % GATT_EATT_MAX_CHAN;
-        if (ec->bearers[i].in_use) {
+     * a single one. Prefer a bearer that still has TX room (matching
+     * gatt_eatt_sendable_num / gatt_eatt_update_congestion), and fall back to
+     * regular round-robin when every bearer is full. */
+    for (int pass = 0; pass < 2; pass++) {
+        for (int n = 0; n < GATT_EATT_MAX_CHAN; n++) {
+            int i = (ec->tx_rr + n) % GATT_EATT_MAX_CHAN;
+            if (!ec->bearers[i].in_use) {
+                continue;
+            }
+            if (pass == 0 && gatt_eatt_bearer_sendable_num(ec->bearers[i].lcid) == 0) {
+                continue;
+            }
             ec->tx_rr = (UINT8)((i + 1) % GATT_EATT_MAX_CHAN);
-            GATT_EATT_TRACE_DEBUG("server_tx_bearer -> rr lcid=0x%04x", ec->bearers[i].lcid);
+            GATT_EATT_TRACE_DEBUG("server_tx_bearer -> lcid=0x%04x pass=%d", ec->bearers[i].lcid, pass);
             return ec->bearers[i].lcid;
         }
     }
@@ -1277,6 +1341,9 @@ BOOLEAN gatt_eatt_set_default_bearer(UINT16 conn_id, UINT16 lcid)
     if (lcid == 0 || lcid == L2CAP_ATT_CID) {
         GATT_EATT_TRACE_DEBUG("set_default_bearer: clear default for conn_id=%u", conn_id);
         ec->default_lcid = 0;
+#if (BLE_EATT_SERVER_INCLUDED == TRUE)
+        gatt_eatt_update_congestion(ec);
+#endif
         return TRUE;
     }
 
@@ -1288,6 +1355,9 @@ BOOLEAN gatt_eatt_set_default_bearer(UINT16 conn_id, UINT16 lcid)
 
     GATT_EATT_TRACE_DEBUG("set_default_bearer conn_id=%u lcid=0x%04x", conn_id, lcid);
     ec->default_lcid = lcid;
+#if (BLE_EATT_SERVER_INCLUDED == TRUE)
+    gatt_eatt_update_congestion(ec);
+#endif
     return TRUE;
 #else
     UNUSED(conn_id);

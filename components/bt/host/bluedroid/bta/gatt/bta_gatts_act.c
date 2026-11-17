@@ -705,6 +705,17 @@ void bta_gatts_send_rsp (tBTA_GATTS_CB *p_cb, tBTA_GATTS_DATA *p_msg)
     }
 
 }
+/* conn_id is the stack id: tcb index in the high byte. Balances the
+ * L2CA_ADD_BTU_NUM done in BTA_GATTS_HandleValueIndication. */
+static void bta_gatts_release_btu_pending(UINT16 conn_id)
+{
+    tl2c_buff_param_t pending;
+
+    pending.conn_id = (UINT8)(conn_id >> 8);
+    pending.get_num = NULL;
+    l2ble_update_att_acl_pkt_num(L2CA_DECREASE_BTU_NUM, &pending);
+}
+
 /*******************************************************************************
 **
 ** Function         bta_gatts_send_conf_evt_to_app
@@ -788,7 +799,7 @@ void bta_gatts_indicate_handle (tBTA_GATTS_CB *p_cb, tBTA_GATTS_DATA *p_msg)
                     APPL_TRACE_ERROR("%s: if mismatch svc owner", __func__);
                 }
                 if (!p_msg->api_indicate.need_confirm) {
-                    l2ble_update_att_acl_pkt_num(L2CA_DECREASE_BTU_NUM, NULL);
+                    bta_gatts_release_btu_pending(p_msg->api_indicate.hdr.layer_specific);
                 }
                 status = BTA_GATT_ILLEGAL_PARAMETER;
             } else {
@@ -800,11 +811,15 @@ void bta_gatts_indicate_handle (tBTA_GATTS_CB *p_cb, tBTA_GATTS_DATA *p_msg)
                                                           p_msg->api_indicate.len,
                                                           p_msg->api_indicate.value);
                 } else {
-                    l2ble_update_att_acl_pkt_num(L2CA_DECREASE_BTU_NUM, NULL);
+                    /* Decrement after the notification returns. By then the PDU
+                     * is either in the L2CAP queue (counted there) or it was
+                     * refused. Decrementing first leaves a window where the
+                     * PDU is in neither counter and sendable is overstated. */
                     status = GATTS_HandleValueNotification (p_msg->api_indicate.hdr.layer_specific,
                                                             p_msg->api_indicate.attr_id,
                                                             p_msg->api_indicate.len,
                                                             p_msg->api_indicate.value);
+                    bta_gatts_release_btu_pending(p_msg->api_indicate.hdr.layer_specific);
                 }
 #if (CLASSIC_BT_INCLUDED == TRUE)
                 /* if over BR_EDR, inform PM for mode change */
@@ -818,7 +833,7 @@ void bta_gatts_indicate_handle (tBTA_GATTS_CB *p_cb, tBTA_GATTS_DATA *p_msg)
             APPL_TRACE_ERROR("Unknown connection ID: %d fail sending notification",
                              p_msg->api_indicate.hdr.layer_specific);
             if (!p_msg->api_indicate.need_confirm) {
-                l2ble_update_att_acl_pkt_num(L2CA_DECREASE_BTU_NUM, NULL);
+                bta_gatts_release_btu_pending(p_msg->api_indicate.hdr.layer_specific);
             }
         }
 
@@ -843,7 +858,7 @@ void bta_gatts_indicate_handle (tBTA_GATTS_CB *p_cb, tBTA_GATTS_DATA *p_msg)
         if (!p_msg->api_indicate.need_confirm) {
             /* Notifications increment the BTU counter in BTA_GATTS_HandleValueIndication();
              * indications do not. So only balance the counter on the notification path. */
-            l2ble_update_att_acl_pkt_num(L2CA_DECREASE_BTU_NUM, NULL);
+            bta_gatts_release_btu_pending(p_msg->api_indicate.hdr.layer_specific);
         } else {
             /* Indication path: the application is waiting for BTA_GATTS_CONF_EVT to know
              * the request is finished. Make a best-effort attempt to deliver an error event

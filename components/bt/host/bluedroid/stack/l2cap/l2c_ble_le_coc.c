@@ -1009,6 +1009,22 @@ static BOOLEAN l2c_ble_le_coc_send_frame(tL2C_CCB *p_ccb, const UINT8 *data, UIN
     return TRUE;
 }
 
+/* CongestionStatus_Cb can disconnect and release this CCB before it returns.
+ * TRUE means p_ccb is still the open channel and try_xmit may keep using it. */
+static BOOLEAN l2c_ble_le_coc_ccb_still_open(tL2C_CCB *p_ccb, UINT16 saved_lcid)
+{
+    tL2C_CCB *p_now = l2cu_find_ccb_by_cid(NULL, saved_lcid);
+
+    if (p_now != p_ccb || !p_ccb->in_use || !p_ccb->le_coc_active ||
+            p_ccb->chnl_state != CST_OPEN) {
+        if (p_now == p_ccb && p_ccb->in_use) {
+            p_ccb->le_coc_xmit_busy = FALSE;
+        }
+        return FALSE;
+    }
+    return TRUE;
+}
+
 static void l2c_ble_le_coc_try_xmit(tL2C_CCB *p_ccb)
 {
     UINT16 mps, chunk, sdu_len, hdr_len;
@@ -1109,19 +1125,34 @@ again:
 
     if (p_ccb->peer_conn_cfg.credits == 0 && p_ccb->p_rcb &&
         p_ccb->p_rcb->api.pL2CA_CongestionStatus_Cb && !p_ccb->cong_sent) {
+        UINT16 saved_lcid = p_ccb->local_cid;
+
         p_ccb->cong_sent = TRUE;
-        (*p_ccb->p_rcb->api.pL2CA_CongestionStatus_Cb)(p_ccb->local_cid, TRUE);
-        L2C_BLE_COC_TRACE_DEBUG("tx congested lcid=0x%04x", p_ccb->local_cid);
+        (*p_ccb->p_rcb->api.pL2CA_CongestionStatus_Cb)(saved_lcid, TRUE);
+        L2C_BLE_COC_TRACE_DEBUG("tx congested lcid=0x%04x", saved_lcid);
+        if (!l2c_ble_le_coc_ccb_still_open(p_ccb, saved_lcid)) {
+            return;
+        }
     } else if (completed_sdu && p_ccb->peer_conn_cfg.credits > 0 &&
-               p_ccb->le_coc_tx_sdu == NULL &&
-               fixed_queue_is_empty(p_ccb->xmit_hold_q) &&
                p_ccb->p_rcb && p_ccb->p_rcb->api.pL2CA_CongestionStatus_Cb) {
-        /* SDU fully sent and pipeline drained with credits to spare: signal the
-         * app it may send the next SDU. This self-clocks TX without polling. The
-         * re-entrancy guard above turns any synchronous re-entry from this
-         * callback into an iterative rerun instead of deep recursion. */
-        p_ccb->cong_sent = FALSE;
-        (*p_ccb->p_rcb->api.pL2CA_CongestionStatus_Cb)(p_ccb->local_cid, FALSE);
+        BOOLEAN drained = (p_ccb->le_coc_tx_sdu == NULL &&
+                           fixed_queue_is_empty(p_ccb->xmit_hold_q));
+
+        /* Non-EATT CoC users treat FALSE as "the outstanding SDU is finished",
+         * so they are told only once nothing is left to send. EATT ignores the
+         * boolean and re-reads notify headroom, which can return while another
+         * SDU is still queued or being fragmented. */
+        if (drained || p_ccb->p_rcb->real_psm == L2CAP_LE_EATT_PSM) {
+            UINT16 saved_lcid = p_ccb->local_cid;
+
+            /* The re-entrancy guard above turns any synchronous re-entry from
+             * this callback into an iterative rerun instead of deep recursion. */
+            p_ccb->cong_sent = FALSE;
+            (*p_ccb->p_rcb->api.pL2CA_CongestionStatus_Cb)(saved_lcid, FALSE);
+            if (!l2c_ble_le_coc_ccb_still_open(p_ccb, saved_lcid)) {
+                return;
+            }
+        }
     }
 
     /* A re-entrant call (typically triggered by the callback above) queued more
@@ -1144,6 +1175,29 @@ static UINT16 l2c_ble_le_coc_xmit_depth(tL2C_CCB *p_ccb)
         depth++;
     }
     return depth;
+}
+
+/* Number of SDU slots this channel's TX queue can still take, ignoring peer
+ * credits. 0 means the next l2c_ble_le_coc_data_write() on it is refused. */
+static UINT16 l2c_ble_le_coc_slots_left(tL2C_CCB *p_ccb)
+{
+    UINT16 depth = l2c_ble_le_coc_xmit_depth(p_ccb);
+
+    if (depth >= L2CAP_LE_COC_MAX_XMIT_SDU) {
+        return 0;
+    }
+    return (UINT16)(L2CAP_LE_COC_MAX_XMIT_SDU - depth);
+}
+
+UINT16 l2c_ble_le_coc_tx_slots(UINT16 lcid)
+{
+    tL2C_CCB *p_ccb;
+
+    p_ccb = l2cu_find_ccb_by_cid(NULL, lcid);
+    if (p_ccb == NULL || !p_ccb->le_coc_active || p_ccb->chnl_state != CST_OPEN) {
+        return 0;
+    }
+    return l2c_ble_le_coc_slots_left(p_ccb);
 }
 
 UINT8 l2c_ble_le_coc_data_write(UINT16 lcid, BT_HDR *p_data)
@@ -1218,7 +1272,6 @@ BOOLEAN l2c_ble_le_coc_is_congested(UINT16 lcid)
 UINT16 l2c_ble_le_coc_get_sendable_num(UINT16 lcid)
 {
     tL2C_CCB *p_ccb;
-    UINT16 depth;
 
     p_ccb = l2cu_find_ccb_by_cid(NULL, lcid);
     if (p_ccb == NULL || !p_ccb->le_coc_active || p_ccb->chnl_state != CST_OPEN) {
@@ -1231,11 +1284,7 @@ UINT16 l2c_ble_le_coc_get_sendable_num(UINT16 lcid)
         return 0;
     }
 
-    depth = l2c_ble_le_coc_xmit_depth(p_ccb);
-    if (depth >= L2CAP_LE_COC_MAX_XMIT_SDU) {
-        return 0;
-    }
-    return (UINT16)(L2CAP_LE_COC_MAX_XMIT_SDU - depth);
+    return l2c_ble_le_coc_slots_left(p_ccb);
 }
 
 BOOLEAN l2c_ble_le_coc_give_credits(UINT16 lcid, UINT16 credits)

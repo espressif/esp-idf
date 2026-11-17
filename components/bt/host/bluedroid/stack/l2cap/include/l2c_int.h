@@ -28,6 +28,10 @@
 #include "common/bt_target.h"
 #include "stack/btm_api.h"
 #include "stack/l2c_api.h"
+
+/* ATT/EATT LE PSM (Assigned Numbers). Same value as GATT_EATT_PSM; kept here
+ * so L2CAP can recognize an EATT channel without including the GATT header. */
+#define L2CAP_LE_EATT_PSM               0x0027
 #include "stack/l2cdefs.h"
 #include "hci/hci_internals.h"
 #include "osi/list.h"
@@ -56,12 +60,6 @@ _Static_assert(L2CAP_MAX_RX_PAYLOAD <= L2CAP_LE_MAX_MPS,
 #define L2CAP_LE_DEFAULT_MTU        512
 #define L2CAP_LE_DEFAULT_MPS        23
 #define L2CAP_LE_DEFAULT_CREDIT     1
-
-/* Maximum number of SDUs held for transmission on one LE CoC channel. Peer
- * credits are the only pacing L2CAP applies here, so a sender that keeps
- * writing while credits are exhausted would grow xmit_hold_q until the heap
- * is gone. */
-#define L2CAP_LE_COC_MAX_XMIT_SDU   8
 
 
 /* Timeouts. Since L2CAP works off a 1-second list, all are in seconds.
@@ -914,6 +912,7 @@ extern void l2c_ble_le_coc_data_ind(tL2C_CCB *p_ccb, BT_HDR *p_msg);
 extern UINT8 l2c_ble_le_coc_data_write(UINT16 lcid, BT_HDR *p_data);
 extern BOOLEAN l2c_ble_le_coc_is_congested(UINT16 lcid);
 extern UINT16 l2c_ble_le_coc_get_sendable_num(UINT16 lcid);
+extern UINT16 l2c_ble_le_coc_tx_slots(UINT16 lcid);
 extern BOOLEAN l2c_ble_le_coc_give_credits(UINT16 lcid, UINT16 credits);
 extern BOOLEAN l2c_ble_le_coc_set_auto_credit(UINT16 lcid, BOOLEAN enable);
 #if (BLE_L2CAP_ENHANCED_COC_INCLUDED == TRUE)

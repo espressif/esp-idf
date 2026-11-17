@@ -18,6 +18,7 @@
 #include "esp_gatts_api.h"
 #include "btc/btc_storage.h"
 #include "common/bt_defs.h"
+#include "stack/l2c_api.h"
 
 #if (GATTS_INCLUDED == TRUE)
 
@@ -878,10 +879,18 @@ void btc_gatts_call_handler(btc_msg_t *msg)
                                    (tBTA_GATTS_ATTR_CONTROL *)&arg->add_descr.attr_control);
         break;
     }
-    case BTC_GATTS_ACT_SEND_INDICATE:
+    case BTC_GATTS_ACT_SEND_INDICATE: {
+        tl2c_buff_param_t pending = {
+            .conn_id = BTC_GATT_GET_CONN_ID(arg->send_ind.conn_id),
+            .get_num = NULL,
+        };
+        if (arg->send_ind.need_confirm == false) {
+            l2ble_update_att_acl_pkt_num(L2CA_DECREASE_BTC_NUM, &pending);
+        }
         BTA_GATTS_HandleValueIndication(arg->send_ind.conn_id, arg->send_ind.attr_handle,
                                         arg->send_ind.value_len, arg->send_ind.value, arg->send_ind.need_confirm);
         break;
+    }
     case BTC_GATTS_ACT_SEND_RESPONSE: {
         esp_ble_gatts_cb_param_t param = {0};
         esp_gatt_rsp_t *p_rsp = arg->send_rsp.rsp;

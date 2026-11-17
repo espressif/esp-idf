@@ -418,6 +418,10 @@ typedef struct {
 
     tGATT_CH_STATE  ch_state;
     UINT8           ch_flags;
+    BOOLEAN         fixed_congested;    /* ATT fixed/legacy bearer congestion state */
+#if (BLE_EATT_SERVER_INCLUDED == TRUE)
+    BOOLEAN         eatt_congested;     /* aggregate EATT bearer congestion state */
+#endif
 
     tGATT_IF        app_hold_link[GATT_MAX_APPS];
 
