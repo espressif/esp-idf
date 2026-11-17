@@ -296,7 +296,7 @@ TEST_CASE_MULTIPLE_DEVICES("I2S_TDM_full_duplex_test_in_48k_8bits_4slots", "[I2S
 /* The I2S source clock can only reach 96Mhz on ESP32H2,
    and the max clock source APLL on P4 is 125M,
    which can't satisfy the following configurations in slave mode */
-#if !CONFIG_IDF_TARGET_ESP32H2 && !CONFIG_IDF_TARGET_ESP32H4 && !CONFIG_IDF_TARGET_ESP32P4
+#if !CONFIG_IDF_TARGET_ESP32H2 && !CONFIG_IDF_TARGET_ESP32H4 && !CONFIG_IDF_TARGET_ESP32P4 && !CONFIG_IDF_TARGET_ESP32H21
 static void test_i2s_tdm_master_48k_16bits_8slots(void)
 {
     test_i2s_tdm_master(48000, I2S_DATA_BIT_WIDTH_16BIT, I2S_TDM_SLOT0 | I2S_TDM_SLOT1 | I2S_TDM_SLOT2 | I2S_TDM_SLOT3 |
@@ -324,7 +324,7 @@ static void test_i2s_tdm_slave_96k_16bits_4slots(void)
 
 TEST_CASE_MULTIPLE_DEVICES("I2S_TDM_full_duplex_test_in_96k_16bits_4slots", "[I2S_TDM]",
                            test_i2s_tdm_master_96k_16bits_4slots, test_i2s_tdm_slave_96k_16bits_4slots);
-#endif  // !CONFIG_IDF_TARGET_ESP32H2 && !CONFIG_IDF_TARGET_ESP32P4
+#endif  // !CONFIG_IDF_TARGET_ESP32H2 && !CONFIG_IDF_TARGET_ESP32H4 && !CONFIG_IDF_TARGET_ESP32P4 && !CONFIG_IDF_TARGET_ESP32H21
 
 static void test_i2s_external_clk_src(bool is_master, bool is_external)
 {
