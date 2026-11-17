@@ -23,3 +23,11 @@ components/bt/common/ble_log/test_apps/ble_log_test:
       reason: No BLE Log test runners are available yet
   depends_components:
     - bt
+
+components/bt/common/ble_log/test_apps/ble_log_usb_test:
+  disable:
+    - if: IDF_TARGET != "none"
+      temporary: true
+      reason: No BLE Log test runners are available yet
+  depends_components:
+    - bt

@@ -69,6 +69,12 @@ void ble_log_prph_deinit(void);
 bool ble_log_prph_trans_init(ble_log_prph_trans_t **trans, size_t trans_size);
 void ble_log_prph_trans_deinit(ble_log_prph_trans_t **trans);
 void ble_log_prph_send_trans(ble_log_prph_trans_t *trans);
+#if CONFIG_BLE_LOG_PRPH_USB
+/* Exchange-and-clear the CDC TX FIFO drop counters (transports and bytes).
+ * The runtime prints them once per periodic window instead of on each
+ * dropped transport. */
+void ble_log_prph_take_cdc_fifo_drops(uint32_t *drops, uint32_t *bytes);
+#endif
 #if BLE_LOG_UART_REDIR_ENABLED
 bool ble_log_prph_flush(void);
 void ble_log_prph_reset_util_counters(void);

@@ -25,3 +25,7 @@ typedef void (*test_ble_log_frame_observer_t)(const test_ble_log_frame_t *frame,
  * Returns true when the whole buffer consists of valid frames. */
 bool test_ble_log_walk_frames(const uint8_t *data, size_t len,
                               test_ble_log_frame_observer_t observer, void *ctx);
+
+/* Restores the ESP Log vprintf hook if a failed case longjmp-ed out before its
+ * own restore statement. Idempotent: tearDown calls it for every case. */
+void test_ble_log_disarm_warning_hook(void);

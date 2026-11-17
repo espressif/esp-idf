@@ -11,10 +11,10 @@ flowchart TD
     C[Compression encoder] --> P
     S[Internal snapshot] --> I[Fixed internal transport]
     R[UART0 redirection] --> D[Redirection transports]
-    P --> Q[ESP Timer runtime queue]
+    P --> Q[Runtime queue]
     I --> Q
     D --> Q
-    Q --> X[Peripheral DMA]
+    Q --> X[Peripheral output]
 ```
 
 The shared pool contains `CONFIG_BLE_LOG_POOL_TRANS_CNT` transports. The last
@@ -44,11 +44,30 @@ independent of producer enable: disable stops new writes, not cached output.
 
 ## Runtime dispatch
 
-Sealed transports enter one bounded queue. The first submission anchors a
-one-shot ESP Timer deadline at 1 ms; later submissions do not move it. Each
-callback drains the queue depth captured at entry and schedules another fixed
-defer only for arrivals left behind, so it does not continuously monopolize
-the shared ESP Timer task.
+Sealed transports enter one bounded queue, drained by one of two dispatch
+paths:
+
+- Non-USB backends (SPI, UART, test) use a one-shot ESP Timer deferral. The
+  first submission anchors the deadline at 1 ms; later submissions do not move
+  it. Each callback drains the queue depth captured at entry and schedules
+  another fixed defer only for arrivals left behind, so it does not
+  continuously monopolize the shared ESP Timer task.
+- USB builds drain the queue from a dedicated task that blocks on it: the 1 ms
+  defer cadence caps throughput well below the USB bulk endpoint (see
+  `CONFIG_BLE_LOG_PRPH_USB`). Deinit stops that task through the gate it
+  already owns: it closes `rt_inited` and posts a NULL stop token, which that
+  one receive reads as "stop"; the queue reserves a slot for the token, so the
+  post never waits for room. The task then recycles what the closed gate left
+  queued and acknowledges the stop. A token rather than a task-abort poke,
+  because the task can be blocked inside its dispatch call, where cancelling
+  the wait would also cancel one of TinyUSB's own mutex takes. Only after that
+  ack *and* the task's own suspend is the task deleted, so teardown can never
+  abort a dispatch call in flight. The suspend is waited
+  for as well because the ack arrives earlier: between the two, deleting the
+  handle would hand a still-running task to the kernel's terminated-task
+  cleanup, which then never frees its TCB and stack. Both waits share one
+  bounded budget; exceeding it logs an error and trips the teardown
+  assertion.
 
 ## Version 8 frame
 
@@ -285,9 +304,72 @@ still emitted.
 | `CONFIG_BLE_LOG_TASK_ID_MAX` | 16 | Task-id registry size, range 2..32; 16 bytes of RAM per entry |
 | `CONFIG_BLE_LOG_TS_SYNC_TOGGLE_IO_ENABLED` | n | Build the optional analyzer GPIO toggle |
 | `CONFIG_BLE_LOG_TS_ENABLED` | n | Deprecated compatibility entry selecting the GPIO toggle |
+| `CONFIG_BLE_LOG_PRPH_USB` | n | Use the USB OTG device as transport (see below) |
+| `CONFIG_BLE_LOG_USB_CDC_TX_BUFSIZE` | 2048 | CDC TX FIFO size; must equal `CONFIG_TINYUSB_CDC_TX_BUFSIZE` |
+| `CONFIG_BLE_LOG_USB_CDC_EP_BUFSIZE` | 512 | CDC endpoint packet buffer. Keep 512 (the High-Speed bulk MPS) on High-Speed; on Full-Speed raise it to 1024, where the 64-byte MPS costs roughly half the achievable rate (see Buffer sizing) |
 
 Old multi-LBM sizing options remain hidden only so existing sdkconfig files can
 be parsed; they no longer control allocation.
+
+## USB transport
+
+The USB transport copies each sealed transport into the TinyUSB CDC-ACM TX
+FIFO and recycles it immediately; a FIFO that cannot hold a whole transport
+drops it and prints a warning once per periodic window (transport and byte
+counts, separate from pool loss). It works on any target with a USB OTG
+peripheral, Full-Speed or High-Speed.
+
+BLE Log is a component inside the IDF tree, so it cannot declare the managed
+dependency itself. Copy the template manifest `idf_component_usb.template.yml`
+from the BLE Log component directory into the application's `main/`
+(merge it into an existing `idf_component.yml` if one is present), otherwise
+enabling `CONFIG_BLE_LOG_PRPH_USB` fails the CMake configure with a fatal
+error. Its content is simply:
+
+```yaml
+dependencies:
+  espressif/esp_tinyusb: "^2.0.0"
+```
+
+Run `idf.py reconfigure` once after copying or editing the file so the
+component manager fetches the component; `CONFIG_TINYUSB_CDC_ENABLED` must
+then be set. Finally, keep the TinyUSB CDC buffer options equal to their
+BLE Log counterparts: `CONFIG_TINYUSB_CDC_TX_BUFSIZE ==
+CONFIG_BLE_LOG_USB_CDC_TX_BUFSIZE` and `CONFIG_TINYUSB_CDC_EP_BUFSIZE ==
+CONFIG_BLE_LOG_USB_CDC_EP_BUFSIZE`; `CONFIG_TINYUSB_CDC_RX_BUFSIZE` at
+least the endpoint size; mismatches are fatal build errors. The device
+enumerates as VID 0x303A PID 0x10B1, product/interface string
+`BLE-Log-Port (<target>)` (the base name is a literal prefix; the target
+is the `IDF_TARGET` the image was built for), distinct from the TinyUSB/blbm
+bridge `0x4001`.
+
+### Buffer sizing
+
+These three buffers are the transport path's whole absorption budget, and
+they cost `TX_BUFSIZE + RX_BUFSIZE + 2 * EP_BUFSIZE` bytes of static RAM
+(TinyUSB keeps one IN and one OUT endpoint buffer, both sized by
+`EP_BUFSIZE`). The defaults - `TX 2048`, `RX 512`, `EP 512` - come to 3584
+bytes. Measured with a producer that is faster than the link (perf mode,
+5 s steady-state windows, ESP-IDF v6.2):
+
+| Setting | High-Speed (ESP32-S31) | Full-Speed (ESP32-S3) |
+| --- | --- | --- |
+| `EP_BUFSIZE=64` | - | 0.58 MiB/s |
+| `EP_BUFSIZE=256` | - | 0.88 MiB/s |
+| `EP_BUFSIZE=512` | **7.5 MiB/s** | 0.97 MiB/s |
+| `EP_BUFSIZE=1024` | 6.8 MiB/s | 1.03 MiB/s |
+| `EP_BUFSIZE=2048` | 6.9 MiB/s | 1.05 MiB/s |
+| `TX_BUFSIZE=1024`, `EP=512` | 7.1 MiB/s | - |
+| `TX_BUFSIZE=4096`, `EP=512` | 7.5 MiB/s | - |
+
+`EP_BUFSIZE` is the length of one bulk IN submission, while the packet size
+in the device descriptor is fixed at 512 (High-Speed) or 64 (Full-Speed). On
+High-Speed that makes 512 the sweet spot - one submission is exactly one
+packet - and larger values lose about 9% for 1.5-4.5 KB more RAM. On
+Full-Speed one 64-byte packet per submission is far too slow, so raise
+`EP_BUFSIZE` to 1024; 2048 adds 2% for 3 KB. `RX_BUFSIZE` has no measured
+effect on throughput; keep it at its `EP_BUFSIZE` minimum. `TX_BUFSIZE` buys
+little below 2048 and nothing above it.
 
 ## Validation apps
 
@@ -301,6 +383,9 @@ idf.py build
 
 cd ../ble_log_perf_test
 idf.py build
+
+cd ../ble_log_usb_test
+idf.py build
 ```
 
 `ble_log_test` validates golden v8 bytes, the consolidated Internal Snapshot,
@@ -308,3 +393,7 @@ source/HCI metadata and capture selection, pool exhaustion and reserve use,
 snapshot busy loss, stale claims, and enable/disable/deinit races.
 `ble_log_rt_test` covers batched dispatch, timer behavior, inflight statistics,
 and repeated deinit races.
+`ble_log_usb_test` is the USB OTG smoke / throughput / raw-pipe app (host-side
+meters), and carries the dispatcher teardown interleaving check in
+`CONFIG_BLE_LOG_USB_TEST_LIFECYCLE_MODE`. Like the other three it is built
+manually: no BLE Log test runner exists yet.

@@ -1,0 +1,6 @@
+# 1000 Hz tick regression for the bounded wait. Self-contained: CI builds each
+# sdkconfig.ci.* file on top of sdkconfig.defaults alone, so the finite budget
+# has to be repeated here. Use with sdkconfig.defaults:
+#   -D SDKCONFIG_DEFAULTS="sdkconfig.defaults;sdkconfig.ci.bounded_tick_1000"
+CONFIG_BLE_LOG_POOL_WAIT_TIMEOUT_MS=100
+CONFIG_FREERTOS_HZ=1000
