@@ -125,7 +125,11 @@ static void s_test_touch_do_initial_scanning(touch_sensor_handle_t touch, int sc
     TEST_ESP_OK(touch_sensor_disable(touch));
 }
 
-#define TEST_ACTIVE_THRESH_RATIO          (0.01f)
+/**
+ * Touch sensor readings may drift slightly after sleep, exceeding the 1% threshold on some boards.
+ * A 2% threshold provides more consistent test results.
+ */
+#define TEST_ACTIVE_THRESH_RATIO          (0.02f)
 
 static touch_channel_config_t s_test_get_chan_cfg_by_benchmark(uint32_t benchmark[])
 {
