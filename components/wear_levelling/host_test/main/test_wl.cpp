@@ -13,6 +13,7 @@
 
 #include "wear_levelling.h"
 #include "WL_Flash.h"
+#include "Partition.h"
 #include "crc32.h"
 
 
@@ -878,4 +879,103 @@ TEST_CASE("BDL release and reconnect", "[wear_levelling][bdl]")
 
     REQUIRE(wl_blockdev->ops->release(wl_blockdev) == ESP_OK);
     REQUIRE(part_blockdev->ops->release(part_blockdev) == ESP_OK);
+}
+
+// Exposes WL_Flash internals needed to lay out position records directly in flash
+class WL_Flash_Probe : public WL_Flash
+{
+public:
+    uint32_t dummy_sec_pos() { return state.wl_dummy_sec_pos; }
+    uint32_t part_max_sec_pos() { return state.wl_part_max_sec_pos; }
+
+    // Writes position record n to both state copies, as updateWL() does
+    void write_pos_record(uint32_t n, bool torn = false)
+    {
+        fillOkBuff(n);
+        if (torn) {
+            // Power loss while programming: only part of the record made it to flash
+            memset(temp_buff + cfg.wl_pos_update_record_size / 2, 0xFF, cfg.wl_pos_update_record_size / 2);
+        }
+        size_t offset = sizeof(wl_state_t) + n * cfg.wl_pos_update_record_size;
+        REQUIRE(partition->write(addr_state1 + offset, temp_buff, cfg.wl_pos_update_record_size) == ESP_OK);
+        REQUIRE(partition->write(addr_state2 + offset, temp_buff, cfg.wl_pos_update_record_size) == ESP_OK);
+    }
+};
+
+static void probe_init(WL_Flash_Probe &wl, Partition &part, const esp_partition_t *partition)
+{
+    // Same configuration as wl_mount()
+    wl_config_t cfg = {};
+    cfg.wl_partition_start_addr   = 0;
+    cfg.wl_partition_size         = partition->size;
+    cfg.wl_page_size              = partition->erase_size;
+    cfg.flash_sector_size         = partition->erase_size;
+    cfg.wl_update_rate            = 16;
+    cfg.wl_pos_update_record_size = 16;
+    cfg.version                   = 2;
+    cfg.wl_temp_buff_size         = 32;
+
+    REQUIRE(wl.config(&cfg, &part) == ESP_OK);
+    REQUIRE(wl.init() == ESP_OK);
+}
+
+// Mounts a fresh WL partition, writes valid records 0..valid_count-1 (and optionally a torn
+// record right after them), then mounts again and returns the recovered dummy sector position.
+static uint32_t recover_pos_after_records(const esp_partition_t *partition, uint32_t valid_count, bool torn_next)
+{
+    REQUIRE(esp_partition_erase_range(partition, 0, partition->size) == ESP_OK);
+
+    Partition part(partition);
+    {
+        WL_Flash_Probe wl;
+        probe_init(wl, part, partition);
+        REQUIRE(wl.dummy_sec_pos() == 0);
+        REQUIRE(valid_count <= wl.part_max_sec_pos());
+        for (uint32_t n = 0; n < valid_count; n++) {
+            wl.write_pos_record(n);
+        }
+        if (torn_next) {
+            REQUIRE(valid_count < wl.part_max_sec_pos());
+            wl.write_pos_record(valid_count, true);
+        }
+    }
+
+    WL_Flash_Probe wl;
+    esp_partition_clear_stats();
+    probe_init(wl, part, partition);
+
+    // init() reads both state headers, then recoverPos() must binary search the
+    // max + 1 possible positions instead of scanning the records one by one
+    uint32_t search_reads = 0;
+    while ((1u << search_reads) < wl.part_max_sec_pos() + 1) {
+        search_reads++;
+    }
+    CHECK(esp_partition_get_read_ops() <= 2 + search_reads);
+
+    return wl.dummy_sec_pos();
+}
+
+TEST_CASE("recoverPos finds dummy sector position", "[wear_levelling]")
+{
+    const esp_partition_t *partition = esp_partition_find_first(ESP_PARTITION_TYPE_DATA, ESP_PARTITION_SUBTYPE_ANY, "storage");
+    REQUIRE(partition != NULL);
+
+    uint32_t max;
+    {
+        REQUIRE(esp_partition_erase_range(partition, 0, partition->size) == ESP_OK);
+        Partition part(partition);
+        WL_Flash_Probe wl;
+        probe_init(wl, part, partition);
+        max = wl.part_max_sec_pos();
+    }
+    REQUIRE(max > 4);
+
+    for (uint32_t k : {0u, 1u, 2u, max / 2 - 1, max / 2, max / 2 + 1, max - 2, max - 1}) {
+        CAPTURE(k, max);
+        CHECK(recover_pos_after_records(partition, k, false) == k);
+        CHECK(recover_pos_after_records(partition, k, true) == k);
+    }
+
+    // All records valid: the position stays on the last sector
+    CHECK(recover_pos_after_records(partition, max, false) == max - 1);
 }
