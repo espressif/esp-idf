@@ -16,7 +16,7 @@
 #include "mspi_timing_tuning_configs.h"
 #include "hal/psram_ctrlr_ll.h"
 #include "hal/mspi_ll.h"
-#include "soc/hp_sys_clkrst_struct.h"
+#include "hal/clk_tree_ll.h"
 
 ESP_LOG_ATTR_TAG(TAG, "MSPI Timing");
 
@@ -38,9 +38,16 @@ void mspi_timing_config_set_psram_clock(uint32_t psram_freq_mhz, mspi_timing_spe
 void mspi_timing_config_set_flash_clock(uint32_t flash_freq_mhz, mspi_timing_speed_mode_t speed_mode, bool control_both_mspi)
 {
 #if MSPI_TIMING_FLASH_NEEDS_TUNING
-    assert(HP_SYS_CLKRST.peri_clk_ctrl00.reg_flash_clk_src_sel == 1);
+    // In ESP32S31 bootloader, the flash clock source is set to CPLL by default for a 80MHz flash frequency.
+    // When timing tuning is needed, it means the flash frequency needs to be raised to 120MHz, so we need to set the flash clock source to BBPLL.
+    // esp_clk_tree_initialize() is called later, so we cannot call esp_clk_tree_enable_src() to enable BBPLL here.
+    // Instead, we will enable BBPLL by LL directly. ref count will still be incremented by esp_clk_tree_initialize() later.
+    if (mspi_timing_ll_get_flash_clk_src(MSPI_TIMING_LL_MSPI_ID_0) != FLASH_CLK_SRC_BBPLL) {
+        clk_ll_bbpll_enable();
+        _mspi_timing_ll_set_flash_clk_src(MSPI_TIMING_LL_MSPI_ID_0, FLASH_CLK_SRC_BBPLL);
+    }
 
-    uint32_t core_clock_mhz = MSPI_TIMING_SPLL_FREQ_MHZ / MSPI_TIMING_LL_HP_FLASH_CORE_CLK_DIV;
+    uint32_t core_clock_mhz = MSPI_TIMING_BBPLL_FREQ_MHZ / MSPI_TIMING_LL_HP_FLASH_CORE_CLK_DIV;
     assert(core_clock_mhz == 120);
     uint32_t freqdiv = core_clock_mhz / flash_freq_mhz;
 
