@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -668,6 +668,142 @@ TEST_CASE("Test xTaskResumeAll resumes pended tasks", "[freertos]")
     // Add a short delay to allow the idle task to free any remaining task memory
     vTaskDelay(10);
 }
+
+/* ---------------------------------------------------------------------------------------------------------------------
+Test xTaskResumeAll resumes tasks pended by an ISR on the other core
+
+Purpose:
+    - When the scheduler is suspended on a particular core, test that a task pinned to that core and unblocked by an
+      ISR running on the other core is placed on the pending ready list of the task's core.
+    - When the scheduler is resumed on the task's core, test that the task is scheduled.
+
+Procedure:
+    Test for each core (the task's core suspends its scheduler, the other core runs the ISR)
+        - Create a blocked task pinned to the task's core
+        - Register an interrupt on the other core to unblock the task
+        - Suspend the scheduler on the task's core
+        - Trigger the interrupt and wait for it to unblock the task
+        - Resume the scheduler on the task's core
+        - Cleanup
+
+Expected:
+    - When the scheduler is resumed on the task's core, the unblocked task should be scheduled and run without
+      waiting for the other core to suspend and resume its own scheduler.
+--------------------------------------------------------------------------------------------------------------------- */
+
+#if !CONFIG_FREERTOS_UNICORE
+
+typedef struct {
+    TaskHandle_t orch_task_hdl;
+    volatile bool *has_run;
+} test_xcore_pended_arg_t;
+
+static volatile bool test_xcore_pended_isr_ran;
+static volatile bool test_xcore_pended_susp_ready;
+
+static bool test_xcore_pended_isr(void *arg)
+{
+    BaseType_t task_woken = pdFALSE;
+    vTaskNotifyGiveFromISR((TaskHandle_t)arg, &task_woken);
+    test_xcore_pended_isr_ran = true;
+    return (task_woken == pdTRUE);
+}
+
+static void test_xcore_pended_susp_task(void *arg)
+{
+    test_xcore_pended_arg_t *test_arg = (test_xcore_pended_arg_t *)arg;
+
+    // Suspend the scheduler on the blocked task's core, then let the other core trigger the interrupt
+    vTaskSuspendAll();
+    test_xcore_pended_susp_ready = true;
+    for (int i = 0; i < 100 && !test_xcore_pended_isr_ran; i++) {
+        esp_rom_delay_us(1000);
+    }
+    // Record the results now and check them only after resuming the scheduler
+    const bool isr_ran = test_xcore_pended_isr_ran;
+    const bool ran_while_suspended = *test_arg->has_run;
+
+    // Resume the scheduler. The unblocked task has a higher priority and should run right away.
+    xTaskResumeAll();
+    esp_rom_delay_us(1000); // Short busy delay, much shorter than any tick-driven wake up
+    const bool ran_after_resume = *test_arg->has_run;
+
+    TEST_ASSERT_EQUAL(true, isr_ran);
+    // The unblocked task cannot run while its core's scheduler is suspended
+    TEST_ASSERT_EQUAL(false, ran_while_suspended);
+    TEST_ASSERT_EQUAL(true, ran_after_resume);
+
+    // Notify completion and wait for deletion
+    xTaskNotifyGive(test_arg->orch_task_hdl);
+    vTaskSuspend(NULL);
+}
+
+static void test_xcore_pended_orch_task(void *arg)
+{
+    TaskHandle_t main_task_hdl = (TaskHandle_t)arg;
+    const BaseType_t task_core = !xPortGetCoreID();
+    volatile bool has_run = false;
+    TaskHandle_t blkd_task_hdl;
+    TaskHandle_t susp_task_hdl;
+    test_xcore_pended_arg_t test_arg = {
+        .orch_task_hdl = xTaskGetCurrentTaskHandle(),
+        .has_run = &has_run,
+    };
+
+    test_xcore_pended_isr_ran = false;
+    test_xcore_pended_susp_ready = false;
+
+    // Create the blocked task pinned to the other core
+    TEST_ASSERT_EQUAL(pdTRUE, xTaskCreatePinnedToCore(test_pended_blkd_task, "blkd", 4096, (void *)&has_run, UNITY_FREERTOS_PRIORITY + 2, &blkd_task_hdl, task_core));
+    vTaskDelay(10);
+    TEST_ASSERT_EQUAL(false, has_run);
+
+    // Install an interrupt on the current core
+    register_intr_cb(test_xcore_pended_isr, (void *)blkd_task_hdl);
+
+    // Suspend the scheduler on the blocked task's core
+    TEST_ASSERT_EQUAL(pdTRUE, xTaskCreatePinnedToCore(test_xcore_pended_susp_task, "susp", 4096, (void *)&test_arg, UNITY_FREERTOS_PRIORITY + 1, &susp_task_hdl, task_core));
+    // Busy wait: only core 0 increments the tick count, so a delay on core 1 does not expire while core 0 has its
+    // scheduler suspended
+    while (!test_xcore_pended_susp_ready) {
+        esp_rom_delay_us(10);
+    }
+
+    // Trigger the interrupt on the current core to unblock the task while its core's scheduler is suspended
+    trigger_intr_cb();
+
+    // Wait for the suspending task to finish its checks
+    ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
+
+    // Clean up the interrupt and tasks
+    deregister_intr_cb();
+    vTaskSuspend(susp_task_hdl);
+    vTaskDelete(susp_task_hdl);
+    vTaskDelete(blkd_task_hdl);
+
+    // Notify completion and wait for deletion
+    xTaskNotifyGive(main_task_hdl);
+    vTaskSuspend(NULL);
+}
+
+TEST_CASE("Test xTaskResumeAll resumes tasks pended by an ISR on the other core", "[freertos]")
+{
+    // Run the test with the ISR on each core
+    for (int i = 0; i < CONFIG_FREERTOS_NUMBER_OF_CORES; i++) {
+        TaskHandle_t orch_task_hdl;
+        TEST_ASSERT_EQUAL(pdTRUE, xTaskCreatePinnedToCore(test_xcore_pended_orch_task, "orch", 4096, (void *)xTaskGetCurrentTaskHandle(), UNITY_FREERTOS_PRIORITY + 1, &orch_task_hdl, i));
+        // Wait for to be notified to test completion
+        ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
+        // Suspend the test task in case it hasn't suspended itself yet
+        vTaskSuspend(orch_task_hdl);
+        vTaskDelay(10);
+        vTaskDelete(orch_task_hdl);
+    }
+    // Add a short delay to allow the idle task to free any remaining task memory
+    vTaskDelay(10);
+}
+
+#endif // !CONFIG_FREERTOS_UNICORE
 
 #endif //SOC_GPTIMER_SUPPORTED
 
