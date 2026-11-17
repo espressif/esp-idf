@@ -19,9 +19,9 @@ ESP_LOG_ATTR_TAG(TAG, "secure_boot_v2_ecdsa");
 #define ECDSA_INTEGER_LEN 32
 #endif
 
-esp_err_t verify_ecdsa_signature_block(const ets_secure_boot_signature_t *sig_block, const uint8_t *image_digest, const ets_secure_boot_sig_block_t *trusted_block)
+esp_err_t verify_ecdsa_signature_block(const uint8_t *image_digest, const ets_secure_boot_sig_block_t *trusted_block)
 {
-    if (!sig_block || !image_digest || !trusted_block) {
+    if (!image_digest || !trusted_block) {
         return ESP_ERR_INVALID_ARG;
     }
 

@@ -99,11 +99,10 @@ static esp_err_t calculate_image_public_key_digests(bool verify_image_digest, bo
                     bootloader_sha256_finish(sig_block_sha, key_digest);
                     if (verify_image_digest) {
                         // Check we can verify the image using this signature and this key
-                        uint8_t temp_verified_digest[ESP_SECURE_BOOT_DIGEST_LEN];
 #if CONFIG_SECURE_SIGNED_APPS_RSA_SCHEME
-                        bool verified = ets_rsa_pss_verify(&block.key, block.signature, image_digest, temp_verified_digest);
+                        bool verified = (verify_rsa_signature_block(image_digest, &block) == ESP_OK);
 #elif CONFIG_SECURE_SIGNED_APPS_ECDSA_V2_SCHEME
-                        bool verified = ets_ecdsa_verify(&block.ecdsa.key.point[0], block.ecdsa.signature, block.ecdsa.key.curve_id, image_digest, temp_verified_digest);
+                        bool verified = (verify_ecdsa_signature_block(image_digest, &block) == ESP_OK);
 #endif
                         if (!verified) {
                             ESP_LOGE(TAG, "Secure boot key (%d) verification failed.", i);
@@ -273,10 +272,10 @@ esp_err_t esp_secure_boot_verify_sbv2_signature_block(const ets_secure_boot_sign
 
 #if CONFIG_SECURE_SIGNED_APPS_RSA_SCHEME
         ESP_LOGI(TAG, "Verifying with RSA-PSS...");
-        ret = verify_rsa_signature_block(sig_block, image_digest, trusted_block);
+        ret = verify_rsa_signature_block(image_digest, trusted_block);
 #elif CONFIG_SECURE_SIGNED_APPS_ECDSA_V2_SCHEME
         ESP_LOGI(TAG, "Verifying with ECDSA...");
-        ret = verify_ecdsa_signature_block(sig_block, image_digest, trusted_block);
+        ret = verify_ecdsa_signature_block(image_digest, trusted_block);
 #endif
         if (ret == 0) {
             break;
