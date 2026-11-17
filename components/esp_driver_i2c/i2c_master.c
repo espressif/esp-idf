@@ -710,6 +710,12 @@ static esp_err_t s_i2c_transaction_start(i2c_master_dev_handle_t i2c_dev, int xf
 
     i2c_ll_txfifo_rst(hal->dev);
     i2c_ll_rxfifo_rst(hal->dev);
+    // contains_read is only set by s_i2c_read_command(), don't let it leak from a previous transaction
+    i2c_master->contains_read = false;
+    // Clear raw interrupt bits left over from the previous transaction (e.g. a TRANS_COMPLETE raised
+    // after an address NACK when the waiter had already returned), otherwise they would be taken as
+    // events of this transaction as soon as the interrupts are enabled.
+    i2c_ll_clear_intr_mask(hal->dev, I2C_LL_INTR_MASK);
     i2c_ll_enable_intr_mask(hal->dev, I2C_LL_MASTER_EVENT_INTR);
     portEXIT_CRITICAL(&i2c_master->base->spinlock);
 
@@ -1402,6 +1408,10 @@ esp_err_t i2c_master_probe(i2c_master_bus_handle_t bus_handle, uint16_t address,
     i2c_ll_txfifo_rst(hal->dev);
     i2c_ll_rxfifo_rst(hal->dev);
     i2c_ll_master_set_fractional_divider(hal->dev, 0, 0);
+    // Same as s_i2c_transaction_start(): probe has no read command, and stale raw interrupt bits
+    // from the previous transaction must not be taken as the result of this probe.
+    bus_handle->contains_read = false;
+    i2c_ll_clear_intr_mask(hal->dev, I2C_LL_INTR_MASK);
     i2c_ll_enable_intr_mask(hal->dev, I2C_LL_MASTER_EVENT_INTR);
     // 20ms is sufficient for stretch, since there is no device config on probe operation.
     i2c_hal_master_set_scl_timeout_val(hal, 20 * 1000, bus_handle->base->clk_src_freq_hz);
