@@ -1067,8 +1067,7 @@ typedef union {
         uint32_t pvt_monitor_func_clk_div_num:4;
         uint32_t reserved_4:16;
         /** pvt_monitor_func_clk_sel : R/W; bitpos: [20]; default: 0;
-         *  set this field to select clock-source. 0: XTAL, 1(default): 160MHz driven by SPLL
-         *  divided by 3.
+         *  set this field to select clock-source. 0: XTAL, 1(default): 96MHz PLL.
          */
         uint32_t pvt_monitor_func_clk_sel:1;
         uint32_t reserved_21:1;

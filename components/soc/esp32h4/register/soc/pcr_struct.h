@@ -1238,7 +1238,7 @@ typedef union {
         /** pvt_monitor_func_clk_sel : R/W; bitpos: [20]; default: 1;
          *  Configures the clock source of PVT MONITOR.
          *  0: XTAL_CLK
-         *  1(default): PLL_F160M_CLK
+         *  1(default): PLL_F96M_CLK
          */
         uint32_t pvt_monitor_func_clk_sel:1;
         uint32_t reserved_21:1;
