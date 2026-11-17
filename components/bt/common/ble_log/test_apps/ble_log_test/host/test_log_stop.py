@@ -96,7 +96,7 @@ static int xSemaphoreTake(void *sem, unsigned t) {
     assert(on_take); on_take(); return 1;
 }
 static void *xTaskGetCurrentTaskHandle(void) { return (void *)2; }
-static void *esp_timer_impl_get_timer_task_handle(void) { return (void *)3; }
+static bool ble_log_rt_is_timer_task(void) { return false; }
 static void vTaskSetTimeOutState(TimeOut_t *t) { *t = 0; }
 static int xTaskCheckForTimeOut(TimeOut_t *t, unsigned *r) { (void)t; (void)r; return 0; }
 static ble_log_prph_trans_t *ble_log_pool_try_claim_available(unsigned n, bool reserve) {
@@ -112,6 +112,9 @@ static bool ble_log_pool_flush_all_trans(void) {
     return flush_success;
 }
 static void ble_log_sync_sample(ble_log_ts_info_t *info) { *info = 0; }
+static void ble_log_rt_ts_sample(ble_log_ts_info_t *info, bool toggle_io) {
+    assert(!toggle_io); *info = 0;
+}
 static bool ble_log_internal_snapshot(int reason, const ble_log_ts_info_t *info, bool wait) {
     (void)reason; (void)info; (void)wait; return true;
 }
