@@ -1,0 +1,9 @@
+CONFIG_ESPTOOLPY_FLASHSIZE_4MB=y
+
+# Whole-disk block device: SD/eMMC card over the SDMMC host
+CONFIG_EXAMPLE_STORAGE_MEDIA_SDCARD=y
+CONFIG_EXAMPLE_SD_HOST_SDMMC=y
+
+# FATFS
+# Runtime FAT sector size is derived from the SD card BDL geometry (512 bytes).
+CONFIG_FATFS_VFS_FSTAT_BLKSIZE=4096
