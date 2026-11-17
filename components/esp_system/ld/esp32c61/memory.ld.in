@@ -23,7 +23,7 @@
 #endif // CONFIG_SECURE_ENABLE_TEE
 
 #define SRAM_SEG_END       0x4083ea70  /* 2nd stage bootloader iram_loader_seg start address */
-#define SRAM_SEG_SIZE      SRAM_SEG_END - SRAM_SEG_START
+#define SRAM_SEG_SIZE      (SRAM_SEG_END - SRAM_SEG_START)
 
 /*
  * IDRAM0_2_SEG_SIZE_DEFAULT is used when page size is 64KB
