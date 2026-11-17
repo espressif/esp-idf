@@ -103,12 +103,6 @@ tools/test_apps/system/gdb_loadable_elf:
       temporary: true
       reason: lack of runners
 
-tools/test_apps/system/gdbstub_runtime:
-  disable_test:
-    - if: IDF_TARGET == "esp32h4"
-      temporary: true
-      reason: cannot pass # TODO: IDF-15607
-
 tools/test_apps/system/init_array:
   enable:
     - if: INCLUDE_DEFAULT == 1 or IDF_TARGET == "linux"

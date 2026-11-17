@@ -1,12 +1,13 @@
 /*
- * SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2025-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 #include "soc/soc_caps.h"
 #include "sdkconfig.h"
+#include "esp_gdbstub_arch.h"
 
-#if SOC_CPU_HAS_FPU || SOC_CPU_HAS_PIE
+#if SOC_CPU_HAS_FPU || SOC_CPU_HAS_DSP || SOC_CPU_HAS_PIE
 const char target_xml[] =
 "<?xml version=\"1.0\"?>"
 "<!DOCTYPE target SYSTEM \"gdb-target.dtd\">"
@@ -95,7 +96,7 @@ const char target_xml[] =
 "<field name=\"v2_int64\" type=\"v2i64\"/>"
 "<field name=\"uint128\" type=\"uint128\"/>"
 "</union>"
-"<reg name=\"q0\" bitsize=\"128\" type=\"vec128\" group=\"vector\" regnum=\"4211\"/>"
+"<reg name=\"q0\" bitsize=\"128\" type=\"vec128\" group=\"vector\" regnum=\"" GDBSTUB_REGNUM_STR(GDBSTUB_PIE_REGNUM_FIRST) "\"/>"
 "<reg name=\"q1\" bitsize=\"128\" type=\"vec128\" group=\"vector\"/>"
 "<reg name=\"q2\" bitsize=\"128\" type=\"vec128\" group=\"vector\"/>"
 "<reg name=\"q3\" bitsize=\"128\" type=\"vec128\" group=\"vector\"/>"
@@ -112,5 +113,13 @@ const char target_xml[] =
 "<reg name=\"misc\" bitsize=\"24\" type=\"v3i8\" group=\"vector\"/>" /* make GDB happy about "Truncated register 4207 in remote 'g' packet" */
 "</feature>"
 #endif /* SOC_CPU_HAS_PIE */
+#if SOC_CPU_HAS_DSP
+"<feature name=\"org.gnu.gdb.riscv.xespdsp\">"
+"<reg name=\"dsp_xacc_l\" bitsize=\"32\" regnum=\"" GDBSTUB_REGNUM_STR(GDBSTUB_DSP_REGNUM_FIRST) "\"/>"
+"<reg name=\"dsp_xacc_h\" bitsize=\"32\"/>"
+"<reg name=\"dsp_sar\" bitsize=\"32\"/>"
+"<reg name=\"dsp_status\" bitsize=\"32\"/>"
+"</feature>"
+#endif /* SOC_CPU_HAS_DSP */
 "</target>";
 #endif

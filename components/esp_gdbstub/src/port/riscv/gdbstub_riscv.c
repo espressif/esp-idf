@@ -99,7 +99,23 @@ static void esp_gdbstub_pie_regs_to_regfile (esp_gdbstub_gdb_regfile_t *dst)
 }
 #endif
 
-#if SOC_CPU_HAS_FPU || SOC_CPU_HAS_PIE
+#if SOC_CPU_HAS_DSP
+static void esp_gdbstub_dsp_regs_to_regfile (esp_gdbstub_gdb_regfile_t *dst)
+{
+    /*
+     * NOTE: The GDB stub logic executes within an ISR, where coprocessors are disabled.
+     *       Therefore, we must enable the coprocessor before reading or writing its registers.
+     */
+    rv_utils_enable_dsp();
+    dst->dsp.xacc_l = RV_READ_CSR(CSR_DSP_XACC_L);
+    dst->dsp.xacc_h = RV_READ_CSR(CSR_DSP_XACC_H);
+    dst->dsp.sar = RV_READ_CSR(CSR_DSP_SAR);
+    dst->dsp.status = RV_READ_CSR(CSR_DSP_STATUS);
+    rv_utils_disable_dsp();
+}
+#endif
+
+#if SOC_CPU_HAS_FPU || SOC_CPU_HAS_DSP || SOC_CPU_HAS_PIE
 static void *esp_gdbstub_coproc_saved_area(const StaticTask_t *tcb, int coproc, bool is_read) {
     /*
      * Coprocessors have lazy register saving mechanism:
@@ -180,8 +196,18 @@ static void esp_gdbstub_coproc_regs_to_regfile(const esp_gdbstub_frame_t *frame,
         memcpy(&dst->pie, csa, sizeof(dst->pie));
     }
 #endif
+#if SOC_CPU_HAS_DSP
+    csa = esp_gdbstub_coproc_saved_area(tcb, DSP_COPROC_IDX, true);
+    if (csa == NULL) {
+        esp_gdbstub_dsp_regs_to_regfile(dst);
+    } else if (csa == GDBSTUB_CSA_NOT_INITIALIZED) {
+        memset(&dst->dsp, 0, sizeof(dst->dsp));
+    } else {
+        memcpy(&dst->dsp, csa, sizeof(dst->dsp));
+    }
+#endif
 }
-#endif /* SOC_CPU_HAS_FPU || SOC_CPU_HAS_PIE */
+#endif /* SOC_CPU_HAS_FPU || SOC_CPU_HAS_DSP || SOC_CPU_HAS_PIE */
 
 void esp_gdbstub_frame_to_regfile(const esp_gdbstub_frame_t *frame, esp_gdbstub_gdb_regfile_t *dst)
 {
@@ -192,7 +218,7 @@ void esp_gdbstub_frame_to_regfile(const esp_gdbstub_frame_t *frame, esp_gdbstub_
     // See The RISC-V Instruction Set Manual Volume I: Unprivileged ISA Document Version 20191213 for more details.
     memcpy(&(dst->x[1]), &frame->ra, sizeof(uint32_t) * 31);
 
-#if SOC_CPU_HAS_FPU || SOC_CPU_HAS_PIE
+#if SOC_CPU_HAS_FPU || SOC_CPU_HAS_DSP || SOC_CPU_HAS_PIE
     esp_gdbstub_coproc_regs_to_regfile(frame, dst);
 #endif
 }
@@ -444,7 +470,28 @@ void esp_gdbstub_set_pie_register(uint32_t reg_index, uint32_t *value_ptr)
 }
 #endif /* SOC_CPU_HAS_PIE */
 
-#if SOC_CPU_HAS_FPU || SOC_CPU_HAS_PIE
+#if SOC_CPU_HAS_DSP
+static void esp_gdbstub_set_dsp_register(uint32_t reg_index, uint32_t value)
+{
+    /*
+     * NOTE: The GDB stub logic executes within an ISR, where coprocessors are disabled.
+     *       Therefore, we must enable the coprocessor before reading or writing its registers.
+     */
+    rv_utils_enable_dsp();
+    if (reg_index == 0) {
+        RV_WRITE_CSR(CSR_DSP_XACC_L, value);
+    } else if (reg_index == 1) {
+        RV_WRITE_CSR(CSR_DSP_XACC_H, value);
+    } else if (reg_index == 2) {
+        RV_WRITE_CSR(CSR_DSP_SAR, value);
+    } else if (reg_index == 3) {
+        RV_WRITE_CSR(CSR_DSP_STATUS, value);
+    }
+    rv_utils_disable_dsp();
+}
+#endif /* SOC_CPU_HAS_DSP */
+
+#if SOC_CPU_HAS_FPU || SOC_CPU_HAS_DSP || SOC_CPU_HAS_PIE
 void esp_gdbstub_set_coproc_register(esp_gdbstub_frame_t *frame, uint32_t reg_index, uint32_t *value_ptr) {
     const StaticTask_t *tcb = esp_gdbstub_find_tcb_by_frame(frame);
     uint32_t *csa; /* points to coprocessor registers data. */
@@ -464,8 +511,9 @@ void esp_gdbstub_set_coproc_register(esp_gdbstub_frame_t *frame, uint32_t reg_in
     }
 #endif
 #if SOC_CPU_HAS_PIE
-    if (reg_index >= 4211 && reg_index <= 4224) {
-        reg_index -= 4211;
+    /* q0 .. xacc. misc is the next register and is not written. */
+    if (reg_index >= GDBSTUB_PIE_REGNUM_FIRST && reg_index <= GDBSTUB_PIE_REGNUM_FIRST + 13) {
+        reg_index -= GDBSTUB_PIE_REGNUM_FIRST;
         csa = esp_gdbstub_coproc_saved_area(tcb, PIE_COPROC_IDX, false);
         if (csa == NULL) {
             esp_gdbstub_set_pie_register(reg_index, value_ptr);
@@ -476,10 +524,24 @@ void esp_gdbstub_set_coproc_register(esp_gdbstub_frame_t *frame, uint32_t reg_in
                 memcpy(&csa[4 * 13], value_ptr, sizeof(uint8_t) * 5);
             }
         }
+        return;
+    }
+#endif
+#if SOC_CPU_HAS_DSP
+    /* xacc_l, xacc_h, sar, status */
+    if (reg_index >= GDBSTUB_DSP_REGNUM_FIRST && reg_index <= GDBSTUB_DSP_REGNUM_FIRST + 3) {
+        reg_index -= GDBSTUB_DSP_REGNUM_FIRST;
+        csa = esp_gdbstub_coproc_saved_area(tcb, DSP_COPROC_IDX, false);
+        if (csa == NULL) {
+            esp_gdbstub_set_dsp_register(reg_index, *value_ptr);
+        } else {
+            csa[reg_index] = *value_ptr;
+        }
+        return;
     }
 #endif
 }
-#endif /* SOC_CPU_HAS_FPU || SOC_CPU_HAS_PIE */
+#endif /* SOC_CPU_HAS_FPU || SOC_CPU_HAS_DSP || SOC_CPU_HAS_PIE */
 
 void esp_gdbstub_set_register(esp_gdbstub_frame_t *frame, uint32_t reg_index, uint32_t *value_ptr)
 {
@@ -493,7 +555,7 @@ void esp_gdbstub_set_register(esp_gdbstub_frame_t *frame, uint32_t reg_index, ui
     } else if (reg_index == 32) { /* register 32 is PC  */
         frame->mepc = value;
     }
-#if SOC_CPU_HAS_FPU || SOC_CPU_HAS_PIE
+#if SOC_CPU_HAS_FPU || SOC_CPU_HAS_DSP || SOC_CPU_HAS_PIE
     esp_gdbstub_set_coproc_register(frame, reg_index, value_ptr);
 #endif
 }
