@@ -38,17 +38,18 @@ extern "C" {
 /// Swap the bit order to its correct place to send
 #define HAL_SPI_SWAP_DATA_TX(data, len) HAL_SWAP32((uint32_t)(data) << (32 - len))
 
-#define SPI_LL_PERIPH_CS_NUM(i)   6            //h21 only support gpspi2
-#define SPI_LL_DMA_MAX_BIT_LEN    (1 << 18)    //reg len: 18 bits
-#define SPI_LL_CPU_MAX_BIT_LEN    (16 * 32)    //Fifo len: 16 words
-#define SPI_LL_TX_MINI_EXTRA_BITS 1            //Minimum length of TX non byte aligned data in bits
-#define SPI_LL_RX_MINI_EXTRA_BITS 1            //Minimum length of RX non byte aligned data in bits
-#define SPI_LL_MAX_PRE_DIV_NUM    (16)
-#define SPI_LL_PERIPH_BITWIDTH(host) (4)       //Supported line mode: DIO, DOUT, QIO, or QOUT
-#define SPI_LL_PERIPH_HAS_SCT(host)  ((host) == SPI2_HOST)  //If peripheral support SCT (DMA Segmented Configured Transaction) mode
-#define SPI_LL_MAX_SCT_CONF_LEN   (0x3FFFA)    //18 bits wide reg
-#define SPI_LL_SCT_CONF_BUF_NUM   (1 + 14)     //1-word-bitmap + 14-word-regs according to TRM
-#define SPI_LL_MOSI_FREE_LEVEL    1            //Default level after bus initialized
+#define SPI_LL_PERIPH_CS_NUM(i)         6            //h21 only support gpspi2
+#define SPI_LL_PERIPH_BITWIDTH(host)    (4)          //Supported line mode: DIO, DOUT, QIO, or QOUT
+#define SPI_LL_PERIPH_HAS_SCT(host)     ((host) == SPI2_HOST)  //If peripheral support SCT (DMA Segmented Configured Transaction) mode
+#define SPI_LL_DMA_MAX_BIT_LEN          (1 << 18)    //reg len: 18 bits
+#define SPI_LL_CPU_MAX_BIT_LEN          (16 * 32)    //Fifo len: 16 words
+#define SPI_LL_TX_MINI_EXTRA_BITS       1            //Minimum length of TX non byte aligned data in bits
+#define SPI_LL_RX_MINI_EXTRA_BITS       1            //Minimum length of RX non byte aligned data in bits
+#define SPI_LL_MAX_PRE_DIV_NUM          (16)
+#define SPI_LL_MAX_SCT_CONF_LEN         (0x3FFFA)    //18 bits wide reg
+#define SPI_LL_SCT_CONF_BUF_NUM         (1 + 14)     //1-word-bitmap + 14-word-regs according to TRM
+#define SPI_LL_MOSI_FREE_LEVEL          1            //Default level after bus initialized
+#define SPI_LL_SUPPORT_FD_TX_WAIT_DMA   1            //support tx wait data on fd mode
 /**
  * The data structure holding calculated clock configuration. Since the
  * calculation needs long time, it should be calculated during initialization and
@@ -104,8 +105,12 @@ typedef enum {
  */
 static inline void spi_ll_enable_bus_clock(spi_host_device_t host_id, bool enable)
 {
-    HAL_ASSERT(host_id == SPI2_HOST);
-    PCR.spi2_conf.spi2_clk_en = enable;
+    /**
+     * On this chip version, close this clock will also stop USJ due to ROM bug.
+     * So we keep it always enabled.
+     */
+    // HAL_ASSERT(host_id == SPI2_HOST);
+    // PCR.spi2_conf.spi2_clk_en = enable;
 }
 
 /**
@@ -128,8 +133,12 @@ static inline void spi_ll_reset_register(spi_host_device_t host_id)
  */
 static inline void spi_ll_enable_clock(spi_host_device_t host_id, bool enable)
 {
-    HAL_ASSERT(host_id == SPI2_HOST);
-    PCR.spi2_clkm_conf.spi2_clkm_en = enable;
+    /**
+     * On this chip version, close this clock will also stop USJ due to ROM bug.
+     * So we keep it always enabled.
+     */
+    // HAL_ASSERT(host_id == SPI2_HOST);
+    // PCR.spi2_clkm_conf.spi2_clkm_en = enable;
 }
 
 /**
@@ -273,6 +282,17 @@ static inline bool spi_ll_usr_is_done(spi_dev_t *hw)
 static inline void spi_ll_user_start(spi_dev_t *hw)
 {
     hw->cmd.usr = 1;
+}
+
+/**
+ * Configure whether a master full-duplex transfer waits for DMA TX data before it starts
+ *
+ * @param hw     Beginning address of the peripheral registers.
+ * @param enable True to start only once the TX AFIFO holds DMA data, false to start immediately
+ */
+static inline void spi_ll_master_enable_fd_wait_dma_tx_data(spi_dev_t *hw, bool enable)
+{
+    hw->slave.mst_fd_wait_dma_tx_data = enable;
 }
 
 /**

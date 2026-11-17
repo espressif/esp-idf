@@ -31,6 +31,7 @@
 #include "test_utils.h"
 #include "test_spi_utils.h"
 #include "spi_performance.h"
+#include "esp_async_memcpy.h"
 
 const static char TAG[] = "test_spi";
 
@@ -96,15 +97,21 @@ static void check_spi_pre_n_for(int clk, int pre, int n)
  * Only test on SPI_CLK_SRC_DEFAULT here
  */
 #define TEST_CLK_TIMES     8
-uint32_t clk_param_80m[TEST_CLK_TIMES][3] = {{1, SPI_LL_MAX_PRE_DIV_NUM, 64}, {100000, 16, 50}, {333333, 4, 60}, {800000, 2, 50}, {900000, 2, 44}, {8000000, 1, 10}, {20000000, 1, 4}, {26000000, 1, 3} };
-uint32_t clk_param_160m[TEST_CLK_TIMES][3] = {{1, SPI_LL_MAX_PRE_DIV_NUM, 64}, {100000, 16, 50}, {333333, 4, 60}, {800000, 2, 50}, {900000, 2, 44}, {8000000, 1, 10}, {20000000, 1, 4}, {26000000, 1, 3} };
-#if SPI_LL_SRC_PRE_DIV_MAX
-uint32_t clk_param_40m[TEST_CLK_TIMES][3] = {{1, SPI_LL_MAX_PRE_DIV_NUM, 64}, {100000, 4, 50}, {333333, 1, 60}, {800000, 1, 25}, {2000000, 1, 10}, {5000000, 1,  4}, {12000000, 1, 2}, {18000000, 1, 1} };
-uint32_t clk_param_48m[TEST_CLK_TIMES][3] = {{1, SPI_LL_MAX_PRE_DIV_NUM, 64}, {100000, 4, 60}, {333333, 2, 36}, {800000, 1, 30}, {5000000, 1, 5}, {12000000, 1, 2}, {18000000, 1, 2}, {24000000, 1, 1} };
-#else
 uint32_t clk_param_40m[TEST_CLK_TIMES][3] = {{1, SPI_LL_MAX_PRE_DIV_NUM, 64}, {100000, 8, 50}, {333333, 2, 60}, {800000, 1, 50}, {2000000, 1, 20}, {5000000, 1,  8}, {12000000, 1, 3}, {18000000, 1, 2} };
 uint32_t clk_param_48m[TEST_CLK_TIMES][3] = {{1, SPI_LL_MAX_PRE_DIV_NUM, 64}, {100000, 8, 60}, {333333, 3, 48}, {800000, 1, 60}, {5000000, 1, 10}, {12000000, 1, 4}, {18000000, 1, 3}, {26000000, 1, 2} };
-#endif
+uint32_t clk_param_80m[TEST_CLK_TIMES][3] = {{1, SPI_LL_MAX_PRE_DIV_NUM, 64}, {100000, 16, 50}, {333333, 4, 60}, {800000, 2, 50}, {900000, 2, 44}, {8000000, 1, 10}, {20000000, 1, 4}, {26000000, 1, 3} };
+uint32_t clk_param_160m[TEST_CLK_TIMES][3] = {{1, SPI_LL_MAX_PRE_DIV_NUM, 64}, {100000, 16, 50}, {333333, 4, 60}, {800000, 2, 50}, {900000, 1, 59}, {8000000, 1, 10}, {20000000, 1, 4}, {26000000, 1, 3} };
+uint32_t clk_param_480m[TEST_CLK_TIMES][3] = {{1, SPI_LL_MAX_PRE_DIV_NUM, 64}, {100000, 16, 50}, {333333, 4, 60}, {800000, 2, 50}, {900000, 1, 41}, {8000000, 1, 10}, {20000000, 1, 4}, {26000000, 1, 3} };
+static struct {
+    uint32_t clock_source_hz;
+    uint32_t (*clk_param)[3];
+} clk_param_map[] = {
+    {40 * 1000 * 1000, clk_param_40m},
+    {48 * 1000 * 1000, clk_param_48m},
+    {80 * 1000 * 1000, clk_param_80m},
+    {160 * 1000 * 1000, clk_param_160m},
+    {480 * 1000 * 1000, clk_param_480m},
+};
 
 TEST_CASE("SPI Master clockdiv calculation routines", "[spi]")
 {
@@ -113,27 +120,19 @@ TEST_CASE("SPI Master clockdiv calculation routines", "[spi]")
     uint32_t clock_source_hz;
 
     esp_clk_tree_src_get_freq_hz(SPI_CLK_SRC_DEFAULT, ESP_CLK_TREE_SRC_FREQ_PRECISION_APPROX, &clock_source_hz);
-    printf("\nTest clock source SPI_CLK_SRC_DEFAULT = %ld\n", clock_source_hz);
-    if ((160 * 1000 * 1000) == clock_source_hz) {
-        for (int i = 0; i < TEST_CLK_TIMES; i++) {
-            check_spi_pre_n_for(clk_param_160m[i][0], clk_param_160m[i][1], clk_param_160m[i][2]);
+    printf("\nTest clock source SPI_CLK_SRC_DEFAULT = %ld Hz\n", clock_source_hz);
+    int i = 0;
+    for (; i < sizeof(clk_param_map) / sizeof(clk_param_map[0]); i++) {
+        if (clk_param_map[i].clock_source_hz == clock_source_hz) {
+            for (int j = 0; j < TEST_CLK_TIMES; j++) {
+                check_spi_pre_n_for(clk_param_map[i].clk_param[j][0], clk_param_map[i].clk_param[j][1], clk_param_map[i].clk_param[j][2]);
+            }
+            break;
         }
-    } else if ((80 * 1000 * 1000) == clock_source_hz) {
-        for (int i = 0; i < TEST_CLK_TIMES; i++) {
-            check_spi_pre_n_for(clk_param_80m[i][0], clk_param_80m[i][1], clk_param_80m[i][2]);
-        }
-    } else if ((48 * 1000 * 1000) == clock_source_hz) {
-        for (int i = 0; i < TEST_CLK_TIMES; i++) {
-            check_spi_pre_n_for(clk_param_48m[i][0], clk_param_48m[i][1], clk_param_48m[i][2]);
-        }
-    } else if ((40 * 1000 * 1000) == clock_source_hz) {
-        for (int i = 0; i < TEST_CLK_TIMES; i++) {
-            check_spi_pre_n_for(clk_param_40m[i][0], clk_param_40m[i][1], clk_param_40m[i][2]);
-        }
-    } else {
+    }
+    if (i == sizeof(clk_param_map) / sizeof(clk_param_map[0])) {
         ESP_LOGW(TAG, "Don't find any routing param!!");
     }
-
     TEST_ESP_OK(spi_bus_free(TEST_SPI_HOST));
 }
 
@@ -158,12 +157,10 @@ TEST_CASE("SPI Master clk_source and divider accuracy", "[spi]")
     for (uint8_t sour_idx = 0; sour_idx < sizeof(spi_clk_sour); sour_idx++) {
         esp_clk_tree_src_get_freq_hz(spi_clk_sour[sour_idx], ESP_CLK_TREE_SRC_FREQ_PRECISION_APPROX, &clock_source_hz);
         printf("\nTesting unknown clock source @%ld Hz\n", clock_source_hz);
-#if SPI_LL_SRC_PRE_DIV_MAX
-        clock_source_hz /= 2;  //targets support pre-div will divide clock by 2 before SPI peripheral
-#endif
         for (uint8_t test_time = 0; test_time < 8; test_time ++) {
             spi_device_handle_t handle;
             spi_device_interface_config_t devcfg = SPI_DEVICE_TEST_DEFAULT_CONFIG();
+            devcfg.input_delay_ns = 0;
             devcfg.clock_source = spi_clk_sour[sour_idx];
             devcfg.clock_speed_hz = MIN(IDF_TARGET_MAX_SPI_CLK_FREQ, clock_source_hz) >> test_time;
 #if CONFIG_IDF_TARGET_ESP32
@@ -216,6 +213,8 @@ TEST_CASE("test_device_dynamic_freq_update", "[spi]")
 
     spi_bus_config_t buscfg = SPI_BUS_TEST_DEFAULT_CONFIG();
     spi_device_interface_config_t devcfg = SPI_DEVICE_TEST_DEFAULT_CONFIG();
+    devcfg.input_delay_ns = 0;
+    devcfg.clock_speed_hz = IDF_TARGET_MAX_SPI_CLK_FREQ;
     devcfg.flags |= SPI_DEVICE_HALFDUPLEX;
     TEST_ESP_OK(spi_bus_initialize(TEST_SPI_HOST, &buscfg, SPI_DMA_CH_AUTO));
     TEST_ESP_OK(spi_bus_add_device(TEST_SPI_HOST, &devcfg, &dev0));
@@ -802,6 +801,39 @@ TEST_CASE("SPI Master no response when switch from host1 (SPI2) to host2 (SPI3)"
     TEST_ESP_OK(spi_bus_remove_device(spi));
     TEST_ESP_OK(spi_bus_free(host));
 }
+
+#if !SOC_GDMA_SUPPORTED
+TEST_CASE("SPI DMA data error when switch between SPI2 and SPI3", "[spi]")
+{
+    spi_device_handle_t dev_handle;
+    spi_bus_config_t buscfg = SPI_BUS_TEST_DEFAULT_CONFIG();
+    buscfg.miso_io_num = buscfg.mosi_io_num;
+    spi_device_interface_config_t devcfg = SPI_DEVICE_TEST_DEFAULT_CONFIG();
+    uint8_t send[13] = "hello spi x\n";
+    uint8_t recv[16];   // esp32 dma rx need requirse 4 byte aligned length
+    spi_transaction_t trans_cfg = {
+        .length = 8 * sizeof(send),
+        .tx_buffer = send,
+        .rx_buffer = recv,
+    };
+
+    for (int periph = SPI2_HOST; periph < SPI_HOST_MAX; periph ++) {
+        printf("Test GPSPI%d\n", periph + 1);
+        TEST_ESP_OK(spi_bus_initialize(periph, &buscfg, SPI_DMA_CH_AUTO));
+        TEST_ESP_OK(spi_bus_add_device(periph, &devcfg, &dev_handle));
+
+        for (uint8_t cnt = 0; cnt < 2; cnt ++) {
+            memset(recv, 0, sizeof(recv));
+            send[10] = cnt + 'A';
+            TEST_ESP_OK(spi_device_transmit(dev_handle, &trans_cfg));
+            printf("%s", recv);
+            spitest_cmp_or_dump(trans_cfg.tx_buffer, trans_cfg.rx_buffer, sizeof(send));
+        }
+        TEST_ESP_OK(spi_bus_remove_device(dev_handle));
+        TEST_ESP_OK(spi_bus_free(periph));
+    }
+}
+#endif
 
 DRAM_ATTR  static uint32_t data_dram[80] = {0};
 //force to place in code area.
@@ -2236,4 +2268,91 @@ TEST_CASE("SPI_Master: PSRAM buffer transaction via EDMA", "[spi]")
     spi_bus_remove_device(dev_handle);
     spi_bus_free(TEST_SPI_HOST);
 }
-#endif
+
+#if SOC_GDMA_SUPPORTED  // only gmda support psram
+#define TEST_PSRAM_DMA_XFER_LEN     4000
+#define TEST_PSRAM_DMA_XFER_CNT     2000
+
+static bool psram_dma_copy_done_cb(async_memcpy_handle_t mcp_hdl, async_memcpy_event_t *event, void *cb_args)
+{
+    SemaphoreHandle_t sem = (SemaphoreHandle_t)cb_args;
+    BaseType_t high_task_wakeup = pdFALSE;
+    xSemaphoreGiveFromISR(sem, &high_task_wakeup);
+    return high_task_wakeup == pdTRUE;
+}
+
+static void psram_dma_disturber_task(void *arg)
+{
+    async_memcpy_handle_t mcp;
+    uint8_t *src = heap_caps_malloc(TEST_PSRAM_DMA_XFER_LEN, MALLOC_CAP_SPIRAM | MALLOC_CAP_8BIT | MALLOC_CAP_CACHE_ALIGNED);
+    uint8_t *dst = heap_caps_malloc(TEST_PSRAM_DMA_XFER_LEN, MALLOC_CAP_SPIRAM | MALLOC_CAP_8BIT | MALLOC_CAP_CACHE_ALIGNED);
+    TEST_ASSERT_NOT_NULL(src);
+    TEST_ASSERT_NOT_NULL(dst);
+    TEST_ASSERT(esp_ptr_external_ram(src));
+    async_memcpy_config_t mcp_cfg = ASYNC_MEMCPY_DEFAULT_CONFIG();
+    TEST_ESP_OK(esp_async_memcpy_install_gdma_ahb(&mcp_cfg, &mcp));
+    SemaphoreHandle_t done = xSemaphoreCreateBinary();
+    TEST_ASSERT_NOT_NULL(done);
+
+    while (!*((volatile bool *)arg)) {
+        TEST_ESP_OK(esp_async_memcpy(mcp, dst, src, TEST_PSRAM_DMA_XFER_LEN, psram_dma_copy_done_cb, done));
+        TEST_ASSERT_EQUAL(pdTRUE, xSemaphoreTake(done, portMAX_DELAY));
+    }
+    vSemaphoreDelete(done);
+    TEST_ESP_OK(esp_async_memcpy_uninstall(mcp));
+    free(src);
+    free(dst);
+    vTaskDelete(NULL);
+}
+
+TEST_CASE("SPI Master DMA trans under concurrent PSRAM GDMA traffic", "[spi]")
+{
+    spi_device_handle_t spi;
+    spi_bus_config_t buscfg = SPI_BUS_TEST_DEFAULT_CONFIG();
+    buscfg.miso_io_num = buscfg.mosi_io_num;
+    spi_device_interface_config_t devcfg = SPI_DEVICE_TEST_DEFAULT_CONFIG();
+    devcfg.clock_speed_hz = IDF_TARGET_MAX_SPI_CLK_FREQ;
+    TEST_ESP_OK(spi_bus_initialize(TEST_SPI_HOST, &buscfg, SPI_DMA_CH_AUTO));
+    TEST_ESP_OK(spi_bus_add_device(TEST_SPI_HOST, &devcfg, &spi));
+
+    uint8_t *tx = heap_caps_malloc(TEST_PSRAM_DMA_XFER_LEN, MALLOC_CAP_INTERNAL | MALLOC_CAP_DMA);
+    uint8_t *rx = heap_caps_malloc(TEST_PSRAM_DMA_XFER_LEN, MALLOC_CAP_INTERNAL | MALLOC_CAP_DMA);
+    TEST_ASSERT_NOT_NULL(tx);
+    TEST_ASSERT_NOT_NULL(rx);
+    test_fill_random_to_buffers_dualboard(1001, tx, rx, TEST_PSRAM_DMA_XFER_LEN);
+
+    // check spi transaction first
+    spi_transaction_t trans = {
+        .length = TEST_PSRAM_DMA_XFER_LEN * 8,
+        .tx_buffer = tx,
+        .rx_buffer = rx,
+    };
+    TEST_ESP_OK(spi_device_transmit(spi, &trans));
+    TEST_ASSERT_EQUAL_HEX8_ARRAY(tx, rx, TEST_PSRAM_DMA_XFER_LEN);
+
+    // start concurrent PSRAM GDMA traffic task
+    bool stop_mcp = false;
+    TEST_ASSERT(xTaskCreate(psram_dma_disturber_task, "psram_dma", 4096, &stop_mcp, uxTaskPriorityGet(NULL), NULL) == pdPASS);
+
+    // start spi transaction with concurrent PSRAM GDMA task
+    uint32_t mismatched = 0;
+    for (int n = 0; n < TEST_PSRAM_DMA_XFER_CNT; n++) {
+        memset(rx, 0, TEST_PSRAM_DMA_XFER_LEN);
+        TEST_ESP_OK(spi_device_transmit(spi, &trans));
+        if (memcmp(tx, rx, TEST_PSRAM_DMA_XFER_LEN) != 0) {
+            mismatched++;
+        }
+    }
+
+    stop_mcp = true; // stop GDMA traffic task
+    free(tx);
+    free(rx);
+    TEST_ESP_OK(spi_bus_remove_device(spi));
+    TEST_ESP_OK(spi_bus_free(TEST_SPI_HOST));
+
+    printf("%" PRIu32 " of %d transfers mismatched\n", mismatched, TEST_PSRAM_DMA_XFER_CNT);
+    TEST_ASSERT_EQUAL_UINT32(0, mismatched);
+    vTaskDelay(10);
+}
+#endif // SOC_GDMA_SUPPORTED
+#endif // CONFIG_SPIRAM && SOC_PSRAM_DMA_CAPABLE

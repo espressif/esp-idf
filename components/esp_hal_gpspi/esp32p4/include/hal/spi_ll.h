@@ -32,21 +32,23 @@ extern "C" {
 /// Interrupt not used. Don't use in app.
 #define SPI_LL_UNUSED_INT_MASK  (SPI_TRANS_DONE_INT_ENA | SPI_SLV_WR_DMA_DONE_INT_ENA | SPI_SLV_RD_DMA_DONE_INT_ENA | SPI_SLV_WR_BUF_DONE_INT_ENA | SPI_SLV_RD_BUF_DONE_INT_ENA)
 /// These 2 masks together will set SPI transaction to one line mode
-#define SPI_LL_ONE_LINE_CTRL_MASK (SPI_FREAD_QUAD | SPI_FREAD_DUAL | SPI_FCMD_QUAD | SPI_FCMD_DUAL | SPI_FADDR_QUAD | SPI_FADDR_DUAL)
-#define SPI_LL_ONE_LINE_USER_MASK (SPI_FWRITE_QUAD | SPI_FWRITE_DUAL)
+#define SPI_LL_ONE_LINE_CTRL_MASK (SPI_FREAD_OCT | SPI_FREAD_QUAD | SPI_FREAD_DUAL | SPI_FCMD_OCT | \
+        SPI_FCMD_QUAD | SPI_FCMD_DUAL | SPI_FADDR_OCT | SPI_FADDR_QUAD | SPI_FADDR_DUAL)
+#define SPI_LL_ONE_LINE_USER_MASK (SPI_FWRITE_OCT | SPI_FWRITE_QUAD | SPI_FWRITE_DUAL)
 /// Swap the bit order to its correct place to send
 #define HAL_SPI_SWAP_DATA_TX(data, len) HAL_SWAP32((uint32_t)(data) << (32 - len))
 
-#define SPI_LL_PERIPH_CS_NUM(i)   (((i)==0)? 2: (((i)==1)? 6: 3))
-#define SPI_LL_DMA_MAX_BIT_LEN    SPI_MS_DATA_BITLEN
-#define SPI_LL_CPU_MAX_BIT_LEN    (16 * 32)    //Fifo len: 16 words
-#define SPI_LL_TX_MINI_EXTRA_BITS 1            //Minimum length of TX non byte aligned data in bits
-#define SPI_LL_RX_MINI_EXTRA_BITS 1            //Minimum length of RX non byte aligned data in bits
-#define SPI_LL_MAX_PRE_DIV_NUM    (16)
+#define SPI_LL_PERIPH_CS_NUM(i)         (((i)==0)? 2: (((i)==1)? 6: 3))
 #define SPI_LL_PERIPH_BITWIDTH(host)    ((host == 2) ? 4 : 8) // Supported line mode: SPI3: 1, 2, 4, SPI1/2: 1, 2, 4, 8
-#define SPI_LL_SRC_PRE_DIV_MAX    (HP_SYS_CLKRST_REG_GPSPI2_MST_CLK_DIV_NUM + 1)   //source pre divider max before peripheral
-#define SPI_LL_PERIPH_CLK_DIV_MAX ((SPI_CLKCNT_N + 1) * (SPI_CLKDIV_PRE + 1)) //peripheral internal maxmum clock divider
-#define SPI_LL_MOSI_FREE_LEVEL    1            //Default level after bus initialized
+#define SPI_LL_PERIPH_CLK_DIV_MAX       ((SPI_CLKCNT_N + 1) * (SPI_CLKDIV_PRE + 1)) //peripheral internal maxmum clock divider
+#define SPI_LL_DMA_MAX_BIT_LEN          SPI_MS_DATA_BITLEN
+#define SPI_LL_CPU_MAX_BIT_LEN          (16 * 32)    //Fifo len: 16 words
+#define SPI_LL_TX_MINI_EXTRA_BITS       1            //Minimum length of TX non byte aligned data in bits
+#define SPI_LL_RX_MINI_EXTRA_BITS       1            //Minimum length of RX non byte aligned data in bits
+#define SPI_LL_MAX_PRE_DIV_NUM          (16)
+#define SPI_LL_SRC_PRE_DIV_MAX          (HP_SYS_CLKRST_REG_GPSPI2_MST_CLK_DIV_NUM + 1)   //source pre divider max before peripheral
+#define SPI_LL_MOSI_FREE_LEVEL          1            //Default level after bus initialized
+#define SPI_LL_SUPPORT_FD_TX_WAIT_DMA   1            //support tx wait data on fd mode
 
 /**
  * The data structure holding calculated clock configuration. Since the
@@ -367,6 +369,17 @@ static inline void spi_ll_user_start(spi_dev_t *hw)
 static inline uint32_t spi_ll_get_running_cmd(spi_dev_t *hw)
 {
     return hw->cmd.usr;
+}
+
+/**
+ * Configure whether a master full-duplex transfer waits for DMA TX data before it starts
+ *
+ * @param hw     Beginning address of the peripheral registers.
+ * @param enable True to start only once the TX AFIFO holds DMA data, false to start immediately
+ */
+static inline void spi_ll_master_enable_fd_wait_dma_tx_data(spi_dev_t *hw, bool enable)
+{
+    hw->slave.mst_fd_wait_dma_tx_data = enable;
 }
 
 /**
