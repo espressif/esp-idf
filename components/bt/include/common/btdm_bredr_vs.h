@@ -200,6 +200,16 @@ struct bt_hci_vs_legacy_rem_auth_evt {
  */
 #define ESP_BT_VS_SEND_ENH_PWR_CTRL_REQ_OCF                         (0x1a3)
 
+/**
+ * @note The init function is `bt_stack_enableInternalDbgVsCmd(true)`
+ */
+#define ESP_BT_VS_ALLOW_ANY_REASON_OCF                              (0x1a4)
+
+/**
+ * @note The init function is `bt_stack_enableLMPPwrCtrlVsCmd(true)`
+ */
+#define ESP_BT_VS_WR_PWR_CTRL_SUP_OCF                               (0x1a5)
+
 //
 // @brief HCI VS Events for Espressif's Internal-Use Debugging
 //

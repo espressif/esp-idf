@@ -318,6 +318,8 @@
     .. doxygendefine:: ESP_BT_VS_WR_ENH_PWR_CTRL_REQ_EN_OCF
     .. doxygendefine:: ESP_BT_VS_SEND_PWR_CTRL_REQ_OCF
     .. doxygendefine:: ESP_BT_VS_SEND_ENH_PWR_CTRL_REQ_OCF
+    .. doxygendefine:: ESP_BT_VS_ALLOW_ANY_REASON_OCF
+    .. doxygendefine:: ESP_BT_VS_WR_PWR_CTRL_SUP_OCF
 
     乐鑫内部调试 HCI 事件
     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
