@@ -1326,8 +1326,13 @@ void bta_gattc_write(tBTA_GATTC_CLCB *p_clcb, tBTA_GATTC_DATA *p_data)
 
     /* write fail */
     if (status != BTA_GATT_OK) {
+        bta_gattc_release_btu_pending(p_data);
         cl_data.handle = p_data->api_write.handle;
         bta_gattc_cmpl_sendmsg(p_clcb->bta_conn_id, GATTC_OPTYPE_WRITE, status, &cl_data);
+    } else {
+        /* Ownership of the BTU pending slot transferred to GATT tGATT_CLCB
+         * (released in gatt_act_write or gatt_end_operation). */
+        p_data->api_write.btu_pending = FALSE;
     }
 }
 /*******************************************************************************
@@ -1806,7 +1811,7 @@ void bta_gattc_free_command_data(tBTA_GATTC_CLCB *p_clcb)
 *******************************************************************************/
 void bta_gattc_fail(tBTA_GATTC_CLCB *p_clcb, tBTA_GATTC_DATA *p_data)
 {
-    UNUSED(p_data);
+    bta_gattc_release_btu_pending(p_data);
 
     if (p_clcb->status == BTA_GATT_OK) {
         APPL_TRACE_ERROR("operation not supported at current state [%d]", p_clcb->state);

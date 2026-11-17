@@ -276,9 +276,11 @@ void gatt_act_write (tGATT_CLCB *p_clcb, UINT8 sec_act)
 
     /* Balance L2CA_ADD_BTU_NUM after the write returns, so a PDU that made it
      * into the L2CAP queue is not missing from both counters in between. */
-    if (p_clcb->op_subtype == GATT_WRITE_NO_RSP && p_tcb != NULL) {
+    if (p_clcb->op_subtype == GATT_WRITE_NO_RSP && p_tcb != NULL &&
+        !p_clcb->btu_pending_released) {
         tl2c_buff_param_t pending;
 
+        p_clcb->btu_pending_released = TRUE;
         pending.conn_id = p_tcb->tcb_idx;
         pending.get_num = NULL;
         l2ble_update_att_acl_pkt_num(L2CA_DECREASE_BTU_NUM, &pending);

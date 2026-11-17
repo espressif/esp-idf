@@ -16,6 +16,7 @@
 #include "stack/sdpdefs.h"
 #include "stack/btm_ble_api.h"
 #include "stack/btm_api.h"
+#include "stack/btu.h"
 #include "btm_int.h"
 #include "l2c_int.h"
 #include "gatt_int.h"
@@ -62,6 +63,7 @@ typedef struct {
     UINT8   peer_cl_feat_val;   /* current Client Supported Features value read back */
     UINT8   tx_rr;              /* round-robin cursor for server-initiated PDUs */
     BOOLEAN congested;          /* last congestion state reported to the applications */
+    UINT16  sendable_num;       /* BTU-owned TX headroom snapshot for cross-task query */
     tGATT_EATT_BEARER bearers[GATT_EATT_MAX_CHAN];
 } tGATT_EATT_CONN;
 
@@ -71,6 +73,9 @@ static UINT16 s_eatt_reg_psm;
 static UINT8 s_eatt_chan_num = GATT_EATT_MAX_CHAN;
 static tGATT_EATT_EVT_CBACK *s_eatt_evt_cback;
 static tGATT_IF s_eatt_gatt_if;
+#if (BLE_EATT_SERVER_INCLUDED == TRUE) && (BLE_EATT_CLIENT_INCLUDED == TRUE)
+static TIMER_LIST_ENT s_eatt_cong_recheck_tle;
+#endif
 
 static void gatt_eatt_connect_cfm(UINT16 lcid, UINT16 result);
 static void gatt_eatt_disconnect_ind(UINT16 lcid, BOOLEAN local_init);
@@ -880,7 +885,10 @@ BOOLEAN gatt_eatt_get_sendable_num(BD_ADDR bd_addr, UINT16 *p_num)
         return FALSE;
     }
     if (p_num != NULL) {
-        *p_num = gatt_eatt_sendable_num(ec);
+        /* Read the BTU-maintained snapshot rather than walking L2CAP CoC
+         * queues from the caller's task (l2cu_release_ccb frees xmit_hold_q
+         * on BTU without holding buff_semaphore). */
+        *p_num = ec->sendable_num;
     }
     return TRUE;
 }
@@ -906,17 +914,33 @@ static void gatt_eatt_report_congestion(tGATT_EATT_CONN *ec, BOOLEAN congested)
 
 static void gatt_eatt_update_congestion(tGATT_EATT_CONN *ec)
 {
+    UINT16 num;
+
     if (ec == NULL || !ec->in_use) {
         return;
     }
+
+    num = (ec->bearer_count != 0) ? gatt_eatt_sendable_num(ec) : 0;
+    ec->sendable_num = num;
 
     /* The application-facing congestion event is per connection while credits
      * are per bearer, and server PDUs round-robin over every bearer. Report the
      * connection congested only once no bearer has room left; reporting on the
      * first congested bearer would stall a server that still has usable ones. */
-    gatt_eatt_report_congestion(ec, (ec->bearer_count != 0) &&
-                                    (gatt_eatt_sendable_num(ec) == 0));
+    gatt_eatt_report_congestion(ec, (ec->bearer_count != 0) && (num == 0));
 }
+
+#if (BLE_EATT_CLIENT_INCLUDED == TRUE)
+static void gatt_eatt_cong_recheck_timeout(TIMER_LIST_ENT *p_tle)
+{
+    UNUSED(p_tle);
+    for (int i = 0; i < MAX_L2CAP_LINKS; i++) {
+        if (s_eatt_conn[i].in_use) {
+            gatt_eatt_update_congestion(&s_eatt_conn[i]);
+        }
+    }
+}
+#endif
 
 void gatt_eatt_recheck_congestion(BD_ADDR bd_addr)
 {
@@ -941,6 +965,8 @@ static void gatt_eatt_relax_congestion(tGATT_EATT_CONN *ec, BOOLEAN tearing_down
         gatt_eatt_update_congestion(ec);
         return;
     }
+
+    ec->sendable_num = 0;
 
     if (!ec->congested) {
         return;
@@ -1009,6 +1035,9 @@ void gatt_eatt_init(void)
 
     memset(s_eatt_conn, 0, sizeof(s_eatt_conn));
     memset(&s_eatt_l2cap_appl, 0, sizeof(s_eatt_l2cap_appl));
+#if (BLE_EATT_SERVER_INCLUDED == TRUE) && (BLE_EATT_CLIENT_INCLUDED == TRUE)
+    memset(&s_eatt_cong_recheck_tle, 0, sizeof(s_eatt_cong_recheck_tle));
+#endif
 
 #if (BLE_EATT_SERVER_INCLUDED == TRUE)
     s_eatt_l2cap_appl.pL2CA_ConnectInd_Cb = gatt_eatt_connect_ind;
@@ -1068,6 +1097,10 @@ void gatt_eatt_deinit(void)
 
     /* Suppress app callbacks while tearing down bearers during stack disable. */
     s_eatt_evt_cback = NULL;
+
+#if (BLE_EATT_SERVER_INCLUDED == TRUE) && (BLE_EATT_CLIENT_INCLUDED == TRUE)
+    btu_free_timer(&s_eatt_cong_recheck_tle);
+#endif
 
     /* Explicitly disconnect every EATT L2CAP channel first. gatt_eatt_free_bearer
      * only clears internal state, and the L2CA_DeregisterLECoc call below walks
@@ -1342,7 +1375,10 @@ BOOLEAN gatt_eatt_set_default_bearer(UINT16 conn_id, UINT16 lcid)
         GATT_EATT_TRACE_DEBUG("set_default_bearer: clear default for conn_id=%u", conn_id);
         ec->default_lcid = 0;
 #if (BLE_EATT_SERVER_INCLUDED == TRUE)
-        gatt_eatt_update_congestion(ec);
+        /* Re-evaluate congestion on the BTU task instead of racing with it from
+         * the caller's task. */
+        s_eatt_cong_recheck_tle.param = (TIMER_PARAM_TYPE)gatt_eatt_cong_recheck_timeout;
+        btu_start_timer(&s_eatt_cong_recheck_tle, BTU_TTYPE_USER_FUNC, 0);
 #endif
         return TRUE;
     }
@@ -1356,7 +1392,8 @@ BOOLEAN gatt_eatt_set_default_bearer(UINT16 conn_id, UINT16 lcid)
     GATT_EATT_TRACE_DEBUG("set_default_bearer conn_id=%u lcid=0x%04x", conn_id, lcid);
     ec->default_lcid = lcid;
 #if (BLE_EATT_SERVER_INCLUDED == TRUE)
-    gatt_eatt_update_congestion(ec);
+    s_eatt_cong_recheck_tle.param = (TIMER_PARAM_TYPE)gatt_eatt_cong_recheck_timeout;
+    btu_start_timer(&s_eatt_cong_recheck_tle, BTU_TTYPE_USER_FUNC, 0);
 #endif
     return TRUE;
 #else

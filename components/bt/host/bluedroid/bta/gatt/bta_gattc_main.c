@@ -413,6 +413,7 @@ BOOLEAN bta_gattc_hdl_event(BT_HDR *p_msg)
         if (p_clcb != NULL) {
             rt = bta_gattc_sm_execute(p_clcb, p_msg->event, (tBTA_GATTC_DATA *) p_msg);
         } else {
+            bta_gattc_release_btu_pending((tBTA_GATTC_DATA *)p_msg);
             APPL_TRACE_DEBUG("Ignore unknown conn ID: %d\n", p_msg->layer_specific);
         }
 

@@ -696,6 +696,7 @@ void BTA_GATTC_WriteCharValue ( UINT16 conn_id,
             /* conn_id is the stack id: tcb index in the high byte. */
             tl2c_buff_param_t pending = { .conn_id = (UINT8)(conn_id >> 8), .get_num = NULL };
             l2ble_update_att_acl_pkt_num(L2CA_ADD_BTU_NUM, &pending);
+            p_buf->btu_pending = TRUE;
         }
         bta_sys_sendmsg(p_buf);
     }
@@ -747,6 +748,7 @@ void BTA_GATTC_WriteCharDescr (UINT16 conn_id,
             /* conn_id is the stack id: tcb index in the high byte. */
             tl2c_buff_param_t pending = { .conn_id = (UINT8)(conn_id >> 8), .get_num = NULL };
             l2ble_update_att_acl_pkt_num(L2CA_ADD_BTU_NUM, &pending);
+            p_buf->btu_pending = TRUE;
         }
         bta_sys_sendmsg(p_buf);
     }

@@ -865,6 +865,7 @@ void l2c_ble_le_coc_handle_flow_ctrl_credit(tL2C_LCB *p_lcb, UINT8 *p, UINT16 cm
         return;
     }
 
+    UINT16 prev_credits = p_ccb->peer_conn_cfg.credits;
     p_ccb->peer_conn_cfg.credits += credit;
     L2C_BLE_COC_TRACE_DEBUG("0x16 lcid=0x%04x +%u tx_cred=%u", lcid, credit, p_ccb->peer_conn_cfg.credits);
 
@@ -872,9 +873,14 @@ void l2c_ble_le_coc_handle_flow_ctrl_credit(tL2C_LCB *p_lcb, UINT8 *p, UINT16 cm
      * still arrive after l2c_ble_le_coc_initiate_disc moved the channel to
      * CST_W4_L2CAP_DISCONNECT_RSP; firing the callback then would tell the upper
      * layer the channel is ready to send while it is being torn down. Mirrors the
-     * CST_OPEN guard in l2c_ble_le_coc_try_xmit. */
+     * CST_OPEN guard in l2c_ble_le_coc_try_xmit. Also notify when a channel
+     * opened with 0 initial credits receives its first credits on an empty queue
+     * (so cong_sent was never latched). */
     if (p_ccb->chnl_state == CST_OPEN && p_ccb->p_rcb &&
-        p_ccb->p_rcb->api.pL2CA_CongestionStatus_Cb && p_ccb->cong_sent) {
+        p_ccb->p_rcb->api.pL2CA_CongestionStatus_Cb &&
+        (p_ccb->cong_sent ||
+         (prev_credits == 0 && p_ccb->le_coc_tx_sdu == NULL &&
+          fixed_queue_is_empty(p_ccb->xmit_hold_q)))) {
         UINT16 saved_lcid = p_ccb->local_cid;
         p_ccb->cong_sent = FALSE;
         (*p_ccb->p_rcb->api.pL2CA_CongestionStatus_Cb)(p_ccb->local_cid, FALSE);
@@ -1138,11 +1144,9 @@ again:
         BOOLEAN drained = (p_ccb->le_coc_tx_sdu == NULL &&
                            fixed_queue_is_empty(p_ccb->xmit_hold_q));
 
-        /* Non-EATT CoC users treat FALSE as "the outstanding SDU is finished",
-         * so they are told only once nothing is left to send. EATT ignores the
-         * boolean and re-reads notify headroom, which can return while another
-         * SDU is still queued or being fragmented. */
-        if (drained || p_ccb->p_rcb->real_psm == L2CAP_LE_EATT_PSM) {
+        /* Report uncongested once all queued SDUs have drained with credits
+         * remaining. */
+        if (drained) {
             UINT16 saved_lcid = p_ccb->local_cid;
 
             /* The re-entrancy guard above turns any synchronous re-entry from

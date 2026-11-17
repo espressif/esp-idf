@@ -28,6 +28,7 @@
 #include <string.h>
 #include <stdio.h>
 
+#include "stack/l2c_api.h"
 #include "stack/l2cdefs.h"
 #include "gatt_int.h"
 #include "stack/gatt_api.h"
@@ -2471,6 +2472,22 @@ void gatt_end_operation(tGATT_CLCB *p_clcb, tGATT_STATUS status, void *p_data)
         osi_free(p_clcb->p_attr_buf);
         p_clcb->p_attr_buf = NULL;
     }
+
+#if (GATTC_INCLUDED == TRUE)
+    /* Balance L2CA_ADD_BTU_NUM if a write-without-response failed security or
+     * was torn down before reaching gatt_act_write(). */
+    if (p_clcb->operation == GATTC_OPTYPE_WRITE &&
+        p_clcb->op_subtype == GATT_WRITE_NO_RSP &&
+        p_clcb->p_tcb != NULL &&
+        !p_clcb->btu_pending_released) {
+        tl2c_buff_param_t pending = {
+            .conn_id = p_clcb->p_tcb->tcb_idx,
+            .get_num = NULL,
+        };
+        p_clcb->btu_pending_released = TRUE;
+        l2ble_update_att_acl_pkt_num(L2CA_DECREASE_BTU_NUM, &pending);
+    }
+#endif
 
 #if !CONFIG_BT_STACK_NO_LOG
     operation =  p_clcb->operation;

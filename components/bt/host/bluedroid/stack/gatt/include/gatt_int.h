@@ -487,6 +487,7 @@ typedef struct {
     BOOLEAN                 in_use;
     TIMER_LIST_ENT          rsp_timer_ent;  /* peer response timer */
     UINT8                   retry_count;
+    BOOLEAN                 btu_pending_released;
 
 } tGATT_CLCB;
 

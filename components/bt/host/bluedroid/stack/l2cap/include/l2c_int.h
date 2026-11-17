@@ -28,10 +28,6 @@
 #include "common/bt_target.h"
 #include "stack/btm_api.h"
 #include "stack/l2c_api.h"
-
-/* ATT/EATT LE PSM (Assigned Numbers). Same value as GATT_EATT_PSM; kept here
- * so L2CAP can recognize an EATT channel without including the GATT header. */
-#define L2CAP_LE_EATT_PSM               0x0027
 #include "stack/l2cdefs.h"
 #include "hci/hci_internals.h"
 #include "osi/list.h"
