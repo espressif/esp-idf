@@ -30,7 +30,7 @@
 #include "esp_bt_defs.h"
 #include "esp_bt_main.h"
 #include "esp_gatt_common_api.h"
-#include "ble_ead.h"
+#include "esp_ble_ead.h"
 
 #define TAG "ENC_ADV_PRPH"
 
@@ -48,7 +48,7 @@ static uint8_t unencrypted_adv_pattern[] = {
 };
 
 /* Session key and IV for encryption - in real application, generate securely! */
-static ble_ead_key_material_t key_material = {
+static esp_ble_ead_key_material_t key_material = {
     .session_key = {
         0x19, 0x6a, 0x0a, 0xd1, 0x2a, 0x61, 0x20, 0x1e,
         0x13, 0x6e, 0x2e, 0xd1, 0x12, 0xda, 0xa9, 0x57
@@ -71,7 +71,7 @@ static esp_ble_adv_params_t adv_params = {
 };
 
 /* Calculate encrypted payload size */
-#define ENCRYPTED_ADV_DATA_LEN  BLE_EAD_ENCRYPTED_PAYLOAD_SIZE(sizeof(unencrypted_adv_pattern))
+#define ENCRYPTED_ADV_DATA_LEN  ESP_BLE_EAD_ENCRYPTED_PAYLOAD_SIZE(sizeof(unencrypted_adv_pattern))
 
 /**
  * @brief Encrypt advertising data and set raw advertising data
@@ -80,16 +80,16 @@ static void set_encrypted_adv_data(void)
 {
     esp_err_t ret;
     uint8_t encrypted_adv_data[ENCRYPTED_ADV_DATA_LEN];
-    int rc;
+    esp_err_t rc;
 
     ESP_LOGI(TAG, "Data before encryption:");
     ESP_LOG_BUFFER_HEX(TAG, unencrypted_adv_pattern, sizeof(unencrypted_adv_pattern));
 
     /* Encrypt the advertising data */
-    rc = ble_ead_encrypt(key_material.session_key, key_material.iv,
-                          unencrypted_adv_pattern, sizeof(unencrypted_adv_pattern),
-                          encrypted_adv_data);
-    if (rc != 0) {
+    rc = esp_ble_ead_encrypt(key_material.session_key, key_material.iv,
+                             unencrypted_adv_pattern, sizeof(unencrypted_adv_pattern),
+                             encrypted_adv_data);
+    if (rc != ESP_OK) {
         ESP_LOGE(TAG, "Encryption of adv data failed: %d", rc);
         return;
     }

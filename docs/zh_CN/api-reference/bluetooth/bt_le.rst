@@ -25,6 +25,10 @@ ESP-IDF 中的低功耗蓝牙 API 包括以下部分：
 
   发现并访问远程服务器的服务（中心设备角色）
 
+- :doc:`Bluetooth Low Energy Encrypted Advertising Data <esp_ble_ead>`
+
+  使用 AES-CCM 加密和解密广播载荷（蓝牙核心规范 5.4）
+
 .. only:: SOC_BLUFI_SUPPORTED
 
    - :doc:`Bluetooth Low Energy BluFi <esp_blufi>`
@@ -41,4 +45,5 @@ ESP-IDF 中的低功耗蓝牙 API 包括以下部分：
    Bluetooth Low Energy GATT Define <esp_gatt_defs>
    Bluetooth Low Energy GATT Server <esp_gatts>
    Bluetooth Low Energy GATT Client <esp_gattc>
+   Bluetooth Low Energy Encrypted Advertising Data <esp_ble_ead>
    :SOC_BLUFI_SUPPORTED: Bluetooth Low Energy BluFi <esp_blufi>

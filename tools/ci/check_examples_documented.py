@@ -32,8 +32,6 @@ KNOWN_MISSING = {
     'bluetooth/bluedroid/ble/ble_compatibility_test',
     'bluetooth/bluedroid/ble/ble_eddystone_receiver',
     'bluetooth/bluedroid/ble/ble_eddystone_sender',
-    'bluetooth/bluedroid/ble/ble_enc_adv_data/enc_adv_data_cent',
-    'bluetooth/bluedroid/ble/ble_enc_adv_data/enc_adv_data_prph',
     'bluetooth/bluedroid/ble/ble_hid_device_demo',
     'bluetooth/bluedroid/ble/ble_ibeacon',
     'bluetooth/bluedroid/ble/ble_multi_conn/ble_multi_conn_cent',

@@ -5,6 +5,8 @@
 
 This example demonstrates how to receive and decrypt BLE Encrypted Advertising Data (EAD) with Bluedroid stack.
 
+Decryption uses the host APIs in `esp_ble_ead.h` (`esp_ble_ead_decrypt`). Enable `CONFIG_BT_BLE_FEAT_ENC_ADV_DATA` (already set in `sdkconfig.defaults`).
+
 ## Overview
 
 This central example works with the `enc_adv_data_prph` peripheral example to demonstrate:
@@ -34,7 +36,7 @@ This central example works with the `enc_adv_data_prph` peripheral example to de
 │       ▼              │         │  key to decrypt                           │
 │  Store key           │         │       │                                   │
 │       │              │         │       ▼                                   │
-│       ▼              │         │  ✅ Decrypt immediately                   │
+│       ▼              │         │  Decrypt immediately                      │
 │  Later scans:        │         │                                            │
 │  ┌─────────┐    ┌─────────┐   │                                            │
 │  │ Central │──▶│ Periph  │   │                                            │
@@ -42,12 +44,12 @@ This central example works with the `enc_adv_data_prph` peripheral example to de
 │       │                        │                                            │
 │       │ No connection needed   │                                            │
 │       ▼                        │                                            │
-│  ✅ Decrypt using stored key   │                                            │
+│  Decrypt using stored key      │                                            │
 │                                │                                            │
 ├────────────────────────────────┼────────────────────────────────────────────┤
-│ ✓ Secure key exchange          │ ✓ No connection latency                   │
-│ ✓ Dynamic key support          │ ✓ Simpler implementation                  │
-│ ✗ First-time connection needed │ ✗ Key must be pre-provisioned             │
+│ + Secure key exchange          │ + No connection latency                   │
+│ + Dynamic key support          │ + Simpler implementation                  │
+│ - First-time connection needed │ - Key must be pre-provisioned             │
 └────────────────────────────────┴────────────────────────────────────────────┘
 ```
 
@@ -69,7 +71,7 @@ This central example works with the `enc_adv_data_prph` peripheral example to de
 │       │  1. Scan                                             │              │
 │       │ ──────────────────────────────────────────────────▶ │              │
 │       │                                                      │              │
-│       │  2. Receive Adv (UUID=0x2C01, Encrypted Data)       │              │
+│       │  2. Receive Adv (UUID=0x1800, Encrypted Data)       │              │
 │       │ ◀────────────────────────────────────────────────── │              │
 │       │                                                      │              │
 │       │     [No key yet - cannot decrypt]                   │              │
@@ -100,7 +102,7 @@ This central example works with the `enc_adv_data_prph` peripheral example to de
 │       │                                                      │              │
 │       │  11. Decrypt using stored key (NO CONNECTION!)      │              │
 │       │      ┌────────────────────────────────────────┐     │              │
-│       │      │ ble_ead_decrypt(session_key, iv, ...)  │     │              │
+│       │      │ esp_ble_ead_decrypt(session_key, iv, ...)  │     │              │
 │       │      │ Result: "prph" (decrypted name)        │     │              │
 │       │      └────────────────────────────────────────┘     │              │
 │       │                                                      │              │
@@ -136,13 +138,13 @@ This central example works with the `enc_adv_data_prph` peripheral example to de
 │       │                                                      │              │
 │       │  3. Immediately decrypt (NO CONNECTION!)            │              │
 │       │      ┌────────────────────────────────────────┐     │              │
-│       │      │ ble_ead_decrypt(pre_shared_key, ...)   │     │              │
+│       │      │ esp_ble_ead_decrypt(pre_shared_key, ...)   │     │              │
 │       │      │ Result: "prph" (decrypted name)        │     │              │
 │       │      └────────────────────────────────────────┘     │              │
 │       │                                                      │              │
 │       ▼                                                      ▼              │
 │                                                                             │
-│  ⚡ No connection overhead - instant decryption!                            │
+│     No connection overhead - instant decryption!                            │
 │                                                                             │
 └─────────────────────────────────────────────────────────────────────────────┘
 ```
@@ -253,11 +255,11 @@ I (XXX) ENC_ADV_CENT: Decrypted device name: prph
 I (XXX) ENC_ADV_CENT_SIMPLE: ========================================
 I (XXX) ENC_ADV_CENT_SIMPLE:   EAD Central - No Connection Mode
 I (XXX) ENC_ADV_CENT_SIMPLE: ========================================
-I (XXX) ENC_ADV_CENT_SIMPLE: ⚡ This example decrypts WITHOUT connecting!
-I (XXX) ENC_ADV_CENT_SIMPLE: 🔍 Scanning started (no connection mode)
+I (XXX) ENC_ADV_CENT_SIMPLE: This example decrypts WITHOUT connecting!
+I (XXX) ENC_ADV_CENT_SIMPLE: Scanning started (no connection mode)
 ...
-I (XXX) ENC_ADV_CENT_SIMPLE: ✅ Decryption successful (no connection needed!)
-I (XXX) ENC_ADV_CENT_SIMPLE: 📛 Decrypted device name: "prph"
+I (XXX) ENC_ADV_CENT_SIMPLE: Decryption successful (no connection needed!)
+I (XXX) ENC_ADV_CENT_SIMPLE: Decrypted device name: "prph"
 ```
 
 ## Troubleshooting
