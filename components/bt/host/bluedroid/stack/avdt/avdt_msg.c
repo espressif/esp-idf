@@ -1341,6 +1341,11 @@ BT_HDR *avdt_msg_asmbl(tAVDT_CCB *p_ccb, BT_HDR *p_buf)
             return NULL;
         }
         p_ccb->p_rx_msg = (BT_HDR *)osi_malloc(BT_DEFAULT_BUFFER_SIZE);
+        if (p_ccb->p_rx_msg == NULL) {
+            AVDT_TRACE_ERROR("Cannot alloc buffer for reassembly !!");
+            osi_free(p_buf);
+            return NULL;
+        }
         memcpy(p_ccb->p_rx_msg, p_buf,
                sizeof(BT_HDR) + p_buf->offset + p_buf->len);
 
