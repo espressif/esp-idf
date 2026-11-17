@@ -532,6 +532,16 @@ examples/peripherals/pcnt:
     - esp_driver_pcnt
     - soc
 
+examples/peripherals/ppa/ppa_palette:
+  disable:
+    - if: SOC_PPA_SUPPORTED != 1
+  depends_components:
+    - esp_driver_dma
+    - esp_driver_ppa
+    - esp_hal_ppa
+    - mbedtls
+    - soc
+
 examples/peripherals/ppa/ppa_rgb_lcd:
   disable:
     - if: SOC_PPA_SUPPORTED != 1 or SOC_LCD_RGB_SUPPORTED != 1
