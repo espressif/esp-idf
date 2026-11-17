@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2025-2026 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
 import re
 
@@ -89,6 +89,14 @@ class CMakeV2MacroDirective(CMakeV2Description):
     cmakev2_type = 'macro'
 
 
+class CMakeV2BuildPropertyDirective(CMakeV2Description):
+    cmakev2_type = 'build_property'
+
+
+class CMakeV2ComponentPropertyDirective(CMakeV2Description):
+    cmakev2_type = 'component_property'
+
+
 class CMakeV2Domain(Domain):
     name = 'cmakev2'
     label = 'ESP-IDF build system v2'
@@ -101,6 +109,8 @@ class CMakeV2Domain(Domain):
         'variable': CMakeV2VariableDirective,
         'function': CMakeV2FunctionDirective,
         'macro': CMakeV2MacroDirective,
+        'build_property': CMakeV2BuildPropertyDirective,
+        'component_property': CMakeV2ComponentPropertyDirective,
         'include': CMakeV2IncludeDirective,
     }
 
@@ -136,9 +146,11 @@ def insert_cmakev2_comment_nodes(app: Sphinx, doctree: nodes.document) -> None:
 
     # Split nodes parsed in CMakeV2IncludeDirective into buckets based on their
     # type.
-    buckets: dict = {'function': [], 'macro': [], 'variable': []}
+    buckets: dict = {'function': [], 'macro': [], 'variable': [], 'build_property': [], 'component_property': []}
     for node in pending:
-        buckets[node['cmakev2-type']].append(node)
+        node_type = node.get('cmakev2-type')
+        if node_type in buckets:
+            buckets[node_type].append(node)
 
     # Sort functions, macros, and variables based on their names.
     buckets_sorted = {}
@@ -155,6 +167,10 @@ def insert_cmakev2_comment_nodes(app: Sphinx, doctree: nodes.document) -> None:
             section.extend(buckets_sorted['function'])
         elif 'cmakev2-macros' in section['ids']:
             section.extend(buckets_sorted['macro'])
+        elif 'cmakev2-build-properties' in section['ids']:
+            section.extend(buckets_sorted['build_property'])
+        elif 'cmakev2-component-properties' in section['ids']:
+            section.extend(buckets_sorted['component_property'])
 
 
 def setup(app: Sphinx) -> dict:
