@@ -163,18 +163,12 @@ esp_err_t esp_bluedroid_init_with_cfg(esp_bluedroid_config_t *cfg)
 #endif
 
 #if HEAP_MEMORY_STATS
-    if (osi_mem_init() != 0) {
-        LOG_ERROR("Bluedroid Initialize Fail");
-        return ESP_FAIL;
-    }
+    osi_mem_stats_reset();
 #endif
 
     ret = bluedroid_config_init(cfg);
     if (ret != BT_STATUS_SUCCESS) {
         LOG_ERROR("Bluedroid stack initialize fail, ret:%d", ret);
-#if HEAP_MEMORY_STATS
-        osi_mem_deinit();
-#endif
         return ESP_FAIL;
     }
 
@@ -185,9 +179,6 @@ esp_err_t esp_bluedroid_init_with_cfg(esp_bluedroid_config_t *cfg)
     if (ret != BT_STATUS_SUCCESS) {
         LOG_ERROR("Bluedroid Initialize Fail");
         bluedroid_config_deinit();
-#if HEAP_MEMORY_STATS
-        osi_mem_deinit();
-#endif
 
         return ESP_FAIL;
     }
@@ -198,9 +189,6 @@ esp_err_t esp_bluedroid_init_with_cfg(esp_bluedroid_config_t *cfg)
         LOG_ERROR("Bluedroid Initialize Fail!");
         btc_deinit();
         bluedroid_config_deinit();
-#if HEAP_MEMORY_STATS
-        osi_mem_deinit();
-#endif
 
         return ESP_ERR_NO_MEM;
     }
@@ -215,9 +203,6 @@ esp_err_t esp_bluedroid_init_with_cfg(esp_bluedroid_config_t *cfg)
         *future_p = NULL;
         btc_deinit();
         bluedroid_config_deinit();
-#if HEAP_MEMORY_STATS
-        osi_mem_deinit();
-#endif
         return ESP_FAIL;
     }
 
@@ -226,9 +211,6 @@ esp_err_t esp_bluedroid_init_with_cfg(esp_bluedroid_config_t *cfg)
         btc_cleanup_partial_init();
         btc_deinit();
         bluedroid_config_deinit();
-#if HEAP_MEMORY_STATS
-        osi_mem_deinit();
-#endif
         return ESP_FAIL;
     }
 
@@ -310,10 +292,6 @@ esp_err_t esp_bluedroid_deinit(void)
 #if (BT_HCI_LOG_INCLUDED == TRUE)
     bt_hci_log_deinit();
 #endif // (BT_HCI_LOG_INCLUDED == TRUE)
-
-#if HEAP_MEMORY_STATS
-    osi_mem_deinit();
-#endif
 
 #if CONFIG_BT_PRF_TASK_ENABLED
     /* Stop the shared BLE profile task while the bt_osal table is still up,

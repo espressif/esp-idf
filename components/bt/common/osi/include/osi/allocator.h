@@ -24,10 +24,6 @@
 #include "bt_common.h"
 #include "esp_heap_caps.h"
 
-#if HEAP_MEMORY_STATS
-int osi_mem_init(void);
-void osi_mem_deinit(void);
-#endif
 char *osi_strdup(const char *str);
 
 void *osi_malloc_func(size_t size);
@@ -42,6 +38,17 @@ void osi_free_func(void *ptr);
 #define osi_malloc_base(size)             malloc((size))
 #define osi_calloc_base(size)             calloc(1, (size))
 #endif /* #if HEAP_ALLOCATION_FROM_SPIRAM_FIRST */
+
+#if HEAP_MEMORY_STATS
+/**
+ * @brief Reset the Bluedroid allocated-memory counter to zero
+ *
+ * Called on Bluedroid init so that each init starts from a clean baseline.
+ * After deinit the counter is left untouched on purpose: a non-zero value
+ * reported by esp_host_used_heap_size_get() is the amount leaked by the host.
+ */
+void osi_mem_stats_reset(void);
+#endif /* HEAP_MEMORY_STATS */
 
 #if HEAP_MEMORY_DEBUG
 
