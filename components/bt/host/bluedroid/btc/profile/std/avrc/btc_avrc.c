@@ -611,6 +611,25 @@ static void handle_rc_disconnect (tBTA_AV_RC_CLOSE *p_rc_close)
     }
 }
 
+void btc_rc_drop_connection(void)
+{
+#if AVRC_DYNAMIC_MEMORY == TRUE
+    if (btc_rc_cb_ptr == NULL) {
+        return;
+    }
+#endif
+    if (!btc_rc_cb.rc_connected) {
+        return;
+    }
+
+    /* Same path as BTA_AV_RC_CLOSE_EVT. Do not touch CT/TG init magic. */
+    tBTA_AV_RC_CLOSE rc_close;
+    memset(&rc_close, 0, sizeof(rc_close));
+    rc_close.rc_handle = btc_rc_cb.rc_handle;
+    memcpy(rc_close.peer_addr, btc_rc_cb.rc_addr, sizeof(BD_ADDR));
+    handle_rc_disconnect(&rc_close);
+}
+
 static void handle_rc_attributes_rsp (tAVRC_MSG_VENDOR *vendor_msg)
 {
     uint8_t attr_count = 0;
