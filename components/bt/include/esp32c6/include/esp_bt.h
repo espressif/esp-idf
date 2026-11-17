@@ -156,7 +156,7 @@ esp_err_t esp_ble_tx_power_set_enhanced(esp_ble_enhanced_power_type_t power_type
  */
 esp_power_level_t esp_ble_tx_power_get_enhanced(esp_ble_enhanced_power_type_t power_type, uint16_t handle);
 
-#define CONFIG_VERSION  0x20260123
+#define CONFIG_VERSION  0x20261021
 #define CONFIG_MAGIC    0x5A5AA5A5
 
 /**
@@ -234,7 +234,7 @@ typedef struct {
     int8_t ch39_txpwr;                               /*!< BLE transmit power (in dBm) used for BLE advertising on channel 39. */
     uint8_t adv_rsv_cnt;                             /*!< BLE adv state machine reserve count number */
     uint8_t conn_rsv_cnt;                            /*!< BLE conn state machine reserve count number */
-    uint8_t priority_level_cfg;                      /*!< The option for priority level configuration */
+    uint16_t priority_level_cfg;                      /*!< The option for priority level configuration */
     uint8_t slv_fst_rx_lat_en;                       /*!< The option for enabling slave fast PDU reception during latency. */
     uint8_t dl_itvl_phy_sync_en;                     /*!< The option for automatically initiate the data length update when phy update or connect interval update. */
     uint8_t scan_allow_adi_filter;                   /*!< The option for ext scan to allow PDU with specific adi. */
