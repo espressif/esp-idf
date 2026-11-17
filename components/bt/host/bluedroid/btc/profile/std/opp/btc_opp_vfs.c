@@ -5,7 +5,7 @@
  */
 
 #include <string.h>
-#include <sys/errno.h>
+#include <errno.h>
 #include <sys/fcntl.h>
 #include <sys/lock.h>
 #include "esp_vfs.h"

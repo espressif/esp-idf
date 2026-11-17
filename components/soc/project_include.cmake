@@ -55,11 +55,9 @@ if(CONFIG_IDF_TOOLCHAIN_GCC)
                 if(CONFIG_SOC_CPU_ZCMP_PUSH_REVERSED)
                     idf_toolchain_add_flags(COMPILE_OPTIONS "-mno-cm-push-reverse")
                 endif()
-                # TODO GCC-493: uncomment when the issue is resolved
-                # https://gcc.gnu.org/bugzilla/show_bug.cgi?id=126454
-                # if(CONFIG_SOC_CPU_ZCMP_POPRET_ISSUE)
+                if(CONFIG_SOC_CPU_ZCMP_POPRET_ISSUE)
                     idf_toolchain_add_flags(COMPILE_OPTIONS "-mno-cm-popret")
-                # endif()
+                endif()
             endif()
         endif()
 
@@ -68,14 +66,15 @@ if(CONFIG_IDF_TOOLCHAIN_GCC)
         endif()
 
         if(CONFIG_SOC_CPU_HAS_PIE)
-            set(_march "${_march}_xespv")
             if(CONFIG_ESP32P4_SELECTS_REV_LESS_V3)
-                set(_march "${_march}2p1")
+                set(_march "${_march}_xespv2p1")
+            else()
+                set(_march "${_march}_xespv2p2")
             endif()
         endif()
 
         if(CONFIG_SOC_CPU_HAS_DSP)
-            set(_march "${_march}_xespdsp")
+            set(_march "${_march}_xespdsp2p1")
         endif()
 
         # Set ABI and ARCH options

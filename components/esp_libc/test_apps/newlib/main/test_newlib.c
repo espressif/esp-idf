@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -70,6 +70,31 @@ TEST_CASE("test sscanf function", "[newlib]")
     TEST_ASSERT_EQUAL(0x40020000, irom_ptr);
     TEST_ASSERT_EQUAL('Q', department);
     TEST_ASSERT_TRUE(1.0f / inv_fine_structure_constant > 136 && 1.0f / inv_fine_structure_constant < 138);
+}
+
+TEST_CASE("test tzset switches local time", "[newlib]")
+{
+    /* 1970-01-01 00:00:00 UTC. POSIX TZ: hours east of UTC are negative. */
+    const time_t epoch = 0;
+    struct tm local = { 0 };
+
+    setenv("TZ", "UTC+0", 1);
+    tzset();
+    localtime_r(&epoch, &local);
+    TEST_ASSERT_EQUAL(0, local.tm_hour);
+    TEST_ASSERT_EQUAL(1, local.tm_mday);
+
+    setenv("TZ", "CST-8", 1);
+    tzset();
+    localtime_r(&epoch, &local);
+    TEST_ASSERT_EQUAL(8, local.tm_hour);
+    TEST_ASSERT_EQUAL(1, local.tm_mday);
+
+    setenv("TZ", "EST5EDT,M3.2.0,M11.1.0", 1);
+    tzset();
+    localtime_r(&epoch, &local);
+    TEST_ASSERT_EQUAL(19, local.tm_hour);
+    TEST_ASSERT_EQUAL(31, local.tm_mday);
 }
 
 TEST_CASE("test time functions", "[newlib]")

@@ -7,7 +7,7 @@
 #include <stdarg.h>
 #include <stdbool.h>
 #include <string.h>
-#include <sys/errno.h>
+#include <errno.h>
 #include <sys/stat.h>
 #include <fcntl.h>
 #include "esp_check.h"

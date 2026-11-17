@@ -17,7 +17,7 @@
 #include "bss.h"
 #include "rrm.h"
 #include "scan.h"
-#include <sys/errno.h>
+#include <errno.h>
 #ifdef ESP_SUPPLICANT
 #include "esp_common_i.h"
 #endif

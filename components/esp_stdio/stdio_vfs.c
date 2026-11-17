@@ -14,7 +14,7 @@
 #include "esp_rom_sys.h"
 #include "esp_stdio.h"
 #include "esp_vfs.h"
-#include <sys/errno.h>
+#include <errno.h>
 
 /**
  * This file is to concentrate all the vfs(UART, USB_SERIAL_JTAG, CDCACM) console into one single file.

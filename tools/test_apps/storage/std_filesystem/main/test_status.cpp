@@ -6,7 +6,7 @@
 
 #include <filesystem>
 #include <cstring>
-#include <sys/errno.h>
+#include <errno.h>
 #include <sys/stat.h>
 #include <sys/dirent.h>
 #include "esp_vfs.h"

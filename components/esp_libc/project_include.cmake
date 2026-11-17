@@ -14,13 +14,9 @@ if(CONFIG_IDF_TOOLCHAIN_GCC)
     # Match the bare name and a previously added absolute path (optional quotes).
     idf_toolchain_remove_flags(COMPILE_OPTIONS "-specs=.*picolibc.specs")
     idf_toolchain_remove_flags(COMPILE_OPTIONS "-D__STDC_WANT_LIB_EXT1__=0")
-    # TODO GCC-495:remove
-    idf_toolchain_remove_flags(COMPILE_OPTIONS "-D__PICOLIBC_ERRNO_FUNCTION=__errno")
     if(CONFIG_LIBC_PICOLIBC)
         __idf_gcc_specs_option(picolibc_specs_option picolibc.specs)
         idf_toolchain_add_flags(COMPILE_OPTIONS "${picolibc_specs_option}")
-        # TODO GCC-495:remove
-        idf_toolchain_add_flags(COMPILE_OPTIONS "-D__PICOLIBC_ERRNO_FUNCTION=__errno")
         if(CONFIG_LIBC_PICOLIBC_NEWLIB_COMPATIBILITY)
             idf_toolchain_add_flags(COMPILE_OPTIONS "-D__STDC_WANT_LIB_EXT1__=0")
         endif()
