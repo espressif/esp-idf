@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -224,6 +224,10 @@ esp_err_t i2c_select_periph_clock(i2c_bus_handle_t handle, soc_module_clk_t clk_
 /**
  * @brief Set I2C SCL/SDA pins
  *
+ * Configures the electrical settings and signal connections of the SCL/SDA pins.
+ * This function does not reserve or revoke those pins, so it can be called again
+ * to reapply the same configuration.
+ *
  * @param handle I2C bus handle
  * @return
  *      - ESP_OK: I2C set SCL/SDA pins successfully.
@@ -233,7 +237,23 @@ esp_err_t i2c_select_periph_clock(i2c_bus_handle_t handle, soc_module_clk_t clk_
 esp_err_t i2c_common_set_pins(i2c_bus_handle_t handle);
 
 /**
+ * @brief Initialize I2C SCL/SDA pins
+ *
+ * Reserves the GPIO pins used by the I2C master bus or slave device, then
+ * configures them by calling i2c_common_set_pins().
+ *
+ * @param handle I2C bus handle
+ * @return
+ *      - ESP_OK: I2C SCL/SDA pins are reserved and configured successfully.
+ *      - ESP_ERR_INVALID_ARG: Argument error.
+ *      - Otherwise: Reserve or configure SCL/SDA IOs error.
+ */
+esp_err_t i2c_common_init_pins(i2c_bus_handle_t handle);
+
+/**
  * @brief Deinit I2C SCL/SDA pins
+ *
+ * Revokes GPIO pins used by the I2C master bus or slave device
  *
  * @param handle I2C bus handle
  * @return
