@@ -63,8 +63,6 @@ void app_main(void)
     ESP_ERROR_CHECK(mdns_init());
     ESP_ERROR_CHECK(mdns_hostname_set("esp-ot-trel"));
 
-    ESP_ERROR_CHECK(example_connect());
-
 #if CONFIG_OPENTHREAD_CLI
     ot_console_start();
     ot_register_external_commands();
@@ -87,6 +85,7 @@ void app_main(void)
     ESP_ERROR_CHECK(esp_openthread_state_indicator_init(esp_openthread_get_instance()));
 #endif
 #if CONFIG_OPENTHREAD_NETWORK_AUTO_START
+    ESP_ERROR_CHECK(example_connect());
     ot_network_auto_start();
 #endif
 }
