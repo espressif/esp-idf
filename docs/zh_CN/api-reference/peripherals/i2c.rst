@@ -470,7 +470,7 @@ I2C 主机执行自定义事务
 
     i2c_master_execute_defined_operations(dev_handle, i2c_ops, sizeof(i2c_ops) / sizeof(i2c_operation_job_t), -1);
 
-读取操作的原理与写入操作相同。需要注意的是，在发送停止 (STOP) 命令之前，主机读取的最后一个字节必须是 ``NACK``。示例如下：
+读取操作的原理与写入操作相同。READ 操作中的 ``ack_value`` 会应用于该操作读取的每一个字节。因此，当 ``ack_value`` 为 ``I2C_NACK_VAL`` 时，``total_bytes`` 必须为 1，否则函数将返回 ``ESP_ERR_INVALID_ARG``。读取多个字节时，应使用 ``READ (N-1, ACK)`` 加 ``READ (1, NACK)``，以确保在发送停止 (STOP) 命令前，主机读取的最后一个字节为 ``NACK``。示例如下：
 
 .. code:: c
 

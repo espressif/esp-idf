@@ -470,7 +470,7 @@ Some devices do not require an address, and allow direct transaction with data:
 
     i2c_master_execute_defined_operations(dev_handle, i2c_ops, sizeof(i2c_ops) / sizeof(i2c_operation_job_t), -1);
 
-The principle of read operations is the same as that of write operations. Note to always ensure the last byte read before the stop condition is a ``NACK``. An example is as follows:
+The principle of read operations is the same as that of write operations. The ``ack_value`` in a READ operation applies to every byte read by that operation. Therefore, when ``ack_value`` is ``I2C_NACK_VAL``, ``total_bytes`` must be 1, or the function returns ``ESP_ERR_INVALID_ARG``. To read multiple bytes, use ``READ (N-1, ACK)`` followed by ``READ (1, NACK)`` so that the last byte read before the stop condition is a ``NACK``. An example is as follows:
 
 .. code:: c
 
