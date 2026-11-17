@@ -176,7 +176,7 @@ static void handle_udp_recv(void *ctx, struct udp_pcb *pcb, struct pbuf *p, cons
     task->is_host_interface =
         (netif_get_index(source_netif) == esp_netif_get_netif_impl_index(esp_openthread_get_backbone_netif()));
 
-    if (esp_openthread_task_queue_post(udp_recv_task, task) != ESP_OK) {
+    if (esp_openthread_task_queue_post(udp_recv_task, task, ESP_OPENTHREAD_TASK_QUEUE_TYPE_NORMAL) != ESP_OK) {
         free(task);
     }
 }

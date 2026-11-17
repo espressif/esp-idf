@@ -17,6 +17,10 @@ extern "C" {
 
 #define WORKFLOW_MAX_NAMELEN 32
 
+#define ESP_OPENTHREAD_MAINLOOP_FD_READ  (1 << 0)
+#define ESP_OPENTHREAD_MAINLOOP_FD_WRITE (1 << 1)
+#define ESP_OPENTHREAD_MAINLOOP_FD_ERROR (1 << 2)
+
 /**
  * @brief update function declaration
  *
@@ -81,6 +85,50 @@ esp_err_t esp_openthread_platform_workflow_register(esp_openthread_update_func u
  *
  */
 void esp_openthread_platform_workflow_unregister(const char *name);
+
+/**
+ * @brief Set a file descriptor in the OpenThread mainloop select sets.
+ *
+ * @note Equivalent to `FD_SET`, but compiled with the application so `FD_SETSIZE`
+ *       matches the rest of the mainloop. Separately compiled code must pass the
+ *       mainloop pointer as an opaque handle and must not take the address of
+ *       `read_fds` / `write_fds` / `error_fds` (that still bakes in member offsets).
+ *
+ * @param[inout] mainloop The mainloop context.
+ * @param[in]    fd       The file descriptor to set.
+ * @param[in]    events   Bitwise OR of `ESP_OPENTHREAD_MAINLOOP_FD_READ`,
+ *                        `ESP_OPENTHREAD_MAINLOOP_FD_WRITE` and
+ *                        `ESP_OPENTHREAD_MAINLOOP_FD_ERROR`.
+ *
+ */
+void esp_openthread_fd_set(esp_openthread_mainloop_context_t *mainloop, int fd, int events);
+
+/**
+ * @brief Check whether a file descriptor is set in the mainloop select result.
+ *
+ * @note Equivalent to `FD_ISSET` on the requested sets.
+ *
+ * @param[in] mainloop The mainloop context.
+ * @param[in] fd       The file descriptor to check.
+ * @param[in] events   Bitwise OR of `ESP_OPENTHREAD_MAINLOOP_FD_READ`,
+ *                     `ESP_OPENTHREAD_MAINLOOP_FD_WRITE` and
+ *                     `ESP_OPENTHREAD_MAINLOOP_FD_ERROR`.
+ *
+ * @return
+ *      - true if `fd` is set in any of the requested sets
+ *      - false otherwise
+ *
+ */
+bool esp_openthread_fd_isset(const esp_openthread_mainloop_context_t *mainloop, int fd, int events);
+
+/**
+ * @brief Update `max_fd` in the OpenThread mainloop context.
+ *
+ * @param[inout] mainloop The mainloop context.
+ * @param[in]    fd       The file descriptor to include in `select()`'s nfds.
+ *
+ */
+void esp_openthread_mainloop_update_fd(esp_openthread_mainloop_context_t *mainloop, int fd);
 
 /**
  * @brief   Initializes the platform-specific support for the OpenThread stack.

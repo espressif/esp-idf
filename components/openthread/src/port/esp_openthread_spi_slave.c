@@ -68,7 +68,7 @@ static void IRAM_ATTR handle_spi_transaction_done(spi_slave_transaction_t *trans
     if (s_complete_callback &&
         s_complete_callback(s_context, (void*)trans->tx_buffer, pending_transaction->output_buf_len,
                             s_input_buf, pending_transaction->input_buf_len, trans->trans_len)) {
-        esp_openthread_task_queue_post(s_process_callback, s_context);
+        esp_openthread_task_queue_post(s_process_callback, s_context, ESP_OPENTHREAD_TASK_QUEUE_TYPE_NORMAL);
     }
 }
 
