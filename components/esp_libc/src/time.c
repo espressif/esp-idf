@@ -189,8 +189,15 @@ WEAK_UNLESS_TIMEFUNC_IMPL int adjtime(const struct timeval *delta, struct timeva
     struct timex tx = {0};
 
     if (delta != NULL) {
+        // Reject deltas that do not fit in the 32-bit struct timex.offset (µs) field,
+        // otherwise the value would be silently truncated and pass the range check.
+        int64_t offset_us = (int64_t)delta->tv_sec * 1000000LL + delta->tv_usec;
+        if (offset_us > LONG_MAX || offset_us < LONG_MIN) {
+            errno = EINVAL;
+            return -1;
+        }
         tx.modes = ADJ_OFFSET_SINGLESHOT;
-        tx.offset = delta->tv_sec * 1000000L + delta->tv_usec;
+        tx.offset = (long)offset_us;
     } else {
         tx.modes = ADJ_OFFSET_SS_READ;
     }
