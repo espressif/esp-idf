@@ -321,8 +321,7 @@ esp_err_t esp_ieee802154_set_transmit_security(uint8_t *frame, uint8_t *key, uin
     assert(frame != NULL);
     assert(key != NULL);
     assert(addr != NULL);
-    ieee802154_transmit_security_config(frame, key, addr);
-    return ESP_OK;
+    return ieee802154_transmit_security_config(frame, key, addr);
 }
 
 esp_err_t esp_ieee802154_add_pending_addr(const uint8_t *addr, bool is_short)

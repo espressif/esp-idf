@@ -86,7 +86,7 @@ static esp_err_t openthread_netif_input(void *h, void *buffer, size_t len, void 
     }
 
     /* Allocate LINK buffer in case it's forwarded to WiFi/ETH */
-    p = pbuf_alloc(PBUF_LINK, len, PBUF_POOL);
+    p = pbuf_alloc(PBUF_LINK, len, PBUF_RAM);
     if (p == NULL) {
         LWIP_DEBUGF(NETIF_DEBUG, ("Failed to allocate input pbuf for OpenThread netif\n"));
         return ESP_ERR_NO_MEM;

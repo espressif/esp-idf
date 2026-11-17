@@ -577,7 +577,7 @@ uint8_t esp_ieee802154_get_recent_lqi(void);
  *
  * @return
  *      - ESP_OK on success.
- *      - ESP_ERR_INVALID_ARG if frame, key, or addr is NULL.
+ *      - ESP_ERR_INVALID_ARG if frame, key, or addr is NULL, or if the frame security payload offset is invalid.
  *      - ESP_FAIL on failure.
  */
 esp_err_t esp_ieee802154_set_transmit_security(uint8_t *frame, uint8_t *key, uint8_t *addr);
@@ -589,6 +589,10 @@ esp_err_t esp_ieee802154_set_transmit_security(uint8_t *frame, uint8_t *key, uin
  * @param[in]  frame          The received frame. Must not be NULL.
  * @param[in]  frame_info     The frame information. Refer to `esp_ieee802154_frame_info_t`.
  * @param[out] enhack_frame   The Enh-ack frame need to be generated via this function, HW will send it back after AIFS.
+ *
+ * @warning The buffer pointed to by `enhack_frame` is 128 bytes long. Byte 0 stores the PSDU length, and bytes 1 to 127
+ *          store the PSDU. The callback must not write beyond `enhack_frame[127]` and must not set `enhack_frame[0]`
+ *          to a value greater than 127.
  *
  * @return
  *        - ESP_OK if Enh-Ack generates done.
