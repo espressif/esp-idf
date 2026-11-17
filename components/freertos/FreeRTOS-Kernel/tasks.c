@@ -6,7 +6,7 @@
  *
  * SPDX-License-Identifier: MIT
  *
- * SPDX-FileContributor: 2023-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileContributor: 2023-2026 Espressif Systems (Shanghai) CO LTD
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy of
  * this software and associated documentation files (the "Software"), to deal in
@@ -241,6 +241,23 @@
         ( void ) pxTCB;                                                             \
         ( ( uxSchedulerSuspended[ 0 ] == ( UBaseType_t ) 0U ) ) ? pdTRUE : pdFALSE; \
     } )
+#endif /* configNUMBER_OF_CORES > 1 */
+/*-----------------------------------------------------------*/
+
+/* Macro to get the core whose pending ready list must hold a task that was
+ * readied while it cannot be scheduled (see taskCAN_BE_SCHEDULED()). Only the
+ * owning core's xTaskResumeAll() drains its pending ready list, so a task
+ * pinned to core X must go to core X's list even when it is readied from an
+ * ISR running on the other core. An unpinned task can only be unschedulable
+ * if both cores have suspended their schedulers, so the current core's list
+ * is used. Same rule as in xTaskRemoveFromEventList().
+ *
+ * - In SMP, this macro must be called from a critical section (where the
+ *   kernel lock is taken). */
+#if ( configNUMBER_OF_CORES > 1 )
+    #define taskPENDING_READY_CORE( pxTCB, xCurCoreID )    ( ( ( pxTCB )->xCoreID == tskNO_AFFINITY ) ? ( xCurCoreID ) : ( pxTCB )->xCoreID )
+#else
+    #define taskPENDING_READY_CORE( pxTCB, xCurCoreID )    ( ( void ) ( pxTCB ), ( xCurCoreID ) )
 #endif /* configNUMBER_OF_CORES > 1 */
 /*-----------------------------------------------------------*/
 
@@ -2263,7 +2280,7 @@ static void prvAddNewTaskToReadyList( TCB_t * pxNewTCB )
                     /* The delayed or ready lists cannot be accessed so the task
                      * is held in the pending ready list until the scheduler is
                      * unsuspended. */
-                    vListInsertEnd( &( xPendingReadyList[ xCurCoreID ] ), &( pxTCB->xEventListItem ) );
+                    vListInsertEnd( &( xPendingReadyList[ taskPENDING_READY_CORE( pxTCB, xCurCoreID ) ] ), &( pxTCB->xEventListItem ) );
                 }
             }
             else
@@ -6135,7 +6152,7 @@ TickType_t uxTaskResetEventItemValue( void )
                 {
                     /* The delayed and ready lists cannot be accessed, so hold
                      * this task pending until the scheduler is resumed. */
-                    listINSERT_END( &( xPendingReadyList[ xCurCoreID ] ), &( pxTCB->xEventListItem ) );
+                    listINSERT_END( &( xPendingReadyList[ taskPENDING_READY_CORE( pxTCB, xCurCoreID ) ] ), &( pxTCB->xEventListItem ) );
                 }
 
                 if( taskIS_YIELD_REQUIRED( pxTCB, pdFALSE ) == pdTRUE )
@@ -6229,7 +6246,7 @@ TickType_t uxTaskResetEventItemValue( void )
                 {
                     /* The delayed and ready lists cannot be accessed, so hold
                      * this task pending until the scheduler is resumed. */
-                    listINSERT_END( &( xPendingReadyList[ xCurCoreID ] ), &( pxTCB->xEventListItem ) );
+                    listINSERT_END( &( xPendingReadyList[ taskPENDING_READY_CORE( pxTCB, xCurCoreID ) ] ), &( pxTCB->xEventListItem ) );
                 }
 
                 if( taskIS_YIELD_REQUIRED( pxTCB, pdFALSE ) == pdTRUE )
