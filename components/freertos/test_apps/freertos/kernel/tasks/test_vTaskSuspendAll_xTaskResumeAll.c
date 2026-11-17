@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -788,6 +788,139 @@ TEST_CASE("Test xTaskSuspendAll on all cores pends all tasks and xTaskResumeAll 
     vSemaphoreDelete(done_sem);
 }
 #endif //SOC_GPTIMER_SUPPORTED
+#endif  // !CONFIG_FREERTOS_UNICORE
+
+/* ---------------------------------------------------------------------------------------------------------------------
+Test xTaskResumeAll yields to a task notified from the other core
+
+Purpose:
+    - When the scheduler is suspended on a particular core, test that a task pinned to that core and unblocked by a
+      task (not an ISR) on the other core runs as soon as the scheduler is resumed.
+    - A task unblocked this way goes directly on the ready list, not on the pending ready list. xTaskResumeAll() must
+      still yield to it.
+
+Procedure:
+    Test for each core (the task's core suspends its scheduler, the other core notifies the task)
+        - Create a blocked task pinned to the task's core
+        - Create a lower priority task pinned to the task's core, which suspends the scheduler
+        - From a task on the other core, unblock the blocked task with xTaskNotifyGive()
+        - Resume the scheduler on the task's core
+        - Cleanup
+
+Expected:
+    - The unblocked task does not run while its core's scheduler is suspended.
+    - When the scheduler is resumed on the task's core, the unblocked task runs right away, without waiting for the
+      task that resumed the scheduler to block.
+--------------------------------------------------------------------------------------------------------------------- */
+
+#if !CONFIG_FREERTOS_UNICORE
+
+typedef struct {
+    TaskHandle_t main_task_hdl;
+    TaskHandle_t blkd_task_hdl;
+    volatile bool blkd_has_run;
+    volatile bool susp_ready;
+    volatile bool notified;
+    // Results, recorded by the suspending task and checked by the test case
+    bool ran_while_suspended;
+    bool ran_after_resume;
+} test_xcore_notify_arg_t;
+
+static void test_xcore_notify_blkd_task(void *arg)
+{
+    test_xcore_notify_arg_t *test_arg = (test_xcore_notify_arg_t *)arg;
+
+    // Wait to be unblocked
+    ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
+    // Indicate the task has been unblocked and has run
+    test_arg->blkd_has_run = true;
+    // Wait to be deleted
+    vTaskSuspend(NULL);
+}
+
+static void test_xcore_notify_susp_task(void *arg)
+{
+    test_xcore_notify_arg_t *test_arg = (test_xcore_notify_arg_t *)arg;
+
+    // Suspend the scheduler on the blocked task's core, then wait for the other core to notify the blocked task
+    vTaskSuspendAll();
+    test_arg->susp_ready = true;
+    for (int i = 0; i < 100 && !test_arg->notified; i++) {
+        esp_rom_delay_us(1000);
+    }
+    test_arg->ran_while_suspended = test_arg->blkd_has_run;
+
+    // Resume the scheduler. The unblocked task has a higher priority and should run right away.
+    xTaskResumeAll();
+    // Short busy delay. This task must not block here, because blocking would let the unblocked task run anyway.
+    esp_rom_delay_us(1000);
+    test_arg->ran_after_resume = test_arg->blkd_has_run;
+
+    // Notify completion and wait for deletion
+    xTaskNotifyGive(test_arg->main_task_hdl);
+    vTaskSuspend(NULL);
+}
+
+static void test_xcore_notify_notifier_task(void *arg)
+{
+    test_xcore_notify_arg_t *test_arg = (test_xcore_notify_arg_t *)arg;
+
+    // Busy wait: only core 0 increments the tick count, so a delay on core 1 does not expire while core 0 has its
+    // scheduler suspended
+    for (int i = 0; i < 1000 && !test_arg->susp_ready; i++) {
+        esp_rom_delay_us(1000);
+    }
+    if (test_arg->susp_ready) {
+        // Unblock the task from task context while its core's scheduler is suspended
+        xTaskNotifyGive(test_arg->blkd_task_hdl);
+        test_arg->notified = true;
+    }
+    // Wait for deletion
+    vTaskSuspend(NULL);
+}
+
+TEST_CASE("Test xTaskResumeAll yields to a task notified from the other core", "[freertos]")
+{
+    // Run the test with the scheduler suspended on each core
+    for (int i = 0; i < CONFIG_FREERTOS_NUMBER_OF_CORES; i++) {
+        test_xcore_notify_arg_t test_arg = {
+            .main_task_hdl = xTaskGetCurrentTaskHandle(),
+        };
+        TaskHandle_t notifier_task_hdl;
+        TaskHandle_t susp_task_hdl;
+
+        // Create the blocked task pinned to core i
+        TEST_ASSERT_EQUAL(pdTRUE, xTaskCreatePinnedToCore(test_xcore_notify_blkd_task, "blkd", 4096, (void *)&test_arg, UNITY_FREERTOS_PRIORITY + 2, &test_arg.blkd_task_hdl, i));
+        vTaskDelay(10);
+        TEST_ASSERT_EQUAL(false, test_arg.blkd_has_run);
+
+        // Create the notifying task on the other core. Its priority is below this task's, so if it shares this
+        // task's core, it runs only once this task blocks below.
+        TEST_ASSERT_EQUAL(pdTRUE, xTaskCreatePinnedToCore(test_xcore_notify_notifier_task, "notifier", 4096, (void *)&test_arg, UNITY_FREERTOS_PRIORITY - 1, &notifier_task_hdl, !i));
+        // Create the task that suspends the scheduler on core i
+        TEST_ASSERT_EQUAL(pdTRUE, xTaskCreatePinnedToCore(test_xcore_notify_susp_task, "susp", 4096, (void *)&test_arg, UNITY_FREERTOS_PRIORITY + 1, &susp_task_hdl, i));
+
+        // Wait for the suspending task to finish its checks
+        TEST_ASSERT_NOT_EQUAL(0, ulTaskNotifyTake(pdTRUE, pdMS_TO_TICKS(2000)));
+
+        // Clean up the tasks
+        vTaskSuspend(susp_task_hdl);
+        vTaskSuspend(notifier_task_hdl);
+        vTaskSuspend(test_arg.blkd_task_hdl);
+        vTaskDelay(10);
+        vTaskDelete(susp_task_hdl);
+        vTaskDelete(notifier_task_hdl);
+        vTaskDelete(test_arg.blkd_task_hdl);
+
+        TEST_ASSERT_EQUAL(true, test_arg.notified);
+        // The unblocked task cannot run while its core's scheduler is suspended
+        TEST_ASSERT_EQUAL(false, test_arg.ran_while_suspended);
+        TEST_ASSERT_EQUAL(true, test_arg.ran_after_resume);
+    }
+    // Add a short delay to allow the idle task to free any remaining task memory
+    vTaskDelay(10);
+}
+
 #endif  // !CONFIG_FREERTOS_UNICORE
 
 /* ---------------------------------------------------------------------------------------------------------------------
