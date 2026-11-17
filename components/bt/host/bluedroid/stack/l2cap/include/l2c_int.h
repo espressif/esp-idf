@@ -29,6 +29,7 @@
 #include "stack/btm_api.h"
 #include "stack/l2c_api.h"
 #include "stack/l2cdefs.h"
+#include "hci/hci_internals.h"
 #include "osi/list.h"
 #include "osi/fixed_queue.h"
 
@@ -38,12 +39,18 @@
 #define L2CAP_LE_MIN_MTU            23
 #define L2CAP_LE_MIN_MPS            23
 #define L2CAP_LE_MAX_MPS            65533
+/* Advertise at most what the HCI fragmenter will reassemble. Peer MPS may
+ * still be up to L2CAP_LE_MAX_MPS; that value is their receive limit. */
 #define L2CAP_LE_CLAMP_MPS(m) \
     ((UINT16)(((m) < L2CAP_LE_MIN_MPS) ? L2CAP_LE_MIN_MPS : \
-     (((m) > L2CAP_LE_MAX_MPS) ? L2CAP_LE_MAX_MPS : (m))))
+     (((m) > L2CAP_MAX_RX_PAYLOAD) ? L2CAP_MAX_RX_PAYLOAD : (m))))
 /* Enhanced Credit Based Flow Control minimums (Core Spec Vol 3 Part A 4.25). */
 #define L2CAP_LE_ECFC_MIN_MTU        64
 #define L2CAP_LE_ECFC_MIN_MPS        64
+_Static_assert(L2CAP_MAX_RX_PAYLOAD >= L2CAP_LE_ECFC_MIN_MPS,
+               "HCI reassembly cap is below the ECFC minimum MPS");
+_Static_assert(L2CAP_MAX_RX_PAYLOAD <= L2CAP_LE_MAX_MPS,
+               "HCI reassembly cap exceeds the LE MPS spec maximum");
 #define L2CAP_LE_MIN_CREDIT         0
 #define L2CAP_LE_MAX_CREDIT         65535
 #define L2CAP_LE_DEFAULT_MTU        512
