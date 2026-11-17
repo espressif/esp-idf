@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2017-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2017-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -50,7 +50,7 @@ struct bt_mesh_time_status {
     uint16_t time_authority : 1; /* 0 = No Time Authority, 1 = Time Authority */
     uint16_t tai_utc_delta : 15; /* Current difference between TAI and UTC in seconds */
     uint8_t  time_zone_offset;   /* The local time zone offset in 15-minute increments */
-};
+} __attribute__((packed));
 
 struct bt_mesh_time_zone_status {
     uint8_t time_zone_offset_curr; /* Current local time zone offset */
@@ -64,7 +64,7 @@ struct bt_mesh_tai_utc_delta_status {
     uint16_t tai_utc_delta_new : 15;  /* Upcoming difference between TAI and UTC in seconds */
     uint16_t padding_2 : 1;           /* Always 0b0. Other values are Prohibited. */
     uint8_t  tai_delta_change[5];     /* TAI Seconds time of the upcoming TAI-UTC Delta change */
-};
+} __attribute__((packed));
 
 struct bt_mesh_time_role_status {
     uint8_t time_role; /* The Time Role for the element */
@@ -77,7 +77,7 @@ struct bt_mesh_time_set {
     uint16_t time_authority : 1; /* 0 = No Time Authority, 1 = Time Authority */
     uint16_t tai_utc_delta : 15; /* Current difference between TAI and UTC in seconds */
     uint8_t  time_zone_offset;   /* The local time zone offset in 15-minute increments */
-};
+} __attribute__((packed));
 
 struct bt_mesh_time_zone_set {
     uint8_t time_zone_offset_new; /* Upcoming local time zone offset */
@@ -88,7 +88,7 @@ struct bt_mesh_tai_utc_delta_set {
     uint16_t tai_utc_delta_new : 15; /* Upcoming difference between TAI and UTC in seconds */
     uint16_t padding : 1;            /* Always 0b0. Other values are Prohibited. */
     uint8_t  tai_delta_change[5];    /* TAI Seconds time of the upcoming TAI-UTC Delta change */
-};
+} __attribute__((packed));
 
 struct bt_mesh_time_role_set {
     uint8_t time_role; /* The Time Role for the element */
@@ -178,7 +178,7 @@ struct bt_mesh_scheduler_act_status {
     uint64_t action : 4;       /* Action to be performed at the scheduled time */
     uint64_t trans_time : 8;   /* Transition time for this action */
     uint16_t scene_number;     /* Transition time for this action */
-};
+} __attribute__((packed));
 
 struct bt_mesh_scheduler_act_get {
     uint8_t index; /* Index of the Schedule Register entry to get */
@@ -196,7 +196,7 @@ struct bt_mesh_scheduler_act_set {
     uint64_t action : 4;       /* Action to be performed at the scheduled time */
     uint64_t trans_time : 8;   /* Transition time for this action */
     uint16_t scene_number;     /* Transition time for this action */
-};
+} __attribute__((packed));
 
 /**
  * @brief This function is called to get scene states.

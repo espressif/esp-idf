@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2017-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2017-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -262,7 +262,7 @@ typedef union {
         uint16_t time_authority : 1;
         uint16_t tai_utc_delta_curr : 15;
         uint8_t  time_zone_offset_curr;
-    } time_set;
+    } __attribute__((packed)) time_set;
     struct {
         uint8_t  tai_seconds[5];
         uint8_t  subsecond;
@@ -270,7 +270,7 @@ typedef union {
         uint16_t time_authority : 1;
         uint16_t tai_utc_delta_curr : 15;
         uint8_t  time_zone_offset_curr;
-    } time_status;
+    } __attribute__((packed)) time_status;
     struct {
         uint8_t time_zone_offset_new;
         uint8_t tai_zone_change[5];
@@ -278,7 +278,7 @@ typedef union {
     struct {
         uint16_t tai_utc_delta_new : 15;
         uint8_t  tai_delta_change[5];
-    } tai_utc_delta_set;
+    } __attribute__((packed)) tai_utc_delta_set;
     struct {
         uint8_t role;
     } time_role_set;
@@ -303,7 +303,7 @@ typedef union {
                  action : 4,
                  trans_time : 8;
         uint16_t scene_number;
-    } scheduler_act_set;
+    } __attribute__((packed)) scheduler_act_set;
 } bt_mesh_time_scene_server_state_change_t;
 
 typedef union {
@@ -320,7 +320,7 @@ typedef union {
         uint16_t time_authority : 1;
         uint16_t tai_utc_delta : 15;
         uint8_t  time_zone_offset;
-    } time_set;
+    } __attribute__((packed)) time_set;
     struct {
         uint8_t time_zone_offset_new;
         uint8_t tai_zone_change[5];
@@ -329,7 +329,7 @@ typedef union {
         uint16_t tai_utc_delta_new : 15;
         uint16_t padding : 1;
         uint8_t  tai_delta_change[5];
-    } tai_utc_delta_set;
+    } __attribute__((packed)) tai_utc_delta_set;
     struct {
         uint8_t time_role;
     } time_role_set;
@@ -358,7 +358,7 @@ typedef union {
                  action : 4,
                  trans_time : 8;
         uint16_t scene_number;
-    } scheduler_act_set;
+    } __attribute__((packed)) scheduler_act_set;
 } bt_mesh_time_scene_server_recv_set_msg_t;
 
 typedef union {
@@ -369,7 +369,7 @@ typedef union {
         uint16_t time_authority : 1;
         uint16_t tai_utc_delta : 15;
         uint8_t  time_zone_offset;
-    } time_status;
+    } __attribute__((packed)) time_status;
 } bt_mesh_time_scene_server_recv_status_msg_t;
 
 void bt_mesh_time_scene_server_lock(void);

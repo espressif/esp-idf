@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2017-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2017-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -119,7 +119,8 @@ static void time_scene_status(struct bt_mesh_model *model,
             status->uncertainty = net_buf_simple_pull_u8(buf);
             uint16_t temp = net_buf_simple_pull_le16(buf);
             status->time_authority = temp & BIT(0);
-            status->tai_utc_delta = temp >> 15;
+            /* The wire field is (tai_utc_delta << 1) | time_authority. */
+            status->tai_utc_delta = (temp >> 1) & BIT_MASK(15);
             status->time_zone_offset = net_buf_simple_pull_u8(buf);
         } else {
             status->sub_second = 0;
