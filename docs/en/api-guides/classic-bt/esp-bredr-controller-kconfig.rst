@@ -17,7 +17,7 @@ Configuration path:
 
 .. note::
 
-   When ESP-Bluedroid HFP is enabled and :ref:`CONFIG_BT_CTRL_BR_EDR_MAX_SYNC_CONN` is ``0``, the build system sets the effective SCO/eSCO connection count to ``1``. See :component_file:`bt/porting_btdm/controller/bredr/include/bredr_user_cfg.h`.
+    When ESP-Bluedroid HFP is enabled, :ref:`CONFIG_BT_CTRL_BR_EDR_MAX_SYNC_CONN` defaults to ``1`` and is restricted to the range ``1`` to ``3``, because HFP requires at least one SCO/eSCO connection.
 
 When BR/EDR is enabled (**BR/EDR Only** or **Dual Mode**), standard commands for inquiry, ACL connection, pairing, encryption, sniff, role switch, scan/page, AFH, EIR, and informational queries are available without enabling the optional feature options below.
 
