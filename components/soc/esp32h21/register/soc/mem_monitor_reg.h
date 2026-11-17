@@ -13,7 +13,7 @@ extern "C" {
 /** MEM_MONITOR_LOG_SETTING_REG register
  *  log config register
  */
-#define MEM_MONITOR_LOG_SETTING_REG (DR_REG_MEM_BASE + 0x0)
+#define MEM_MONITOR_LOG_SETTING_REG (DR_REG_MEM_MONITOR_BASE + 0x0)
 /** MEM_MONITOR_LOG_ENA : R/W; bitpos: [2:0]; default: 0;
  *  enable bus log. BIT0: hp-cpu, BIT1: lp-cpu, BIT2: DMA.823 don't support lp-cpu
  */
@@ -40,7 +40,7 @@ extern "C" {
 /** MEM_MONITOR_LOG_CHECK_DATA_REG register
  *  check data register
  */
-#define MEM_MONITOR_LOG_CHECK_DATA_REG (DR_REG_MEM_BASE + 0x4)
+#define MEM_MONITOR_LOG_CHECK_DATA_REG (DR_REG_MEM_MONITOR_BASE + 0x4)
 /** MEM_MONITOR_LOG_CHECK_DATA : R/W; bitpos: [31:0]; default: 0;
  *  The special check data, when write this special data, it will trigger logging.
  */
@@ -52,7 +52,7 @@ extern "C" {
 /** MEM_MONITOR_LOG_DATA_MASK_REG register
  *  check data mask register
  */
-#define MEM_MONITOR_LOG_DATA_MASK_REG (DR_REG_MEM_BASE + 0x8)
+#define MEM_MONITOR_LOG_DATA_MASK_REG (DR_REG_MEM_MONITOR_BASE + 0x8)
 /** MEM_MONITOR_LOG_DATA_MASK : R/W; bitpos: [3:0]; default: 0;
  *  byte mask enable, BIT0 mask the first byte of MEM_MONITOR_LOG_CHECK_DATA, and BIT1
  *  mask second byte, and so on.
@@ -65,7 +65,7 @@ extern "C" {
 /** MEM_MONITOR_LOG_MIN_REG register
  *  log boundary register
  */
-#define MEM_MONITOR_LOG_MIN_REG (DR_REG_MEM_BASE + 0xc)
+#define MEM_MONITOR_LOG_MIN_REG (DR_REG_MEM_MONITOR_BASE + 0xc)
 /** MEM_MONITOR_LOG_MIN : R/W; bitpos: [31:0]; default: 0;
  *  the min address of log range
  */
@@ -77,7 +77,7 @@ extern "C" {
 /** MEM_MONITOR_LOG_MAX_REG register
  *  log boundary register
  */
-#define MEM_MONITOR_LOG_MAX_REG (DR_REG_MEM_BASE + 0x10)
+#define MEM_MONITOR_LOG_MAX_REG (DR_REG_MEM_MONITOR_BASE + 0x10)
 /** MEM_MONITOR_LOG_MAX : R/W; bitpos: [31:0]; default: 0;
  *  the max address of log range
  */
@@ -89,7 +89,7 @@ extern "C" {
 /** MEM_MONITOR_LOG_MEM_START_REG register
  *  log message store range register
  */
-#define MEM_MONITOR_LOG_MEM_START_REG (DR_REG_MEM_BASE + 0x14)
+#define MEM_MONITOR_LOG_MEM_START_REG (DR_REG_MEM_MONITOR_BASE + 0x14)
 /** MEM_MONITOR_LOG_MEM_START : R/W; bitpos: [31:0]; default: 0;
  *  the start address of writing logging message
  */
@@ -101,7 +101,7 @@ extern "C" {
 /** MEM_MONITOR_LOG_MEM_END_REG register
  *  log message store range register
  */
-#define MEM_MONITOR_LOG_MEM_END_REG (DR_REG_MEM_BASE + 0x18)
+#define MEM_MONITOR_LOG_MEM_END_REG (DR_REG_MEM_MONITOR_BASE + 0x18)
 /** MEM_MONITOR_LOG_MEM_END : R/W; bitpos: [31:0]; default: 0;
  *  the end address of writing logging message
  */
@@ -113,7 +113,7 @@ extern "C" {
 /** MEM_MONITOR_LOG_MEM_CURRENT_ADDR_REG register
  *  current writing address.
  */
-#define MEM_MONITOR_LOG_MEM_CURRENT_ADDR_REG (DR_REG_MEM_BASE + 0x1c)
+#define MEM_MONITOR_LOG_MEM_CURRENT_ADDR_REG (DR_REG_MEM_MONITOR_BASE + 0x1c)
 /** MEM_MONITOR_LOG_MEM_CURRENT_ADDR : RO; bitpos: [31:0]; default: 0;
  *  means next writing address
  */
@@ -125,7 +125,7 @@ extern "C" {
 /** MEM_MONITOR_LOG_MEM_ADDR_UPDATE_REG register
  *  writing address update
  */
-#define MEM_MONITOR_LOG_MEM_ADDR_UPDATE_REG (DR_REG_MEM_BASE + 0x20)
+#define MEM_MONITOR_LOG_MEM_ADDR_UPDATE_REG (DR_REG_MEM_MONITOR_BASE + 0x20)
 /** MEM_MONITOR_LOG_MEM_ADDR_UPDATE : WT; bitpos: [0]; default: 0;
  *  Set 1 to updata MEM_MONITOR_LOG_MEM_CURRENT_ADDR, when set 1,
  *  MEM_MONITOR_LOG_MEM_CURRENT_ADDR will update to MEM_MONITOR_LOG_MEM_START
@@ -138,7 +138,7 @@ extern "C" {
 /** MEM_MONITOR_LOG_MEM_FULL_FLAG_REG register
  *  full flag status register
  */
-#define MEM_MONITOR_LOG_MEM_FULL_FLAG_REG (DR_REG_MEM_BASE + 0x24)
+#define MEM_MONITOR_LOG_MEM_FULL_FLAG_REG (DR_REG_MEM_MONITOR_BASE + 0x24)
 /** MEM_MONITOR_LOG_MEM_FULL_FLAG : RO; bitpos: [0]; default: 0;
  *  1 means memory write loop at least one time at the range of MEM_START and MEM_END
  */
@@ -157,7 +157,7 @@ extern "C" {
 /** MEM_MONITOR_CLOCK_GATE_REG register
  *  clock gate force on register
  */
-#define MEM_MONITOR_CLOCK_GATE_REG (DR_REG_MEM_BASE + 0x28)
+#define MEM_MONITOR_CLOCK_GATE_REG (DR_REG_MEM_MONITOR_BASE + 0x28)
 /** MEM_MONITOR_CLK_EN : R/W; bitpos: [0]; default: 0;
  *  Set 1 to force on the clk of mem_monitor register
  */
@@ -169,7 +169,7 @@ extern "C" {
 /** MEM_MONITOR_DATE_REG register
  *  version register
  */
-#define MEM_MONITOR_DATE_REG (DR_REG_MEM_BASE + 0x3fc)
+#define MEM_MONITOR_DATE_REG (DR_REG_MEM_MONITOR_BASE + 0x3fc)
 /** MEM_MONITOR_DATE : R/W; bitpos: [27:0]; default: 35660096;
  *  version register
  */

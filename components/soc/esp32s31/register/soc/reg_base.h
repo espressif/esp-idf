@@ -77,7 +77,7 @@
 #define DR_REG_INTR0_BASE                         0x20585000
 #define DR_REG_HP_SYS_BASE                        0x20586000
 #define DR_REG_HP_SYS_CLKRST_BASE                 0x20587000
-#define DR_REG_CNNT_PAD_CTRL_BASE                 0x20588000
+#define DR_REG_CNNT_IO_MUX_BASE                   0x20588000
 #define DR_REG_HP_ALIVE_SYS_BASE                  0x20589000
 #define DR_REG_HP_PERI1_PMS_BASE                  0x2058A000
 #define DR_REG_LP_SYS_BASE                        0x20700000
@@ -143,5 +143,3 @@
 #define DR_REG_MB_BASE                          DR_REG_LP_MAILBOX_BASE
 #define DR_REG_AXI_IC_BASE                      (DR_REG_ICM_SYS_BASE + 0x400)
 #define IEEE802154_REG_BASE                     0x20103000
-#define DR_REG_CNNT_BASE                        DR_REG_CNNT_SYS_REG_BASE
-#define DR_REG_CNNT_IO_MUX_BASE                   DR_REG_CNNT_PAD_CTRL_BASE

@@ -10,6 +10,8 @@
 extern "C" {
 #endif
 
+#define DR_REG_I2S_BASE(i)                         (DR_REG_I2S0_BASE)                      // only one I2S on H21
+
 /** I2S_INT_RAW_REG register
  *  I2S interrupt raw register, valid in level.
  */

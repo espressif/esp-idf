@@ -13,7 +13,7 @@ extern "C" {
 /** SDIO_SLC_CONF0_REG register
  *  Sdio slave DMA configuration register.
  */
-#define SDIO_SLC_CONF0_REG (DR_REG_SDIO_BASE + 0x0)
+#define SDIO_SLC_CONF0_REG (DR_REG_SLC_BASE + 0x0)
 /** SDIO_SLC0_TX_RST : R/W; bitpos: [0]; default: 0;
  *  Set 1 to reset receiving fsm in dma channel0.
  */
@@ -261,7 +261,7 @@ extern "C" {
 /** SDIO_SLC_SLC0INT_RAW_REG register
  *  Sdio slave DMA channel0 raw interrupt status register.
  */
-#define SDIO_SLC_SLC0INT_RAW_REG (DR_REG_SDIO_BASE + 0x4)
+#define SDIO_SLC_SLC0INT_RAW_REG (DR_REG_SLC_BASE + 0x4)
 /** SDIO_SLC_FRHOST_BIT0_INT_RAW : R/WTC/SS; bitpos: [0]; default: 0;
  *  The raw interrupt bit 0 for host to interrupt slave.
  */
@@ -476,7 +476,7 @@ extern "C" {
 /** SDIO_SLC_SLC0INT_ST_REG register
  *  Sdio slave DMA channel0 masked interrupt status register.
  */
-#define SDIO_SLC_SLC0INT_ST_REG (DR_REG_SDIO_BASE + 0x8)
+#define SDIO_SLC_SLC0INT_ST_REG (DR_REG_SLC_BASE + 0x8)
 /** SDIO_SLC_FRHOST_BIT0_INT_ST : RO; bitpos: [0]; default: 0;
  *  The masked interrupt status bit for SLC_FRHOST_BIT0_INT interrupt.
  */
@@ -684,7 +684,7 @@ extern "C" {
 /** SDIO_SLC_SLC0INT_ENA_REG register
  *  Sdio slave DMA channel0 interrupt enable register.
  */
-#define SDIO_SLC_SLC0INT_ENA_REG (DR_REG_SDIO_BASE + 0xc)
+#define SDIO_SLC_SLC0INT_ENA_REG (DR_REG_SLC_BASE + 0xc)
 /** SDIO_SLC_FRHOST_BIT0_INT_ENA : R/W; bitpos: [0]; default: 0;
  *  The interrupt enable bit for SLC_FRHOST_BIT0_INT interrupt.
  */
@@ -892,7 +892,7 @@ extern "C" {
 /** SDIO_SLC_SLC0INT_CLR_REG register
  *  Sdio slave DMA channel0 interrupt clear register.
  */
-#define SDIO_SLC_SLC0INT_CLR_REG (DR_REG_SDIO_BASE + 0x10)
+#define SDIO_SLC_SLC0INT_CLR_REG (DR_REG_SLC_BASE + 0x10)
 /** SDIO_SLC_FRHOST_BIT0_INT_CLR : WT; bitpos: [0]; default: 0;
  *  Set this bit to clear SLC_FRHOST_BIT0_INT interrupt.
  */
@@ -1100,7 +1100,7 @@ extern "C" {
 /** SDIO_SLC_SLC1INT_RAW_REG register
  *  Sdio slave DMA channel1 raw interrupt status register.
  */
-#define SDIO_SLC_SLC1INT_RAW_REG (DR_REG_SDIO_BASE + 0x14)
+#define SDIO_SLC_SLC1INT_RAW_REG (DR_REG_SLC_BASE + 0x14)
 /** SDIO_SLC_FRHOST_BIT8_INT_RAW : R/WTC/SS; bitpos: [0]; default: 0;
  *  The raw interrupt bit 8 for host to interrupt slave.
  */
@@ -1284,7 +1284,7 @@ extern "C" {
 /** SDIO_SLC_SLC1INT_ST_REG register
  *  Sdio slave DMA channel1 masked interrupt status register.
  */
-#define SDIO_SLC_SLC1INT_ST_REG (DR_REG_SDIO_BASE + 0x18)
+#define SDIO_SLC_SLC1INT_ST_REG (DR_REG_SLC_BASE + 0x18)
 /** SDIO_SLC_FRHOST_BIT8_INT_ST : RO; bitpos: [0]; default: 0;
  *  The masked interrupt status bit for SLC_FRHOST_BIT0_INT interrupt.
  */
@@ -1464,7 +1464,7 @@ extern "C" {
 /** SDIO_SLC_SLC1INT_ENA_REG register
  *  Sdio slave DMA channel1 interrupt enable register.
  */
-#define SDIO_SLC_SLC1INT_ENA_REG (DR_REG_SDIO_BASE + 0x1c)
+#define SDIO_SLC_SLC1INT_ENA_REG (DR_REG_SLC_BASE + 0x1c)
 /** SDIO_SLC_FRHOST_BIT8_INT_ENA : R/W; bitpos: [0]; default: 0;
  *  The interrupt enable bit for SLC_FRHOST_BIT0_INT interrupt.
  */
@@ -1644,7 +1644,7 @@ extern "C" {
 /** SDIO_SLC_SLC1INT_CLR_REG register
  *  Sdio slave DMA channel1 interrupt clear register.
  */
-#define SDIO_SLC_SLC1INT_CLR_REG (DR_REG_SDIO_BASE + 0x20)
+#define SDIO_SLC_SLC1INT_CLR_REG (DR_REG_SLC_BASE + 0x20)
 /** SDIO_SLC_FRHOST_BIT8_INT_CLR : WT; bitpos: [0]; default: 0;
  *  Set this bit to clear SLC_FRHOST_BIT0_INT interrupt.
  */
@@ -1824,7 +1824,7 @@ extern "C" {
 /** SDIO_SLC_RX_STATUS_REG register
  *  Sdio slave DMA rxfifo status register.
  */
-#define SDIO_SLC_RX_STATUS_REG (DR_REG_SDIO_BASE + 0x24)
+#define SDIO_SLC_RX_STATUS_REG (DR_REG_SLC_BASE + 0x24)
 /** SDIO_SLC0_RX_FULL : RO; bitpos: [0]; default: 0;
  *  The status bit for rxfifo full during slave sending data to host through dma
  *  channel0.
@@ -1875,7 +1875,7 @@ extern "C" {
 /** SDIO_SLC_SLC0RXFIFO_PUSH_REG register
  *  Sdio slave DMA channel0 rxfifo debug register.
  */
-#define SDIO_SLC_SLC0RXFIFO_PUSH_REG (DR_REG_SDIO_BASE + 0x28)
+#define SDIO_SLC_SLC0RXFIFO_PUSH_REG (DR_REG_SLC_BASE + 0x28)
 /** SDIO_SLC0_RXFIFO_WDATA : R/W; bitpos: [8:0]; default: 0;
  *  The data used to sent into rxfifo through APB bus.
  */
@@ -1896,7 +1896,7 @@ extern "C" {
 /** SDIO_SLC_SLC1RXFIFO_PUSH_REG register
  *  Sdio slave DMA channel1 rxfifo debug register.
  */
-#define SDIO_SLC_SLC1RXFIFO_PUSH_REG (DR_REG_SDIO_BASE + 0x2c)
+#define SDIO_SLC_SLC1RXFIFO_PUSH_REG (DR_REG_SLC_BASE + 0x2c)
 /** SDIO_SLC1_RXFIFO_WDATA : R/W; bitpos: [8:0]; default: 0;
  *  The data used to sent into rxfifo through APB bus.
  */
@@ -1917,7 +1917,7 @@ extern "C" {
 /** SDIO_SLC_TX_STATUS_REG register
  *  Sdio slave DMA txfifo status register.
  */
-#define SDIO_SLC_TX_STATUS_REG (DR_REG_SDIO_BASE + 0x30)
+#define SDIO_SLC_TX_STATUS_REG (DR_REG_SLC_BASE + 0x30)
 /** SDIO_SLC0_TX_FULL : RO; bitpos: [0]; default: 0;
  *  The status bit for txfifo full during slave receiving data from host through dma
  *  channel0.
@@ -1954,7 +1954,7 @@ extern "C" {
 /** SDIO_SLC_SLC0TXFIFO_POP_REG register
  *  Sdio slave DMA channel0 txfifo debug register.
  */
-#define SDIO_SLC_SLC0TXFIFO_POP_REG (DR_REG_SDIO_BASE + 0x34)
+#define SDIO_SLC_SLC0TXFIFO_POP_REG (DR_REG_SLC_BASE + 0x34)
 /** SDIO_SLC0_TXFIFO_RDATA : RO; bitpos: [10:0]; default: 1024;
  *  This field saves the data read from txfifo through APB bus.
  */
@@ -1974,7 +1974,7 @@ extern "C" {
 /** SDIO_SLC_SLC1TXFIFO_POP_REG register
  *  Sdio slave DMA channel1 txfifo debug register.
  */
-#define SDIO_SLC_SLC1TXFIFO_POP_REG (DR_REG_SDIO_BASE + 0x38)
+#define SDIO_SLC_SLC1TXFIFO_POP_REG (DR_REG_SLC_BASE + 0x38)
 /** SDIO_SLC1_TXFIFO_RDATA : RO; bitpos: [10:0]; default: 1024;
  *  This field saves the data read from txfifo through APB bus.
  */
@@ -1995,7 +1995,7 @@ extern "C" {
  *  Sdio slave DMA channel0 configuration and status register of link list for slave
  *  sending data.
  */
-#define SDIO_SLC_SLC0RX_LINK_REG (DR_REG_SDIO_BASE + 0x3c)
+#define SDIO_SLC_SLC0RX_LINK_REG (DR_REG_SLC_BASE + 0x3c)
 /** SDIO_SLC0_RXLINK_STOP : R/W/SC; bitpos: [28]; default: 0;
  *  Set 1 to stop the linked list operation for dma channel0 sending packets.
  */
@@ -2030,7 +2030,7 @@ extern "C" {
 /** SDIO_SLC_SLC0RX_LINK_ADDR_REG register
  *  Sdio slave DMA channel0 address of first descriptor of sending link list.
  */
-#define SDIO_SLC_SLC0RX_LINK_ADDR_REG (DR_REG_SDIO_BASE + 0x40)
+#define SDIO_SLC_SLC0RX_LINK_ADDR_REG (DR_REG_SLC_BASE + 0x40)
 /** SDIO_SLC0_RXLINK_ADDR : R/W; bitpos: [31:0]; default: 0;
  *  The initial address of dma channel0's sending linked list.
  */
@@ -2043,7 +2043,7 @@ extern "C" {
  *  Sdio slave DMA channel0 configuration and status register of link list for slave
  *  receiving data.
  */
-#define SDIO_SLC_SLC0TX_LINK_REG (DR_REG_SDIO_BASE + 0x44)
+#define SDIO_SLC_SLC0TX_LINK_REG (DR_REG_SLC_BASE + 0x44)
 /** SDIO_SLC0_TXLINK_STOP : R/W/SC; bitpos: [28]; default: 0;
  *  Set 1 to stop the linked list operation for dma channel0 receiving packets.
  */
@@ -2078,7 +2078,7 @@ extern "C" {
 /** SDIO_SLC_SLC0TX_LINK_ADDR_REG register
  *  Sdio slave DMA channel0 address of first descriptor of receiving linked list.
  */
-#define SDIO_SLC_SLC0TX_LINK_ADDR_REG (DR_REG_SDIO_BASE + 0x48)
+#define SDIO_SLC_SLC0TX_LINK_ADDR_REG (DR_REG_SLC_BASE + 0x48)
 /** SDIO_SLC0_TXLINK_ADDR : R/W; bitpos: [31:0]; default: 0;
  *  The initial address of dma channel0's receiving linked list.
  */
@@ -2091,7 +2091,7 @@ extern "C" {
  *  Sdio slave DMA channel1 configuration and status register of link list for slave
  *  sending data.
  */
-#define SDIO_SLC_SLC1RX_LINK_REG (DR_REG_SDIO_BASE + 0x4c)
+#define SDIO_SLC_SLC1RX_LINK_REG (DR_REG_SLC_BASE + 0x4c)
 /** SDIO_SLC1_BT_PACKET : R/W; bitpos: [20]; default: 1;
  *  Configure the packet type for slave to send: 0- wifi packet, 1- blue-tooth packet.
  */
@@ -2133,7 +2133,7 @@ extern "C" {
 /** SDIO_SLC_SLC1RX_LINK_ADDR_REG register
  *  Sdio slave DMA channel1 address of first descriptor of sending link list.
  */
-#define SDIO_SLC_SLC1RX_LINK_ADDR_REG (DR_REG_SDIO_BASE + 0x50)
+#define SDIO_SLC_SLC1RX_LINK_ADDR_REG (DR_REG_SLC_BASE + 0x50)
 /** SDIO_SLC1_RXLINK_ADDR : R/W; bitpos: [31:0]; default: 0;
  *  The initial address of dma channel1's sending linked list.
  */
@@ -2146,7 +2146,7 @@ extern "C" {
  *  Sdio slave DMA channel1 configuration and status register of link list for slave
  *  receiving data.
  */
-#define SDIO_SLC_SLC1TX_LINK_REG (DR_REG_SDIO_BASE + 0x54)
+#define SDIO_SLC_SLC1TX_LINK_REG (DR_REG_SLC_BASE + 0x54)
 /** SDIO_SLC1_TXLINK_STOP : R/W/SC; bitpos: [28]; default: 0;
  *  Set 1 to stop the linked list operation for dma channel1 receiving packets.
  */
@@ -2181,7 +2181,7 @@ extern "C" {
 /** SDIO_SLC_SLC1TX_LINK_ADDR_REG register
  *  Sdio slave DMA channel1 address of first descriptor of receiving linked list.
  */
-#define SDIO_SLC_SLC1TX_LINK_ADDR_REG (DR_REG_SDIO_BASE + 0x58)
+#define SDIO_SLC_SLC1TX_LINK_ADDR_REG (DR_REG_SLC_BASE + 0x58)
 /** SDIO_SLC1_TXLINK_ADDR : R/W; bitpos: [31:0]; default: 0;
  *  The initial address of dma channel1's receiving linked list.
  */
@@ -2193,7 +2193,7 @@ extern "C" {
 /** SDIO_SLC_SLCINTVEC_TOHOST_REG register
  *  Sdio slave DMA channel0 address of first descriptor of receiving linked list.
  */
-#define SDIO_SLC_SLCINTVEC_TOHOST_REG (DR_REG_SDIO_BASE + 0x5c)
+#define SDIO_SLC_SLCINTVEC_TOHOST_REG (DR_REG_SLC_BASE + 0x5c)
 /** SDIO_SLC0_TOHOST_INTVEC : WT; bitpos: [7:0]; default: 0;
  *  The interrupt vector for slave to interrupt host through dma channel0.
  */
@@ -2212,7 +2212,7 @@ extern "C" {
 /** SDIO_SLC_SLC0TOKEN0_REG register
  *  Sdio slave DMA channel0 receiving buffer configuration and status register.
  */
-#define SDIO_SLC_SLC0TOKEN0_REG (DR_REG_SDIO_BASE + 0x60)
+#define SDIO_SLC_SLC0TOKEN0_REG (DR_REG_SLC_BASE + 0x60)
 /** SDIO_SLC0_TOKEN0_WDATA : WT; bitpos: [11:0]; default: 0;
  *  The number of available receiving buffers.
  */
@@ -2253,7 +2253,7 @@ extern "C" {
 /** SDIO_SLC_SLC0TOKEN1_REG register
  *  Sdio slave DMA channel0 receiving buffer configuration and status register1.
  */
-#define SDIO_SLC_SLC0TOKEN1_REG (DR_REG_SDIO_BASE + 0x64)
+#define SDIO_SLC_SLC0TOKEN1_REG (DR_REG_SLC_BASE + 0x64)
 /** SDIO_SLC0_TOKEN1_WDATA : WT; bitpos: [11:0]; default: 0;
  *  The number of available receiving buffers.
  */
@@ -2294,7 +2294,7 @@ extern "C" {
 /** SDIO_SLC_SLC1TOKEN0_REG register
  *  Sdio slave DMA channel1 receiving buffer configuration and status register.
  */
-#define SDIO_SLC_SLC1TOKEN0_REG (DR_REG_SDIO_BASE + 0x68)
+#define SDIO_SLC_SLC1TOKEN0_REG (DR_REG_SLC_BASE + 0x68)
 /** SDIO_SLC1_TOKEN0_WDATA : WT; bitpos: [11:0]; default: 0;
  *  The number of available receiving buffers.
  */
@@ -2335,7 +2335,7 @@ extern "C" {
 /** SDIO_SLC_SLC1TOKEN1_REG register
  *  Sdio slave DMA channel1 receiving buffer configuration and status register1.
  */
-#define SDIO_SLC_SLC1TOKEN1_REG (DR_REG_SDIO_BASE + 0x6c)
+#define SDIO_SLC_SLC1TOKEN1_REG (DR_REG_SLC_BASE + 0x6c)
 /** SDIO_SLC1_TOKEN1_WDATA : WT; bitpos: [11:0]; default: 0;
  *  The number of available receiving buffers.
  */
@@ -2376,7 +2376,7 @@ extern "C" {
 /** SDIO_SLC_CONF1_REG register
  *  Sdio slave DMA configuration1 register.
  */
-#define SDIO_SLC_CONF1_REG (DR_REG_SDIO_BASE + 0x70)
+#define SDIO_SLC_CONF1_REG (DR_REG_SLC_BASE + 0x70)
 /** SDIO_SLC0_CHECK_OWNER : R/W; bitpos: [0]; default: 0;
  *  Set 1 to check the owner bit of descriptors  used by dma channel0.
  */
@@ -2472,7 +2472,7 @@ extern "C" {
 /** SDIO_SLC_SLC0_STATE0_REG register
  *  Sdio slave DMA channel0 status register.
  */
-#define SDIO_SLC_SLC0_STATE0_REG (DR_REG_SDIO_BASE + 0x74)
+#define SDIO_SLC_SLC0_STATE0_REG (DR_REG_SLC_BASE + 0x74)
 /** SDIO_SLC0_STATE0 : RO; bitpos: [31:0]; default: 0;
  *  [18:0] the current receiving descriptor address, [20:19] receiving descriptor fsm
  *  state, [23:21] receiving fsm state, [30:24] the count value of data received in
@@ -2486,7 +2486,7 @@ extern "C" {
 /** SDIO_SLC_SLC0_STATE1_REG register
  *  Sdio slave DMA channel0 status1 register.
  */
-#define SDIO_SLC_SLC0_STATE1_REG (DR_REG_SDIO_BASE + 0x78)
+#define SDIO_SLC_SLC0_STATE1_REG (DR_REG_SLC_BASE + 0x78)
 /** SDIO_SLC0_STATE1 : RO; bitpos: [31:0]; default: 0;
  *  [18:0] the current sending descriptor address, [20:19] sending descriptor fsm
  *  state, [23:21] sending fsm state, [30:24] the count value of data to be sent in
@@ -2500,7 +2500,7 @@ extern "C" {
 /** SDIO_SLC_SLC1_STATE0_REG register
  *  Sdio slave DMA channel1 status register.
  */
-#define SDIO_SLC_SLC1_STATE0_REG (DR_REG_SDIO_BASE + 0x7c)
+#define SDIO_SLC_SLC1_STATE0_REG (DR_REG_SLC_BASE + 0x7c)
 /** SDIO_SLC1_STATE0 : RO; bitpos: [31:0]; default: 0;
  *  [18:0] the current receiving descriptor address, [20:19] receiving descriptor fsm
  *  state, [23:21] receiving fsm state, [30:24] the count value of data received in
@@ -2514,7 +2514,7 @@ extern "C" {
 /** SDIO_SLC_SLC1_STATE1_REG register
  *  Sdio slave DMA channel1 status1 register.
  */
-#define SDIO_SLC_SLC1_STATE1_REG (DR_REG_SDIO_BASE + 0x80)
+#define SDIO_SLC_SLC1_STATE1_REG (DR_REG_SLC_BASE + 0x80)
 /** SDIO_SLC1_STATE1 : RO; bitpos: [31:0]; default: 0;
  *  [18:0] the current sending descriptor address, [20:19] sending descriptor fsm
  *  state, [23:21] sending fsm state, [30:24] the count value of data to be sent in
@@ -2528,7 +2528,7 @@ extern "C" {
 /** SDIO_SLC_BRIDGE_CONF_REG register
  *  Sdio slave DMA bridge configuration register.
  */
-#define SDIO_SLC_BRIDGE_CONF_REG (DR_REG_SDIO_BASE + 0x84)
+#define SDIO_SLC_BRIDGE_CONF_REG (DR_REG_SLC_BASE + 0x84)
 /** SDIO_SLC_TXEOF_ENA : R/W; bitpos: [5:0]; default: 32;
  *  Configure the end-of-frame address of receiving packet. The priority from high to
  *  low is: if txeof_ena[0] is 1, end-of-frame address is 0xfff,  if txeof_ena[1] is 1,
@@ -2587,7 +2587,7 @@ extern "C" {
 /** SDIO_SLC_SLC0_TO_EOF_DES_ADDR_REG register
  *  Sdio slave DMA channel0 start address of sending linked list register.
  */
-#define SDIO_SLC_SLC0_TO_EOF_DES_ADDR_REG (DR_REG_SDIO_BASE + 0x88)
+#define SDIO_SLC_SLC0_TO_EOF_DES_ADDR_REG (DR_REG_SLC_BASE + 0x88)
 /** SDIO_SLC0_TO_EOF_DES_ADDR : RO; bitpos: [31:0]; default: 0;
  *  The descriptor address of the last sent packet through dma channel0.
  */
@@ -2599,7 +2599,7 @@ extern "C" {
 /** SDIO_SLC_SLC0_TX_EOF_DES_ADDR_REG register
  *  Sdio slave DMA channel0 receiving packet status register.
  */
-#define SDIO_SLC_SLC0_TX_EOF_DES_ADDR_REG (DR_REG_SDIO_BASE + 0x8c)
+#define SDIO_SLC_SLC0_TX_EOF_DES_ADDR_REG (DR_REG_SLC_BASE + 0x8c)
 /** SDIO_SLC0_TX_SUC_EOF_DES_ADDR : RO; bitpos: [31:0]; default: 0;
  *  The descriptor address of the last successfully received packet through dma
  *  channel0.
@@ -2612,7 +2612,7 @@ extern "C" {
 /** SDIO_SLC_SLC0_TO_EOF_BFR_DES_ADDR_REG register
  *  Sdio slave DMA channel0 start address of sending linked list register.
  */
-#define SDIO_SLC_SLC0_TO_EOF_BFR_DES_ADDR_REG (DR_REG_SDIO_BASE + 0x90)
+#define SDIO_SLC_SLC0_TO_EOF_BFR_DES_ADDR_REG (DR_REG_SLC_BASE + 0x90)
 /** SDIO_SLC0_TO_EOF_BFR_DES_ADDR : RO; bitpos: [31:0]; default: 0;
  *  The descriptor address of the last successfully sent buffer packet through dma
  *  channel0.
@@ -2625,7 +2625,7 @@ extern "C" {
 /** SDIO_SLC_SLC1_TO_EOF_DES_ADDR_REG register
  *  Sdio slave DMA channel1 start address of sending linked list register.
  */
-#define SDIO_SLC_SLC1_TO_EOF_DES_ADDR_REG (DR_REG_SDIO_BASE + 0x94)
+#define SDIO_SLC_SLC1_TO_EOF_DES_ADDR_REG (DR_REG_SLC_BASE + 0x94)
 /** SDIO_SLC1_TO_EOF_DES_ADDR : RO; bitpos: [31:0]; default: 0;
  *  The descriptor address of the last sent packet through dma channel1.
  */
@@ -2637,7 +2637,7 @@ extern "C" {
 /** SDIO_SLC_SLC1_TX_EOF_DES_ADDR_REG register
  *  Sdio slave DMA channel1 receiving packet status register.
  */
-#define SDIO_SLC_SLC1_TX_EOF_DES_ADDR_REG (DR_REG_SDIO_BASE + 0x98)
+#define SDIO_SLC_SLC1_TX_EOF_DES_ADDR_REG (DR_REG_SLC_BASE + 0x98)
 /** SDIO_SLC1_TX_SUC_EOF_DES_ADDR : RO; bitpos: [31:0]; default: 0;
  *  The descriptor address of the last successfully received packet through dma
  *  channel1.
@@ -2650,7 +2650,7 @@ extern "C" {
 /** SDIO_SLC_SLC1_TO_EOF_BFR_DES_ADDR_REG register
  *  Sdio slave DMA channel1 start address of sending linked list register.
  */
-#define SDIO_SLC_SLC1_TO_EOF_BFR_DES_ADDR_REG (DR_REG_SDIO_BASE + 0x9c)
+#define SDIO_SLC_SLC1_TO_EOF_BFR_DES_ADDR_REG (DR_REG_SLC_BASE + 0x9c)
 /** SDIO_SLC1_TO_EOF_BFR_DES_ADDR : RO; bitpos: [31:0]; default: 0;
  *  The descriptor address of the last successfully sent buffer packet through dma
  *  channel1.
@@ -2663,7 +2663,7 @@ extern "C" {
 /** SDIO_SLC_AHB_TEST_REG register
  *  Sdio slave AHB test register.
  */
-#define SDIO_SLC_AHB_TEST_REG (DR_REG_SDIO_BASE + 0xa0)
+#define SDIO_SLC_AHB_TEST_REG (DR_REG_SLC_BASE + 0xa0)
 /** SDIO_SLC_AHB_TESTMODE : R/W; bitpos: [2:0]; default: 0;
  *  set bit2 to 1 to enable sdio slave ahb test.
  */
@@ -2682,7 +2682,7 @@ extern "C" {
 /** SDIO_SLC_SDIO_ST_REG register
  *  Sdio slave function status register.
  */
-#define SDIO_SLC_SDIO_ST_REG (DR_REG_SDIO_BASE + 0xa4)
+#define SDIO_SLC_SDIO_ST_REG (DR_REG_SLC_BASE + 0xa4)
 /** SDIO_CMD_ST : RO; bitpos: [2:0]; default: 0;
  *  The sdio command fsm state.
  */
@@ -2729,7 +2729,7 @@ extern "C" {
 /** SDIO_SLC_RX_DSCR_CONF_REG register
  *  Sdio slave sending descriptor configuration register.
  */
-#define SDIO_SLC_RX_DSCR_CONF_REG (DR_REG_SDIO_BASE + 0xa8)
+#define SDIO_SLC_RX_DSCR_CONF_REG (DR_REG_SLC_BASE + 0xa8)
 /** SDIO_SLC0_TOKEN_NO_REPLACE : R/W; bitpos: [0]; default: 0;
  *  reserved
  */
@@ -2820,7 +2820,7 @@ extern "C" {
 /** SDIO_SLC_SLC0_TXLINK_DSCR_REG register
  *  ******* Description ***********
  */
-#define SDIO_SLC_SLC0_TXLINK_DSCR_REG (DR_REG_SDIO_BASE + 0xac)
+#define SDIO_SLC_SLC0_TXLINK_DSCR_REG (DR_REG_SLC_BASE + 0xac)
 /** SDIO_SLC0_TXLINK_DSCR : RO; bitpos: [31:0]; default: 0;
  *  reserved
  */
@@ -2832,7 +2832,7 @@ extern "C" {
 /** SDIO_SLC_SLC0_TXLINK_DSCR_BF0_REG register
  *  ******* Description ***********
  */
-#define SDIO_SLC_SLC0_TXLINK_DSCR_BF0_REG (DR_REG_SDIO_BASE + 0xb0)
+#define SDIO_SLC_SLC0_TXLINK_DSCR_BF0_REG (DR_REG_SLC_BASE + 0xb0)
 /** SDIO_SLC0_TXLINK_DSCR_BF0 : RO; bitpos: [31:0]; default: 0;
  *  reserved
  */
@@ -2844,7 +2844,7 @@ extern "C" {
 /** SDIO_SLC_SLC0_TXLINK_DSCR_BF1_REG register
  *  reserved
  */
-#define SDIO_SLC_SLC0_TXLINK_DSCR_BF1_REG (DR_REG_SDIO_BASE + 0xb4)
+#define SDIO_SLC_SLC0_TXLINK_DSCR_BF1_REG (DR_REG_SLC_BASE + 0xb4)
 /** SDIO_SLC0_TXLINK_DSCR_BF1 : RO; bitpos: [31:0]; default: 0;
  *  reserved
  */
@@ -2856,7 +2856,7 @@ extern "C" {
 /** SDIO_SLC_SLC0_RXLINK_DSCR_REG register
  *  ******* Description ***********
  */
-#define SDIO_SLC_SLC0_RXLINK_DSCR_REG (DR_REG_SDIO_BASE + 0xb8)
+#define SDIO_SLC_SLC0_RXLINK_DSCR_REG (DR_REG_SLC_BASE + 0xb8)
 /** SDIO_SLC0_RXLINK_DSCR : RO; bitpos: [31:0]; default: 0;
  *  the third word of slc0 link descriptor, or known as the next descriptor address
  */
@@ -2868,7 +2868,7 @@ extern "C" {
 /** SDIO_SLC_SLC0_RXLINK_DSCR_BF0_REG register
  *  ******* Description ***********
  */
-#define SDIO_SLC_SLC0_RXLINK_DSCR_BF0_REG (DR_REG_SDIO_BASE + 0xbc)
+#define SDIO_SLC_SLC0_RXLINK_DSCR_BF0_REG (DR_REG_SLC_BASE + 0xbc)
 /** SDIO_SLC0_RXLINK_DSCR_BF0 : RO; bitpos: [31:0]; default: 0;
  *  reserved
  */
@@ -2880,7 +2880,7 @@ extern "C" {
 /** SDIO_SLC_SLC0_RXLINK_DSCR_BF1_REG register
  *  reserved
  */
-#define SDIO_SLC_SLC0_RXLINK_DSCR_BF1_REG (DR_REG_SDIO_BASE + 0xc0)
+#define SDIO_SLC_SLC0_RXLINK_DSCR_BF1_REG (DR_REG_SLC_BASE + 0xc0)
 /** SDIO_SLC0_RXLINK_DSCR_BF1 : RO; bitpos: [31:0]; default: 0;
  *  reserved
  */
@@ -2892,7 +2892,7 @@ extern "C" {
 /** SDIO_SLC_SLC1_TXLINK_DSCR_REG register
  *  reserved
  */
-#define SDIO_SLC_SLC1_TXLINK_DSCR_REG (DR_REG_SDIO_BASE + 0xc4)
+#define SDIO_SLC_SLC1_TXLINK_DSCR_REG (DR_REG_SLC_BASE + 0xc4)
 /** SDIO_SLC1_TXLINK_DSCR : RO; bitpos: [31:0]; default: 0;
  *  reserved
  */
@@ -2904,7 +2904,7 @@ extern "C" {
 /** SDIO_SLC_SLC1_TXLINK_DSCR_BF0_REG register
  *  reserved
  */
-#define SDIO_SLC_SLC1_TXLINK_DSCR_BF0_REG (DR_REG_SDIO_BASE + 0xc8)
+#define SDIO_SLC_SLC1_TXLINK_DSCR_BF0_REG (DR_REG_SLC_BASE + 0xc8)
 /** SDIO_SLC1_TXLINK_DSCR_BF0 : RO; bitpos: [31:0]; default: 0;
  *  reserved
  */
@@ -2916,7 +2916,7 @@ extern "C" {
 /** SDIO_SLC_SLC1_TXLINK_DSCR_BF1_REG register
  *  reserved
  */
-#define SDIO_SLC_SLC1_TXLINK_DSCR_BF1_REG (DR_REG_SDIO_BASE + 0xcc)
+#define SDIO_SLC_SLC1_TXLINK_DSCR_BF1_REG (DR_REG_SLC_BASE + 0xcc)
 /** SDIO_SLC1_TXLINK_DSCR_BF1 : RO; bitpos: [31:0]; default: 0;
  *  reserved
  */
@@ -2928,7 +2928,7 @@ extern "C" {
 /** SDIO_SLC_SLC1_RXLINK_DSCR_REG register
  *  ******* Description ***********
  */
-#define SDIO_SLC_SLC1_RXLINK_DSCR_REG (DR_REG_SDIO_BASE + 0xd0)
+#define SDIO_SLC_SLC1_RXLINK_DSCR_REG (DR_REG_SLC_BASE + 0xd0)
 /** SDIO_SLC1_RXLINK_DSCR : RO; bitpos: [31:0]; default: 0;
  *  the third word of slc1 link descriptor, or known as the next descriptor address
  */
@@ -2940,7 +2940,7 @@ extern "C" {
 /** SDIO_SLC_SLC1_RXLINK_DSCR_BF0_REG register
  *  ******* Description ***********
  */
-#define SDIO_SLC_SLC1_RXLINK_DSCR_BF0_REG (DR_REG_SDIO_BASE + 0xd4)
+#define SDIO_SLC_SLC1_RXLINK_DSCR_BF0_REG (DR_REG_SLC_BASE + 0xd4)
 /** SDIO_SLC1_RXLINK_DSCR_BF0 : RO; bitpos: [31:0]; default: 0;
  *  reserved
  */
@@ -2952,7 +2952,7 @@ extern "C" {
 /** SDIO_SLC_SLC1_RXLINK_DSCR_BF1_REG register
  *  reserved
  */
-#define SDIO_SLC_SLC1_RXLINK_DSCR_BF1_REG (DR_REG_SDIO_BASE + 0xd8)
+#define SDIO_SLC_SLC1_RXLINK_DSCR_BF1_REG (DR_REG_SLC_BASE + 0xd8)
 /** SDIO_SLC1_RXLINK_DSCR_BF1 : RO; bitpos: [31:0]; default: 0;
  *  reserved
  */
@@ -2964,7 +2964,7 @@ extern "C" {
 /** SDIO_SLC_SLC0_TX_ERREOF_DES_ADDR_REG register
  *  reserved
  */
-#define SDIO_SLC_SLC0_TX_ERREOF_DES_ADDR_REG (DR_REG_SDIO_BASE + 0xdc)
+#define SDIO_SLC_SLC0_TX_ERREOF_DES_ADDR_REG (DR_REG_SLC_BASE + 0xdc)
 /** SDIO_SLC0_TX_ERR_EOF_DES_ADDR : RO; bitpos: [31:0]; default: 0;
  *  reserved
  */
@@ -2976,7 +2976,7 @@ extern "C" {
 /** SDIO_SLC_SLC1_TX_ERREOF_DES_ADDR_REG register
  *  reserved
  */
-#define SDIO_SLC_SLC1_TX_ERREOF_DES_ADDR_REG (DR_REG_SDIO_BASE + 0xe0)
+#define SDIO_SLC_SLC1_TX_ERREOF_DES_ADDR_REG (DR_REG_SLC_BASE + 0xe0)
 /** SDIO_SLC1_TX_ERR_EOF_DES_ADDR : RO; bitpos: [31:0]; default: 0;
  *  reserved
  */
@@ -2988,7 +2988,7 @@ extern "C" {
 /** SDIO_SLC_TOKEN_LAT_REG register
  *  reserved
  */
-#define SDIO_SLC_TOKEN_LAT_REG (DR_REG_SDIO_BASE + 0xe4)
+#define SDIO_SLC_TOKEN_LAT_REG (DR_REG_SLC_BASE + 0xe4)
 /** SDIO_SLC0_TOKEN : RO; bitpos: [11:0]; default: 0;
  *  reserved
  */
@@ -3007,7 +3007,7 @@ extern "C" {
 /** SDIO_SLC_TX_DSCR_CONF_REG register
  *  reserved
  */
-#define SDIO_SLC_TX_DSCR_CONF_REG (DR_REG_SDIO_BASE + 0xe8)
+#define SDIO_SLC_TX_DSCR_CONF_REG (DR_REG_SLC_BASE + 0xe8)
 /** SDIO_SLC_WR_RETRY_THRESHOLD : R/W; bitpos: [10:0]; default: 128;
  *  reserved
  */
@@ -3019,7 +3019,7 @@ extern "C" {
 /** SDIO_SLC_CMD_INFOR0_REG register
  *  reserved
  */
-#define SDIO_SLC_CMD_INFOR0_REG (DR_REG_SDIO_BASE + 0xec)
+#define SDIO_SLC_CMD_INFOR0_REG (DR_REG_SLC_BASE + 0xec)
 /** SDIO_CMD_CONTENT0 : RO; bitpos: [31:0]; default: 0;
  *  reserved
  */
@@ -3031,7 +3031,7 @@ extern "C" {
 /** SDIO_SLC_CMD_INFOR1_REG register
  *  reserved
  */
-#define SDIO_SLC_CMD_INFOR1_REG (DR_REG_SDIO_BASE + 0xf0)
+#define SDIO_SLC_CMD_INFOR1_REG (DR_REG_SLC_BASE + 0xf0)
 /** SDIO_CMD_CONTENT1 : RO; bitpos: [31:0]; default: 0;
  *  reserved
  */
@@ -3043,7 +3043,7 @@ extern "C" {
 /** SDIO_SLC_SLC0_LEN_CONF_REG register
  *  reserved
  */
-#define SDIO_SLC_SLC0_LEN_CONF_REG (DR_REG_SDIO_BASE + 0xf4)
+#define SDIO_SLC_SLC0_LEN_CONF_REG (DR_REG_SLC_BASE + 0xf4)
 /** SDIO_SLC0_LEN_WDATA : WT; bitpos: [19:0]; default: 0;
  *  The packet length sent by dma channel0.
  */
@@ -3136,7 +3136,7 @@ extern "C" {
 /** SDIO_SLC_SLC0_LENGTH_REG register
  *  reserved
  */
-#define SDIO_SLC_SLC0_LENGTH_REG (DR_REG_SDIO_BASE + 0xf8)
+#define SDIO_SLC_SLC0_LENGTH_REG (DR_REG_SLC_BASE + 0xf8)
 /** SDIO_SLC0_LEN : RO; bitpos: [19:0]; default: 0;
  *  Indicates the paclet length sent by the slave through dma channel0.
  */
@@ -3148,7 +3148,7 @@ extern "C" {
 /** SDIO_SLC_SLC0_TXPKT_H_DSCR_REG register
  *  Sdio slave DMA channel0 start address of receiving linked list register.
  */
-#define SDIO_SLC_SLC0_TXPKT_H_DSCR_REG (DR_REG_SDIO_BASE + 0xfc)
+#define SDIO_SLC_SLC0_TXPKT_H_DSCR_REG (DR_REG_SLC_BASE + 0xfc)
 /** SDIO_SLC0_TX_PKT_H_DSCR_ADDR : R/W; bitpos: [31:0]; default: 0;
  *  Configure the start address of receiving linked list to be stitched to the current
  *  linked list of dma channel0.
@@ -3161,7 +3161,7 @@ extern "C" {
 /** SDIO_SLC_SLC0_TXPKT_E_DSCR_REG register
  *  Sdio slave DMA channel0 end address of receiving linked list register.
  */
-#define SDIO_SLC_SLC0_TXPKT_E_DSCR_REG (DR_REG_SDIO_BASE + 0x100)
+#define SDIO_SLC_SLC0_TXPKT_E_DSCR_REG (DR_REG_SLC_BASE + 0x100)
 /** SDIO_SLC0_TX_PKT_E_DSCR_ADDR : R/W; bitpos: [31:0]; default: 0;
  *  Configure end address of receiving linked list to be stitched to the current linked
  *  list of dma channel0.
@@ -3174,7 +3174,7 @@ extern "C" {
 /** SDIO_SLC_SLC0_RXPKT_H_DSCR_REG register
  *  Sdio slave DMA channel0 start address of sending linked list register.
  */
-#define SDIO_SLC_SLC0_RXPKT_H_DSCR_REG (DR_REG_SDIO_BASE + 0x104)
+#define SDIO_SLC_SLC0_RXPKT_H_DSCR_REG (DR_REG_SLC_BASE + 0x104)
 /** SDIO_SLC0_RX_PKT_H_DSCR_ADDR : R/W; bitpos: [31:0]; default: 0;
  *  Configure the start address of sending linked list to be stitched to the current
  *  linked list of dma channel0.
@@ -3187,7 +3187,7 @@ extern "C" {
 /** SDIO_SLC_SLC0_RXPKT_E_DSCR_REG register
  *  Sdio slave DMA channel0 end address of sending linked list register.
  */
-#define SDIO_SLC_SLC0_RXPKT_E_DSCR_REG (DR_REG_SDIO_BASE + 0x108)
+#define SDIO_SLC_SLC0_RXPKT_E_DSCR_REG (DR_REG_SLC_BASE + 0x108)
 /** SDIO_SLC0_RX_PKT_E_DSCR_ADDR : R/W; bitpos: [31:0]; default: 0;
  *  Configure the end address of sending linked list to be stitched to the current
  *  linked list of dma channel0.
@@ -3200,7 +3200,7 @@ extern "C" {
 /** SDIO_SLC_SLC0_TXPKTU_H_DSCR_REG register
  *  Sdio slave DMA channel0 start address of receiving linked list status register.
  */
-#define SDIO_SLC_SLC0_TXPKTU_H_DSCR_REG (DR_REG_SDIO_BASE + 0x10c)
+#define SDIO_SLC_SLC0_TXPKTU_H_DSCR_REG (DR_REG_SLC_BASE + 0x10c)
 /** SDIO_SLC0_TX_PKT_START_DSCR_ADDR : RO; bitpos: [31:0]; default: 0;
  *  The start address of the linked list of the last received packet through dma
  *  channel0.
@@ -3213,7 +3213,7 @@ extern "C" {
 /** SDIO_SLC_SLC0_TXPKTU_E_DSCR_REG register
  *  Sdio slave DMA channel0 end address of receiving linked list status register.
  */
-#define SDIO_SLC_SLC0_TXPKTU_E_DSCR_REG (DR_REG_SDIO_BASE + 0x110)
+#define SDIO_SLC_SLC0_TXPKTU_E_DSCR_REG (DR_REG_SLC_BASE + 0x110)
 /** SDIO_SLC0_TX_PKT_END_DSCR_ADDR : RO; bitpos: [31:0]; default: 0;
  *  The end address of the linked list of the last received packet through dma channel0.
  */
@@ -3225,7 +3225,7 @@ extern "C" {
 /** SDIO_SLC_SLC0_RXPKTU_H_DSCR_REG register
  *  Sdio slave DMA channel0 start address of sending linked list status register.
  */
-#define SDIO_SLC_SLC0_RXPKTU_H_DSCR_REG (DR_REG_SDIO_BASE + 0x114)
+#define SDIO_SLC_SLC0_RXPKTU_H_DSCR_REG (DR_REG_SLC_BASE + 0x114)
 /** SDIO_SLC0_RX_PKT_START_DSCR_ADDR : RO; bitpos: [31:0]; default: 0;
  *  The start address of the linked list of the last sent packet through dma channel0.
  */
@@ -3237,7 +3237,7 @@ extern "C" {
 /** SDIO_SLC_SLC0_RXPKTU_E_DSCR_REG register
  *  Sdio slave DMA channel0 end address of sending linked list status register.
  */
-#define SDIO_SLC_SLC0_RXPKTU_E_DSCR_REG (DR_REG_SDIO_BASE + 0x118)
+#define SDIO_SLC_SLC0_RXPKTU_E_DSCR_REG (DR_REG_SLC_BASE + 0x118)
 /** SDIO_SLC0_RX_PKT_END_DSCR_ADDR : RO; bitpos: [31:0]; default: 0;
  *  The end address of the linked list of the last sent packet through dma channel0.
  */
@@ -3249,7 +3249,7 @@ extern "C" {
 /** SDIO_SLC_SEQ_POSITION_REG register
  *  The position of receiving packet configuration register.
  */
-#define SDIO_SLC_SEQ_POSITION_REG (DR_REG_SDIO_BASE + 0x11c)
+#define SDIO_SLC_SEQ_POSITION_REG (DR_REG_SLC_BASE + 0x11c)
 /** SDIO_SLC0_SEQ_POSITION : R/W; bitpos: [7:0]; default: 9;
  *  Configure the position of the receiving packet through dma channel0.
  */
@@ -3268,7 +3268,7 @@ extern "C" {
 /** SDIO_SLC_SLC0_DSCR_REC_CONF_REG register
  *  Sdio slave DMA sending linked list limit configuration register.
  */
-#define SDIO_SLC_SLC0_DSCR_REC_CONF_REG (DR_REG_SDIO_BASE + 0x120)
+#define SDIO_SLC_SLC0_DSCR_REC_CONF_REG (DR_REG_SLC_BASE + 0x120)
 /** SDIO_SLC0_RX_DSCR_REC_LIM : R/W; bitpos: [9:0]; default: 1023;
  *  Configure the limit number of descriptors used to send one packet through dma
  *  channel0 in stitch mode.
@@ -3281,7 +3281,7 @@ extern "C" {
 /** SDIO_SLC_SDIO_CRC_ST0_REG register
  *  Sdio slave receiving packet data crc status register.
  */
-#define SDIO_SLC_SDIO_CRC_ST0_REG (DR_REG_SDIO_BASE + 0x124)
+#define SDIO_SLC_SDIO_CRC_ST0_REG (DR_REG_SLC_BASE + 0x124)
 /** SDIO_DAT0_CRC_ERR_CNT : RO; bitpos: [7:0]; default: 0;
  *  The count value of received packet data crc errors on sd_data0 line.
  */
@@ -3314,7 +3314,7 @@ extern "C" {
 /** SDIO_SLC_SDIO_CRC_ST1_REG register
  *  Sdio slave receiving command crc status register.
  */
-#define SDIO_SLC_SDIO_CRC_ST1_REG (DR_REG_SDIO_BASE + 0x128)
+#define SDIO_SLC_SDIO_CRC_ST1_REG (DR_REG_SLC_BASE + 0x128)
 /** SDIO_CMD_CRC_ERR_CNT : RO; bitpos: [7:0]; default: 0;
  *  The count value of received command crc errors.
  */
@@ -3334,7 +3334,7 @@ extern "C" {
 /** SDIO_SLC_SLC0_EOF_START_DES_REG register
  *  Sdio slave DMA channel0 start address of sending linked list status register.
  */
-#define SDIO_SLC_SLC0_EOF_START_DES_REG (DR_REG_SDIO_BASE + 0x12c)
+#define SDIO_SLC_SLC0_EOF_START_DES_REG (DR_REG_SLC_BASE + 0x12c)
 /** SDIO_SLC0_EOF_START_DES_ADDR : RO; bitpos: [31:0]; default: 0;
  *  The start address of the linked list of the last sent packet through dma channel0.
  */
@@ -3346,7 +3346,7 @@ extern "C" {
 /** SDIO_SLC_SLC0_PUSH_DSCR_ADDR_REG register
  *  Sdio slave DMA channel0 address of sending linked list status register.
  */
-#define SDIO_SLC_SLC0_PUSH_DSCR_ADDR_REG (DR_REG_SDIO_BASE + 0x130)
+#define SDIO_SLC_SLC0_PUSH_DSCR_ADDR_REG (DR_REG_SLC_BASE + 0x130)
 /** SDIO_SLC0_RX_PUSH_DSCR_ADDR : RO; bitpos: [31:0]; default: 0;
  *  the current descriptor address when slc0 gets a link descriptor, aligned with word
  */
@@ -3358,7 +3358,7 @@ extern "C" {
 /** SDIO_SLC_SLC0_DONE_DSCR_ADDR_REG register
  *  Sdio slave DMA channel0 address of sending linked list status register1.
  */
-#define SDIO_SLC_SLC0_DONE_DSCR_ADDR_REG (DR_REG_SDIO_BASE + 0x134)
+#define SDIO_SLC_SLC0_DONE_DSCR_ADDR_REG (DR_REG_SLC_BASE + 0x134)
 /** SDIO_SLC0_RX_DONE_DSCR_ADDR : RO; bitpos: [31:0]; default: 0;
  *  the current descriptor address when slc0 finishes reading data from one buffer,
  *  aligned with word
@@ -3371,7 +3371,7 @@ extern "C" {
 /** SDIO_SLC_SLC0_SUB_START_DES_REG register
  *  Sdio slave DMA channel0 start address of sending linked list status register.
  */
-#define SDIO_SLC_SLC0_SUB_START_DES_REG (DR_REG_SDIO_BASE + 0x138)
+#define SDIO_SLC_SLC0_SUB_START_DES_REG (DR_REG_SLC_BASE + 0x138)
 /** SDIO_SLC0_SUB_PAC_START_DSCR_ADDR : RO; bitpos: [31:0]; default: 0;
  *  The start address of the linked list of the last sent packet through dma channel0.
  */
@@ -3383,7 +3383,7 @@ extern "C" {
 /** SDIO_SLC_SLC0_DSCR_CNT_REG register
  *  Sdio slave DMA channel0 descriptor status register.
  */
-#define SDIO_SLC_SLC0_DSCR_CNT_REG (DR_REG_SDIO_BASE + 0x13c)
+#define SDIO_SLC_SLC0_DSCR_CNT_REG (DR_REG_SLC_BASE + 0x13c)
 /** SDIO_SLC0_RX_DSCR_CNT_LAT : RO; bitpos: [9:0]; default: 0;
  *  The number of descriptors got by dma channel0 for sending packets.
  */
@@ -3402,7 +3402,7 @@ extern "C" {
 /** SDIO_SLC_SLC0_LEN_LIM_CONF_REG register
  *  Sdio slave DMA channel0 buffer limit configuration register.
  */
-#define SDIO_SLC_SLC0_LEN_LIM_CONF_REG (DR_REG_SDIO_BASE + 0x140)
+#define SDIO_SLC_SLC0_LEN_LIM_CONF_REG (DR_REG_SLC_BASE + 0x140)
 /** SDIO_SLC0_LEN_LIM : R/W; bitpos: [19:0]; default: 21504;
  *  Every time when the number of buffers loaded for sending packets reaches the number
  *  of slc0_len_lim, the current number of buffers loaded is saved into the registers
@@ -3416,7 +3416,7 @@ extern "C" {
 /** SDIO_SLC_SLC0INT_ST1_REG register
  *  Sdio slave DMA channel0 masked interrupt status register1.
  */
-#define SDIO_SLC_SLC0INT_ST1_REG (DR_REG_SDIO_BASE + 0x144)
+#define SDIO_SLC_SLC0INT_ST1_REG (DR_REG_SLC_BASE + 0x144)
 /** SDIO_SLC_FRHOST_BIT0_INT_ST1 : RO; bitpos: [0]; default: 0;
  *  The masked interrupt status bit1 for SLC_FRHOST_bit10_INT interrupt.
  */
@@ -3624,7 +3624,7 @@ extern "C" {
 /** SDIO_SLC_SLC0INT_ENA1_REG register
  *  Sdio slave DMA channel0 interrupt enable register1.
  */
-#define SDIO_SLC_SLC0INT_ENA1_REG (DR_REG_SDIO_BASE + 0x148)
+#define SDIO_SLC_SLC0INT_ENA1_REG (DR_REG_SLC_BASE + 0x148)
 /** SDIO_SLC_FRHOST_BIT0_INT_ENA1 : R/W; bitpos: [0]; default: 0;
  *  The interrupt enable bit1 for SLC_FRHOST_bit10_INT interrupt.
  */
@@ -3832,7 +3832,7 @@ extern "C" {
 /** SDIO_SLC_SLC1INT_ST1_REG register
  *  Sdio slave DMA channel1 masked interrupt status register1.
  */
-#define SDIO_SLC_SLC1INT_ST1_REG (DR_REG_SDIO_BASE + 0x14c)
+#define SDIO_SLC_SLC1INT_ST1_REG (DR_REG_SLC_BASE + 0x14c)
 /** SDIO_SLC_FRHOST_BIT8_INT_ST1 : RO; bitpos: [0]; default: 0;
  *  The masked interrupt status bit1 for SLC_FRHOST_bit10_INT interrupt.
  */
@@ -4012,7 +4012,7 @@ extern "C" {
 /** SDIO_SLC_SLC1INT_ENA1_REG register
  *  Sdio slave DMA channel1 interrupt enable register1.
  */
-#define SDIO_SLC_SLC1INT_ENA1_REG (DR_REG_SDIO_BASE + 0x150)
+#define SDIO_SLC_SLC1INT_ENA1_REG (DR_REG_SLC_BASE + 0x150)
 /** SDIO_SLC_FRHOST_BIT8_INT_ENA1 : R/W; bitpos: [0]; default: 0;
  *  The interrupt enable bit1 for SLC_FRHOST_bit10_INT interrupt.
  */
@@ -4192,7 +4192,7 @@ extern "C" {
 /** SDIO_SLC_SLC0_TX_SHAREMEM_START_REG register
  *  Sdio slave DMA channel0 address range of receiving linked list register.
  */
-#define SDIO_SLC_SLC0_TX_SHAREMEM_START_REG (DR_REG_SDIO_BASE + 0x154)
+#define SDIO_SLC_SLC0_TX_SHAREMEM_START_REG (DR_REG_SLC_BASE + 0x154)
 /** SDIO_SDIO_SLC0_TX_SHAREMEM_START_ADDR : R/W; bitpos: [31:0]; default: 0;
  *  The start address boundary of descriptor can be used to receive packet through dma
  *  channel0.
@@ -4205,7 +4205,7 @@ extern "C" {
 /** SDIO_SLC_SLC0_TX_SHAREMEM_END_REG register
  *  Sdio slave DMA channel0 address range of receiving linked list register1.
  */
-#define SDIO_SLC_SLC0_TX_SHAREMEM_END_REG (DR_REG_SDIO_BASE + 0x158)
+#define SDIO_SLC_SLC0_TX_SHAREMEM_END_REG (DR_REG_SLC_BASE + 0x158)
 /** SDIO_SDIO_SLC0_TX_SHAREMEM_END_ADDR : R/W; bitpos: [31:0]; default: 4294967295;
  *  The end address boundary of descriptor can be used to receive packet through dma
  *  channel0.
@@ -4218,7 +4218,7 @@ extern "C" {
 /** SDIO_SLC_SLC0_RX_SHAREMEM_START_REG register
  *  Sdio slave DMA channel0 address range of sending linked list register.
  */
-#define SDIO_SLC_SLC0_RX_SHAREMEM_START_REG (DR_REG_SDIO_BASE + 0x15c)
+#define SDIO_SLC_SLC0_RX_SHAREMEM_START_REG (DR_REG_SLC_BASE + 0x15c)
 /** SDIO_SDIO_SLC0_RX_SHAREMEM_START_ADDR : R/W; bitpos: [31:0]; default: 0;
  *  The start address boundary of descriptor can be used to send packet through dma
  *  channel0.
@@ -4231,7 +4231,7 @@ extern "C" {
 /** SDIO_SLC_SLC0_RX_SHAREMEM_END_REG register
  *  Sdio slave DMA channel0 address range of sending linked list register1.
  */
-#define SDIO_SLC_SLC0_RX_SHAREMEM_END_REG (DR_REG_SDIO_BASE + 0x160)
+#define SDIO_SLC_SLC0_RX_SHAREMEM_END_REG (DR_REG_SLC_BASE + 0x160)
 /** SDIO_SDIO_SLC0_RX_SHAREMEM_END_ADDR : R/W; bitpos: [31:0]; default: 4294967295;
  *  The end address boundary of descriptor can be used to send packet through dma
  *  channel0.
@@ -4244,7 +4244,7 @@ extern "C" {
 /** SDIO_SLC_SLC1_TX_SHAREMEM_START_REG register
  *  Sdio slave DMA channel1 address range of receiving linked list register.
  */
-#define SDIO_SLC_SLC1_TX_SHAREMEM_START_REG (DR_REG_SDIO_BASE + 0x164)
+#define SDIO_SLC_SLC1_TX_SHAREMEM_START_REG (DR_REG_SLC_BASE + 0x164)
 /** SDIO_SDIO_SLC1_TX_SHAREMEM_START_ADDR : R/W; bitpos: [31:0]; default: 0;
  *  The start address boundary of descriptor can be used to receive packet through dma
  *  channel1.
@@ -4257,7 +4257,7 @@ extern "C" {
 /** SDIO_SLC_SLC1_TX_SHAREMEM_END_REG register
  *  Sdio slave DMA channel1 address range of receiving linked list register1.
  */
-#define SDIO_SLC_SLC1_TX_SHAREMEM_END_REG (DR_REG_SDIO_BASE + 0x168)
+#define SDIO_SLC_SLC1_TX_SHAREMEM_END_REG (DR_REG_SLC_BASE + 0x168)
 /** SDIO_SDIO_SLC1_TX_SHAREMEM_END_ADDR : R/W; bitpos: [31:0]; default: 4294967295;
  *  The end address boundary of descriptor can be used to receive packet through dma
  *  channel1.
@@ -4270,7 +4270,7 @@ extern "C" {
 /** SDIO_SLC_SLC1_RX_SHAREMEM_START_REG register
  *  Sdio slave DMA channel1 address range of sending linked list register.
  */
-#define SDIO_SLC_SLC1_RX_SHAREMEM_START_REG (DR_REG_SDIO_BASE + 0x16c)
+#define SDIO_SLC_SLC1_RX_SHAREMEM_START_REG (DR_REG_SLC_BASE + 0x16c)
 /** SDIO_SDIO_SLC1_RX_SHAREMEM_START_ADDR : R/W; bitpos: [31:0]; default: 0;
  *  The start address boundary of descriptor can be used to send packet through dma
  *  channel1.
@@ -4283,7 +4283,7 @@ extern "C" {
 /** SDIO_SLC_SLC1_RX_SHAREMEM_END_REG register
  *  Sdio slave DMA channel1 address range of sending linked list register1.
  */
-#define SDIO_SLC_SLC1_RX_SHAREMEM_END_REG (DR_REG_SDIO_BASE + 0x170)
+#define SDIO_SLC_SLC1_RX_SHAREMEM_END_REG (DR_REG_SLC_BASE + 0x170)
 /** SDIO_SDIO_SLC1_RX_SHAREMEM_END_ADDR : R/W; bitpos: [31:0]; default: 4294967295;
  *  The end address boundary of descriptor can be used to send packet through dma
  *  channel1.
@@ -4296,7 +4296,7 @@ extern "C" {
 /** SDIO_SLC_HDA_TX_SHAREMEM_START_REG register
  *  Sdio slave HAD receiving address range register.
  */
-#define SDIO_SLC_HDA_TX_SHAREMEM_START_REG (DR_REG_SDIO_BASE + 0x174)
+#define SDIO_SLC_HDA_TX_SHAREMEM_START_REG (DR_REG_SLC_BASE + 0x174)
 /** SDIO_SDIO_HDA_TX_SHAREMEM_START_ADDR : R/W; bitpos: [31:0]; default: 0;
  *  Use 31 to 20 bit of this field as the higher 20 bits of 32-bit address for HAD
  *  receiving packets.
@@ -4309,7 +4309,7 @@ extern "C" {
 /** SDIO_SLC_HDA_RX_SHAREMEM_START_REG register
  *  Sdio slave HAD sending address range register.
  */
-#define SDIO_SLC_HDA_RX_SHAREMEM_START_REG (DR_REG_SDIO_BASE + 0x178)
+#define SDIO_SLC_HDA_RX_SHAREMEM_START_REG (DR_REG_SLC_BASE + 0x178)
 /** SDIO_SDIO_HDA_RX_SHAREMEM_START_ADDR : R/W; bitpos: [31:0]; default: 0;
  *  Use 31 to 20 bit of this field as the higher 20 bits of 32-bit address for HAD
  *  sending packets.
@@ -4322,7 +4322,7 @@ extern "C" {
 /** SDIO_SLC_BURST_LEN_REG register
  *  Sdio slave AHB burst type configuration register.
  */
-#define SDIO_SLC_BURST_LEN_REG (DR_REG_SDIO_BASE + 0x17c)
+#define SDIO_SLC_BURST_LEN_REG (DR_REG_SLC_BASE + 0x17c)
 /** SDIO_SLC0_TXDATA_BURST_LEN : R/W; bitpos: [0]; default: 1;
  *  AHB burst type: 0-incr4,1-incr8
  */
@@ -4355,7 +4355,7 @@ extern "C" {
 /** SDIO_SLC_DATE_REG register
  *  Sdio slave DMA version register.
  */
-#define SDIO_SLC_DATE_REG (DR_REG_SDIO_BASE + 0x1f8)
+#define SDIO_SLC_DATE_REG (DR_REG_SLC_BASE + 0x1f8)
 /** SDIO_SLC_DATE : R/W; bitpos: [31:0]; default: 554182400;
  *  Sdio slave DMA version register.
  */
@@ -4367,7 +4367,7 @@ extern "C" {
 /** SDIO_SLC_ID_REG register
  *  Sdio slave ID register.
  */
-#define SDIO_SLC_ID_REG (DR_REG_SDIO_BASE + 0x1fc)
+#define SDIO_SLC_ID_REG (DR_REG_SLC_BASE + 0x1fc)
 /** SDIO_SLC_ID : R/W; bitpos: [31:0]; default: 256;
  *  reserved
  */

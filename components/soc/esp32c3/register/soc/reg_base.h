@@ -21,6 +21,7 @@
 #define DR_REG_SPI1_BASE                        0x60002000
 #define DR_REG_SPI0_BASE                        0x60003000
 #define DR_REG_GPIO_BASE                        0x60004000
+#define DR_REG_GPIO_SD_BASE                     0x60004F00
 #define DR_REG_FE2_BASE                         0x60005000
 #define DR_REG_FE_BASE                          0x60006000
 #define DR_REG_RTCCNTL_BASE                     0x60008000

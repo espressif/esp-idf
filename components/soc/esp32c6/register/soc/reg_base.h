@@ -70,7 +70,7 @@
 #define DR_REG_LP_ANALOG_PERI_BASE              0x600B2C00
 #define DR_REG_LP_TEE_BASE                      0x600B3400
 #define DR_REG_LP_APM_BASE                      0x600B3800
-#define DR_REG_OPT_DEBUG_BASE                   0x600B3C00
+#define DR_REG_OTP_DEBUG_BASE                   0x600B3C00
 
 #define DR_REG_TRACE_BASE                       0x600C0000
 #define DR_REG_ASSIST_DEBUG_BASE                0x600C2000

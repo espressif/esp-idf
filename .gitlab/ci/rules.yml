@@ -43,6 +43,11 @@
   - "tools/ci/test_build_system*.py"
   - "tools/test_build_system/**/*"
 
+.patterns-soc_component: &patterns-soc_component
+  - ".gitlab/ci/pre_check.yml"
+  - "components/soc/**/*"
+  - "tools/ci/soc_header_check/**/*"
+
 .patterns-host_test_ldgen: &patterns-host_test_ldgen
   - ".gitlab/ci/host-test.yml"
 
@@ -364,6 +369,15 @@
     - <<: *if-label-windows
     - <<: *if-dev-push
       changes: *patterns-build_system_win
+
+.rules:soc_component:
+  rules:
+    - <<: *if-revert-branch
+      when: never
+    - <<: *if-protected-check
+    - <<: *if-label-build
+    - <<: *if-dev-push
+      changes: *patterns-soc_component
 
 .rules:test:host_test:
   rules:

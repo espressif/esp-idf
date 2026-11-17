@@ -10,6 +10,8 @@
 extern "C" {
 #endif
 
+#define DR_REG_TWAI_BASE(i)                     (DR_REG_TWAI0_BASE + (i) * 0x1000)
+
 /** TWAI_MODE_REG register
  *  TWAI mode register.
  */

@@ -13,7 +13,7 @@ extern "C" {
 /** CSI_BRIG_CLK_EN_REG register
  *  csi bridge register mapping unit clock gating.
  */
-#define CSI_BRIG_CLK_EN_REG (DR_REG_CSI_BRIG_BASE + 0x0)
+#define CSI_BRIG_CLK_EN_REG (DR_REG_CSI_BRG_BASE + 0x0)
 /** CSI_BRIG_CLK_EN : R/W; bitpos: [0]; default: 0;
  *  0: enable clock gating. 1: disable clock gating, clock always on.
  */
@@ -25,7 +25,7 @@ extern "C" {
 /** CSI_BRIG_CSI_EN_REG register
  *  csi bridge enable.
  */
-#define CSI_BRIG_CSI_EN_REG (DR_REG_CSI_BRIG_BASE + 0x4)
+#define CSI_BRIG_CSI_EN_REG (DR_REG_CSI_BRG_BASE + 0x4)
 /** CSI_BRIG_CSI_BRIG_EN : R/W; bitpos: [0]; default: 0;
  *  0: disable csi bridge. 1: enable csi bridge.
  */
@@ -44,7 +44,7 @@ extern "C" {
 /** CSI_BRIG_DMA_REQ_CFG_REG register
  *  dma request configuration.
  */
-#define CSI_BRIG_DMA_REQ_CFG_REG (DR_REG_CSI_BRIG_BASE + 0x8)
+#define CSI_BRIG_DMA_REQ_CFG_REG (DR_REG_CSI_BRG_BASE + 0x8)
 /** CSI_BRIG_DMA_BURST_LEN : R/W; bitpos: [11:0]; default: 128;
  *  DMA burst length.
  */
@@ -78,7 +78,7 @@ extern "C" {
 /** CSI_BRIG_BUF_FLOW_CTL_REG register
  *  csi bridge buffer control.
  */
-#define CSI_BRIG_BUF_FLOW_CTL_REG (DR_REG_CSI_BRIG_BASE + 0xc)
+#define CSI_BRIG_BUF_FLOW_CTL_REG (DR_REG_CSI_BRG_BASE + 0xc)
 /** CSI_BRIG_CSI_BUF_AFULL_THRD : R/W; bitpos: [13:0]; default: 2040;
  *  buffer almost full threshold.
  */
@@ -97,7 +97,7 @@ extern "C" {
 /** CSI_BRIG_DATA_TYPE_CFG_REG register
  *  pixel data type configuration.
  */
-#define CSI_BRIG_DATA_TYPE_CFG_REG (DR_REG_CSI_BRIG_BASE + 0x10)
+#define CSI_BRIG_DATA_TYPE_CFG_REG (DR_REG_CSI_BRG_BASE + 0x10)
 /** CSI_BRIG_DATA_TYPE_MIN : R/W; bitpos: [5:0]; default: 24;
  *  the min value of data type used for pixel filter.
  */
@@ -116,7 +116,7 @@ extern "C" {
 /** CSI_BRIG_FRAME_CFG_REG register
  *  frame configuration.
  */
-#define CSI_BRIG_FRAME_CFG_REG (DR_REG_CSI_BRIG_BASE + 0x14)
+#define CSI_BRIG_FRAME_CFG_REG (DR_REG_CSI_BRG_BASE + 0x14)
 /** CSI_BRIG_VADR_NUM : R/W; bitpos: [11:0]; default: 480;
  *  vadr of frame data.
  */
@@ -149,7 +149,7 @@ extern "C" {
 /** CSI_BRIG_ENDIAN_MODE_REG register
  *  data endianness order configuration.
  */
-#define CSI_BRIG_ENDIAN_MODE_REG (DR_REG_CSI_BRIG_BASE + 0x18)
+#define CSI_BRIG_ENDIAN_MODE_REG (DR_REG_CSI_BRG_BASE + 0x18)
 /** CSI_BRIG_BYTE_ENDIAN_ORDER : R/W; bitpos: [0]; default: 0;
  *  endianness order in bytes. 2'h0 is normal mode and 2'h3 is useful to YUV420(Legacy)
  *  when isp is bapassed.
@@ -169,7 +169,7 @@ extern "C" {
 /** CSI_BRIG_INT_RAW_REG register
  *  csi bridge interrupt raw.
  */
-#define CSI_BRIG_INT_RAW_REG (DR_REG_CSI_BRIG_BASE + 0x1c)
+#define CSI_BRIG_INT_RAW_REG (DR_REG_CSI_BRG_BASE + 0x1c)
 /** CSI_BRIG_VADR_NUM_GT_INT_RAW : R/WTC/SS; bitpos: [0]; default: 0;
  *  reg_vadr_num is greater than real interrupt raw.
  */
@@ -216,7 +216,7 @@ extern "C" {
 /** CSI_BRIG_INT_CLR_REG register
  *  csi bridge interrupt clr.
  */
-#define CSI_BRIG_INT_CLR_REG (DR_REG_CSI_BRIG_BASE + 0x20)
+#define CSI_BRIG_INT_CLR_REG (DR_REG_CSI_BRG_BASE + 0x20)
 /** CSI_BRIG_VADR_NUM_GT_REAL_INT_CLR : WT; bitpos: [0]; default: 0;
  *  reg_vadr_num is greater than real interrupt clr.
  */
@@ -263,7 +263,7 @@ extern "C" {
 /** CSI_BRIG_INT_ST_REG register
  *  csi bridge interrupt st.
  */
-#define CSI_BRIG_INT_ST_REG (DR_REG_CSI_BRIG_BASE + 0x24)
+#define CSI_BRIG_INT_ST_REG (DR_REG_CSI_BRG_BASE + 0x24)
 /** CSI_BRIG_VADR_NUM_GT_INT_ST : RO; bitpos: [0]; default: 0;
  *  reg_vadr_num is greater than real interrupt st.
  */
@@ -310,7 +310,7 @@ extern "C" {
 /** CSI_BRIG_INT_ENA_REG register
  *  csi bridge interrupt enable.
  */
-#define CSI_BRIG_INT_ENA_REG (DR_REG_CSI_BRIG_BASE + 0x28)
+#define CSI_BRIG_INT_ENA_REG (DR_REG_CSI_BRG_BASE + 0x28)
 /** CSI_BRIG_VADR_NUM_GT_INT_ENA : R/W; bitpos: [0]; default: 0;
  *  reg_vadr_num is greater than real interrupt enable.
  */
@@ -357,7 +357,7 @@ extern "C" {
 /** CSI_BRIG_DMA_REQ_INTERVAL_REG register
  *  DMA interval configuration.
  */
-#define CSI_BRIG_DMA_REQ_INTERVAL_REG (DR_REG_CSI_BRIG_BASE + 0x2c)
+#define CSI_BRIG_DMA_REQ_INTERVAL_REG (DR_REG_CSI_BRG_BASE + 0x2c)
 /** CSI_BRIG_DMA_REQ_INTERVAL : R/W; bitpos: [15:0]; default: 1;
  *  16'b1: 1 cycle. 16'b11: 2 cycle. ... ... 16'hFFFF: 16 cycle.
  */
@@ -369,7 +369,7 @@ extern "C" {
 /** CSI_BRIG_DMABLK_SIZE_REG register
  *  DMA block size configuration.
  */
-#define CSI_BRIG_DMABLK_SIZE_REG (DR_REG_CSI_BRIG_BASE + 0x30)
+#define CSI_BRIG_DMABLK_SIZE_REG (DR_REG_CSI_BRG_BASE + 0x30)
 /** CSI_BRIG_DMABLK_SIZE : R/W; bitpos: [12:0]; default: 8191;
  *  the number of reg_dma_burst_len in a block
  */
@@ -381,7 +381,7 @@ extern "C" {
 /** CSI_BRIG_HOST_CTRL_REG register
  *  csi host control by csi bridge.
  */
-#define CSI_BRIG_HOST_CTRL_REG (DR_REG_CSI_BRIG_BASE + 0x40)
+#define CSI_BRIG_HOST_CTRL_REG (DR_REG_CSI_BRG_BASE + 0x40)
 /** CSI_BRIG_CSI_ENABLECLK : R/W; bitpos: [0]; default: 1;
  *  enable clock lane module of csi phy.
  */
@@ -407,7 +407,7 @@ extern "C" {
 /** CSI_BRIG_HOST_CM_CTRL_REG register
  *  CSI HOST color mode convert configuration.
  */
-#define CSI_BRIG_HOST_CM_CTRL_REG (DR_REG_CSI_BRIG_BASE + 0x48)
+#define CSI_BRIG_HOST_CM_CTRL_REG (DR_REG_CSI_BRG_BASE + 0x48)
 /** CSI_BRIG_CSI_HOST_CM_EN : R/W; bitpos: [0]; default: 1;
  *  Configures whether to enable cm output
  */
@@ -476,7 +476,7 @@ extern "C" {
 /** CSI_BRIG_HOST_SIZE_CTRL_REG register
  *  CSI HOST color mode convert configuration.
  */
-#define CSI_BRIG_HOST_SIZE_CTRL_REG (DR_REG_CSI_BRIG_BASE + 0x4c)
+#define CSI_BRIG_HOST_SIZE_CTRL_REG (DR_REG_CSI_BRG_BASE + 0x4c)
 /** CSI_BRIG_CSI_HOST_CM_VNUM : R/W; bitpos: [11:0]; default: 0;
  *  Configures idi32 image size in y-direction, row_num - 1, valid only when
  *  yuv422_to_yuv420_en = 1

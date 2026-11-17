@@ -13,7 +13,7 @@ extern "C" {
 /** TSENS_CTRL_REG register
  *  Tsens configuration.
  */
-#define TSENS_CTRL_REG (DR_REG_TSENS_BASE + 0x0)
+#define TSENS_CTRL_REG (DR_REG_LP_TSENSOR_BASE + 0x0)
 /** TSENS_OUT : RO; bitpos: [7:0]; default: 0;
  *  Temperature sensor data out.
  */
@@ -81,7 +81,7 @@ extern "C" {
 /** TSENS_INT_RAW_REG register
  *  Tsens interrupt raw registers.
  */
-#define TSENS_INT_RAW_REG (DR_REG_TSENS_BASE + 0x8)
+#define TSENS_INT_RAW_REG (DR_REG_LP_TSENSOR_BASE + 0x8)
 /** TSENS_COCPU_TSENS_WAKE_INT_RAW : R/WTC/SS; bitpos: [0]; default: 0;
  *  Tsens wakeup interrupt raw.
  */
@@ -93,7 +93,7 @@ extern "C" {
 /** TSENS_INT_ST_REG register
  *  Tsens interrupt status registers.
  */
-#define TSENS_INT_ST_REG (DR_REG_TSENS_BASE + 0xc)
+#define TSENS_INT_ST_REG (DR_REG_LP_TSENSOR_BASE + 0xc)
 /** TSENS_COCPU_TSENS_WAKE_INT_ST : RO; bitpos: [0]; default: 0;
  *  Tsens wakeup interrupt status.
  */
@@ -105,7 +105,7 @@ extern "C" {
 /** TSENS_INT_ENA_REG register
  *  Tsens interrupt enable registers.
  */
-#define TSENS_INT_ENA_REG (DR_REG_TSENS_BASE + 0x10)
+#define TSENS_INT_ENA_REG (DR_REG_LP_TSENSOR_BASE + 0x10)
 /** TSENS_COCPU_TSENS_WAKE_INT_ENA : R/WTC; bitpos: [0]; default: 0;
  *  Tsens wakeup interrupt enable.
  */
@@ -117,7 +117,7 @@ extern "C" {
 /** TSENS_INT_CLR_REG register
  *  Tsens interrupt clear registers.
  */
-#define TSENS_INT_CLR_REG (DR_REG_TSENS_BASE + 0x14)
+#define TSENS_INT_CLR_REG (DR_REG_LP_TSENSOR_BASE + 0x14)
 /** TSENS_COCPU_TSENS_WAKE_INT_CLR : WT; bitpos: [0]; default: 0;
  *  Tsens wakeup interrupt clear.
  */
@@ -129,7 +129,7 @@ extern "C" {
 /** TSENS_CLK_CONF_REG register
  *  Tsens regbank configuration registers.
  */
-#define TSENS_CLK_CONF_REG (DR_REG_TSENS_BASE + 0x18)
+#define TSENS_CLK_CONF_REG (DR_REG_LP_TSENSOR_BASE + 0x18)
 /** TSENS_CLK_EN : R/W; bitpos: [0]; default: 0;
  *  Tsens regbank clock gating enable.
  */
@@ -141,7 +141,7 @@ extern "C" {
 /** TSENS_INT_ENA_W1TS_REG register
  *  Tsens wakeup interrupt enable assert.
  */
-#define TSENS_INT_ENA_W1TS_REG (DR_REG_TSENS_BASE + 0x1c)
+#define TSENS_INT_ENA_W1TS_REG (DR_REG_LP_TSENSOR_BASE + 0x1c)
 /** TSENS_COCPU_TSENS_WAKE_INT_ENA_W1TS : WT; bitpos: [0]; default: 0;
  *  Write 1 to this field to assert interrupt enable.
  */
@@ -153,7 +153,7 @@ extern "C" {
 /** TSENS_INT_ENA_W1TC_REG register
  *  Tsens wakeup interrupt enable deassert.
  */
-#define TSENS_INT_ENA_W1TC_REG (DR_REG_TSENS_BASE + 0x20)
+#define TSENS_INT_ENA_W1TC_REG (DR_REG_LP_TSENSOR_BASE + 0x20)
 /** TSENS_COCPU_TSENS_WAKE_INT_ENA_W1TC : WT; bitpos: [0]; default: 0;
  *  Write 1 to this field to deassert interrupt enable.
  */
@@ -165,7 +165,7 @@ extern "C" {
 /** TSENS_WAKEUP_CTRL_REG register
  *  Tsens wakeup control registers.
  */
-#define TSENS_WAKEUP_CTRL_REG (DR_REG_TSENS_BASE + 0x24)
+#define TSENS_WAKEUP_CTRL_REG (DR_REG_LP_TSENSOR_BASE + 0x24)
 /** TSENS_WAKEUP_TH_LOW : R/W; bitpos: [7:0]; default: 0;
  *  Lower threshold.
  */
@@ -205,7 +205,7 @@ extern "C" {
 /** TSENS_SAMPLE_RATE_REG register
  *  Hardware automatic sampling control registers.
  */
-#define TSENS_SAMPLE_RATE_REG (DR_REG_TSENS_BASE + 0x28)
+#define TSENS_SAMPLE_RATE_REG (DR_REG_LP_TSENSOR_BASE + 0x28)
 /** TSENS_SAMPLE_RATE : R/W; bitpos: [15:0]; default: 20;
  *  Hardware automatic sampling rate.
  */
