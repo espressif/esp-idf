@@ -13,6 +13,10 @@ To perform software reset of the chip, the :cpp:func:`esp_restart` function is p
 
 Additionally, the :cpp:func:`esp_register_shutdown_handler` function can register a routine that will be automatically called before a restart (that is triggered by :cpp:func:`esp_restart`) occurs. This is similar to the functionality of ``atexit`` POSIX function.
 
+If a shutdown handler, or multiple shutdown handlers collectively, block longer than :menuitem:`CONFIG_ESP_SYSTEM_SHUTDOWN_HANDLER_TIMEOUT_MS` (30 seconds by default), the RTC watchdog resets the chip and :cpp:func:`esp_reset_reason` reports ``ESP_RST_WDT``. Set the option to 0 to disable the guard. Handlers that return in time are unchanged: the RTC watchdog is re-armed to 1 second for the final reset, and the reset reason stays ``ESP_RST_SW``. Light sleep pauses this watchdog unless :menuitem:`CONFIG_ESP_SLEEP_ENABLE_RTC_WDT_IN_SLEEP` is enabled.
+
+If :menuitem:`CONFIG_BOOTLOADER_WDT_DISABLE_IN_USER_CODE` is enabled, this timeout replaces the application's RTC watchdog configuration for the shutdown window. A task that keeps feeding the RTC watchdog can still prevent the reset.
+
 Reset Reason
 ------------
 

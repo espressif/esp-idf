@@ -51,6 +51,8 @@ RTC/LP 看门狗定时器用于追踪从上电到用户主函数执行的启动�
 
 如果未能及时重置或禁用 RTC_WDT，芯片将自动重置。请参阅 :ref:`RTC-Watchdog-Timeout` 了解更多信息。
 
+如果某个关闭处理函数，或多个关闭处理函数合计，阻塞时间超过 :menuitem:`CONFIG_ESP_SYSTEM_SHUTDOWN_HANDLER_TIMEOUT_MS`，RTC 看门狗会复位芯片，复位原因为 ``ESP_RST_WDT``。这也包括会一直阻塞的处理函数（例如卡在 ``esp_wifi_stop`` 中），否则芯片一直不会复位：重启任务被阻塞时，空闲任务仍在喂狗，任务看门狗不会超时。除非启用 :menuitem:`CONFIG_ESP_SLEEP_ENABLE_RTC_WDT_IN_SLEEP`，否则浅睡眠会暂停该看门狗。与 :menuitem:`CONFIG_BOOTLOADER_WDT_DISABLE_IN_USER_CODE` 的关系见 :doc:`杂项系统 API <misc_system_api>`。
+
 中断看门狗定时器 (IWDT)
 -------------------------------
 

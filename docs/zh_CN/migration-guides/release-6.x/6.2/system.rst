@@ -54,7 +54,6 @@ OTA 更新
 
 与此前的默认配置（禁用回滚）相比，默认启用自动确认的应用程序回滚功能会略微增加代码大小。在 ESP32 上测试 :example:`system/ota/native_ota_example` 示例，引导加载程序大约增加 80 字节，应用程序大约增加 350 字节。具体数值因目标芯片和应用配置而异。
 
-
 SPIRAM DMA 预留池
 -----------------
 
@@ -66,3 +65,12 @@ SPIRAM DMA 预留池
 因此 ``heap_caps_malloc(MALLOC_CAP_INTERNAL)`` 不再优先从预留池分配；显式 ``MALLOC_CAP_DMA`` 请求仍会优先使用预留池。
 
 当 ``CONFIG_SPIRAM_MALLOC_ALWAYSINTERNAL`` 为非 0 值时，``malloc()`` 优先尝试内部内存的那一轮现在会跳过仅以低优先级提供 ``MALLOC_CAP_DEFAULT`` 的堆（预留池，以及部分芯片上的 RTC RAM 和 SPM）。这些堆仅在 PSRAM 耗尽后才会被使用。
+
+软件重启
+--------
+
+如果某个关闭处理函数，或多个关闭处理函数合计，阻塞时间超过 :ref:`CONFIG_ESP_SYSTEM_SHUTDOWN_HANDLER_TIMEOUT_MS <CONFIG_ESP_SYSTEM_SHUTDOWN_HANDLER_TIMEOUT_MS>` （默认 30 秒），RTC 看门狗会复位芯片，复位原因为 ``ESP_RST_WDT``。将其设为 0 可保持原有行为：处理函数若永不返回，芯片一直不会复位。
+
+及时返回的处理函数不受影响：RTC 看门狗会在最终复位前重新配置为 1 秒，复位原因仍为 ``ESP_RST_SW``。
+
+若启用了 :ref:`CONFIG_BOOTLOADER_WDT_DISABLE_IN_USER_CODE <CONFIG_BOOTLOADER_WDT_DISABLE_IN_USER_CODE>`，应用程序已经拥有 RTC 看门狗。关闭超时会在关闭窗口内替换该配置。持续喂狗的任务仍可能阻止这次复位。

@@ -25,6 +25,7 @@ from pytest_embedded_idf.utils import soc_filtered_targets
             )
         ),
         ('single_core_esp32', 'esp32'),
+        ('auto_lightsleep', 'esp32'),
     ],
     indirect=['config', 'target'],
 )

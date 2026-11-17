@@ -9,8 +9,15 @@
 #include "soc/soc_caps.h"
 #include "esp_system.h"
 #include "esp_task_wdt.h"
+#include "freertos/FreeRTOS.h"
+#include "freertos/task.h"
+#if CONFIG_PM_ENABLE && CONFIG_FREERTOS_USE_TICKLESS_IDLE && SOC_LIGHT_SLEEP_SUPPORTED
+#include "esp_pm.h"
+#include "esp_timer.h"
+#endif
 #include "esp_attr.h"
 #include "esp_sleep.h"
+#include "esp_rom_sys.h"
 #include "soc/rtc.h"
 #include "hal/wdt_hal.h"
 #if CONFIG_IDF_TARGET_ARCH_RISCV
@@ -294,6 +301,177 @@ TEST_CASE_MULTIPLE_STAGES("reset reason ESP_RST_WDT after RTC watchdog",
                           "[reset_reason]",
                           do_rtc_wdt,
                           check_reset_reason_any_wdt);
+
+#if CONFIG_ESP_SYSTEM_SHUTDOWN_HANDLER_TIMEOUT_MS > 0
+static void hang_in_shutdown_handler(void)
+{
+    while (1) {
+    }
+}
+
+static void do_shutdown_handler_hang(void)
+{
+    setup_values();
+    TEST_ASSERT_EQUAL(ESP_OK, esp_register_shutdown_handler(hang_in_shutdown_handler));
+    esp_restart();
+}
+
+/* Same check as the RTC watchdog case: a blocked shutdown handler must come
+ * back as a watchdog reset, not a software reset or a hang. */
+TEST_CASE_MULTIPLE_STAGES("reset reason ESP_RST_WDT after hung shutdown handler",
+                          "[reset_reason]",
+                          do_shutdown_handler_hang,
+                          check_reset_reason_any_wdt);
+
+#if CHECK_RTC_MEM
+/* Bit n is set only after handler n has finished its delay. */
+static RTC_NOINIT_ATTR uint32_t s_shutdown_handlers_done;
+#endif
+
+/* Each handler waits for 40% of the total timeout. */
+static void shutdown_handler_slice(unsigned index)
+{
+    esp_rom_delay_us((CONFIG_ESP_SYSTEM_SHUTDOWN_HANDLER_TIMEOUT_MS * 4 / 10) * 1000);
+#if CHECK_RTC_MEM
+    s_shutdown_handlers_done |= 1u << index;
+#else
+    (void)index;
+#endif
+}
+
+static void shutdown_handler_0(void)
+{
+    shutdown_handler_slice(0);
+}
+
+static void shutdown_handler_1(void)
+{
+    shutdown_handler_slice(1);
+}
+
+static void shutdown_handler_2(void)
+{
+    shutdown_handler_slice(2);
+}
+
+static void do_shutdown_handlers_cumulative(void)
+{
+#if CHECK_RTC_MEM
+    s_shutdown_handlers_done = 0;
+#endif
+    setup_values();
+    /* Collectively, the shutdown handlers take 120% of the timeout, so the RTC
+     * watchdog resets the chip before the third handler finishes. */
+    TEST_ASSERT_EQUAL(ESP_OK, esp_register_shutdown_handler(shutdown_handler_0));
+    TEST_ASSERT_EQUAL(ESP_OK, esp_register_shutdown_handler(shutdown_handler_1));
+    TEST_ASSERT_EQUAL(ESP_OK, esp_register_shutdown_handler(shutdown_handler_2));
+    /* Does not return. The RTC watchdog resets the chip during the third handler. */
+    esp_restart();
+}
+
+static void check_shutdown_handlers_cumulative(void)
+{
+    TEST_ASSERT_EQUAL_MESSAGE(ESP_RST_WDT, esp_reset_reason(),
+                              "RTC watchdog did not reset the chip during the third handler");
+#if CHECK_RTC_MEM
+    TEST_ASSERT_EQUAL_HEX32(CHECK_VALUE, s_rtc_noinit_val);
+    /* The first two handlers must finish. The reset is during the third handler. */
+    TEST_ASSERT_BITS_MESSAGE(0x3, 0x3, s_shutdown_handlers_done,
+                             "RTC watchdog reset the chip during the third handler, but an earlier handler did not finish");
+    /* The third handler must not finish. */
+    TEST_ASSERT_BITS_MESSAGE(0x4, 0, s_shutdown_handlers_done,
+                             "third handler finished; RTC watchdog missed the timeout");
+#endif
+}
+
+TEST_CASE_MULTIPLE_STAGES("reset reason ESP_RST_WDT after shutdown handlers exceed timeout together",
+                          "[reset_reason]",
+                          do_shutdown_handlers_cumulative,
+                          check_shutdown_handlers_cumulative);
+
+/* The scheduler is still running here. This wait returns only if some task
+ * notifies this one, but no task does. */
+static void wait_for_notification(void)
+{
+    ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
+}
+
+static void do_shutdown_handler_notify_wait(void)
+{
+    setup_values();
+    TEST_ASSERT_EQUAL(ESP_OK, esp_register_shutdown_handler(wait_for_notification));
+    esp_restart();
+}
+
+TEST_CASE_MULTIPLE_STAGES("reset reason ESP_RST_WDT after shutdown handler waits for notification",
+                          "[reset_reason]",
+                          do_shutdown_handler_notify_wait,
+                          check_reset_reason_any_wdt);
+
+#if CONFIG_PM_ENABLE && CONFIG_FREERTOS_USE_TICKLESS_IDLE && SOC_LIGHT_SLEEP_SUPPORTED
+/* Wall time waited inside the handler. Must survive the software reset. */
+#if CHECK_RTC_MEM
+static RTC_NOINIT_ATTR uint32_t s_light_sleep_wait_ms;
+#endif
+static int64_t s_light_sleep_wait_start_us;
+
+/* Becomes runnable only while the shutdown handler is blocked. Notifies after
+ * the shutdown timeout has passed in wall time. */
+static void notify_after_shutdown_timeout(void *arg)
+{
+    TaskHandle_t restart_task = (TaskHandle_t)arg;
+    vTaskDelay(pdMS_TO_TICKS(CONFIG_ESP_SYSTEM_SHUTDOWN_HANDLER_TIMEOUT_MS + 1500));
+    xTaskNotifyGive(restart_task);
+    vTaskDelete(NULL);
+}
+
+/* Blocks so the idle task can enter automatic light sleep. Light sleep pauses
+ * the RTC watchdog armed for this handler, so this wait can outlast the
+ * timeout and still return. */
+static void wait_through_auto_light_sleep(void)
+{
+    ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
+#if CHECK_RTC_MEM
+    int64_t elapsed_ms = (esp_timer_get_time() - s_light_sleep_wait_start_us) / 1000;
+    s_light_sleep_wait_ms = (elapsed_ms > 0) ? (uint32_t)elapsed_ms : 0;
+#endif
+}
+
+static void do_shutdown_handler_auto_light_sleep(void)
+{
+    esp_pm_config_t pm_config = {
+        .max_freq_mhz = CONFIG_ESP_DEFAULT_CPU_FREQ_MHZ,
+        .min_freq_mhz = CONFIG_XTAL_FREQ,
+        .light_sleep_enable = true,
+    };
+    setup_values();
+#if CHECK_RTC_MEM
+    s_light_sleep_wait_ms = 0;
+#endif
+    TEST_ASSERT_EQUAL(ESP_OK, esp_pm_configure(&pm_config));
+    s_light_sleep_wait_start_us = esp_timer_get_time();
+    TEST_ASSERT_EQUAL(pdPASS, xTaskCreate(notify_after_shutdown_timeout, "late_notify", 2048,
+                                          xTaskGetCurrentTaskHandle(), 1, NULL));
+    TEST_ASSERT_EQUAL(ESP_OK, esp_register_shutdown_handler(wait_through_auto_light_sleep));
+    esp_restart();
+}
+
+static void check_shutdown_handler_auto_light_sleep(void)
+{
+    check_reset_reason_sw();
+#if CHECK_RTC_MEM
+    TEST_ASSERT_GREATER_OR_EQUAL_UINT32_MESSAGE(
+        CONFIG_ESP_SYSTEM_SHUTDOWN_HANDLER_TIMEOUT_MS, s_light_sleep_wait_ms,
+        "handler returned before the shutdown timeout; light sleep did not cover the wait");
+#endif
+}
+
+TEST_CASE_MULTIPLE_STAGES("reset reason ESP_RST_SW after shutdown handler waits in automatic light sleep",
+                          "[reset_reason]",
+                          do_shutdown_handler_auto_light_sleep,
+                          check_shutdown_handler_auto_light_sleep);
+#endif // CONFIG_PM_ENABLE && CONFIG_FREERTOS_USE_TICKLESS_IDLE && SOC_LIGHT_SLEEP_SUPPORTED
+#endif // CONFIG_ESP_SYSTEM_SHUTDOWN_HANDLER_TIMEOUT_MS
 
 static void do_brownout(void)
 {

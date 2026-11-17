@@ -99,6 +99,12 @@ esp_err_t esp_unregister_shutdown_handler(shutdown_handler_t handle);
   *
   * This function can be called both from PRO and APP CPUs.
   * After successful restart, CPU reset reason will be SW_CPU_RESET.
+  * If a shutdown handler, or multiple shutdown handlers collectively, block
+  * longer than CONFIG_ESP_SYSTEM_SHUTDOWN_HANDLER_TIMEOUT_MS, the RTC watchdog
+  * resets the chip and the reset reason is ESP_RST_WDT.
+  * Set that option to 0 to disable the guard. Targets without an RTC watchdog
+  * are unchanged. Light sleep pauses this watchdog unless
+  * CONFIG_ESP_SLEEP_ENABLE_RTC_WDT_IN_SLEEP is enabled.
   * Peripherals (except for Wi-Fi, BT, UART0, SPI1, and legacy timers) are not reset.
   * This function does not return.
   */
