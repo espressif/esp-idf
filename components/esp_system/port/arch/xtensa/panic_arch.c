@@ -20,12 +20,8 @@
 
 #if !CONFIG_IDF_TARGET_ESP32
 #include "soc/rtc_cntl_reg.h"
-#if CONFIG_ESP_SYSTEM_MEMPROT && CONFIG_ESP_SYSTEM_MEMPROT_PMS
-#ifdef CONFIG_IDF_TARGET_ESP32S2
+#if CONFIG_ESP_SYSTEM_MEMPROT && CONFIG_ESP_SYSTEM_MEMPROT_PMS && CONFIG_IDF_TARGET_ESP32S2
 #include "esp32s2/memprot.h"
-#else
-#include "esp_memprot.h"
-#endif
 #endif
 #endif // CONFIG_IDF_TARGET_ESP32
 
@@ -302,15 +298,20 @@ void panic_soc_fill_info(void *f, panic_info_t *info)
         info->exception = PANIC_EXCEPTION_DEBUG;
     }
 
-    //MV note: ESP32S3 PMS handling?
     if (frame->exccause == PANIC_RSN_CACHEERR) {
-#if CONFIG_ESP_SYSTEM_MEMPROT && CONFIG_ESP_SYSTEM_MEMPROT_PMS && CONFIG_IDF_TARGET_ESP32S2
+        bool memprot_fault = false;
+#if CONFIG_ESP_SYSTEM_MEMPROT && CONFIG_ESP_SYSTEM_MEMPROT_PMS
+#if CONFIG_IDF_TARGET_ESP32S2
         if (esp_memprot_is_intr_ena_any()) {
             info->details = print_memprot_err_details;
             info->reason = "Memory protection fault";
-        } else
+            memprot_fault = true;
+        }
+#else
+        memprot_fault = panic_memprot_fill_info(info);
 #endif
-        {
+#endif
+        if (!memprot_fault) {
             info->details = print_cache_err_details;
         }
     }
