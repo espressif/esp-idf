@@ -112,10 +112,19 @@ function(_add_flags_to_files files flags)
         endforeach()
 
         foreach(flag ${flags})
-            # Skip flags that contain IDF_TOOLCHAIN_BUILD_DIR substring
-            # to avoid recursion
-            string(FIND "${flag}" "${IDF_TOOLCHAIN_BUILD_DIR}" found_pos)
-            if(found_pos EQUAL -1)
+            # Skip @response-file refs into IDF_TOOLCHAIN_BUILD_DIR (avoid recursion).
+            # IDF emits @"path", but @path and @'path' are also acceptable.
+            set(_skip_flag FALSE)
+            if(flag MATCHES "^@")
+                # Drop leading @ so remaining token is a path (possibly quoted).
+                string(SUBSTRING "${flag}" 1 -1 _resp_path)
+                # Unwrap "..." / '...' (shell rules); leave bare paths unchanged.
+                separate_arguments(_resp_path UNIX_COMMAND "${_resp_path}")
+                # Paranoid: flag already should use IDF_TOOLCHAIN_BUILD_DIR spelling.
+                file(REAL_PATH "${_resp_path}" _resp_path)
+                cmake_path(IS_PREFIX IDF_TOOLCHAIN_BUILD_DIR "${_resp_path}" _skip_flag)
+            endif()
+            if(NOT _skip_flag)
                 file(APPEND "${file_path}" "${flag}\n")
             endif()
         endforeach()
