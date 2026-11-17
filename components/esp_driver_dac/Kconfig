@@ -4,7 +4,7 @@ menu "ESP-Driver:DAC Configurations"
         bool "Place DAC control functions into IRAM"
         default n
         help
-            Place DAC control functions (e.g. 'dac_oneshot_output_voltage') into IRAM,
+            Place DAC control functions (e.g. 'dac_oneshot_output_code') into IRAM,
             so that this function can be IRAM-safe and able to be called in the other IRAM interrupt context.
             Enabling this option can improve driver performance as well.
 

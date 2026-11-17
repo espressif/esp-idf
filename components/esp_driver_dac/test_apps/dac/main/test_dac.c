@@ -44,13 +44,13 @@ TEST_CASE("DAC_API_basic_logic_test", "[dac]")
     TEST_ESP_OK(dac_oneshot_new_channel(&(dac_oneshot_config_t) {
         .chan_id = DAC_CHAN_0
     }, &oneshot_chan0_handle));
-    TEST_ESP_OK(dac_oneshot_output_voltage(oneshot_chan0_handle, 128));
+    TEST_ESP_OK(dac_oneshot_output_code(oneshot_chan0_handle, 128));
     TEST_ESP_OK(dac_oneshot_del_channel(oneshot_chan0_handle));
     dac_oneshot_handle_t oneshot_chan1_handle;
     TEST_ESP_OK(dac_oneshot_new_channel(&(dac_oneshot_config_t) {
         .chan_id = DAC_CHAN_1
     }, &oneshot_chan1_handle));
-    TEST_ESP_OK(dac_oneshot_output_voltage(oneshot_chan1_handle, 100));
+    TEST_ESP_OK(dac_oneshot_output_code(oneshot_chan1_handle, 100));
     TEST_ESP_OK(dac_oneshot_del_channel(oneshot_chan1_handle));
 
     /* Cosine wave API test */
@@ -177,7 +177,7 @@ TEST_CASE("DAC_set_voltage_test", "[dac]")
     int curr_adc = 0;
     int last_adc = 0;
     for (uint8_t i = 0; i <= 200; i += 20) {
-        TEST_ESP_OK(dac_oneshot_output_voltage(oneshot_chan0_handle, i));
+        TEST_ESP_OK(dac_oneshot_output_code(oneshot_chan0_handle, i));
         vTaskDelay(pdMS_TO_TICKS(20));
         TEST_ESP_OK(adc_oneshot_read(adc2_handle, ADC_TEST_CHANNEL_NUM, &curr_adc));
         printf("DAC: %d - ADC: %d\n", i, curr_adc);

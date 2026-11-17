@@ -28,7 +28,7 @@ static bool IRAM_ATTR on_timer_alarm_cb(gptimer_handle_t timer, const gptimer_al
     }
 
     dac_example_sample_t code = wave_data[wave_sel][index];
-    dac_oneshot_output_voltage(dac_handle, code);
+    dac_oneshot_output_code(dac_handle, code);
 
     point_cnt++;
     if (point_cnt < EXAMPLE_UPDATE_RATE_HZ * CONFIG_EXAMPLE_WAVE_PERIOD_SEC) {

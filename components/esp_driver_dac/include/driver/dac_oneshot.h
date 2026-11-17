@@ -23,6 +23,7 @@ typedef struct dac_oneshot_s    *dac_oneshot_handle_t;  /*!< DAC oneshot channel
  */
 typedef struct {
     dac_channel_t               chan_id;    /*!< DAC channel id */
+    dac_channel_config_t        chan_cfg;   /*!< Channel (analog pad) configuration. */
 } dac_oneshot_config_t;
 
 /**
@@ -52,16 +53,29 @@ esp_err_t dac_oneshot_new_channel(const dac_oneshot_config_t *oneshot_cfg, dac_o
 esp_err_t dac_oneshot_del_channel(dac_oneshot_handle_t handle);
 
 /**
- * @brief Output the voltage
- * @note  Generally it'll take 7~11 us on ESP32 and 10~21 us on ESP32-S2
+ * @brief Set the analog output code
  *
  * @param[in]  handle       The DAC oneshot channel handle
- * @param[in]  digi_value   The digital value that need to be converted
+ * @param[in]  digi_value   The DAC code to convert. Valid range depends on the channel configuration.
  * @return
  *      - ESP_ERR_INVALID_ARG  The input parameter is invalid
  *      - ESP_OK                Convert the digital value success
  */
-esp_err_t dac_oneshot_output_voltage(dac_oneshot_handle_t handle, uint8_t digi_value);
+esp_err_t dac_oneshot_output_code(dac_oneshot_handle_t handle, uint16_t digi_value);
+
+/**
+ * @brief Output the voltage
+ *
+ * @deprecated Use `dac_oneshot_output_code()` instead
+ *
+ * @param[in]  handle       The DAC oneshot channel handle
+ * @param[in]  digi_value   The DAC code to convert. Valid range depends on the channel configuration.
+ * @return
+ *      - ESP_ERR_INVALID_ARG  The input parameter is invalid
+ *      - ESP_OK                Convert the digital value success
+ */
+esp_err_t dac_oneshot_output_voltage(dac_oneshot_handle_t handle, uint16_t digi_value)
+__attribute__((deprecated("Please use dac_oneshot_output_code instead")));
 
 /**
  * @brief Get the DAC code bit width of a oneshot channel
