@@ -203,6 +203,10 @@ esp_err_t gpio_wakeup_enable(gpio_num_t gpio_num, gpio_int_type_t intr_type);
 /**
  * @brief Disable GPIO wake-up function.
  *
+ * @note When either CONFIG_ESP_SLEEP_GPIO_RESET_WORKAROUND or CONFIG_PM_SLP_DISABLE_GPIO is enabled,
+ *       the sleep-state configuration of `gpio_num` is applied during sleep (and that the user must
+ *       call `gpio_sleep_sel_dis()` again if the pin should stay on the active-state configuration).
+ *
  * @param gpio_num GPIO number
  *
  * @return
