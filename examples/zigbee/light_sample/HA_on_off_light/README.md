@@ -1,9 +1,9 @@
-| Supported Targets | ESP32-C5 | ESP32-C6 | ESP32-H2 |
-| ----------------- | -------- | -------- | -------- |
+| Supported Targets | ESP32-C5 | ESP32-C6 | ESP32-H2 | ESP32-H21 | ESP32-H4 | ESP32-S31 |
+| ----------------- | -------- | -------- | -------- | --------- | -------- | --------- |
 
 # Light Bulb Example
 
-This test code shows how to configure Zigbee end device and use it as HA on/off light bulb.
+This example demonstrates how to configure a Home Automation on/off light on a Zigbee Coordinator using ESP Zigbee SDK v2.
 
 The ESP Zigbee SDK provides more examples and tools for productization:
 * [ESP Zigbee SDK Docs](https://docs.espressif.com/projects/esp-zigbee-sdk)
@@ -11,13 +11,13 @@ The ESP Zigbee SDK provides more examples and tools for productization:
 
 ## Hardware Required
 
-* One development board with ESP32-H2 SoC acting as Zigbee end-device (loaded with HA_on_off_light example)
+* One 802.15.4-enabled development board running this example as a Zigbee Coordinator
 * A USB cable for power supply and programming
-* Choose another ESP32-H2 as Zigbee coordinator (see [HA_on_off_switch example](../HA_on_off_switch))
+* A second board running as a Zigbee Router/End Device (see [HA_on_off_switch](../HA_on_off_switch))
 
 ## Configure the project
 
-Before project configuration and build, make sure to set the correct chip target using `idf.py --preview set-target TARGET` command.
+Before project configuration and build, make sure to set the correct chip target using `idf.py set-target TARGET`.
 
 ## Erase the NVRAM
 
@@ -31,36 +31,28 @@ Build the project, flash it to the board, and start the monitor tool to view the
 
 ## Example Output
 
-As you run the example, you will see the following log:
+When the program starts, the board forms a Zigbee network and opens it for joining. As you run the example, you will see output similar to:
 
 ```
-I (403) app_start: Starting scheduler on CPU0
-I (408) main_task: Started on CPU0
-I (408) main_task: Calling app_main()
-I (428) phy: phy_version: 230,2, 9aae6ea, Jan 15 2024, 11:17:12
-I (428) phy: libbtbb version: 944f18e, Jan 15 2024, 11:17:25
-I (438) main_task: Returned from app_main()
-I (548) ESP_ZB_ON_OFF_LIGHT: ZDO signal: ZDO Config Ready (0x17), status: ESP_FAIL
-I (548) ESP_ZB_ON_OFF_LIGHT: Initialize Zigbee stack
-W (548) rmt: channel resolution loss, real=10666666
-I (558) gpio: GPIO[8]| InputEn: 0| OutputEn: 1| OpenDrain: 0| Pullup: 1| Pulldown: 0| Intr:0 
-I (548) ESP_ZB_ON_OFF_LIGHT: Deferred driver initialization successful
-I (568) ESP_ZB_ON_OFF_LIGHT: Device started up in  factory-reset mode
-I (578) ESP_ZB_ON_OFF_LIGHT: Start network steering
-I (3558) ESP_ZB_ON_OFF_LIGHT: Joined network successfully (Extended PAN ID: 74:4d:bd:ff:fe:63:f7:30, PAN ID: 0x13af, Channel:13, Short Address: 0x7c16)
-I (10238) ESP_ZB_ON_OFF_LIGHT: Received message: endpoint(10), cluster(0x6), attribute(0x0), data size(1)
-I (10238) ESP_ZB_ON_OFF_LIGHT: Light sets to On
-I (10798) ESP_ZB_ON_OFF_LIGHT: Received message: endpoint(10), cluster(0x6), attribute(0x0), data size(1)
-I (10798) ESP_ZB_ON_OFF_LIGHT: Light sets to Off
-I (11228) ESP_ZB_ON_OFF_LIGHT: Received message: endpoint(10), cluster(0x6), attribute(0x0), data size(1)
-I (11228) ESP_ZB_ON_OFF_LIGHT: Light sets to On
-I (11618) ESP_ZB_ON_OFF_LIGHT: Received message: endpoint(10), cluster(0x6), attribute(0x0), data size(1)
-I (11618) ESP_ZB_ON_OFF_LIGHT: Light sets to Off
+I (435) ON_OFF_LIGHT: Start ESP Zigbee Stack
+I (475) ON_OFF_LIGHT: Initialize Zigbee stack
+I (475) ON_OFF_LIGHT: Deferred driver initialization successful
+I (485) ON_OFF_LIGHT: Device started up in factory-reset mode
+I (795) ON_OFF_LIGHT: Formed network successfully: PAN ID(0x3051, EXT: 0x4831b7fffec183f0), Channel(13), Short Address(0x0000)
+I (1175) ON_OFF_LIGHT: Network steering completed
+I (3705) ON_OFF_LIGHT: New device commissioned or rejoined(short: 0xa515)
 ```
 
 ## Light Control Functions
 
- * By toggling the switch button (BOOT) on the ESP32-H2 board loaded with the `HA_on_off_switch` example, the LED on this board loaded with `HA_on_off_light` example will be on and off.
+* By toggling the switch button (BOOT) on the board loaded with the `HA_on_off_switch` example, the LED on this board will turn on and off.
+
+```
+I (26905) ON_OFF_LIGHT: ZCL SetAttributeValue message for endpoint(10) cluster(0x0006) server with status(0x00)
+I (26905) ON_OFF_LIGHT: Set On/Off: 1
+I (27535) ON_OFF_LIGHT: ZCL SetAttributeValue message for endpoint(10) cluster(0x0006) server with status(0x00)
+I (27535) ON_OFF_LIGHT: Set On/Off: 0
+```
 
 ## Troubleshooting
 
