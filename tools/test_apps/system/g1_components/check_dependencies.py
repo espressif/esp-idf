@@ -64,7 +64,6 @@ expected_dep_violations = {
 # dependency graph captures edges that target_link_libraries creates at link
 # time but were never recorded as requires.
 if os.environ.get('IDF_BUILD_V2'):
-    expected_dep_violations.setdefault('esp_common', []).extend(['efuse', 'bootloader_support', 'app_update'])
     expected_dep_violations['esp_system'].append('esp_app_format')
 
 # Target-specific expected dependency violations

@@ -592,3 +592,7 @@
 -
     re: "error: 'WIFI_BW_HT40' undeclared \\(first use in this function\\)"
     hint: "The enum value 'WIFI_BW_HT40' has been removed. Use 'WIFI_BW40' instead."
+
+-
+    re: "Build property 'BUILD_COMPONENTS' is not supported"
+    hint: "The 'BUILD_COMPONENTS' build property does not exist in Build System v2, since components are not collected before they are evaluated. To check whether a component takes part in the build, use the '$<TARGET_EXISTS:idf::component_name>' generator expression instead. For details and a migration example, run 'idf.py docs -sp api-guides/build-system-v2/breaking-changes.html#cmakev2-build-components'"
