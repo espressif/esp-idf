@@ -146,6 +146,12 @@ RMT 接收器可以对输入信号采样，将其转换为 RMT 数据格式，�
 
     同时分配多个 RMT 通道时，RMT 组的分频系数将以第一个通道的分辨率来计算，驱动会从低到高寻找合适的分频系数。若分配多个通道时出现分频系数冲突，请调整分配通道的顺序，按照目标分辨率的大小按序申请通道（从大到小或者从小到大）。
 
+.. only:: SOC_HP_CPU_HAS_MULTIPLE_CORES
+
+    .. note::
+
+        同一组内的 RMT 通道共享一个中断，该中断会一直留在安装第一个通道时所在的 CPU 内核上。之后即使从另一个内核调用 :cpp:func:`rmt_new_tx_channel` / :cpp:func:`rmt_new_rx_channel` 也会成功，新通道会加入该组，而不会把 ISR 迁走。若希望 RMT 中断运行在指定内核上，请在绑定到该内核的任务中创建第一个通道。
+
 卸载 RMT 通道
 ~~~~~~~~~~~~~~~~~~~~~
 
@@ -643,7 +649,7 @@ FAQ
         - 增加 :cpp:member:`rmt_tx_channel_config_t::mem_block_symbols` 的值，步长为 {IDF_TARGET_SOC_RMT_MEM_WORDS_PER_CHANNEL}。
         - 将编码函数放置在 IRAM 中。
         - 如果所用芯片支持 :cpp:member:`rmt_tx_channel_config_t::with_dma`，请启用该选项。
-        - 将RMT驱动安装在另外一个CPU核上，避免和其他高中断频率的外设竞争同一个CPU资源。
+        - 在绑定到另一个 CPU 内核的任务中安装第一个 RMT 通道，使共享的 RMT 中断运行在该内核上，避免和其他高中断频率的外设（例如 Wi-Fi、蓝牙）竞争同一个 CPU 资源。之后即使从其他内核安装通道，也会加入该组。
 
 API 参考
 -------------
