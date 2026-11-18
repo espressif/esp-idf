@@ -14,7 +14,7 @@
 #include "soc/soc.h"
 #include "soc/usb_serial_jtag_reg.h"
 #include "driver/usb_serial_jtag.h"
-#if !CONFIG_FREERTOS_UNICORE && defined(CONFIG_ESP_IPC_ENABLE)
+#if !CONFIG_FREERTOS_UNICORE
 #include "esp_ipc.h"
 #endif
 
@@ -29,7 +29,7 @@ _Static_assert(BLE_LOG_USJ_RX_BUFSIZE > 64,
 BLE_LOG_STATIC BLE_LOG_DRAM_ATTR bool s_inited = false;
 BLE_LOG_STATIC uint32_t s_tx_ring_drops;
 BLE_LOG_STATIC uint32_t s_tx_ring_dropped_bytes;
-#if !CONFIG_FREERTOS_UNICORE && defined(CONFIG_ESP_IPC_ENABLE)
+#if !CONFIG_FREERTOS_UNICORE
 BLE_LOG_STATIC BaseType_t s_install_core;
 #endif
 
@@ -40,7 +40,7 @@ void ble_log_prph_take_tx_ring_drops(uint32_t *drops, uint32_t *bytes)
                                  __ATOMIC_ACQ_REL);
 }
 
-#if !CONFIG_FREERTOS_UNICORE && defined(CONFIG_ESP_IPC_ENABLE)
+#if !CONFIG_FREERTOS_UNICORE
 BLE_LOG_STATIC void ble_log_usj_uninstall_cb(void *arg)
 {
     (void)arg;
@@ -71,7 +71,7 @@ bool ble_log_prph_init(size_t trans_cnt)
     g_usb_print = false;
 #endif
     esp_rom_install_channel_putc(2, NULL);
-#if !CONFIG_FREERTOS_UNICORE && defined(CONFIG_ESP_IPC_ENABLE)
+#if !CONFIG_FREERTOS_UNICORE
     s_install_core = xPortGetCoreID();
 #endif
     BLE_LOG_ATOMIC_STORE_RELEASE(s_inited, true);
@@ -88,7 +88,7 @@ void ble_log_prph_deinit(void)
     BLE_LOG_ATOMIC_STORE_RELEASE(s_tx_ring_dropped_bytes, 0);
     /* Residual TX ring bytes are dropped. COPY_FIFO deinit does not call
      * wait_tx_done. SOF with no host reader would hang. */
-#if !CONFIG_FREERTOS_UNICORE && defined(CONFIG_ESP_IPC_ENABLE)
+#if !CONFIG_FREERTOS_UNICORE
     if (xPortGetCoreID() != s_install_core) {
         (void)esp_ipc_call_blocking((uint32_t)s_install_core,
                                     ble_log_usj_uninstall_cb, NULL);
