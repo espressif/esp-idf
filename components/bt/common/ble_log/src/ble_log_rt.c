@@ -146,8 +146,8 @@ BLE_LOG_STATIC void ble_log_rt_report_loss(void)
     }
     if (tx_ring_drops != 0 || tx_ring_dropped_bytes != 0) {
         ESP_LOGW(TAG,
-                 "Lost %lu transport(s), %lu byte(s): TX ring full "
-                 "after USB output (frames already sealed, not written)",
+                 "Lost %lu transport(s), %lu byte(s): USB transport did "
+                 "not take them (frames already sealed)",
                  (unsigned long)tx_ring_drops,
                  (unsigned long)tx_ring_dropped_bytes);
     }
