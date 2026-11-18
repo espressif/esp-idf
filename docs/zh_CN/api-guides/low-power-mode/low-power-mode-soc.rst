@@ -402,6 +402,9 @@ Light-sleep 模式配置
   .. note::
       上表中不涉及的配置均是默认。
 
+  .. note::
+      启用 :menuitem:`CONFIG_ESP_SLEEP_SET_FLASH_DPD` 取决于所用 SPI flash 是否支持使用 B9h 指令进入 Deep Power-Down 模式，并使用 ABh 指令退出该模式。
+
 .. only:: esp32s31
 
   .. list-table::
@@ -458,6 +461,9 @@ Light-sleep 模式配置
 
   .. note::
       上表中不涉及的配置均是默认。
+
+  .. note::
+      启用 :menuitem:`CONFIG_ESP_SLEEP_SET_FLASH_DPD` 取决于所用 SPI flash 是否支持使用 B9h 指令进入 Deep Power-Down 模式，并使用 ABh 指令退出该模式。
 
 .. only:: esp32c5
 
@@ -516,6 +522,9 @@ Light-sleep 模式配置
   .. note::
       在 {IDF_TARGET_NAME} 上，light sleep 期间 SPI flash 供电需保持开启，:menuitem:`CONFIG_ESP_SLEEP_POWER_DOWN_FLASH` 不可用。
 
+  .. note::
+      启用 :menuitem:`CONFIG_ESP_SLEEP_SET_FLASH_DPD` 取决于所用 SPI flash 是否支持使用 B9h 指令进入 Deep Power-Down 模式，并使用 ABh 指令退出该模式。
+
 .. only:: esp32c61
 
   .. list-table::
@@ -572,6 +581,9 @@ Light-sleep 模式配置
 
   .. note::
       在 {IDF_TARGET_NAME} 上，light sleep 期间 SPI flash 供电需保持开启，:menuitem:`CONFIG_ESP_SLEEP_POWER_DOWN_FLASH` 不可用。
+
+  .. note::
+      启用 :menuitem:`CONFIG_ESP_SLEEP_SET_FLASH_DPD` 取决于所用 SPI flash 是否支持使用 B9h 指令进入 Deep Power-Down 模式，并使用 ABh 指令退出该模式。
 
 .. only:: esp32s3
 
@@ -633,6 +645,9 @@ Light-sleep 模式配置
   .. note::
       上表中不涉及的配置均是默认。
 
+  .. note::
+      启用 :menuitem:`CONFIG_ESP_SLEEP_SET_FLASH_DPD` 取决于所用 SPI flash 是否支持使用 B9h 指令进入 Deep Power-Down 模式，并使用 ABh 指令退出该模式。
+
 .. only:: esp32c3
 
   .. list-table::
@@ -689,6 +704,9 @@ Light-sleep 模式配置
 
   .. note::
       上表中不涉及的配置均是默认。
+
+  .. note::
+      启用 :menuitem:`CONFIG_ESP_SLEEP_SET_FLASH_DPD` 取决于所用 SPI flash 是否支持使用 B9h 指令进入 Deep Power-Down 模式，并使用 ABh 指令退出该模式。
 
 .. only:: esp32 or esp32s2
 
@@ -785,6 +803,9 @@ Light-sleep 模式配置
 
   .. note::
       上表中不涉及的配置均是默认。
+
+  .. note::
+      启用 :menuitem:`CONFIG_ESP_SLEEP_SET_FLASH_DPD` 取决于所用 SPI flash 是否支持使用 B9h 指令进入 Deep Power-Down 模式，并使用 ABh 指令退出该模式。
 
 Deep-sleep 模式配置
 ---------------------

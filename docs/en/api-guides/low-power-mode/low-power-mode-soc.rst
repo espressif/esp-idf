@@ -402,6 +402,9 @@ Recommended Configuration
   .. note::
       Configurations not mentioned in the above table are set to default.
 
+  .. note::
+      Enabling :menuitem:`CONFIG_ESP_SLEEP_SET_FLASH_DPD` depends on whether the SPI flash used supports the B9h command to enter Deep Power-Down mode and the ABh command to exit it.
+
 .. only:: esp32s31
 
   .. list-table::
@@ -458,6 +461,9 @@ Recommended Configuration
 
   .. note::
       Configurations not mentioned in the above table are set to default.
+
+  .. note::
+      Enabling :menuitem:`CONFIG_ESP_SLEEP_SET_FLASH_DPD` depends on whether the SPI flash used supports the B9h command to enter Deep Power-Down mode and the ABh command to exit it.
 
 .. only:: esp32c5
 
@@ -516,6 +522,9 @@ Recommended Configuration
   .. note::
       On {IDF_TARGET_NAME}, SPI flash needs to remain powered during light sleep and :menuitem:`CONFIG_ESP_SLEEP_POWER_DOWN_FLASH` is not available.
 
+  .. note::
+      Enabling :menuitem:`CONFIG_ESP_SLEEP_SET_FLASH_DPD` depends on whether the SPI flash used supports the B9h command to enter Deep Power-Down mode and the ABh command to exit it.
+
 .. only:: esp32c61
 
   .. list-table::
@@ -572,6 +581,9 @@ Recommended Configuration
 
   .. note::
       On {IDF_TARGET_NAME}, SPI flash need remains powered during light sleep and :menuitem:`CONFIG_ESP_SLEEP_POWER_DOWN_FLASH` is not available.
+
+  .. note::
+      Enabling :menuitem:`CONFIG_ESP_SLEEP_SET_FLASH_DPD` depends on whether the SPI flash used supports the B9h command to enter Deep Power-Down mode and the ABh command to exit it.
 
 .. only:: esp32s3
 
@@ -633,6 +645,9 @@ Recommended Configuration
   .. note::
       Configurations not mentioned in the above table are set to default.
 
+  .. note::
+      Enabling :menuitem:`CONFIG_ESP_SLEEP_SET_FLASH_DPD` depends on whether the SPI flash used supports the B9h command to enter Deep Power-Down mode and the ABh command to exit it.
+
 .. only:: esp32c3
 
   .. list-table::
@@ -689,6 +704,9 @@ Recommended Configuration
 
   .. note::
       Configurations not mentioned in the above table are set to default.
+
+  .. note::
+      Enabling :menuitem:`CONFIG_ESP_SLEEP_SET_FLASH_DPD` depends on whether the SPI flash used supports the B9h command to enter Deep Power-Down mode and the ABh command to exit it.
 
 .. only:: esp32 or esp32s2
 
@@ -785,6 +803,9 @@ Recommended Configuration
 
   .. note::
       Configurations not mentioned in the above table are set to default.
+
+  .. note::
+      Enabling :menuitem:`CONFIG_ESP_SLEEP_SET_FLASH_DPD` depends on whether the SPI flash used supports the B9h command to enter Deep Power-Down mode and the ABh command to exit it.
 
 Deep-sleep Mode Configuration
 ---------------------------------
