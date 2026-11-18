@@ -33,10 +33,19 @@ void event_delete(event_t *ev)
 }
 
 /*-----------------------------------------------------------*/
+/* Cleanup handler for event_wait*(): a cancelled waiter exits with the mutex
+ * re-locked by the cond wait. Unlock it, or event_clear() deadlocks. */
+static void event_unlock_on_cancel(void *mutex)
+{
+    pthread_mutex_unlock((pthread_mutex_t *)mutex);
+}
+
+/*-----------------------------------------------------------*/
 /* Wait for event indefinitely (cooperative blocking) */
 bool event_wait(event_t *ev)
 {
     pthread_mutex_lock(&ev->mutex);
+    pthread_cleanup_push(event_unlock_on_cancel, &ev->mutex);
 
     while (!ev->event_triggered)
     {
@@ -44,7 +53,7 @@ bool event_wait(event_t *ev)
     }
 
     ev->event_triggered = false;
-    pthread_mutex_unlock(&ev->mutex);
+    pthread_cleanup_pop(1);
     return true;
 }
 
@@ -53,7 +62,8 @@ bool event_wait(event_t *ev)
 bool event_wait_timed(event_t *ev, time_t ms)
 {
     struct timespec ts;
-    int ret = 0;
+    /* volatile: glibc's pthread_cleanup_push() uses setjmp */
+    volatile int ret = 0;
 
     clock_gettime(CLOCK_REALTIME, &ts);
     ts.tv_sec  += ms / 1000;
@@ -66,21 +76,16 @@ bool event_wait_timed(event_t *ev, time_t ms)
     }
 
     pthread_mutex_lock(&ev->mutex);
+    pthread_cleanup_push(event_unlock_on_cancel, &ev->mutex);
 
     while (!ev->event_triggered && ret == 0)
     {
         ret = pthread_cond_timedwait(&ev->cond, &ev->mutex, &ts);
-        if (ret == ETIMEDOUT)
-        {
-            ev->event_triggered = false;
-            pthread_mutex_unlock(&ev->mutex);
-            return false;
-        }
     }
 
     ev->event_triggered = false;
-    pthread_mutex_unlock(&ev->mutex);
-    return true;
+    pthread_cleanup_pop(1);
+    return ret != ETIMEDOUT;
 }
 
 /*-----------------------------------------------------------*/
