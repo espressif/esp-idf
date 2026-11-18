@@ -1288,8 +1288,15 @@ void smp_proc_id_addr(tSMP_CB *p_cb, tSMP_INT_DATA *p_data)
                        BLE_PSEUDO_BDA(p_cb->pairing_bda), p_acl, BLE_PSEUDO_BDA(pid_key.static_addr));
         if (p_acl != NULL) {
             BD_ADDR new_pseudo;
+            BD_ADDR old_pseudo;
+            memcpy(old_pseudo, p_cb->pairing_bda, BD_ADDR_LEN);
             if (btm_ble_pseudo_apply_identity(p_acl->hci_handle, pid_key.static_addr,
                                               pid_key.addr_type, new_pseudo)) {
+                /* Completion clears BTM pairing state only when its address
+                 * matches btm_cb.pairing_bda. Follow the same re-key. */
+                if (memcmp(btm_cb.pairing_bda, old_pseudo, BD_ADDR_LEN) == 0) {
+                    memcpy(btm_cb.pairing_bda, new_pseudo, BD_ADDR_LEN);
+                }
                 memcpy(p_cb->pairing_bda, new_pseudo, BD_ADDR_LEN);
                 BLE_PSEUDO_DBG("smp PID: pairing_bda updated -> " BLE_PSEUDO_BDA_FMT,
                                BLE_PSEUDO_BDA(p_cb->pairing_bda));

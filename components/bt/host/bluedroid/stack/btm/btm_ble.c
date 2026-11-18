@@ -2755,6 +2755,9 @@ BOOLEAN btm_ble_pseudo_apply_identity(UINT16 handle, const BD_ADDR identity,
         BTM_TRACE_ERROR("%s: handle=0x%x side-table update failed, skip re-key", __func__, handle);
         return FALSE;
     }
+    /* Keys already delivered to the host used ent.pseudo. Keep that address so
+     * BTC can retarget the pending set instead of dropping it. */
+    btm_ble_pseudo_remember_previous(handle, ent.pseudo);
     btm_ble_pseudo_rekey_link(handle, btm_handle_to_acl(handle), new_pseudo);
     return TRUE;
 }

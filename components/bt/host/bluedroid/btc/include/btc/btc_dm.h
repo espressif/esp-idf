@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -16,9 +16,14 @@ typedef enum {
 } btc_dm_sec_act_t;
 
 /* btc_dm_args_t */
-typedef union {
-    //BTC_DM_SEC_ACT
+typedef struct {
     tBTA_DM_SEC sec;
+#if (BLE_INCLUDED == TRUE && SMP_INCLUDED == TRUE && BLE_PERIPH_PSEUDO_ADDR_BOND == TRUE)
+    /* Captured synchronously on BTU before disconnect can clear the side table. */
+    BD_ADDR     pseudo_prev_addr;
+    bool        pseudo_prev_valid;
+    bool        is_pseudo_bond;
+#endif
 } btc_dm_sec_args_t;
 
 typedef struct
