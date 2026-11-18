@@ -319,18 +319,24 @@ menu "OpenThread"
 
         config OPENTHREAD_DNS64_CLIENT
             bool "Enable DNS64 Client"
-            depends on LWIP_IPV4 && OPENTHREAD_PLATFORM_NETIF
+            depends on LWIP_IPV4 && OPENTHREAD_PLATFORM_NETIF && OPENTHREAD_DNS_CLIENT
             select LWIP_HOOK_DNS_EXTERNAL_RESOLVE_SELECT_CUSTOM
             default n
             help
-                Select this option to acquire NAT64 address from dns servers.
+                Resolve IPv4 hosts through OpenThread first. If that fails or
+                times out, use lwIP DNS with the configured NAT64 DNS server.
         menu "DNS64 Client Configurations"
             depends on OPENTHREAD_DNS64_CLIENT
             config OPENTHREAD_DNS_SERVER_ADDR
                 string "DNS server address (IPv4)"
                 default "8.8.8.8"
                 help
-                    Set the DNS server IPv4 address.
+                    Set the primary DNS server IPv4 address for the lwIP fallback.
+            config OPENTHREAD_DNS_SECONDARY_SERVER_ADDR
+                string "Secondary DNS server address (IPv4)"
+                default "1.1.1.1"
+                help
+                    Set the backup DNS server IPv4 address for the lwIP fallback.
         endmenu
 
         config OPENTHREAD_TIMING_OPTIMIZATION
