@@ -236,6 +236,9 @@ typedef struct {
     /* TRUE when the local stack refused the procedure (e.g. hardened re-pairing)
        and the stored bond must be kept regardless of REMOVE_BOND_ON_PAIR_FAIL_AS_*. */
     BOOLEAN keep_bond;
+    /* TRUE when smp_stored_key_enc_cmpl() built this completion. It is not the
+       procedure that armed tBTM_SEC_DEV_REC.p_callback. */
+    BOOLEAN stored_ltk_cmpl;
 } tSMP_CMPL;
 
 typedef struct {

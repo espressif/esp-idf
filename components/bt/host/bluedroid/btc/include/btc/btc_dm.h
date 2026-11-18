@@ -40,6 +40,10 @@ typedef struct
 {
     bt_bdaddr_t            static_bdaddr;
     BD_ADDR                bd_addr;
+    /* Address the pending is_*_key_rcvd keys belong to. bd_addr is overwritten
+       by every auth-complete, including one for a different link. */
+    BD_ADDR                ble_keys_bd_addr;
+    bool                   ble_keys_addr_valid;
     btc_dm_ble_cb_t        ble;
 } btc_dm_pairing_cb_t;
 

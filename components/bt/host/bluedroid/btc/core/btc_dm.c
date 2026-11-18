@@ -195,6 +195,34 @@ static BOOLEAN btc_dm_ble_should_remove_bond_on_fail(BOOLEAN is_central)
 }
 #endif
 
+static void btc_dm_clear_pending_ble_keys(void)
+{
+    btc_dm_cb.pairing_cb.ble.is_penc_key_rcvd = false;
+    btc_dm_cb.pairing_cb.ble.is_pid_key_rcvd = false;
+    btc_dm_cb.pairing_cb.ble.is_pcsrk_key_rcvd = false;
+    btc_dm_cb.pairing_cb.ble.is_lenc_key_rcvd = false;
+    btc_dm_cb.pairing_cb.ble.is_lcsrk_key_rcvd = false;
+    btc_dm_cb.pairing_cb.ble.is_lidk_key_rcvd = false;
+    btc_dm_cb.pairing_cb.ble_keys_addr_valid = false;
+}
+
+static bool btc_dm_pending_ble_keys_match(BD_ADDR bd_addr)
+{
+    return btc_dm_cb.pairing_cb.ble_keys_addr_valid &&
+           memcmp(btc_dm_cb.pairing_cb.ble_keys_bd_addr, bd_addr, BD_ADDR_LEN) == 0;
+}
+
+/* A key for a different address replaces the previous pending set. */
+static void btc_dm_note_ble_key_addr(BD_ADDR bd_addr)
+{
+    if (btc_dm_cb.pairing_cb.ble_keys_addr_valid &&
+            memcmp(btc_dm_cb.pairing_cb.ble_keys_bd_addr, bd_addr, BD_ADDR_LEN) != 0) {
+        btc_dm_clear_pending_ble_keys();
+    }
+    memcpy(btc_dm_cb.pairing_cb.ble_keys_bd_addr, bd_addr, BD_ADDR_LEN);
+    btc_dm_cb.pairing_cb.ble_keys_addr_valid = true;
+}
+
 #if BLE_SMP_BOND_NVS_FLASH
 static void btc_dm_save_ble_bonding_keys(void)
 {
@@ -266,6 +294,7 @@ static void btc_dm_ble_auth_cmpl_evt (tBTA_DM_AUTH_CMPL *p_auth_cmpl)
     BTC_TRACE_DEBUG("%s, status = %d", __func__, p_auth_cmpl->success);
     bt_status_t status = BT_STATUS_FAIL;
     bt_bdaddr_t bdaddr;
+    bool keys_match = btc_dm_pending_ble_keys_match(p_auth_cmpl->bd_addr);
     bdcpy(bdaddr.address, p_auth_cmpl->bd_addr);
     bdcpy(btc_dm_cb.pairing_cb.bd_addr, p_auth_cmpl->bd_addr);
 
@@ -277,23 +306,29 @@ static void btc_dm_ble_auth_cmpl_evt (tBTA_DM_AUTH_CMPL *p_auth_cmpl)
 
         // Check if need to save BLE keys
         if((p_auth_cmpl->auth_mode & SMP_AUTH_GEN_BOND) == 0) {
+            if (keys_match) {
+                btc_dm_clear_pending_ble_keys();
+            }
             return;
         }
 
 #if BLE_SMP_BOND_NVS_FLASH
         int addr_type = BLE_ADDR_PUBLIC;
 
-        if (btc_dm_cb.pairing_cb.ble.is_pid_key_rcvd) {
-            // delete unused section in NVS
-            btc_storage_remove_unused_sections(p_auth_cmpl->bd_addr, &btc_dm_cb.pairing_cb.ble.pid_key);
-        }
-
         if (btc_storage_get_remote_addr_type(&bdaddr, &addr_type) != BT_STATUS_SUCCESS) {
             btc_storage_set_remote_addr_type(&bdaddr, p_auth_cmpl->addr_type, true);
         }
         btc_storage_set_ble_dev_auth_mode(&bdaddr, p_auth_cmpl->auth_mode, true);
-        btc_dm_save_ble_bonding_keys();
+        if (keys_match) {
+            if (btc_dm_cb.pairing_cb.ble.is_pid_key_rcvd) {
+                btc_storage_remove_unused_sections(p_auth_cmpl->bd_addr, &btc_dm_cb.pairing_cb.ble.pid_key);
+            }
+            btc_dm_save_ble_bonding_keys();
+        }
 #endif
+        if (keys_match) {
+            btc_dm_clear_pending_ble_keys();
+        }
     } else {
         /*Map the HCI fail reason  to  bt status  */
         BOOLEAN remove_bond = FALSE;
@@ -341,6 +376,9 @@ static void btc_dm_ble_auth_cmpl_evt (tBTA_DM_AUTH_CMPL *p_auth_cmpl)
                               (p_auth_cmpl->bd_addr[4] << 8) + p_auth_cmpl->bd_addr[5]);
         }
 
+        if (keys_match) {
+            btc_dm_clear_pending_ble_keys();
+        }
     }
 
 #if (CONFIG_BT_STACK_NO_LOG)
@@ -993,6 +1031,7 @@ void btc_dm_sec_cb_handler(btc_msg_t *msg)
         ble_msg->act = ESP_GAP_BLE_KEY_EVT;
         param.ble_security.ble_key.key_type = p_data->ble_key.key_type;
         memcpy(param.ble_security.ble_key.bd_addr, p_data->ble_key.bd_addr, BD_ADDR_LEN);
+        btc_dm_note_ble_key_addr(p_data->ble_key.bd_addr);
         switch (p_data->ble_key.key_type) {
             case BTM_LE_KEY_PENC: {
                 BTC_TRACE_DEBUG("Rcv BTA_LE_KEY_PENC");

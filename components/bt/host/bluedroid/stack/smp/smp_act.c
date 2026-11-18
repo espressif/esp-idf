@@ -1443,19 +1443,26 @@ void smp_check_auth_req(tSMP_CB *p_cb, tSMP_INT_DATA *p_data)
                     __func__, enc_enable, p_cb->local_i_key, p_cb->local_r_key);
     if (enc_enable == 1) {
 #if (BLE_INCLUDED == TRUE)
-        /* The new pairing has been authenticated and the link is now encrypted with the
-           freshly generated key, so the previous bond can be dropped. Doing it here rather
-           than when the Pairing Request is exchanged keeps the old key in place for a
-           pairing that never completes. Encryption with an existing bond must retain
-           its keys. */
-        tBTM_SEC_DEV_REC *p_dev_rec = btm_find_dev(p_cb->pairing_bda);
-        if (p_dev_rec && (p_cb->flags & SMP_PAIR_FLAG_ENC_AFTER_PAIR)) {
-            if (p_dev_rec->ble.key_type & (BTM_LE_KEY_PENC | BTM_LE_KEY_LENC)) {
-                SMP_TRACE_DEBUG("LE replace bond after enc, BDA:0x%02X%02X%02X%02X%02X%02X",
-                                p_cb->pairing_bda[0], p_cb->pairing_bda[1], p_cb->pairing_bda[2],
-                                p_cb->pairing_bda[3], p_cb->pairing_bda[4], p_cb->pairing_bda[5]);
+        /* Only the link that owns smp_cb reaches here: smp_link_encrypted()
+           delivers SMP_ENCRYPTED_EVT solely for that peer, and this action runs
+           only from SMP_STATE_ENCRYPTION_PENDING. Stored-LTK re-encryption is
+           reported by smp_stored_key_enc_cmpl() and does not enter. The flag
+           therefore means this encryption finishes the pairing on this control
+           block. Drop the previous bond only then: clearing another link's LTK
+           and IRK makes the next disconnect free that record as unpaired. */
+        if (p_cb->flags & SMP_PAIR_FLAG_ENC_AFTER_PAIR) {
+            tBTM_SEC_DEV_REC *p_dev_rec = btm_find_dev(p_cb->pairing_bda);
+            if (p_dev_rec) {
+                if (p_dev_rec->ble.key_type & (BTM_LE_KEY_PENC | BTM_LE_KEY_LENC)) {
+                    SMP_TRACE_DEBUG("LE replace bond after enc, BDA:0x%02X%02X%02X%02X%02X%02X",
+                                    p_cb->pairing_bda[0], p_cb->pairing_bda[1], p_cb->pairing_bda[2],
+                                    p_cb->pairing_bda[3], p_cb->pairing_bda[4], p_cb->pairing_bda[5]);
+                }
+                btm_sec_clear_ble_keys(p_dev_rec);
             }
-            btm_sec_clear_ble_keys(p_dev_rec);
+        } else {
+            SMP_TRACE_DEBUG("%s encryption without a new pairing, keep existing LE keys",
+                            __func__);
         }
 #endif  ///BLE_INCLUDED == TRUE
 
@@ -2248,6 +2255,119 @@ void smp_set_local_oob_random_commitment(tSMP_CB *p_cb, tSMP_INT_DATA *p_data)
 
 /*******************************************************************************
 **
+** Function         smp_encrypted_peer_is_pairing
+**
+** Description      TRUE when bda is the address recorded for the in-flight
+**                  procedure. The encryption event address, the record address,
+**                  and the pseudo address are all accepted: btm_find_dev()
+**                  matches any of them, and pairing_bda may be a different one
+**                  of the three. A non-zero pairing_bda alone is not ownership;
+**                  smp_cb_owns_link() decides that.
+**
+*******************************************************************************/
+static BOOLEAN smp_encrypted_peer_is_pairing(tSMP_CB *p_cb, BD_ADDR bda,
+        tBTM_SEC_DEV_REC *p_dev_rec)
+{
+    BD_ADDR dummy_bda = {0};
+
+    if (memcmp(p_cb->pairing_bda, dummy_bda, BD_ADDR_LEN) == 0) {
+        return FALSE;
+    }
+    if (memcmp(p_cb->pairing_bda, bda, BD_ADDR_LEN) == 0) {
+        return TRUE;
+    }
+    if (p_dev_rec == NULL) {
+        return FALSE;
+    }
+    if (memcmp(p_dev_rec->bd_addr, p_cb->pairing_bda, BD_ADDR_LEN) == 0) {
+        return TRUE;
+    }
+    return (memcmp(p_dev_rec->ble.pseudo_addr, dummy_bda, BD_ADDR_LEN) != 0 &&
+            memcmp(p_dev_rec->ble.pseudo_addr, p_cb->pairing_bda, BD_ADDR_LEN) == 0);
+}
+
+/*******************************************************************************
+**
+** Function         smp_cb_owns_link
+**
+** Description      TRUE when an SMP procedure is in flight and this link is
+**                  the one it belongs to. state/flags say a procedure exists.
+**                  SMP_Pair() sets SMP_PAIR_FLAGS_WE_STARTED_DD before L2CAP
+**                  connects, while state is still IDLE; that still owns the
+**                  block, because a SMP_COMPLT_EVT for the same address would
+**                  reset btm_cb.pairing_state in btm_proc_smp_cback(). A
+**                  pairing_bda left behind with state IDLE and flags clear is
+**                  not ownership. SMP_BR_PairWith() also leaves the LE state
+**                  IDLE, with smp_over_br set; that CTKD procedure is not this
+**                  LE encryption.
+**
+*******************************************************************************/
+static BOOLEAN smp_cb_owns_link(tSMP_CB *p_cb, BD_ADDR bda, tBTM_SEC_DEV_REC *p_dev_rec)
+{
+    if (p_cb->state == SMP_STATE_IDLE && p_cb->flags == 0) {
+        return FALSE;
+    }
+    if (p_cb->smp_over_br && p_cb->state == SMP_STATE_IDLE) {
+        return FALSE;
+    }
+    return smp_encrypted_peer_is_pairing(p_cb, bda, p_dev_rec);
+}
+
+/*******************************************************************************
+**
+** Function         smp_stored_key_enc_cmpl
+**
+** Description      Completion of an encryption that used the stored LTK and is
+**                  not part of an SMP procedure. Reports what the old
+**                  ENCRYPTION_PENDING path reported, without writing smp_cb.
+**                  The control block may belong to a pairing on another link.
+**                  Peripheral failure reports nothing, as smp_check_auth_req()
+**                  did when role was slave and SMP_PAIR_FLAG_ENC_AFTER_PAIR
+**                  was clear.
+**
+*******************************************************************************/
+static void smp_stored_key_enc_cmpl(BD_ADDR bda, tBTM_SEC_DEV_REC *p_dev_rec, UINT8 encr_enable)
+{
+    tSMP_EVT_DATA evt_data = {0};
+    tSMP_CALLBACK *p_callback = smp_cb.p_callback;
+
+    p_dev_rec->enc_init_by_we = FALSE;
+    if (!encr_enable && !p_dev_rec->role_master) {
+        return;
+    }
+
+    evt_data.cmplt.reason = encr_enable ? SMP_SUCCESS : SMP_ENC_FAIL;
+    evt_data.cmplt.stored_ltk_cmpl = TRUE;
+    if (encr_enable) {
+        /* smp_proc_pairing_cmpl() took this when p_cb->auth_mode was 0. */
+        evt_data.cmplt.auth_mode = p_dev_rec->ble.auth_mode;
+    }
+
+#if (BLE_INCLUDED == TRUE)
+#if (SMP_SLAVE_CON_PARAMS_UPD_ENABLE == TRUE)
+    if (!p_dev_rec->role_master) {
+        if (p_dev_rec->ble.skip_update_conn_param) {
+            p_dev_rec->ble.skip_update_conn_param = false;
+        } else {
+#if (BT_MULTI_CONNECTION_ENBALE == FALSE)
+            L2CA_EnableUpdateBleConnParams(bda, TRUE);
+#endif
+        }
+    }
+#endif
+#endif
+
+    /* Per-link part of smp_reset_control_value(), for this bda only. */
+    L2CA_SetIdleTimeoutByBdAddr(bda, SMP_LINK_TOUT_MIN, BT_TRANSPORT_LE);
+    L2CA_RemoveFixedChnl(L2CAP_SMP_CID, bda);
+
+    if (p_callback) {
+        (*p_callback)(SMP_COMPLT_EVT, bda, &evt_data);
+    }
+}
+
+/*******************************************************************************
+**
 ** Function         smp_link_encrypted
 **
 ** Description      This function is called when link is encrypted and notified to
@@ -2261,10 +2381,20 @@ void smp_set_local_oob_random_commitment(tSMP_CB *p_cb, tSMP_INT_DATA *p_data)
 void smp_link_encrypted(BD_ADDR bda, UINT8 encr_enable)
 {
     tSMP_CB *p_cb = &smp_cb;
-    tBTM_SEC_DEV_REC  *p_dev_rec = btm_find_dev (bda);
+    tBTM_SEC_DEV_REC *p_dev_rec = btm_find_dev(bda);
     SMP_TRACE_DEBUG("%s encr_enable=%d\n", __func__, encr_enable);
 
-    if (memcmp(&smp_cb.pairing_bda[0], bda, BD_ADDR_LEN) == 0) {
+    /* Security Request with BTM_BLE_SEC_REQ_ACT_PAIR leaves this wait and does
+       not set flags. A later BTM_SetEncryption(BTM_BLE_SEC_ENCRYPT) starts
+       stored-LTK encryption without cancelling the wait, so ENC_CMPL in
+       WAIT_APP_RSP would be ignored and the timer would fail the bond.
+       Only this link's wait is retired. */
+    if (p_cb->state == SMP_STATE_WAIT_APP_RSP && p_cb->flags == 0 &&
+            p_cb->cb_evt == SMP_SEC_REQUEST_EVT &&
+            smp_encrypted_peer_is_pairing(p_cb, bda, p_dev_rec)) {
+        btu_stop_timer(&p_cb->rsp_timer_ent);
+        smp_cb_cleanup(p_cb);
+    } else if (smp_cb_owns_link(p_cb, bda, p_dev_rec)) {
         /* encryption completed with STK, remember the key size now, could be overwrite
         *  when key exchange happens                                        */
         if (p_cb->loc_enc_size != 0 && encr_enable) {
@@ -2272,23 +2402,19 @@ void smp_link_encrypted(BD_ADDR bda, UINT8 encr_enable)
             btm_ble_update_sec_key_size(bda, p_cb->loc_enc_size);
         }
 
+        /* IDLE with SMP_PAIR_FLAGS_WE_STARTED_DD still owns the block, but the
+           state machine ignores SMP_ENCRYPTED_EVT there. Do not synthesize a
+           completion: it would reset BTM pairing state for this address. */
         smp_sm_event(&smp_cb, SMP_ENCRYPTED_EVT, &encr_enable);
-    } else if (p_dev_rec && !p_dev_rec->role_master && !p_dev_rec->enc_init_by_we ){
-        /*
-        if enc_init_by_we is false, it means that client initiates encryption before slave calls esp_ble_set_encryption()
-        we need initiate pairing_bda and p_cb->role then encryption, for example iPhones
-        */
-        memcpy(&smp_cb.pairing_bda[0], bda, BD_ADDR_LEN);
-        p_cb->state = SMP_STATE_ENCRYPTION_PENDING;
-        p_cb->role = HCI_ROLE_SLAVE;
-        p_dev_rec->enc_init_by_we = FALSE;
-        smp_sm_event(&smp_cb, SMP_ENCRYPTED_EVT, &encr_enable);
-    } else if (p_dev_rec && p_dev_rec->role_master && p_dev_rec->enc_init_by_we){
-        memcpy(&smp_cb.pairing_bda[0], bda, BD_ADDR_LEN);
-        p_cb->state = SMP_STATE_ENCRYPTION_PENDING;
-        p_cb->role = HCI_ROLE_MASTER;
-        p_dev_rec->enc_init_by_we = FALSE;
-        smp_sm_event(&smp_cb, SMP_ENCRYPTED_EVT, &encr_enable);
+        return;
+    }
+
+    /* peripheral && !enc_init_by_we (the peer encrypted, e.g. iPhone),
+       or central && BTM_SetEncryption(). Other combinations stay unhandled. */
+    if (p_dev_rec &&
+            ((!p_dev_rec->role_master && !p_dev_rec->enc_init_by_we) ||
+             (p_dev_rec->role_master && p_dev_rec->enc_init_by_we))) {
+        smp_stored_key_enc_cmpl(bda, p_dev_rec, encr_enable);
     }
 }
 
