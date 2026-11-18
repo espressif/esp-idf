@@ -519,27 +519,20 @@ esp_err_t esp_psram_impl_get_available_size(uint32_t *out_size_bytes)
 }
 
 /******************************* Halfsleep Mode *******************************/
-static struct {
-    uint8_t mr4;
-    uint64_t halfsleep_wakeup_tick;
-} s_halfsleep_ctx = {0};
+static uint64_t s_halfsleep_wakeup_tick = 0;
 
 void esp_psram_impl_enter_halfsleep_mode(void)
 {
-    // Backup MR4
-    psram_ctrlr_ll_common_transaction(PSRAM_CTRLR_LL_MSPI_ID_3,
-                                      AP_OCT_PSRAM_REG_READ, AP_OCT_PSRAM_RD_CMD_BITLEN,
-                                      0x4, AP_OCT_PSRAM_ADDR_BITLEN,
-                                      AP_OCT_PSRAM_RD_REG_DUMMY_BITLEN,
-                                      NULL, 0,
-                                      &s_halfsleep_ctx.mr4, 16,
-                                      false);
     // Set refresh rate to 0.5x
-    oct_psram_mode_reg_t mode_reg;
-    mode_reg.mr4.val = s_halfsleep_ctx.mr4;
-    mode_reg.mr4.rf = 3; // (0:4x  1:1x  3:0.5x)
+    oct_psram_mode_reg_t mode_reg = {
+        .mr4 = {
+            .pasr = 0,
+            .rf = 3, // (0:4x  1:1x  3:0.5x)
+            .wr_latency = AP_OCT_PSRAM_WR_LATENCY,
+        },
+    };
     psram_ctrlr_ll_common_transaction(PSRAM_CTRLR_LL_MSPI_ID_3,
-                                      AP_OCT_PSRAM_REG_WRITE, AP_OCT_PSRAM_RD_CMD_BITLEN,
+                                      AP_OCT_PSRAM_REG_WRITE, AP_OCT_PSRAM_WR_CMD_BITLEN,
                                       0x4, AP_OCT_PSRAM_ADDR_BITLEN,
                                       0,
                                       &mode_reg.mr4.val, 16,
@@ -548,7 +541,7 @@ void esp_psram_impl_enter_halfsleep_mode(void)
     // Set halfsleep mode
     uint8_t halfsleep_cmd = AP_OCT_PSRAM_ULP_MODE_HALFSLEEP;
     psram_ctrlr_ll_common_transaction(PSRAM_CTRLR_LL_MSPI_ID_3,
-                                      AP_OCT_PSRAM_REG_WRITE, AP_OCT_PSRAM_RD_CMD_BITLEN,
+                                      AP_OCT_PSRAM_REG_WRITE, AP_OCT_PSRAM_WR_CMD_BITLEN,
                                       0x6, AP_OCT_PSRAM_ADDR_BITLEN,
                                       0,
                                       &halfsleep_cmd, 16,
@@ -559,7 +552,7 @@ void esp_psram_impl_enter_halfsleep_mode(void)
 void esp_psram_impl_exit_halfsleep_mode(void)
 {
     // Record the tick exiting halfsleep mode
-    s_halfsleep_ctx.halfsleep_wakeup_tick = rtc_time_get();
+    s_halfsleep_wakeup_tick = rtc_time_get();
 
     // Set CE# to active to wakeup PSRAM halfsleep
     psram_ctrlr_ll_half_sleep_wakeup();
@@ -567,17 +560,24 @@ void esp_psram_impl_exit_halfsleep_mode(void)
 
 void esp_psram_impl_resume_from_halfsleep_mode(uint32_t slowclk_period)
 {
-    uint64_t halfsleep_exit_tick  = s_halfsleep_ctx.halfsleep_wakeup_tick + rtc_time_us_to_slowclk(CONFIG_PM_SLP_SPIRAM_HALFSLEEP_EXIT_WAIT_DELAY, slowclk_period);
+    uint64_t halfsleep_exit_tick = s_halfsleep_wakeup_tick + rtc_time_us_to_slowclk(CONFIG_PM_SLP_SPIRAM_HALFSLEEP_EXIT_WAIT_DELAY, slowclk_period);
     while (rtc_time_get() < halfsleep_exit_tick) {
         // Busy wait for PSRAM to exit halfsleep mode
     }
 
     // Restore MR4 configuration (restore refresh rate)
+    oct_psram_mode_reg_t mode_reg = {
+        .mr4 = {
+            .pasr = 0,
+            .rf = 0,
+            .wr_latency = AP_OCT_PSRAM_WR_LATENCY,
+        },
+    };
     psram_ctrlr_ll_common_transaction(PSRAM_CTRLR_LL_MSPI_ID_3,
                                       AP_OCT_PSRAM_REG_WRITE, AP_OCT_PSRAM_WR_CMD_BITLEN,
                                       0x4, AP_OCT_PSRAM_ADDR_BITLEN,
                                       0,
-                                      &s_halfsleep_ctx.mr4, 16,
+                                      &mode_reg.mr4.val, 16,
                                       NULL, 0,
                                       false);
 }
