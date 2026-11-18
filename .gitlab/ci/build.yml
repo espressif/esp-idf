@@ -12,8 +12,8 @@
 ####################
 # Dynamic Pipeline #
 ####################
-# Generate GCC and Clang separately so only the standard GCC pipeline includes
-# the additional jobs which compare the app sizes.
+# Generate GCC, Clang and buildv2 separately so only the standard GCC pipeline
+# includes the additional jobs which compare the app sizes.
 generate_build_child_pipeline:
   needs:
     - pipeline_variables
@@ -29,6 +29,9 @@ generate_build_child_pipeline:
       - build_child_pipeline_clang.yml
       - test_related_apps_clang.txt
       - non_test_related_apps_clang.txt
+      - buildv2_child_pipeline.yml
+      - test_related_apps_buildv2.txt
+      - non_test_related_apps_buildv2.txt
     expire_in: 1 week
     when: always
   script:
@@ -49,41 +52,21 @@ generate_build_child_pipeline:
     - shuf non_test_related_apps.txt -o non_test_related_apps.txt
     - shuf test_related_apps_clang.txt -o test_related_apps_clang.txt
     - shuf non_test_related_apps_clang.txt -o non_test_related_apps_clang.txt
-
-# Only discover buildv2 apps for MRs that request the buildv2 pipeline.
-generate_build_child_pipeline_buildv2:
-  extends:
-    - .build_template
-    - .rules:labels:buildv2
-  tags: [fast_run, shiny]
-  variables:
-    # Manifest rules must see this during discovery, not only at build time.
-    IDF_BUILD_V2: "1"
-    IDF_CI_ARTIFACT_NAMESPACE: buildv2
-  needs:
-    - pipeline_variables
-    - job: pre_check_complete
-      artifacts: false
-    - job: baseline_manifest_sha
-      optional: true
-  artifacts:
-    paths:
-      - buildv2_child_pipeline.yml
-      - test_related_apps_buildv2.txt
-      - non_test_related_apps_buildv2.txt
-    expire_in: 1 week
-    when: always
-  script:
-    - idf-ci --debug --config "gitlab.build_enabled_toolchains=['gcc']"
-      --config "gitlab.test_enabled_toolchains=['gcc']"
-      gitlab build-child-pipeline
-      -p components
-      -p examples
-      -p tools/test_apps
-      --modified-files "${MR_MODIFIED_FILES}"
-      buildv2_child_pipeline.yml
-    - shuf test_related_apps_buildv2.txt -o test_related_apps_buildv2.txt
-    - shuf non_test_related_apps_buildv2.txt -o non_test_related_apps_buildv2.txt
+    # Discover the buildv2 apps under the same condition as .if-label-buildv2 in rules.yml.
+    # Manifest rules read IDF_BUILD_V2 during app discovery.
+    - |
+      if [ -n "${BOT_LABEL_BUILDV2:-}" ] || echo ",${CI_MERGE_REQUEST_LABELS:-}," | grep -qi ',buildv2,'; then
+        IDF_BUILD_V2=1 IDF_CI_ARTIFACT_NAMESPACE=buildv2 idf-ci --debug \
+          --config "gitlab.build_enabled_toolchains=['gcc']" \
+          --config "gitlab.test_enabled_toolchains=['gcc']" \
+          gitlab build-child-pipeline \
+          -p components \
+          -p examples \
+          -p tools/test_apps \
+          buildv2_child_pipeline.yml
+        shuf test_related_apps_buildv2.txt -o test_related_apps_buildv2.txt
+        shuf non_test_related_apps_buildv2.txt -o non_test_related_apps_buildv2.txt
+      fi
 
 build_child_pipeline_clang:
   stage: build
@@ -116,7 +99,7 @@ build_child_pipeline_buildv2:
       optional: true
       artifacts: false
     - pipeline_variables
-    - generate_build_child_pipeline_buildv2
+    - generate_build_child_pipeline
   variables:
     PARENT_PIPELINE_ID: $CI_PIPELINE_ID
     IDF_BUILD_V2: "1"
@@ -126,6 +109,6 @@ build_child_pipeline_buildv2:
   trigger:
     include:
       - artifact: buildv2_child_pipeline.yml
-        job: generate_build_child_pipeline_buildv2
+        job: generate_build_child_pipeline
     strategy: depend
   allow_failure: true

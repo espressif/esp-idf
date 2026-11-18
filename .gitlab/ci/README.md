@@ -63,10 +63,12 @@ constraints permit these idf-build-apps releases. Check the installed versions
 and generated GCC/Clang app lists and test YAML in the generator job before
 claiming GitLab CI validation.
 
-The separate, label-gated `generate_build_child_pipeline_buildv2` job runs GCC-only
-discovery with `IDF_BUILD_V2=1`. It creates `*_apps_buildv2.txt` and uses the
-`buildv2` artifact namespace; MRs without the `buildv2` label skip that
-discovery and its child pipeline.
+When the buildv2 child pipeline runs, `generate_build_child_pipeline` also runs
+GCC-only discovery with `IDF_BUILD_V2=1`. It creates `*_apps_buildv2.txt` and uses
+the `buildv2` artifact namespace. The generated build jobs depend on
+`generate_build_child_pipeline`. The buildv2 discovery therefore runs in
+`generate_build_child_pipeline`. The `buildv2` MR label or the `BOT_LABEL_BUILDV2`
+variable enables the buildv2 child pipeline.
 
 ## What if Expected Jobs ARE NOT Created?
 
