@@ -1465,7 +1465,7 @@ int wpa_pasn_auth_rx(struct pasn_data *pasn, const u8 *data, size_t len,
 	copy = NULL;
 
 	wpa_hexdump_key(MSG_DEBUG, "PASN: Frame MIC", mic, mic_len);
-	if (ret || os_memcmp(mic, out_mic, mic_len) != 0) {
+	if (ret || os_memcmp_const(mic, out_mic, mic_len) != 0) {
 		wpa_printf(MSG_DEBUG, "PASN: Failed MIC verification");
 		goto fail;
 	}

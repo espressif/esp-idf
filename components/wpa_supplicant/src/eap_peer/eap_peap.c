@@ -460,7 +460,7 @@ eap_tlv_validate_cryptobinding(struct eap_sm *sm,
 		    buf, sizeof(buf));
 	hmac_sha1(data->cmk, 20, buf, sizeof(buf), mac);
 
-	if (os_memcmp(mac, pos, SHA1_MAC_LEN) != 0) {
+	if (os_memcmp_const(mac, pos, SHA1_MAC_LEN) != 0) {
 		wpa_printf(MSG_DEBUG, "EAP-PEAP: Invalid Compound_MAC in "
 			   "cryptobinding TLV");
 		wpa_hexdump(MSG_DEBUG, "EAP-PEAP: Received MAC",

@@ -16,6 +16,9 @@ int uuid_str2bin(const char *str, u8 *bin)
 	const char *pos;
 	u8 *opos;
 
+	if (!str || !bin || os_strlen(str) < 36)
+		return -1;
+
 	pos = str;
 	opos = bin;
 
