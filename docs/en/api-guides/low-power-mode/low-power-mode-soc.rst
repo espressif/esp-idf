@@ -580,7 +580,7 @@ Recommended Configuration
       Configurations not mentioned in the above table are set to default.
 
   .. note::
-      On {IDF_TARGET_NAME}, SPI flash need remains powered during light sleep and :menuitem:`CONFIG_ESP_SLEEP_POWER_DOWN_FLASH` is not available.
+      On {IDF_TARGET_NAME}, SPI flash needs to remain powered during light sleep and :menuitem:`CONFIG_ESP_SLEEP_POWER_DOWN_FLASH` is not available.
 
   .. note::
       Enabling :menuitem:`CONFIG_ESP_SLEEP_SET_FLASH_DPD` depends on whether the SPI flash used supports the B9h command to enter Deep Power-Down mode and the ABh command to exit it.
