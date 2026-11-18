@@ -328,7 +328,7 @@ void rtc_clk_cpu_freq_set_xtal(void);
  * setting PMU_UPDATE_DIG_SYS_CLK_SEL after restoring the CPU clock config,
  * otherwise the HP root clock remains stuck at XTAL 40 MHz.
  */
-void rtc_clk_modem_pll_lock_release(void);
+void rtc_clk_modem_state_mux_lock_release(void);
 #endif
 
 /**

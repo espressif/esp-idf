@@ -1178,20 +1178,22 @@ static esp_err_t SLEEP_FN_ATTR esp_sleep_start(uint32_t sleep_flags, esp_sleep_m
     // Restore CPU frequency (Will fallback to rtc_clk_cpu_freq_set_config if PLL source is not configured.)
 #if SOC_PM_SUPPORT_PMU_MODEM_STATE && !SOC_PM_BBPLL_PD_IN_MODEM_STATE
     if (pmu_sleep_pll_already_enabled()) {
-        /* The PMU holds HP_ROOT on PLL until the lock is released, so the PCR dividers
-         * written here apply to the PLL root immediately. Order must therefore follow the
-         * root the dividers belong to. */
+        /* While the lock is held the PMU forces the HP_ROOT mux, so the PCR dividers
+         * written here take effect on that forced root, which may differ from the root
+         * the restored dividers were computed for. The order below must therefore follow
+         * the root the dividers belong to. */
         const uint32_t xtal_freq_mhz = (uint32_t)rtc_clk_xtal_freq_get();
         if (cpu_freq_config.source_freq_mhz <= xtal_freq_mhz) {
-            /* XTAL/RC_FAST dividers are computed for a slow root (usually 1), so writing
-             * them under the forced PLL root would overclock the bus. Unlock first. */
-            rtc_clk_modem_pll_lock_release();
+            /* Low frequency sources AHB divider value are typically 1, set while the PLL root is forced would
+             * overclock the bus, and on a forced XTAL root they would simply not be in effect yet. Release first. */
+            rtc_clk_modem_state_mux_lock_release();
             rtc_clk_cpu_freq_set_config_fast(&cpu_freq_config);
         } else {
             /* PLL dividers match the root currently forced, so program them before
-             * unlocking; the reverse order would run the PLL root with slow-root dividers. */
+             * releasing; the reverse order would run the PLL root with the non-PLL
+             * dividers. On an XTAL-forced target this only under-clocks the bus. */
             rtc_clk_cpu_freq_set_config_fast(&cpu_freq_config);
-            rtc_clk_modem_pll_lock_release();
+            rtc_clk_modem_state_mux_lock_release();
         }
     } else
 #endif

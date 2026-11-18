@@ -287,12 +287,11 @@ void rtc_clk_cpu_freq_set_xtal(void);
 /**
  * @brief Release root clock source locked by PMU
  *
- * wifi receiving beacon frame in PMU modem state strongly depends on the BBPLL
- * clock, PMU will forcibly lock the root clock source as PLL, when the root
- * clock source of the software system is selected as PLL, we need to release
- * the root clock source locking in the sleep process (a critical section).
+ * In PMU modem state, PMU owns the HP_ROOT mux (sysclk_slp_sel = 1) and
+ * selects XTAL. After restoring the CPU clock config, software must set
+ * PMU_UPDATE_DIG_SYS_CLK_SEL or the root stays on the modem-state source.
  */
-void rtc_clk_modem_pll_lock_release(void);
+void rtc_clk_modem_state_mux_lock_release(void);
 
 /**
  * @brief Get the current APB frequency.
