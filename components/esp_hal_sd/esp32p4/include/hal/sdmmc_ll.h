@@ -918,6 +918,7 @@ static inline void sdmmc_ll_stop_dma(sdmmc_dev_t *hw)
     hw->ctrl.dma_reset = 1;     //here might be an issue as we don't wait the `dma_reset` to be self-cleared, check in next steps
     hw->bmod.fb = 0;
     hw->bmod.enable = 0;
+    hw->bmod.sw_reset = 1;        // reset is cleared by hardware on the next cycle
 }
 
 /*---------------------------------------------------------------

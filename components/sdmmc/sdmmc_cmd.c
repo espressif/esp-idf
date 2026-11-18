@@ -583,6 +583,10 @@ esp_err_t sdmmc_write_sectors_dma(sdmmc_card_t* card, const void* src,
 
     uint32_t status = 0;
     esp_err_t err = sdmmc_send_cmd(card, &cmd);
+    if (err != ESP_OK && !host_is_spi(card)) {
+        // the card may still be sending or receiving data
+        sdmmc_stop_transmission_if_needed(card);
+    }
     esp_err_t err_cmd13 = sdmmc_send_cmd_send_status(card, &status);
 
     if (err != ESP_OK) {
@@ -738,6 +742,10 @@ esp_err_t sdmmc_read_sectors_dma(sdmmc_card_t* card, void* dst,
 
     uint32_t status = 0;
     esp_err_t err = sdmmc_send_cmd(card, &cmd);
+    if (err != ESP_OK && !host_is_spi(card)) {
+        // the card may still be sending or receiving data
+        sdmmc_stop_transmission_if_needed(card);
+    }
     esp_err_t err_cmd13 = sdmmc_send_cmd_send_status(card, &status);
 
     if (err != ESP_OK) {

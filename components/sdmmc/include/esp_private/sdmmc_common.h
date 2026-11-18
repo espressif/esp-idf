@@ -226,6 +226,10 @@ esp_err_t sdmmc_fix_host_flags(sdmmc_card_t* card);
 // Use only with SDMMC mode (not SDSPI)
 esp_err_t sdmmc_wait_for_idle(sdmmc_card_t* card, uint32_t status);
 
+// Use only with SDMMC mode (not SDSPI)
+// After a failed data command, check the card state and send CMD12 if the card is still in a data state
+esp_err_t sdmmc_stop_transmission_if_needed(sdmmc_card_t* card);
+
 //Currently only SDIO support using this buffer. And only 512 block size is supported.
 #define SDMMC_IO_BLOCK_SIZE     512
 esp_err_t sdmmc_allocate_aligned_buf(sdmmc_card_t* card);
