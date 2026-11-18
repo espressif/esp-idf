@@ -222,7 +222,7 @@ Fast connect keeps a record of the AP each connection ends on as the station con
 flowchart TD
     A["Connection attempt"] --> B{"Hint is fast connect's record?"}
     B -- "Yes" --> C["Driver tries the remembered AP alone"]
-    B -- "No" --> D["Driver scans every channel, strongest first"]
+    B -- "No" --> D["Driver connects as the station configuration says<br/>(after a fallback: every channel, strongest first)"]
     C --> E{"Connected?"}
     D --> E
     E -- "No, record in use<br/>(not own leave, not roam)" --> F["Clear the record on the Wi-Fi task,<br/>before the disconnection event is posted"]

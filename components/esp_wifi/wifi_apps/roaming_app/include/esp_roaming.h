@@ -41,7 +41,9 @@ struct roam_config {
     bool rrm_roaming_enabled;
     /** Seconds before restoring default low RSSI threshold; 0 disables (max 255). */
     uint8_t low_rssi_threshold_reset_sec;
-    /* Appended so the members above keep their offsets. Takes effect only when its option is built in. */
+    /* Appended so the members above keep their offsets. Takes effect only when its option is built in. Its
+     * default comes from ESP_WIFI_ROAMING_FAST_CONNECT: read the configuration with roam_get_config_params()
+     * before changing it, or a struct filled from scratch turns fast connect off and forgets its record. */
     bool fast_connect;            /**< remember the AP and connect to it directly (ESP_WIFI_ROAMING_FAST_CONNECT) */
 };
 

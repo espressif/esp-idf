@@ -105,11 +105,17 @@ menu "Fast connect"
             Fast connect does not move off a remembered AP that still takes the connection but has grown
             weak: the low RSSI and periodic scan triggers do that, as for any other connection.
 
+            Like the roaming triggers, fast connect needs at least one roaming method (Roaming Methods):
+            without one the roaming app does not start, and fast connect does nothing.
+
             With this option the roaming app owns scan_method, sort_method, bssid_set, bssid and channel of
-            the station configuration, and the supplicant leaves the hint in place when BTM or MBO is
-            enabled. The hint is saved with the rest of the station configuration (in NVS, unless the
-            application chose WIFI_STORAGE_RAM): an application that sets a new station configuration at
-            every boot replaces it, and so scans every channel at every boot, as without this option.
+            the station configuration, and the supplicant leaves the record in place when BTM or MBO is
+            enabled. The record is told by its shape, not by who set it: any BSSID hint with WIFI_FAST_SCAN
+            and WIFI_CONNECT_AP_BY_SIGNAL, both zero by default, is taken as the record, an application's
+            included, and is cleared after one failed connection. The hint is saved with the rest of the
+            station configuration (in NVS, unless the application chose WIFI_STORAGE_RAM): an application
+            that sets a new station configuration at every boot replaces it, and so scans every channel at
+            every boot, as without this option.
 
             Turning fast connect off at run time (roam_config.fast_connect) clears the hint. While the station
             is connecting the hint cannot be written, so fast connect stays on until that attempt ends, and

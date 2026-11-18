@@ -88,10 +88,10 @@ I (65007) wifi:security: WPA2-PSK, phy: bgn, rssi: -32
 I (65027) wifi:pm start, type: 1
 ```
 
-With fast connect, the first boot on a new network scans every channel, connects to the strongest AP and remembers it:
+With fast connect, the first boot on a new network, or after a firmware without fast connect, scans every channel, connects to the strongest AP and remembers it:
 
 ```
-I (xxx) wifi roaming app: saving a new network
+I (xxx) wifi roaming app: saving the station configuration
 I (xxx) wifi roaming app: connected on channel 11, <ms> ms after boot
 I (xxx) ROAM: fast connect: remembered xx:xx:xx:xx:xx:xx on channel 11
 I (xxx) wifi roaming app: boot to IP: <ms> ms

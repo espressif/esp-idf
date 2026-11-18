@@ -116,12 +116,15 @@ static void example_set_station_config(void)
 #if CONFIG_ESP_WIFI_ROAMING_FAST_CONNECT
     wifi_config_t saved = {0};
     ESP_ERROR_CHECK(esp_wifi_get_config(WIFI_IF_STA, &saved));
+    /* A configuration saved without fast connect (WIFI_FAST_SCAN, no BSSID) is set again, so the first
+     * connection takes the strongest AP rather than the first one found. */
     if (strncmp((const char *) saved.sta.ssid, EXAMPLE_ESP_WIFI_SSID, sizeof(saved.sta.ssid)) == 0 &&
-            strncmp((const char *) saved.sta.password, EXAMPLE_ESP_WIFI_PASS, sizeof(saved.sta.password)) == 0) {
+            strncmp((const char *) saved.sta.password, EXAMPLE_ESP_WIFI_PASS, sizeof(saved.sta.password)) == 0 &&
+            (saved.sta.bssid_set || saved.sta.scan_method == WIFI_ALL_CHANNEL_SCAN)) {
         ESP_LOGI(TAG, "keeping the saved station configuration (AP remembered: %s)", saved.sta.bssid_set ? "yes" : "no");
         return;
     }
-    ESP_LOGI(TAG, "saving a new network");
+    ESP_LOGI(TAG, "saving the station configuration");
 #endif
     ESP_ERROR_CHECK(esp_wifi_set_config(WIFI_IF_STA, &wifi_config));
 }

@@ -41,7 +41,7 @@ If enabled (“Remember the AP and connect to it directly next time”), the roa
 
 A remembered AP that is gone costs one connection attempt before the fallback. A remembered AP that still takes the connection but has grown weak is kept: moving off it is the job of the low RSSI and periodic scan triggers above, which work after a fast connect as after any other connection.
 
-With fast connect, the roaming app owns `scan_method`, `sort_method`, `bssid_set`, `bssid` and `channel` of the station configuration, and the supplicant leaves the hint in place when BTM or MBO is enabled (see Notes, 2). An application should set the station configuration only when the network changes: one that sets it at every boot replaces the record and scans every channel at every boot. A new network is best saved with `WIFI_ALL_CHANNEL_SCAN` and `WIFI_CONNECT_AP_BY_SIGNAL`. The `roaming_app` example (`examples/wifi/roaming/roaming_app`) does both.
+With fast connect, the roaming app owns `scan_method`, `sort_method`, `bssid_set`, `bssid` and `channel` of the station configuration, and the supplicant leaves the record in place when BTM or MBO is enabled (see Notes, 2). The record is told by its shape: any BSSID hint with `WIFI_FAST_SCAN` and `WIFI_CONNECT_AP_BY_SIGNAL`, both zero by default, is taken as the record, an application's included. An application should set the station configuration only when the network changes: one that sets it at every boot replaces the record and scans every channel at every boot. A new network is best saved with `WIFI_ALL_CHANNEL_SCAN` and `WIFI_CONNECT_AP_BY_SIGNAL`. The `roaming_app` example (`examples/wifi/roaming/roaming_app`) does both.
 
 
 **Roaming Methods**
