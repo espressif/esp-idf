@@ -78,6 +78,17 @@ void cache_hal_init(void)
     ctx.l2.i_cache_enabled = 1;
     ctx.l2.d_cache_enabled = 1;
 #endif
+
+#if SOC_CACHE_INTERNAL_MEM_VIA_L1CACHE
+    // L1 also caches internal memory, so invalidate the two external windows separately:
+    // flash and PSRAM, instruction and data. L2 is initialized separately.
+    cache_ll_invalidate_addr(CACHE_LL_LEVEL_INT_MEM, CACHE_TYPE_ALL, CACHE_LL_ID_ALL,
+                             SOC_DRAM_FLASH_ADDRESS_LOW,
+                             SOC_DRAM_FLASH_ADDRESS_HIGH - SOC_DRAM_FLASH_ADDRESS_LOW);
+    cache_ll_invalidate_addr(CACHE_LL_LEVEL_INT_MEM, CACHE_TYPE_ALL, CACHE_LL_ID_ALL,
+                             SOC_DRAM_PSRAM_ADDRESS_LOW,
+                             SOC_DRAM_PSRAM_ADDRESS_HIGH - SOC_DRAM_PSRAM_ADDRESS_LOW);
+#endif
 }
 
 #if CACHE_LL_ENABLE_DISABLE_STATE_SW
