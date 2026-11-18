@@ -126,14 +126,6 @@ static void clear_bssid_flag_and_channel(struct wpa_supplicant *wpa_s)
         return;
     }
 
-#if CONFIG_ESP_WIFI_ENABLE_ROAMING_APP
-    /* The roaming app's fast connect keeps its record of the AP as this hint, sets it to each AP connected
-     * to, and clears it itself after a connection through it fails (CONFIG_ESP_WIFI_ROAMING_FAST_CONNECT). */
-    if (roam_fast_connect_owns_connect_hint()) {
-        return;
-    }
-#endif
-
     config = os_zalloc(sizeof(wifi_config_t));
 
     if (!config) {
@@ -142,6 +134,15 @@ static void clear_bssid_flag_and_channel(struct wpa_supplicant *wpa_s)
     }
 
     esp_wifi_get_config(WIFI_IF_STA, config);
+#if CONFIG_ESP_WIFI_ENABLE_ROAMING_APP
+    /* The roaming app's fast connect keeps its record of the AP as this hint, sets it to each AP connected
+     * to, and clears it itself after a connection through it fails (CONFIG_ESP_WIFI_ROAMING_FAST_CONNECT).
+     * Any other hint is cleared here as without fast connect. */
+    if (roam_fast_connect_owns_connect_hint(&config->sta)) {
+        os_free(config);
+        return;
+    }
+#endif
     if (config->sta.bssid_set || config->sta.channel) {
         config->sta.channel = 0;
         config->sta.bssid_set = 0;

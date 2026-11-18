@@ -105,7 +105,7 @@ The roaming logic also honors AP-advertised transition disable policy while sele
 
 1) Advanced roaming support is disabled by default.
 
-2) When enabling the advanced roaming support, it is expected that the BSSID to connect to is not specifically set by the application. This would defeat the purpose of roaming between different APs of the network. The roaming app may temporarily set BSSID/channel hints for a directed reconnect, but these hints are cleared again so normal roaming can continue. With fast connect, the roaming app keeps a hint on purpose, as its record of the AP connected to: it changes the hint at each connection, clears it after a connection through it fails, and asks the supplicant not to clear it when BTM or MBO is enabled.
+2) When enabling the advanced roaming support, it is expected that the BSSID to connect to is not specifically set by the application. This would defeat the purpose of roaming between different APs of the network. The roaming app may temporarily set BSSID/channel hints for a directed reconnect, but these hints are cleared again so normal roaming can continue. With fast connect, the roaming app keeps a hint on purpose, as its record of the AP connected to: it changes the hint at each connection, clears it after a connection through it fails, and asks the supplicant not to clear it when BTM or MBO is enabled. The supplicant still clears any other hint, as without fast connect.
 
 3) For roaming to work as expected, the APs between which the station is expected to roam must have the same or compatible authmode. These include :
 

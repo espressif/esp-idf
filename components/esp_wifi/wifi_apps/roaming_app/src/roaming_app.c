@@ -599,9 +599,11 @@ static bool roaming_app_fast_connect_is_record(const wifi_sta_config_t *sta)
            sta->sort_method == WIFI_CONNECT_AP_BY_SIGNAL && sta->bssid_set && !is_zero_ether_addr(sta->bssid);
 }
 
-bool roam_fast_connect_owns_connect_hint(void)
+/* Only the record: any other hint, such as a directed reconnect made while no record was kept, is cleared by
+ * the supplicant as without fast connect, since roam_fast_connect_sta_disconnected() forgets only the record. */
+bool roam_fast_connect_owns_connect_hint(const wifi_sta_config_t *sta)
 {
-    return roaming_app_fast_connect_active();
+    return roaming_app_fast_connect_active() && roaming_app_fast_connect_is_record(sta);
 }
 
 /* At a connection (Wi-Fi task): remember the AP connected to, unless it is the one remembered. */
@@ -691,7 +693,7 @@ void roam_fast_connect_sta_disconnected(uint8_t reason)
              "every channel, strongest first, from the next attempt", MAC2STR(bssid), channel, reason);
 }
 #else
-bool roam_fast_connect_owns_connect_hint(void)
+bool roam_fast_connect_owns_connect_hint(const wifi_sta_config_t *sta)
 {
     return false;
 }
