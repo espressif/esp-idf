@@ -134,7 +134,8 @@ if(CONFIG_LWIP_ENABLE)
 
     if(CONFIG_LWIP_DHCP_DOES_ARP_CHECK)
         list(APPEND srcs "port/acd_dhcp_check.c")
-    elseif(CONFIG_LWIP_DHCP_DOES_ACD_CHECK)
+    elseif(CONFIG_LWIP_DHCP_DOES_ACD_CHECK OR CONFIG_LWIP_AUTOIP)
+        # AutoIP needs ACD too (LWIP_ACD in lwip/opt.h), also when DHCP does not check the offered address
         list(APPEND srcs "lwip/src/core/ipv4/acd.c")
     endif()
 
