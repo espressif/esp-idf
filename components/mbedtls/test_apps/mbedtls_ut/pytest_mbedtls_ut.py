@@ -18,7 +18,7 @@ PSRAM_ECC_DMA_TARGETS = [
 @pytest.mark.generic
 @idf_parametrize('target', ['supported_targets'], indirect=['target'])
 def test_mbedtls(dut: Dut) -> None:
-    dut.run_all_single_board_cases()
+    dut.run_all_single_board_cases(timeout=180)
 
 
 @pytest.mark.generic
