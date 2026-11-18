@@ -6,7 +6,7 @@
  *
  * SPDX-License-Identifier: MIT
  *
- * SPDX-FileContributor: 2023-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileContributor: 2023-2026 Espressif Systems (Shanghai) CO LTD
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy of
  * this software and associated documentation files (the "Software"), to deal in
@@ -44,6 +44,9 @@
 #include "task.h"
 #include "timers.h"
 #include "stack_macros.h"
+#if CONFIG_FREERTOS_PORT_THREAD_SAFE_CLAIM
+#include "esp_compiler.h"
+#endif
 
 /* The default definitions are only available for non-MPU ports. The
  * reason is that the stack alignment requirements vary for different
@@ -6968,6 +6971,13 @@ static void prvResetNextTaskUnblockTime( void )
 
     void vTaskEnterCritical( void )
     {
+#if CONFIG_FREERTOS_PORT_THREAD_SAFE_CLAIM
+        if( unlikely( port_xThreadSafeClaimed ) )
+        {
+            return;
+        }
+#endif
+
         traceENTER_vTaskEnterCritical();
 
         portDISABLE_INTERRUPTS();
@@ -7095,6 +7105,13 @@ static void prvResetNextTaskUnblockTime( void )
 
     void vTaskExitCritical( void )
     {
+#if CONFIG_FREERTOS_PORT_THREAD_SAFE_CLAIM
+        if( unlikely( port_xThreadSafeClaimed ) )
+        {
+            return;
+        }
+#endif
+
         traceENTER_vTaskExitCritical();
 
         if( xSchedulerRunning != pdFALSE )

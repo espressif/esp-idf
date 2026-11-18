@@ -566,6 +566,21 @@ menu "FreeRTOS"
                 If enabled, context of port*_CRITICAL calls (ISR or Non-ISR) would be checked to be in compliance with
                 Vanilla FreeRTOS. e.g Calling port*_CRITICAL from ISR context would cause assert failure
 
+        config FREERTOS_PORT_THREAD_SAFE_CLAIM
+            bool "Enable xPortThreadSafeClaim/xPortThreadSafeDisclaim APIs"
+            default y if SOC_BRANCH_PREDICTOR_SUPPORTED
+            default n
+            help
+                Enables the xPortThreadSafeClaim() and xPortThreadSafeDisclaim() APIs, which allow a caller to
+                declare that it has already ensured thread safety (e.g. by disabling interrupts and stalling all
+                other cores), causing subsequent vPortEnterCritical/vPortExitCritical calls to become no-ops for
+                the duration of the claim.
+
+                This feature adds a branch check to every port-layer critical-section enter/exit path. On chips
+                with a hardware branch predictor (SOC_BRANCH_PREDICTOR_SUPPORTED) the branch is predicted-not-taken
+                and has negligible overhead. On older chips without a branch predictor the branch has a measurable
+                per-critical-section cost, so this option defaults to disabled.
+
     endmenu # Port
 
     menu "Extra"

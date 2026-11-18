@@ -8,7 +8,7 @@
  *
  * SPDX-License-Identifier: MIT
  *
- * SPDX-FileContributor: 2023-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileContributor: 2023-2026 Espressif Systems (Shanghai) CO LTD
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy of
  * this software and associated documentation files (the "Software"), to deal in
@@ -228,6 +228,24 @@ static inline void __attribute__((always_inline)) vPortEnterCritical(portMUX_TYP
  * @param[in] mux Spinlock
  */
 void vPortExitCritical(portMUX_TYPE *mux);
+
+#if CONFIG_FREERTOS_PORT_THREAD_SAFE_CLAIM
+/**
+ * @brief Claim thread-safe region start
+ *        If claimed, vPortEnterCritical/vPortExitCritical on the current core are no-ops.
+ *        Only can be used in single-core running context with interrupts disabled.
+ * @note !!! Caller must guarantee thread safety between Claim and Disclaim !!!
+ */
+void xPortThreadSafeClaim(void);
+
+/**
+ * @brief Claim thread-safe region end
+ *        Restores normal port critical behavior
+ *        Only can be used in single-core running context with interrupts disabled.
+ * @note !!! Caller must guarantee thread safety between Claim and Disclaim !!!
+ */
+void xPortThreadSafeDisclaim(void);
+#endif /* CONFIG_FREERTOS_PORT_THREAD_SAFE_CLAIM */
 
 /**
  * @brief FreeRTOS Compliant version of xPortEnterCriticalTimeout()

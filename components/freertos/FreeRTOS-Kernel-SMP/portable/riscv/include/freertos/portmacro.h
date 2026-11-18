@@ -327,6 +327,26 @@ and vPortExitCritical() from precompiled libraries (.a) thereby failing linking.
 void vPortEnterCritical(void);
 void vPortExitCritical(void);
 
+#if CONFIG_FREERTOS_PORT_THREAD_SAFE_CLAIM
+/**
+ * @brief Claim thread-safe region start
+ *        If claimed, vPortEnterCritical/vPortExitCritical on the current core are no-ops.
+ *        Only can be used in single-core running context with interrupts disabled.
+ * @note !!! Caller must guarantee thread safety between Claim and Disclaim !!!
+ */
+void xPortThreadSafeClaim(void);
+
+/**
+ * @brief Claim thread-safe region end
+ *        Restores normal port critical behavior
+ *        Only can be used in single-core running context with interrupts disabled.
+ * @note !!! Caller must guarantee thread safety between Claim and Disclaim !!!
+ */
+void xPortThreadSafeDisclaim(void);
+
+extern volatile bool port_xThreadSafeClaimed;
+#endif /* CONFIG_FREERTOS_PORT_THREAD_SAFE_CLAIM */
+
 //IDF task critical sections
 #define portTRY_ENTER_CRITICAL(lock, timeout)       ({(void) lock; (void) timeout; vPortEnterCritical(); pdPASS;})
 #define portENTER_CRITICAL_IDF(lock)                ({(void) lock; vPortEnterCritical();})
