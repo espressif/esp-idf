@@ -38,7 +38,6 @@ typedef struct esp_srp_handle {
     int      len_g;
 
     /* Salt */
-    esp_mpi_t *s;
     char    *bytes_s;
     int      len_s;
     /* Verifier */
@@ -147,9 +146,6 @@ void esp_srp_free(esp_srp_handle_t *hd)
     }
     if (hd->g) {
         esp_mpi_free(hd->g);
-    }
-    if (hd->s) {
-        esp_mpi_free(hd->s);
     }
     if (hd->bytes_s) {
         free(hd->bytes_s);
@@ -400,28 +396,27 @@ static esp_err_t _esp_srp_gen_salt_verifier(esp_srp_handle_t *hd, const char *us
         return ESP_ERR_INVALID_ARG;
     }
 
-    /* Get Salt */
-    int str_salt_len;
+    /* Get Salt: exactly salt_len random bytes. The salt is only ever
+     * hashed as bytes, so it does not need to be a bignum. */
     esp_mpi_t *x = NULL;
-    hd->s = esp_mpi_new();
-    if (!hd->s) {
-        ESP_LOGE(TAG, "Failed to allocate bignum s");
-        goto error;
-    }
-
-    esp_mpi_get_rand(hd->s, 8 * salt_len, -1, 0);
-    hd->bytes_s = esp_mpi_to_bin(hd->s, &str_salt_len);
+    hd->bytes_s = malloc(salt_len);
     if (!hd->bytes_s) {
-        ESP_LOGE(TAG, "Failed to generate salt of len %d", salt_len);
+        ESP_LOGE(TAG, "Failed to allocate salt of len %d", salt_len);
         goto error;
     }
-
+    /* Some clients (Android app, esp_prov) drop a leading zero byte from
+     * the salt before hashing it. The device hashes all the bytes, so the
+     * two would not match. Retry until the first byte is not zero. */
+    do {
+        esp_get_random(NULL, (unsigned char *)hd->bytes_s, salt_len);
+    } while (hd->bytes_s[0] == 0);
     hd->len_s = salt_len;
+
     ESP_LOGD(TAG, "Salt ->");
-    ESP_LOG_BUFFER_HEX_LEVEL(TAG, hd->bytes_s, str_salt_len, ESP_LOG_DEBUG);
+    ESP_LOG_BUFFER_HEX_LEVEL(TAG, hd->bytes_s, hd->len_s, ESP_LOG_DEBUG);
 
     /* Calculate X which is simply a hash for all these things */
-    x = calculate_x(hd->bytes_s, str_salt_len, username, username_len, pass, pass_len);
+    x = calculate_x(hd->bytes_s, hd->len_s, username, username_len, pass, pass_len);
     if (!x) {
         ESP_LOGE(TAG, "Failed to calculate x");
         goto error;
@@ -441,10 +436,6 @@ static esp_err_t _esp_srp_gen_salt_verifier(esp_srp_handle_t *hd, const char *us
     return ESP_OK;
 
 error:
-    if (hd->s) {
-        esp_mpi_free(hd->s);
-        hd->s = NULL;
-    }
     if (hd->bytes_s) {
         free(hd->bytes_s);
         hd->bytes_s = NULL;
@@ -486,10 +477,6 @@ esp_err_t esp_srp_srv_pubkey(esp_srp_handle_t *hd, const char *username, int use
     return ESP_OK;
 
 error:
-    if (hd->s) {
-        esp_mpi_free(hd->s);
-        hd->s = NULL;
-    }
     if (*bytes_salt) {
         free(*bytes_salt);
         *bytes_salt = NULL;
@@ -581,11 +568,6 @@ esp_err_t esp_srp_set_salt_verifier(esp_srp_handle_t *hd, const char *salt, int 
     memcpy(hd->bytes_s, salt, salt_len);
     hd->len_s = salt_len;
 
-    hd->s = esp_mpi_new_from_bin(salt, salt_len);
-    if (!hd->s) {
-        goto error;
-    }
-
     hd->v = esp_mpi_new_from_bin(verifier, verifier_len);
     if (!hd->v) {
         goto error;
@@ -597,10 +579,6 @@ error:
         free(hd->bytes_s);
         hd->bytes_s = NULL;
         hd->len_s = 0;
-    }
-    if (hd->s) {
-        esp_mpi_free(hd->s);
-        hd->s = NULL;
     }
     if (hd->v) {
         esp_mpi_free(hd->v);
