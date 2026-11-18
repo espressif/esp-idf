@@ -1,0 +1,6 @@
+# Default-config variant. CI builds each sdkconfig.ci.* file on top of
+# sdkconfig.defaults alone, so without this file the two finite-budget
+# variants would be the whole build matrix and the unbounded (-1)
+# configuration, with the infinite-wait cases it compiles, would drop out
+# of it. The rule for this exact file name gives it the config name
+# "default".

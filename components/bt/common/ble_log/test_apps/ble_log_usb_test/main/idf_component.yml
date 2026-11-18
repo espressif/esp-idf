@@ -1,0 +1,5 @@
+# SPDX-FileCopyrightText: 2026 Espressif Systems (Shanghai) CO LTD
+# SPDX-License-Identifier: CC0-1.0
+dependencies:
+  espressif/esp_tinyusb:
+    version: "^2.0.0"
