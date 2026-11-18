@@ -112,12 +112,73 @@ static void do_rto_recovery_test(int slot, int width, bool is_write)
 }
 
 #define TEST_LONG_XFER_SIZE  (64 * 1024)
+/* At least 2 ticks, so that the event queue wait lasts at least 1 ms. Much shorter than the transfer of
+ * TEST_LONG_XFER_SIZE at the default frequency in 1-bit mode (about 26 ms), so the transfer is
+ * always aborted while data is on the bus. */
+#define TEST_ABORT_TIMEOUT_MS  2
 
-/* Abort a long multi-block transfer while data is on the bus: the transaction gives up after 1 ms
- * (event queue timeout) while the card is still sending / receiving data. Then check that the host
- * can still talk to the card. */
-static void do_midtransfer_abort_test(int slot, int width, int freq_khz, bool is_write)
+#define CARD_STATE_PRG  7
+
+/* Wrapper around the host transaction function, which shortens the timeout of the first command with
+ * opcode s_abort_opcode. Commands sent afterwards (CMD13, CMD12, ACMD22) keep their normal timeouts. */
+static esp_err_t (*s_orig_do_transaction)(int slot, sdmmc_command_t *cmd);
+static uint32_t s_abort_opcode;
+static bool s_abort_pending;
+
+static esp_err_t do_transaction_abort_data_cmd(int slot, sdmmc_command_t *cmd)
 {
+    if (s_abort_pending && cmd->opcode == s_abort_opcode) {
+        s_abort_pending = false;
+        cmd->timeout_ms = TEST_ABORT_TIMEOUT_MS;
+    }
+    return s_orig_do_transaction(slot, cmd);
+}
+
+static void start_aborting_data_cmd(sdmmc_card_t *card, uint32_t opcode)
+{
+    s_orig_do_transaction = card->host.do_transaction;
+    s_abort_opcode = opcode;
+    s_abort_pending = true;
+    card->host.do_transaction = do_transaction_abort_data_cmd;
+}
+
+static void stop_aborting_data_cmd(sdmmc_card_t *card)
+{
+    card->host.do_transaction = s_orig_do_transaction;
+    TEST_ASSERT_FALSE_MESSAGE(s_abort_pending, "data command was not sent");
+}
+
+static uint32_t get_card_state(sdmmc_card_t *card)
+{
+    uint32_t status = 0;
+    TEST_ESP_OK(sdmmc_send_cmd_send_status(card, &status));
+    return MMC_R1_CURRENT_STATE_STATUS(status);
+}
+
+/* After an aborted write the card can be programming for a while before it returns to tran */
+static uint32_t wait_while_programming(sdmmc_card_t *card)
+{
+    uint32_t state = get_card_state(card);
+    for (int i = 0; i < 100 && state == CARD_STATE_PRG; i++) {
+        vTaskDelay(pdMS_TO_TICKS(10));
+        state = get_card_state(card);
+    }
+    return state;
+}
+
+/* Abort a long multi-block transfer while data is on the bus: the transaction gives up after
+ * TEST_ABORT_TIMEOUT_MS (event queue timeout) while the card is still sending / receiving data.
+ * If via_rw_api is false, the command is sent with sdmmc_send_cmd() and the test checks that the card
+ * is left in the data / rcv state, then calls sdmmc_stop_transmission_if_needed() itself.
+ * If via_rw_api is true, the transfer goes through sdmmc_read_sectors_dma() / sdmmc_write_sectors_dma(),
+ * which must bring the card back to the tran state on their own.
+ * In both cases, check that the following reads and writes work and carry the right data. */
+static void do_midtransfer_abort_test(int slot, int width, int freq_khz, bool is_write, bool via_rw_api)
+{
+#if CONFIG_FREERTOS_HZ != 1000
+    // with a longer tick, the event queue wait can last most of the transfer, so the abort may not happen mid-transfer
+    TEST_IGNORE_MESSAGE("mid-transfer abort tests require CONFIG_FREERTOS_HZ=1000");
+#endif
     sdmmc_card_t card;
     sdmmc_test_sd_skip_if_board_incompatible(slot, width, freq_khz, NO_DDR, NO_EMMC);
     sdmmc_test_sd_begin(slot, width, freq_khz, NO_DDR, &card);
@@ -126,6 +187,8 @@ static void do_midtransfer_abort_test(int slot, int width, int freq_khz, bool is
 
     const size_t block_size = card.csd.sector_size;
     const size_t sector = card.csd.capacity / 2;
+    const size_t long_sector = sector + 1024;
+    const size_t long_block_count = TEST_LONG_XFER_SIZE / block_size;
 
     uint32_t *good = heap_caps_malloc(TEST_XFER_SIZE, MALLOC_CAP_DMA | MALLOC_CAP_INTERNAL);
     uint32_t *rd = heap_caps_malloc(TEST_XFER_SIZE, MALLOC_CAP_DMA | MALLOC_CAP_INTERNAL);
@@ -138,59 +201,81 @@ static void do_midtransfer_abort_test(int slot, int width, int freq_khz, bool is
     fill_pattern(big, TEST_LONG_XFER_SIZE, 0xB16B0000u);
     TEST_ESP_OK(sdmmc_write_sectors(&card, good, sector, TEST_XFER_SIZE / block_size));
 
-    sdmmc_command_t cmd = {
-        .opcode = is_write ? MMC_WRITE_BLOCK_MULTIPLE : MMC_READ_BLOCK_MULTIPLE,
-        .flags = SCF_CMD_ADTC | SCF_RSP_R1 | (is_write ? 0 : SCF_CMD_READ),
-        .arg = card.ocr & SD_OCR_SDHC_CAP ? sector + 1024 : (sector + 1024) * block_size,
-                   .data = big,
-                   .datalen = TEST_LONG_XFER_SIZE,
-                   .buflen = TEST_LONG_XFER_SIZE,
-                   .blklen = block_size,
-                   .timeout_ms = 1,
-    };
-    esp_err_t err = sdmmc_send_cmd(&card, &cmd);
-    ESP_LOGI(TAG, "%s with 1 ms timeout returned 0x%x", is_write ? "CMD25" : "CMD18", err);
-    vTaskDelay(pdMS_TO_TICKS(200));
+    const char *cmd_name = is_write ? "CMD25" : "CMD18";
+    esp_err_t err;
+    if (via_rw_api) {
+        // only the data command gets the short timeout, the commands sent during recovery keep their normal timeouts
+        start_aborting_data_cmd(&card, is_write ? MMC_WRITE_BLOCK_MULTIPLE : MMC_READ_BLOCK_MULTIPLE);
+        if (is_write) {
+            err = sdmmc_write_sectors_dma(&card, big, long_sector, long_block_count, TEST_LONG_XFER_SIZE);
+        } else {
+            err = sdmmc_read_sectors_dma(&card, big, long_sector, long_block_count, TEST_LONG_XFER_SIZE);
+        }
+        stop_aborting_data_cmd(&card);
+        ESP_LOGI(TAG, "%s via sdmmc_%s_sectors_dma with %d ms timeout returned 0x%x",
+                 cmd_name, is_write ? "write" : "read", TEST_ABORT_TIMEOUT_MS, err);
+        TEST_ASSERT_NOT_EQUAL(ESP_OK, err);
+    } else {
+        sdmmc_command_t cmd = {
+            .opcode = is_write ? MMC_WRITE_BLOCK_MULTIPLE : MMC_READ_BLOCK_MULTIPLE,
+            .flags = SCF_CMD_ADTC | SCF_RSP_R1 | (is_write ? 0 : SCF_CMD_READ),
+            .arg = card.ocr & SD_OCR_SDHC_CAP ? long_sector : long_sector * block_size,
+            .data = big,
+            .datalen = TEST_LONG_XFER_SIZE,
+            .buflen = TEST_LONG_XFER_SIZE,
+            .blklen = block_size,
+            .timeout_ms = TEST_ABORT_TIMEOUT_MS,
+        };
+        err = sdmmc_send_cmd(&card, &cmd);
+        ESP_LOGI(TAG, "%s with %d ms timeout returned 0x%x", cmd_name, TEST_ABORT_TIMEOUT_MS, err);
+        TEST_ASSERT_NOT_EQUAL(ESP_OK, err);
 
-    // the driver only resets the controller, bringing the card out of the data state is done by the protocol layer
-    esp_err_t stop_err = sdmmc_stop_transmission_if_needed(&card);
-    ESP_LOGI(TAG, "stop transmission after abort returned 0x%x", stop_err);
+        // the driver only resets the controller, the card must still be in the middle of the transfer
+        uint32_t state = get_card_state(&card);
+        ESP_LOGI(TAG, "card state after abort: %"PRIu32, state);
+        TEST_ASSERT_EQUAL(is_write ? MMC_R1_CURRENT_STATE_RCV : MMC_R1_CURRENT_STATE_DATA, state);
 
-    uint32_t status = 0;
-    err = sdmmc_send_cmd_send_status(&card, &status);
-    ESP_LOGI(TAG, "CMD13 after abort returned 0x%x, status=0x%08"PRIx32" (state=%d)", err, status, (int)MMC_R1_CURRENT_STATE(&status));
+        TEST_ESP_OK(sdmmc_stop_transmission_if_needed(&card));
+    }
+
+    uint32_t state = wait_while_programming(&card);
+    ESP_LOGI(TAG, "card state after recovery: %"PRIu32, state);
+    TEST_ASSERT_EQUAL(MMC_R1_CURRENT_STATE_TRAN, state);
 
     memset(rd, 0, TEST_XFER_SIZE);
-    err = sdmmc_read_sectors(&card, rd, sector, TEST_XFER_SIZE / block_size);
-    ESP_LOGI(TAG, "read after abort returned 0x%x", err);
-    bool read_ok = (err == ESP_OK) && memcmp(good, rd, TEST_XFER_SIZE) == 0;
-    ESP_LOGI(TAG, "read data %s", read_ok ? "matches" : "DOES NOT match");
+    TEST_ESP_OK(sdmmc_read_sectors(&card, rd, sector, TEST_XFER_SIZE / block_size));
+    TEST_ASSERT_EQUAL_HEX32_ARRAY(good, rd, TEST_XFER_SIZE / sizeof(uint32_t));
 
     fill_pattern(good, TEST_XFER_SIZE, 0x44440000u);
-    esp_err_t werr = sdmmc_write_sectors(&card, good, sector, TEST_XFER_SIZE / block_size);
-    ESP_LOGI(TAG, "write after abort returned 0x%x", werr);
+    TEST_ESP_OK(sdmmc_write_sectors(&card, good, sector, TEST_XFER_SIZE / block_size));
     memset(rd, 0, TEST_XFER_SIZE);
-    esp_err_t rerr = sdmmc_read_sectors(&card, rd, sector, TEST_XFER_SIZE / block_size);
-    bool rw_ok = werr == ESP_OK && rerr == ESP_OK && memcmp(good, rd, TEST_XFER_SIZE) == 0;
-    ESP_LOGI(TAG, "write+read-back after abort: %s (werr=0x%x rerr=0x%x)", rw_ok ? "OK" : "FAILED", werr, rerr);
+    TEST_ESP_OK(sdmmc_read_sectors(&card, rd, sector, TEST_XFER_SIZE / block_size));
+    TEST_ASSERT_EQUAL_HEX32_ARRAY(good, rd, TEST_XFER_SIZE / sizeof(uint32_t));
 
     free(good);
     free(rd);
     free(big);
     sdmmc_test_sd_end(&card);
-    TEST_ESP_OK(stop_err);
-    TEST_ASSERT_TRUE(read_ok);
-    TEST_ASSERT_TRUE(rw_ok);
 }
 
 TEST_CASE("SDMMC recovers after mid-transfer abort of CMD18 (read), slot 0, 1-bit", "[sdmmc][dma_recovery]")
 {
-    do_midtransfer_abort_test(SLOT_0, 1, SDMMC_FREQ_DEFAULT, false);
+    do_midtransfer_abort_test(SLOT_0, 1, SDMMC_FREQ_DEFAULT, false, false);
 }
 
 TEST_CASE("SDMMC recovers after mid-transfer abort of CMD25 (write), slot 0, 1-bit", "[sdmmc][dma_recovery]")
 {
-    do_midtransfer_abort_test(SLOT_0, 1, SDMMC_FREQ_DEFAULT, true);
+    do_midtransfer_abort_test(SLOT_0, 1, SDMMC_FREQ_DEFAULT, true, false);
+}
+
+TEST_CASE("SDMMC read_sectors recovers after mid-transfer abort of CMD18, slot 0, 1-bit", "[sdmmc][dma_recovery]")
+{
+    do_midtransfer_abort_test(SLOT_0, 1, SDMMC_FREQ_DEFAULT, false, true);
+}
+
+TEST_CASE("SDMMC write_sectors recovers after mid-transfer abort of CMD25, slot 0, 1-bit", "[sdmmc][dma_recovery]")
+{
+    do_midtransfer_abort_test(SLOT_0, 1, SDMMC_FREQ_DEFAULT, true, true);
 }
 
 TEST_CASE("SDMMC recovers after RTO on CMD25 (write), slot 0, 4-bit", "[sdmmc][dma_recovery]")
