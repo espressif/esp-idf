@@ -428,8 +428,8 @@ little below 2048 and nothing above it.
 
 ## USB Serial/JTAG transport
 
-On a chip with only USB Serial/JTAG (C3, C5, C6, C61, H2, H21), or when you
-want the USJ jack instead of the USB OTG jack (H4, S3), BLE Log can copy each
+On a chip with only USB Serial/JTAG (C3, C6, H2), or when you want the USJ
+jack instead of the USB OTG jack (S3), BLE Log can copy each
 sealed transport into the USB-Serial-JTAG driver TX ring. The hardware FIFO
 is 64 bytes and is not configurable. The device stays the ROM USB
 Serial/JTAG identity (VID 0x303A PID 0x1001). The host opens that CDC-ACM
@@ -459,8 +459,7 @@ targets the transport writes as soon as the SOF-based
 from before the gate.
 
 On C6 the BLE Log peripheral default stays UART DMA (`SOC_UHCI_SUPPORTED`).
-USJ is opt-in. On H4, OTG TinyUSB and USJ are two choice members because
-they are two ports with two host identities.
+USJ is opt-in.
 
 ### Console and other FIFO owners
 
@@ -471,7 +470,7 @@ A default sdkconfig on a USJ chip turns on
 `CONFIG_ESP_CONSOLE_USB_SERIAL_JTAG_ENABLED`. That secondary console already
 owns the FIFO. Hidden `CONFIG_BLE_LOG_USJ_BUS_BUSY` is then y, and the BLE
 Log USJ choice is not in the menu. The same hide applies when
-`CONFIG_ESP_TRACE_TRANSPORT_USB_SERIAL_JTAG` or
+`CONFIG_APPTRACE_DEST_USB_CDC` or
 `CONFIG_OPENTHREAD_RCP_USB_SERIAL_JTAG` is on, or when
 `CONFIG_USJ_ENABLE_USB_SERIAL_JTAG` is off.
 
@@ -483,7 +482,7 @@ operator has to release the port:
    secondary `ESP_CONSOLE_SECONDARY_NONE`. Keep UART as the console if you
    still want `ESP_LOG` / REPL; `idf.py monitor` then uses the UART-bridge
    COM port, not the USJ ACM node.
-2. esp_trace: transport not "USB Serial JTAG".
+2. app_trace: destination not "USB_CDC" (ESP32-C3/S3 only).
 3. OpenThread RCP: transport not "USB RCP".
 4. Leave `CONFIG_USJ_ENABLE_USB_SERIAL_JTAG` on.
 5. `Component config -> Bluetooth -> Common Options -> Enable BT Log Async
@@ -561,7 +560,7 @@ DevKitC-02 Type-C is USJ (GPIO18 D-, GPIO19 D+). UART0 is on the header
 pins. Third-party C3 boards often wire the only USB connector to a UART
 bridge and leave GPIO18/19 unconnected.
 
-### Resource occupancy (ESP32-C5 @ 240 MHz)
+### Resource occupancy (USJ, measured on a later branch)
 
 Measured on `ble_log_usj_test` with `idf.py size-files` / `--archives`
 against `ble_log_usj_test.map`. Flash and static SRAM are link-map bytes.
@@ -576,7 +575,7 @@ map `.bss`.
 | BLE Log COPY_FIFO (shared with TinyUSB CDC) | (in `ble_log_rt.c` / `ble_log_lbm_v2.c`) | | Dispatch task stack 1024 B (RISC-V; 2048 B on Xtensa); pool 8 x 640 B = 5120 B plus transport structs and the runtime queue | Same COPY_FIFO path as `CONFIG_BLE_LOG_PRPH_USB`. Not USJ-only. |
 
 CPU: 6.3% of one core (FreeRTOS IDLE delta) while the USJ driver was
-written at its drop-rate load on C5 @ 240 MHz. That measurement called
+written at its drop-rate load on a USJ target @ 240 MHz. That measurement called
 `usb_serial_jtag_write_bytes` directly (`timeout` 0, whole 640-byte frame
 or none, TX ring 2048). It is not `ble_log_write_hex` occupancy. BLE Log
 uses the same write contract, so the driver portion of CPU is that figure;
@@ -593,8 +592,8 @@ ring does not increase the link rate.
 | Signaling | USB 2.0 Full Speed, 12 Mbit/s | Datasheet. Not a delivered-byte rate. |
 | Hardware FIFO | 64 bytes TX and RX | `usb_serial_jtag.c` `USB_SER_JTAG_ENDP_SIZE`. |
 | FS bulk ceiling | 19 x 64 B/ms = 1.216 MB/s | USB spec inference. |
-| Driver drop rate | 750 KiB/s device, 726 KiB/s host | ESP32-C5 @ 240 MHz, n=5, 3 s, host-paced ACM reader. Same write contract as BLE Log (`write_bytes` timeout 0, whole 640-byte frame or none, TX ring 2048). The measurement called the driver directly, not `ble_log_write_hex`. CPU occupancy 6.3% (FreeRTOS IDLE delta). No DMA. C6 is unmeasured. |
-| Software ring default | 2048 bytes | Same knee as the TinyUSB CDC TX FIFO, and esp_trace's USJ minimum. |
+| Driver drop rate | 750 KiB/s device, 726 KiB/s host | A USJ target @ 240 MHz, n=5, 3 s, host-paced ACM reader. Same write contract as BLE Log (`write_bytes` timeout 0, whole 640-byte frame or none, TX ring 2048). The measurement called the driver directly, not `ble_log_write_hex`. CPU occupancy 6.3% (FreeRTOS IDLE delta). No DMA. C6 is unmeasured. |
+| Software ring default | 2048 bytes | Same knee as the TinyUSB CDC TX FIFO, and the USJ ring floor recorded above. |
 
 ## Validation apps
 

@@ -155,9 +155,9 @@ function(register_ble_log_usj_transport component_type)
         message(FATAL_ERROR
             "BLE_LOG_PRPH_USB_SERIAL_JTAG is set while BLE_LOG_USJ_BUS_BUSY "
             "is set. Console ESP_CONSOLE_USB_SERIAL_JTAG_ENABLED="
-            "${CONFIG_ESP_CONSOLE_USB_SERIAL_JTAG_ENABLED}, esp_trace "
-            "ESP_TRACE_TRANSPORT_USB_SERIAL_JTAG="
-            "${CONFIG_ESP_TRACE_TRANSPORT_USB_SERIAL_JTAG}, OpenThread RCP "
+            "${CONFIG_ESP_CONSOLE_USB_SERIAL_JTAG_ENABLED}, app_trace "
+            "APPTRACE_DEST_USB_CDC="
+            "${CONFIG_APPTRACE_DEST_USB_CDC}, OpenThread RCP "
             "OPENTHREAD_RCP_USB_SERIAL_JTAG="
             "${CONFIG_OPENTHREAD_RCP_USB_SERIAL_JTAG}, "
             "USJ_ENABLE_USB_SERIAL_JTAG="

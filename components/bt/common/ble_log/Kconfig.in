@@ -149,18 +149,19 @@ if BLE_LOG_ENABLED
     config BLE_LOG_USJ_BUS_BUSY
         bool
         default y if ESP_CONSOLE_USB_SERIAL_JTAG_ENABLED
-        default y if ESP_TRACE_TRANSPORT_USB_SERIAL_JTAG
+        default y if APPTRACE_DEST_USB_CDC
         default y if OPENTHREAD_RCP_USB_SERIAL_JTAG
         default y if !USJ_ENABLE_USB_SERIAL_JTAG
         default n
         help
             Hidden. The USB Serial/JTAG FIFO already has another owner
-            (primary or secondary console, esp_trace, OpenThread RCP),
-            or the USJ module is turned off. BLE Log will not steal it.
+            (primary or secondary console, app_trace USB_CDC, OpenThread
+            RCP), or the USJ module is turned off. BLE Log will not
+            steal it.
 
     menu "USB Serial/JTAG BLE Log is hidden (port owned elsewhere)"
         depends on SOC_USB_SERIAL_JTAG_SUPPORTED && BLE_LOG_USJ_BUS_BUSY
-        comment "Turn off USB-Serial-JTAG console (primary and secondary), esp_trace USJ, and OpenThread RCP USB."
+        comment "Turn off USB-Serial-JTAG console (primary and secondary), app_trace USB_CDC, and OpenThread RCP USB."
         comment "Leave USJ_ENABLE_USB_SERIAL_JTAG on. This menu will not flip those options."
     endmenu
 
@@ -367,14 +368,13 @@ if BLE_LOG_ENABLED
                 Byte ring passed to usb_serial_jtag_driver_install as
                 tx_buffer_size. A sealed transport is copied here whole
                 or dropped. Must be >= BLE_LOG_POOL_TRANS_SIZE. Not
-                required to be a power of two (that constraint belongs
-                to esp_trace's own ring, not to this driver).
+                required to be a power of two.
 
-                2048 is the floor: esp_trace documents that a smaller
-                USJ ring overflows easily, and the TinyUSB CDC TX FIFO
-                measured the same size as the knee (three 640-byte
-                transports). Raising it does not raise the link rate.
-                There is no EP_BUFSIZE counterpart.
+                2048 is the floor: a smaller USJ ring overflows easily,
+                and the TinyUSB CDC TX FIFO measured the same size as
+                the knee (three 640-byte transports). Raising it does
+                not raise the link rate. There is no EP_BUFSIZE
+                counterpart.
     endif
 
     menu "Settings of BLE Log Compression"
