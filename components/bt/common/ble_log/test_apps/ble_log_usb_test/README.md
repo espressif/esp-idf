@@ -74,7 +74,10 @@ per-speed buffer guidance.
 
 ## Supported Targets
 
-| Supported Targets | ESP32-S2 | ESP32-S3 | ESP32-P4 | ESP32-H4 | ESP32-S31 |
-| ----------------- | -------- | -------- | -------- | -------- | --------- |
+| Supported Targets |
+| ----------------- |
 
-CI builds are temporarily disabled until BLE Log test runners are available.
+The app needs `SOC_USB_OTG_SUPPORTED`, which this branch defines for
+ESP32-S2, ESP32-S3 and ESP32-P4. The table is empty because
+`.build-test-rules.yml` disables CI builds for every target until BLE Log
+test runners are available.
