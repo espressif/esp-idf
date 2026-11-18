@@ -41,6 +41,10 @@ struct roam_config {
     bool rrm_roaming_enabled;
     /** Seconds before restoring default low RSSI threshold; 0 disables (max 255). */
     uint8_t low_rssi_threshold_reset_sec;
+    /* Appended so the members above keep their offsets. Takes effect only when its option is built in. Its
+     * default comes from ESP_WIFI_ROAMING_FAST_CONNECT: read the configuration with roam_get_config_params()
+     * before changing it, or a struct filled from scratch turns fast connect off and forgets its record. */
+    bool fast_connect;            /**< remember the AP and connect to it directly (ESP_WIFI_ROAMING_FAST_CONNECT) */
 };
 
 void roam_init_app(void);
@@ -58,6 +62,13 @@ esp_err_t esp_wifi_blacklist_remove(const uint8_t *bssid);
 
 #if CONFIG_ESP_WIFI_ENABLE_ROAMING_APP
 void esp_wifi_roaming_set_current_bssid(const uint8_t *bssid);
+/* For the supplicant: true when this station configuration's connect hint is fast connect's record of the
+ * AP, which the supplicant then leaves in place when BTM or MBO is enabled. */
+bool roam_fast_connect_owns_connect_hint(const wifi_sta_config_t *sta);
+/* For the supplicant's connection and disconnection callbacks, on the Wi-Fi task: fast connect clears its
+ * record after a failed attempt there, before the driver posts WIFI_EVENT_STA_DISCONNECTED. */
+void roam_fast_connect_sta_connected(void);
+void roam_fast_connect_sta_disconnected(uint8_t reason);
 #endif
 
 #ifdef __cplusplus
