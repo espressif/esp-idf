@@ -3407,6 +3407,11 @@ int owe_process_assoc_resp(const u8 *rsn_ie, size_t rsn_len, const uint8_t *dh_i
 
     prime_len = OWE_PRIME_LEN;
 
+    if (dh_len - 2 != prime_len) {
+        wpa_printf(MSG_ERROR, "OWE: Invalid peer DH public key length");
+        goto fail;
+    }
+
     /* Set peer's public key point and calculate shared secret */
     sh_secret = crypto_ecdh_set_peerkey(sm->owe_ecdh, 0, dh_ie+2, dh_len-2);
     sh_secret = wpabuf_zeropad(sh_secret, prime_len);
