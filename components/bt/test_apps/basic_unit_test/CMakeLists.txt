@@ -10,4 +10,6 @@ if(IDF_TARGET STREQUAL "esp32")
     list(APPEND SDKCONFIG_DEFAULTS "sdkconfig.defaults.esp32")
 endif()
 
+# (set before project() so the bt component picks it up; not in Kconfig).
+idf_build_set_property(COMPILE_DEFINITIONS "BT_BLUEDROID_UNIT_TEST=1" APPEND)
 project(bt_test)
