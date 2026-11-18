@@ -1,5 +1,8 @@
 # BLE Log USB Serial/JTAG test app
 
+| Supported Targets |
+| ----------------- |
+
 USB Serial/JTAG smoke app for `CONFIG_BLE_LOG_PRPH_USB_SERIAL_JTAG=y`.
 The device stays the ROM USB Serial/JTAG identity (VID 0x303A PID 0x1001).
 Open that CDC-ACM port for the binary log stream. Do not open the JTAG
