@@ -606,6 +606,48 @@ bool roam_fast_connect_owns_connect_hint(const wifi_sta_config_t *sta)
     return roaming_app_fast_connect_active() && roaming_app_fast_connect_is_record(sta);
 }
 
+/* Forget the record, if the station configuration holds it (Wi-Fi task). */
+static esp_err_t roaming_app_fast_connect_forget(void)
+{
+    wifi_config_t wifi_cfg = {0};
+    uint8_t bssid[ETH_ALEN];
+    esp_err_t err;
+
+    err = esp_wifi_get_config(WIFI_IF_STA, &wifi_cfg);
+    if (err != ESP_OK || !roaming_app_fast_connect_is_record(&wifi_cfg.sta)) {
+        return err;
+    }
+    os_memcpy(bssid, wifi_cfg.sta.bssid, ETH_ALEN);
+    wifi_cfg.sta.scan_method = WIFI_ALL_CHANNEL_SCAN;
+    wifi_cfg.sta.bssid_set = false;
+    os_memset(wifi_cfg.sta.bssid, 0, ETH_ALEN);
+    wifi_cfg.sta.channel = 0;
+    err = esp_wifi_set_config(WIFI_IF_STA, &wifi_cfg);
+    if (err == ESP_OK) {
+        ESP_LOGI(ROAMING_TAG, "fast connect: forgot " MACSTR, MAC2STR(bssid));
+    }
+    return err;
+}
+
+/* Turn fast connect off (Wi-Fi task). Its record goes first: nothing would clear it after a failure any more, and
+ * the station would stay pinned to that one AP. While the station is connecting, esp_wifi_set_config() fails, so
+ * fast connect stays on and the turn-off is finished at the end of that attempt, by the next connection or
+ * disconnection. */
+static void roaming_app_fast_connect_turn_off(void)
+{
+    esp_err_t err = roaming_app_fast_connect_forget();
+
+    if (err != ESP_OK) {
+        ESP_LOGW(ROAMING_TAG, "fast connect: failed to forget its record (%s): turning off at the next connection "
+                 "or disconnection", esp_err_to_name(err));
+        g_roaming_app.fast_connect_off_pending = true;
+        return;
+    }
+    g_roaming_app.fast_connect_off_pending = false;
+    g_roaming_app.config.fast_connect = false;
+    ESP_LOGI(ROAMING_TAG, "fast connect: turned off");
+}
+
 /* At a connection (Wi-Fi task): remember the AP connected to, unless it is the one remembered. True when the
  * station configuration holds the record of this AP afterward. */
 static bool roaming_app_fast_connect_remember(const wifi_ap_record_t *ap)
@@ -669,6 +711,10 @@ void roam_fast_connect_sta_disconnected(uint8_t reason)
 
     s_fast_connect_linked = false;
     ESP_LOGD(ROAMING_TAG, "fast connect: disconnected (reason %d, connected before: %d)", reason, was_linked);
+    if (g_roaming_app.fast_connect_off_pending) {
+        roaming_app_fast_connect_turn_off();
+        return;
+    }
     if (was_linked || !roaming_app_fast_connect_active() ||
             reason == WIFI_REASON_ASSOC_LEAVE || reason == WIFI_REASON_ROAMING) {
         return;
@@ -1526,6 +1572,9 @@ static void roaming_app_connected_event_handler(void *ctx, void *data)
         ESP_LOGW(ROAMING_TAG, "Skipping AP info-dependent connected handling");
     }
 #if FAST_CONNECT_ENABLED
+    if (g_roaming_app.fast_connect_off_pending) {
+        roaming_app_fast_connect_turn_off();
+    }
     if (g_roaming_app.config.fast_connect && ap_info_available &&
             roaming_app_fast_connect_remember(&g_roaming_app.current_bss.ap)) {
         /* Fast connect's record is in place and replaces any hint the roaming app set to roam. Otherwise that
@@ -3492,7 +3541,7 @@ static int update_config_params(void *data)
     bool next_scan_filter_bssid_set = false;
     bool filters_changed;
 #if FAST_CONNECT_ENABLED
-    bool keep_fast_connect = false;
+    bool fast_connect_was_on = g_roaming_app.config.fast_connect;
 #endif
 
     if (config->scan_filter_ssid[0] != '\0') {
@@ -3514,42 +3563,18 @@ static int update_config_params(void *data)
                               next_scan_filter_bssid,
                               sizeof(next_scan_filter_bssid)) != 0);
 
-#if FAST_CONNECT_ENABLED
-    if (g_roaming_app.config.fast_connect && !config->fast_connect) {
-        wifi_config_t wifi_cfg = {0};
-        esp_err_t err;
-
-        /* Fast connect stops: nothing would clear its record after a failure any more, and the station would
-         * stay pinned to that one AP. If the record cannot be forgotten, fast connect stays on, so a failed
-         * connection still clears it; turning it off again retries the forget. */
-        err = esp_wifi_get_config(WIFI_IF_STA, &wifi_cfg);
-        if (err == ESP_OK && roaming_app_fast_connect_is_record(&wifi_cfg.sta)) {
-            uint8_t bssid[ETH_ALEN];
-
-            os_memcpy(bssid, wifi_cfg.sta.bssid, ETH_ALEN);
-            wifi_cfg.sta.scan_method = WIFI_ALL_CHANNEL_SCAN;
-            wifi_cfg.sta.bssid_set = false;
-            os_memset(wifi_cfg.sta.bssid, 0, ETH_ALEN);
-            wifi_cfg.sta.channel = 0;
-            err = esp_wifi_set_config(WIFI_IF_STA, &wifi_cfg);
-            if (err == ESP_OK) {
-                ESP_LOGI(ROAMING_TAG, "fast connect: turned off: forgot " MACSTR, MAC2STR(bssid));
-            }
-        }
-        if (err != ESP_OK) {
-            ESP_LOGE(ROAMING_TAG, "fast connect: not turned off: failed to forget its record: %s", esp_err_to_name(err));
-            keep_fast_connect = true;
-        }
-    }
-#endif
     g_roaming_app.config = *config;
     g_roaming_app.config.low_rssi_roam_diff =
         roaming_app_clamp_low_rssi_roam_diff(g_roaming_app.config.low_rssi_roam_diff);
 #if !FAST_CONNECT_ENABLED
     g_roaming_app.config.fast_connect = false;
 #else
-    if (keep_fast_connect) {
+    if (fast_connect_was_on && !config->fast_connect) {
+        /* Stays on until its record is forgotten, which may wait for the end of a connection attempt. */
         g_roaming_app.config.fast_connect = true;
+        roaming_app_fast_connect_turn_off();
+    } else {
+        g_roaming_app.fast_connect_off_pending = false;
     }
 #endif
     memset(g_roaming_app.config.scan_filter_ssid, 0, sizeof(g_roaming_app.config.scan_filter_ssid));

@@ -155,6 +155,7 @@ struct roaming_app {
     bool scan_ongoing;
     bool sta_connected;
     bool connect_hint_active;
+    bool fast_connect_off_pending; /* fast connect asked off, its record not yet forgotten (Wi-Fi task) */
     int8_t current_rssi_threshold;
     char *btm_neighbor_list;
     struct timeval last_roam_attempt_time;
