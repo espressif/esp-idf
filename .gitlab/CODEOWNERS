@@ -237,6 +237,7 @@
 
 /tools/test_apps/                    @esp-idf-codeowners/ci
 /tools/test_apps/README.md           @esp-idf-codeowners/docs @esp-idf-codeowners/ci
+/tools/test_apps/**/*.py             @esp-idf-codeowners/ci @esp-idf-codeowners/tools
 
 ## Note: owners here should be the same as the owners for the same example subdir, above
 /tools/test_apps/build_system/          @esp-idf-codeowners/build-config
@@ -248,8 +249,6 @@
 /tools/test_apps/security/              @esp-idf-codeowners/security
 /tools/test_apps/storage/               @esp-idf-codeowners/storage
 /tools/test_apps/system/                @esp-idf-codeowners/system
-
-/tools/test_apps/**/*.py             @esp-idf-codeowners/ci @esp-idf-codeowners/tools
 
 /tools/test_build_system/     @esp-idf-codeowners/tools @esp-idf-codeowners/build-config
 /tools/test_build_system/buildv2/test_blockdev_ioctl.py  @esp-idf-codeowners/storage
