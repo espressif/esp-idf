@@ -400,10 +400,11 @@ These three buffers are the transport path's whole absorption budget, and
 they cost `TX_BUFSIZE + RX_BUFSIZE + 2 * EP_BUFSIZE` bytes of static RAM
 (TinyUSB keeps one IN and one OUT endpoint buffer, both sized by
 `EP_BUFSIZE`). The defaults - `TX 2048`, `RX 512`, `EP 512` - come to 3584
-bytes. Measured with a producer that is faster than the link (perf mode,
-5 s steady-state windows, ESP-IDF v6.2):
+bytes. Measured with a producer that is faster than the link (perf
+mode, 5 s steady-state windows, a High-Speed USB target on a later
+ESP-IDF release):
 
-| Setting | High-Speed (ESP32-S31) | Full-Speed (ESP32-S3) |
+| Setting | High-Speed | Full-Speed (ESP32-S3) |
 | --- | --- | --- |
 | `EP_BUFSIZE=64` | - | 0.58 MiB/s |
 | `EP_BUFSIZE=256` | - | 0.88 MiB/s |

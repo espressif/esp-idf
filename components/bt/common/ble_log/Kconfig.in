@@ -277,11 +277,12 @@ if BLE_LOG_ENABLED
                 dropped. Must be at least BLE_LOG_POOL_TRANS_SIZE.
                 Also set CONFIG_TINYUSB_CDC_TX_BUFSIZE to this value.
 
-                Measured on ESP32-S31: 1024 costs about 5% of the
-                delivered throughput (the FIFO stalls the producer
-                sooner), while 4096 gains nothing over 2048. 2048 (three
-                transports of headroom) is the knee; only lower it to
-                trade throughput for 1 KB of RAM.
+                Measured on a High-Speed USB target on a later ESP-IDF
+                release: 1024 costs about 5% of the delivered
+                throughput (the FIFO stalls the producer sooner), while
+                4096 gains nothing over 2048. 2048 (three transports of
+                headroom) is the knee; only lower it to trade throughput
+                for 1 KB of RAM.
 
         config BLE_LOG_USB_CDC_EP_BUFSIZE
             int "CDC bulk endpoint buffer size (bytes)"
@@ -301,7 +302,7 @@ if BLE_LOG_ENABLED
                 not follow this option, so the best value depends on the
                 target speed:
 
-                - High-Speed (e.g. ESP32-S31): keep 512, where one
+                - High-Speed (512-byte bulk MPS): keep 512, where one
                   submission is exactly one packet. 1024 and 2048 deliver
                   about 9% less and cost roughly 1.5 KB / 4.5 KB more RAM.
                 - Full-Speed (e.g. ESP32-S2/S3): raise it to 1024. The
