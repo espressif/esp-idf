@@ -597,6 +597,12 @@ void bta_sys_sendmsg(void *p_msg)
     }
 }
 
+BOOLEAN bta_sys_sendmsg_status(void *p_msg)
+{
+    /* Caller frees p_msg on failure so it can roll back work done before the post. */
+    return btu_task_post(SIG_BTU_BTA_MSG, p_msg, OSI_THREAD_MAX_TIMEOUT) ? TRUE : FALSE;
+}
+
 /*******************************************************************************
 **
 ** Function         bta_sys_start_timer

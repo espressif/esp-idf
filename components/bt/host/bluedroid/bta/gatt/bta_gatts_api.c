@@ -463,7 +463,13 @@ void BTA_GATTS_HandleValueIndication (UINT16 conn_id, UINT16 attr_id, UINT16 dat
             tl2c_buff_param_t pending = { .conn_id = (UINT8)(conn_id >> 8), .get_num = NULL };
             l2ble_update_att_acl_pkt_num(L2CA_ADD_BTU_NUM, &pending);
         }
-        bta_sys_sendmsg(p_buf);
+        if (!bta_sys_sendmsg_status(p_buf)) {
+            if (need_confirm == false) {
+                tl2c_buff_param_t pending = { .conn_id = (UINT8)(conn_id >> 8), .get_num = NULL };
+                l2ble_update_att_acl_pkt_num(L2CA_DECREASE_BTU_NUM, &pending);
+            }
+            osi_free(p_buf);
+        }
     }
     return;
 

@@ -1172,7 +1172,13 @@ void bta_gattc_disc_cmpl(tBTA_GATTC_CLCB *p_clcb, tBTA_GATTC_DATA *p_data)
          * referenced by p_clcb->p_q_cmd
          */
         if (p_q_cmd != p_clcb->p_q_cmd) {
-            osi_free(p_q_cmd);
+            bta_gattc_release_btu_pending(p_q_cmd);
+            /* list_remove frees the node through the list's osi_free_func. */
+            if (p_clcb->p_cmd_list != NULL && list_contains(p_clcb->p_cmd_list, p_q_cmd)) {
+                list_remove(p_clcb->p_cmd_list, p_q_cmd);
+            } else {
+                osi_free(p_q_cmd);
+            }
             p_q_cmd = NULL;
         }
     }

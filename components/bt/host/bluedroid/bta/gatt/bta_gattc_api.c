@@ -698,7 +698,10 @@ void BTA_GATTC_WriteCharValue ( UINT16 conn_id,
             l2ble_update_att_acl_pkt_num(L2CA_ADD_BTU_NUM, &pending);
             p_buf->btu_pending = TRUE;
         }
-        bta_sys_sendmsg(p_buf);
+        if (!bta_sys_sendmsg_status(p_buf)) {
+            bta_gattc_release_btu_pending((tBTA_GATTC_DATA *)p_buf);
+            osi_free(p_buf);
+        }
     }
     return;
 }
@@ -750,7 +753,10 @@ void BTA_GATTC_WriteCharDescr (UINT16 conn_id,
             l2ble_update_att_acl_pkt_num(L2CA_ADD_BTU_NUM, &pending);
             p_buf->btu_pending = TRUE;
         }
-        bta_sys_sendmsg(p_buf);
+        if (!bta_sys_sendmsg_status(p_buf)) {
+            bta_gattc_release_btu_pending((tBTA_GATTC_DATA *)p_buf);
+            osi_free(p_buf);
+        }
     }
     return;
 
