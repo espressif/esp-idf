@@ -119,7 +119,8 @@ menu "Fast connect"
 
             Turning fast connect off at run time (roam_config.fast_connect) clears the hint. While the station
             is connecting the hint cannot be written, so fast connect stays on until that attempt ends, and
-            roam_get_config_params() reports it on until then. Turning this
+            roam_get_config_params() reports it off from the request on, and the hint is forgotten at the
+            end of that attempt. Turning this
             option off in a later firmware leaves the last hint in the saved station configuration, with
             nothing to clear it after a failure: such a firmware should clear bssid_set once.
 endmenu #"Fast connect"

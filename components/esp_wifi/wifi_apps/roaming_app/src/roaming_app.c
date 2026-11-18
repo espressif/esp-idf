@@ -3518,6 +3518,13 @@ static int roaming_app_get_config_params_internal(void *ctx, void *data)
         config->scan_config.channel = g_roaming_app.saved_scan_channel;
     }
 #endif
+#if FAST_CONNECT_ENABLED
+    /* A turn-off waiting for the end of a connection attempt is reported as done, so a caller that reads the
+     * configuration, changes another member and writes it back does not cancel the turn-off. */
+    if (g_roaming_app.fast_connect_off_pending) {
+        config->fast_connect = false;
+    }
+#endif
     config->scan_config.ssid = config->scan_filter_ssid[0] != '\0' ? config->scan_filter_ssid : NULL;
     config->scan_config.bssid = config->scan_filter_bssid_set ? config->scan_filter_bssid : NULL;
 
