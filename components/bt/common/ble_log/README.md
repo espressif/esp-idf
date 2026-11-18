@@ -440,8 +440,8 @@ port. It does not match PID 0x10B1 or the product string `BLE-Log-Port`.
 The signal is the `SET_LINE_CODE` / `DTR_CHG` / `RTS_CHG` bits of
 `USB_SERIAL_JTAG.int_raw`. The host sets them when it programs the port, and a
 chip reset clears them. A transport produced before that first open
-is dropped through the not-connected path, so it does not raise the
-FIFO-full counter.
+is dropped through the not-connected path, and counts as loss in the same
+periodic window as a FIFO-full drop.
 
 The latch proves the port was opened at least once since the chip reset,
 not that it is open now. Re-enumeration without a chip reset (unplug and
