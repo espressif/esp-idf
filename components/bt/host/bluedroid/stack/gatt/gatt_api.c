@@ -1364,6 +1364,53 @@ tGATT_IF GATT_Register (tBT_UUID *p_app_uuid128, const tGATT_CBACK *p_cb_info)
 }
 
 
+#if (GATTC_INCLUDED == TRUE)
+/* Same balance as gatt_end_operation(): a no-response write can be freed here
+ * while it is still waiting for encryption and has not reached gatt_act_write(). */
+static void gatt_release_wnr_btu_pending(tGATT_CLCB *p_clcb)
+{
+    if (p_clcb->operation == GATTC_OPTYPE_WRITE &&
+            p_clcb->op_subtype == GATT_WRITE_NO_RSP &&
+            p_clcb->p_tcb != NULL &&
+            !p_clcb->btu_pending_released) {
+        tl2c_buff_param_t pending;
+
+        pending.conn_id = p_clcb->p_tcb->tcb_idx;
+        pending.get_num = NULL;
+        p_clcb->btu_pending_released = TRUE;
+        l2ble_update_att_acl_pkt_num(L2CA_DECREASE_BTU_NUM, &pending);
+    }
+}
+#endif
+
+#if (SMP_INCLUDED == TRUE)
+/* Drop this clcb from the encryption wait queue. The queue has no remove-by-pointer
+ * operation, so walk it once and put the other waiters back in order. */
+static void gatt_drop_pending_enc_clcb(tGATT_TCB *p_tcb, tGATT_CLCB *p_clcb)
+{
+    size_t count;
+
+    if (p_tcb == NULL || p_tcb->pending_enc_clcb == NULL ||
+            fixed_queue_is_empty(p_tcb->pending_enc_clcb)) {
+        return;
+    }
+
+    count = fixed_queue_length(p_tcb->pending_enc_clcb);
+    for (; count > 0; count--) {
+        tGATT_PENDING_ENC_CLCB *p_buf =
+            (tGATT_PENDING_ENC_CLCB *)fixed_queue_dequeue(p_tcb->pending_enc_clcb, 0);
+        if (p_buf == NULL) {
+            break;
+        }
+        if (p_buf->p_clcb == p_clcb) {
+            osi_free(p_buf);
+        } else if (!fixed_queue_enqueue(p_tcb->pending_enc_clcb, p_buf, FIXED_QUEUE_MAX_TIMEOUT)) {
+            osi_free(p_buf);
+        }
+    }
+}
+#endif
+
 /*******************************************************************************
 **
 ** Function         GATT_Deregister
@@ -1438,6 +1485,12 @@ void GATT_Deregister (tGATT_IF gatt_if)
                         (p_clcb->p_reg->gatt_if == gatt_if) &&
                         (p_clcb->p_tcb->tcb_idx == p_tcb->tcb_idx)) {
                     btu_stop_timer(&p_clcb->rsp_timer_ent);
+#if (GATTC_INCLUDED == TRUE)
+                    gatt_release_wnr_btu_pending(p_clcb);
+#endif
+#if (SMP_INCLUDED == TRUE)
+                    gatt_drop_pending_enc_clcb(p_clcb->p_tcb, p_clcb);
+#endif
                     gatt_clcb_dealloc (p_clcb);
                     // Removed break to ensure all CLCBs are cleaned up
                     // break;
