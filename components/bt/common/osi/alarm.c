@@ -38,7 +38,7 @@
 #define ALARM_FLAG_CANCELING     (1u << 1)
 /* Mirrors armed_list membership. alarm_list_of() uses it to pick one list. */
 #define ALARM_FLAG_ARMED         (1u << 2)
-/* Periodic esp_timer stopped after a failed post. The next success resumes it. */
+/* Periodic esp_timer stopped after a failed post. Stay on one-shot phase. */
 #define ALARM_FLAG_DEGRADED      (1u << 3)
 /* osi_alarm_free ran while a callback still holds a ref. Released at the last unref. */
 #define ALARM_FLAG_FREE_DEFERRED (1u << 4)
@@ -132,7 +132,6 @@ typedef enum {
 static alarm_post_result_t alarm_post(struct alarm_t *alarm);
 static bool alarm_arm_once(struct alarm_t *alarm, uint64_t delay_us);
 static bool alarm_arm_periodic_once(struct alarm_t *alarm);
-static bool alarm_restore_periodic(struct alarm_t *alarm);
 static bool alarm_schedule_retry(struct alarm_t *alarm);
 static void alarm_to_idle(struct alarm_t *alarm);
 static void alarm_to_armed(struct alarm_t *alarm);
@@ -871,26 +870,11 @@ static bool alarm_arm_once(struct alarm_t *alarm, uint64_t delay_us)
     return true;
 }
 
-/* start_*_at rejects a deadline already in the past. Each miss steps one
- * period later; after this many, give up on the original phase. */
+/* A past deadline steps one period later; after this many, give up on the phase. */
 #define ALARM_PERIODIC_PHASE_CATCHUP    3
 
-/* Next phase that start_*_at will accept. A deadline already due steps forward. */
-static uint64_t alarm_future_deadline(uint64_t deadline, uint64_t period)
-{
-    int64_t now = esp_timer_get_time();
-
-    if (period != 0 && (int64_t)deadline <= now) {
-        uint64_t steps = ((uint64_t)now - deadline) / period + 1;
-
-        deadline += steps * period;
-    }
-    return deadline;
-}
-
-/* Step the phase until start_*_at accepts it. period 0 leaves |err_out| unset. */
-static bool alarm_arm_at_phase(struct alarm_t *alarm, bool periodic, uint64_t *deadline_out,
-                               esp_err_t *err_out)
+/* Arm one-shot for the next future phase. period 0 leaves |err_out| unset. */
+static bool alarm_arm_at_phase(struct alarm_t *alarm, uint64_t *deadline_out, esp_err_t *err_out)
 {
     uint64_t period = alarm->period_us;
     uint64_t deadline;
@@ -900,13 +884,14 @@ static bool alarm_arm_at_phase(struct alarm_t *alarm, bool periodic, uint64_t *d
         return false;
     }
 
-    deadline = alarm_future_deadline(alarm->deadline_us, period);
+    deadline = alarm->deadline_us;
     for (uint8_t attempt = 0; attempt < ALARM_PERIODIC_PHASE_CATCHUP && err != ESP_OK; attempt++) {
-        if (periodic) {
-            err = esp_timer_start_periodic_at(alarm->alarm_hdl, period, deadline);
-        } else {
-            err = esp_timer_start_once_at(alarm->alarm_hdl, deadline);
+        int64_t now = esp_timer_get_time();
+
+        if ((int64_t)deadline <= now) {
+            deadline += (((uint64_t)now - deadline) / period + 1) * period;
         }
+        err = esp_timer_start_once(alarm->alarm_hdl, deadline - (uint64_t)now);
         if (err != ESP_OK) {
             deadline += period;
         }
@@ -928,7 +913,7 @@ static bool alarm_arm_periodic_once(struct alarm_t *alarm)
     uint64_t deadline;
     esp_err_t err = ESP_FAIL;
 
-    if (alarm_arm_at_phase(alarm, false, &deadline, &err)) {
+    if (alarm_arm_at_phase(alarm, &deadline, &err)) {
         alarm->deadline_us = deadline;
         return true;
     }
@@ -936,7 +921,7 @@ static bool alarm_arm_periodic_once(struct alarm_t *alarm)
         return false;
     }
 
-    OSI_TRACE_WARNING("%s start_once_at failed 0x%x\n", __func__, err);
+    OSI_TRACE_WARNING("%s start_once failed 0x%x\n", __func__, err);
     err = esp_timer_start_once(alarm->alarm_hdl, alarm->period_us);
     if (err != ESP_OK) {
         OSI_TRACE_ERROR("%s failed to arm periodic one-shot, err 0x%x\n", __func__, err);
@@ -947,30 +932,12 @@ static bool alarm_arm_periodic_once(struct alarm_t *alarm)
     return true;
 }
 
-/* Post succeeded. Resume the periodic esp_timer on the same phase. */
-static bool alarm_restore_periodic(struct alarm_t *alarm)
-{
-    uint64_t deadline;
-    esp_err_t err = ESP_FAIL;
-
-    if (!alarm_arm_at_phase(alarm, true, &deadline, &err)) {
-        if (alarm->period_us != 0) {
-            OSI_TRACE_WARNING("%s start_periodic_at failed 0x%x\n", __func__, err);
-        }
-        return false;
-    }
-
-    alarm->deadline_us = deadline;
-    alarm->flags &= ~ALARM_FLAG_DEGRADED;
-    return true;
-}
-
 static bool alarm_schedule_retry(struct alarm_t *alarm)
 {
     uint64_t delay_us = alarm_retry_delay_us(alarm);
 
     if (alarm->period_us != 0 && (alarm->flags & ALARM_FLAG_DEGRADED) == 0) {
-        /* Leave periodic mode until the next post succeeds. */
+        /* Leave periodic mode; keep the phase with one-shots. */
         alarm->flags |= ALARM_FLAG_DEGRADED;
         alarm->deadline_us += alarm->period_us;
         alarm_stop(alarm->alarm_hdl);
@@ -1001,11 +968,11 @@ static bool alarm_stop_to_idle(struct alarm_t *alarm, slist_node_t *prev)
     return true;
 }
 
-/* Degraded resumes periodic mode. A live period only steps the phase. */
+/* Degraded stays on one-shot phase. A live period only steps the phase. */
 static void alarm_handle_post_ok(struct alarm_t *alarm, slist_node_t *prev)
 {
     if ((alarm->flags & ALARM_FLAG_DEGRADED) != 0) {
-        if (!alarm_restore_periodic(alarm) && !alarm_arm_periodic_once(alarm)) {
+        if (!alarm_arm_periodic_once(alarm)) {
             alarm_clear_period(alarm);
             alarm_idle_at(alarm, prev);
         }
