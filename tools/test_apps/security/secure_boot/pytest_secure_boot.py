@@ -106,6 +106,10 @@ def corrupt_sig_block(sig_block, seed=0, corrupt_sig=True, corrupt_crc=False, si
     else:
         raise ValueError(f'Invalid signature type: {signature_type}')
 
+    # Everything between the signature and the CRC word. Empty for RSA-3072,
+    # where the signature runs right up to it, but for ECDSA it is most of the
+    # block, and it is covered by the CRC like the rest.
+    reserved = sig_block[len(data) + len(sig) : 1196]
     crc = sig_block[1196:1200]
     padding = sig_block[1200:1216]
 
@@ -122,13 +126,25 @@ def corrupt_sig_block(sig_block, seed=0, corrupt_sig=True, corrupt_crc=False, si
         assert new_sig != sig
 
     if not corrupt_crc:
-        crc = struct.pack('<I', zlib.crc32(data + new_sig) & 0xFFFFFFFF)
+        crc = struct.pack('<I', zlib.crc32(data + new_sig + reserved) & 0xFFFFFFFF)
     else:
         crc = struct.pack('<I', zlib.crc32(crc))
 
-    result = data + new_sig + crc + padding
+    result = data + new_sig + reserved + crc + padding
     assert len(result) == len(sig_block)
     return result
+
+
+def get_secure_boot_key(dut: Dut) -> str:
+    """The signing key, as a path that does not depend on the working directory.
+
+    CONFIG_SECURE_BOOT_SIGNING_KEY is evaluated relative to the project
+    directory, and pytest does not necessarily run from there.
+    """
+    key = str(dut.app.sdkconfig.get('SECURE_BOOT_SIGNING_KEY'))
+    if os.path.isabs(key):
+        return key
+    return os.path.join(str(dut.app.app_path), key)
 
 
 def dut_start_secure_app(dut: Dut) -> None:
@@ -196,7 +212,7 @@ def _examples_security_secure_boot_key_combo(dut: Dut) -> None:
     dut_start_secure_app(dut)
     dut.expect('Secure Boot is enabled', timeout=10)
     efuse_secure_boot_key_digests = dut.app.sdkconfig.get('SOC_EFUSE_SECURE_BOOT_KEY_DIGESTS')
-    secure_boot_key = dut.app.sdkconfig.get('SECURE_BOOT_SIGNING_KEY')
+    secure_boot_key = get_secure_boot_key(dut)
     for index in range(efuse_secure_boot_key_digests):
         for block in range(EFUSE_KEY_BLOCKS):
             dut.serial.reset_efuses()
@@ -234,7 +250,7 @@ def _examples_security_secure_boot_key_revoke(dut: Dut) -> None:
     dut_start_secure_app(dut)
     dut.expect('Secure Boot is enabled', timeout=10)
     efuse_secure_boot_key_digests = dut.app.sdkconfig.get('SOC_EFUSE_SECURE_BOOT_KEY_DIGESTS')
-    secure_boot_key = dut.app.sdkconfig.get('SECURE_BOOT_SIGNING_KEY')
+    secure_boot_key = get_secure_boot_key(dut)
 
     for index in range(efuse_secure_boot_key_digests):
         dut.serial.reset_efuses()
@@ -263,20 +279,28 @@ def test_examples_security_secure_boot_key_revoke_ecdsa(dut: Dut) -> None:
     _examples_security_secure_boot_key_revoke(dut)
 
 
-def get_signature_type_size(dut: Dut, signature_type: int) -> int:
-    signature_type_size = 0
+def get_signature_type(dut: Dut, signature_type: int) -> int:
+    # The scheme markers name a family; corrupt_sig_block needs the curve, which
+    # only the app's config says.
     if signature_type == SIGNATURE_TYPE_RSA:
-        signature_type_size = SIGNATURE_TYPE_RSA_3072_SIZE
-    elif signature_type == SIGNATURE_TYPE_ECDSA:
-        if dut.app.sdkconfig.get('CONFIG_SECURE_BOOT_ECDSA_KEY_LEN_256_BITS'):
-            signature_type_size = SIGNATURE_TYPE_ECDSA_P256_SIZE
-        elif dut.app.sdkconfig.get('CONFIG_SECURE_BOOT_ECDSA_KEY_LEN_384_BITS'):
-            signature_type_size = SIGNATURE_TYPE_ECDSA_P384_SIZE
-        else:
-            raise ValueError(f'Invalid signature type: {signature_type}')
-    else:
+        return SIGNATURE_TYPE_RSA_3072
+    if signature_type == SIGNATURE_TYPE_ECDSA:
+        if dut.app.sdkconfig.get('SECURE_BOOT_ECDSA_KEY_LEN_256_BITS'):
+            return SIGNATURE_TYPE_ECDSA_P256
+        if dut.app.sdkconfig.get('SECURE_BOOT_ECDSA_KEY_LEN_384_BITS'):
+            return SIGNATURE_TYPE_ECDSA_P384
+    raise ValueError(f'Invalid signature type: {signature_type}')
+
+
+def get_signature_type_size(signature_type: int) -> int:
+    sizes = {
+        SIGNATURE_TYPE_RSA_3072: SIGNATURE_TYPE_RSA_3072_SIZE,
+        SIGNATURE_TYPE_ECDSA_P256: SIGNATURE_TYPE_ECDSA_P256_SIZE,
+        SIGNATURE_TYPE_ECDSA_P384: SIGNATURE_TYPE_ECDSA_P384_SIZE,
+    }
+    if signature_type not in sizes:
         raise ValueError(f'Invalid signature type: {signature_type}')
-    return signature_type_size
+    return sizes[signature_type]
 
 
 def _examples_security_secure_boot_corrupt_bl_sig(dut: Dut, signature_type: int) -> None:
@@ -287,14 +311,15 @@ def _examples_security_secure_boot_corrupt_bl_sig(dut: Dut, signature_type: int)
     with open(bootloader_bin, 'rb') as f:
         signed_bl = f.read()
 
-    signature_type_size = get_signature_type_size(dut, signature_type)
+    signature_type = get_signature_type(dut, signature_type)
+    signature_type_size = get_signature_type_size(signature_type)
     seeds = range(0, signature_type_size)
     max_seed = max(seeds)
-    secure_boot_key = dut.app.sdkconfig.get('SECURE_BOOT_SIGNING_KEY')
+    secure_boot_key = get_secure_boot_key(dut)
 
     for seed in seeds:
         print(f'Case {seed} / {max_seed}')
-        corrupt_bl = corrupt_signature(signed_bl, seed=seed)
+        corrupt_bl = corrupt_signature(signed_bl, seed=seed, signature_type=signature_type)
         with open('corrupt_bl.bin', 'wb') as corrupt_file:
             corrupt_file.write(corrupt_bl)
         dut.serial.reset_efuses()
@@ -340,20 +365,22 @@ def _examples_security_secure_boot_corrupt_app_sig(dut: Dut, signature_type: int
     with open(app_bin, 'rb') as f:
         signed_app = f.read()
 
-    signature_size = get_signature_type_size(dut, signature_type)
+    signature_type = get_signature_type(dut, signature_type)
+    signature_size = get_signature_type_size(signature_type)
     seeds = range(0, signature_size)
     max_seed = max(seeds)
+    secure_boot_key = get_secure_boot_key(dut)
 
     for seed in seeds:
         print(f'Case {seed} / {max_seed}')
-        corrupt_app = corrupt_signature(signed_app, seed=seed)
+        corrupt_app = corrupt_signature(signed_app, seed=seed, signature_type=signature_type)
         with open('corrupt_app.bin', 'wb') as corrupt_file:
             corrupt_file.write(corrupt_app)
         dut.serial.reset_efuses()
         dut.burn_wafer_version()
         dut.serial.app_flash('corrupt_app.bin')
         dut.secure_boot_burn_en_bit()
-        dut.secure_boot_burn_digest('test_rsa_3072_key.pem', 0, 0)
+        dut.secure_boot_burn_digest(secure_boot_key, 0, 0)
         dut.expect('Signature Check Failed', timeout=10)
         dut.expect('image valid, signature bad', timeout=2)
 
@@ -362,14 +389,14 @@ def _examples_security_secure_boot_corrupt_app_sig(dut: Dut, signature_type: int
     dut.serial.reset_efuses()
     dut.burn_wafer_version()
 
-    corrupt_app = corrupt_signature(signed_app, corrupt_sig=False, corrupt_crc=True)
+    corrupt_app = corrupt_signature(signed_app, corrupt_sig=False, corrupt_crc=True, signature_type=signature_type)
     with open('corrupt_app.bin', 'wb') as corrupt_file:
         corrupt_file.write(corrupt_app)
 
     dut.serial.app_flash('corrupt_app.bin')
 
     dut.secure_boot_burn_en_bit()
-    dut.secure_boot_burn_digest('test_rsa_3072_key.pem', 0, 0)
+    dut.secure_boot_burn_digest(secure_boot_key, 0, 0)
 
     dut.expect(
         'Sig block 0 invalid: {}'.format(
