@@ -6,6 +6,7 @@
 
 #include "utils/includes.h"
 #include "utils/common.h"
+#include "eloop.h"
 #include "esp_event.h"
 #include "esp_wifi.h"
 #include "esp_wifi_types.h"
@@ -27,6 +28,8 @@
 #include "esp_wifi_types_generic.h"
 #include "esp_roaming.h"
 
+extern bool current_task_is_wifi_task(void);
+
 /* Utility Functions */
 esp_err_t esp_supplicant_str_to_mac(const char *str, uint8_t dest[6])
 {
@@ -39,6 +42,13 @@ esp_err_t esp_supplicant_str_to_mac(const char *str, uint8_t dest[6])
 
 struct wpa_supplicant g_wpa_supp;
 
+#define ESP_RRM_FEATURE_DISABLE_MASK_SUPPORTED \
+    (ESP_RRM_FEATURE_DISABLE_BEACON_MEASUREMENT | \
+     ESP_RRM_FEATURE_DISABLE_LINK_MEASUREMENT | \
+     ESP_RRM_FEATURE_DISABLE_NEIGHBOR_REPORT)
+
+static uint32_t s_rrm_feature_disable_mask;
+
 #ifdef CONFIG_RRM
 static void handle_rrm_frame(struct wpa_supplicant *wpa_s, u8 *sender,
                              u8 *payload, size_t len, int8_t rssi)
@@ -47,13 +57,25 @@ static void handle_rrm_frame(struct wpa_supplicant *wpa_s, u8 *sender,
         return;
     }
     if (payload[0] == WLAN_RRM_NEIGHBOR_REPORT_RESPONSE) {
+        if (s_rrm_feature_disable_mask & ESP_RRM_FEATURE_DISABLE_NEIGHBOR_REPORT) {
+            wpa_printf(MSG_DEBUG, "RRM: Ignoring neighbor report response (disabled by app)");
+            return;
+        }
         /* neighbor report parsing */
         wpas_rrm_process_neighbor_rep(wpa_s, payload + 1, len - 1);
     } else if (payload[0] == WLAN_RRM_RADIO_MEASUREMENT_REQUEST) {
+        if (s_rrm_feature_disable_mask & ESP_RRM_FEATURE_DISABLE_BEACON_MEASUREMENT) {
+            wpa_printf(MSG_DEBUG, "RRM: Ignoring radio measurement request (disabled by app)");
+            return;
+        }
         /* Beacon measurement */
         wpas_rrm_handle_radio_measurement_request(wpa_s, NULL,
                                                   sender, payload + 1, len - 1);
     } else if (payload[0] == WLAN_RRM_LINK_MEASUREMENT_REQUEST) {
+        if (s_rrm_feature_disable_mask & ESP_RRM_FEATURE_DISABLE_LINK_MEASUREMENT) {
+            wpa_printf(MSG_DEBUG, "RRM: Ignoring link measurement request (disabled by app)");
+            return;
+        }
         /* Link measurement */
         wpas_rrm_handle_link_measurement_request(wpa_s, NULL,
                                                  payload + 1, len - 1, rssi);
@@ -440,6 +462,11 @@ int esp_rrm_send_neighbor_report_request(void)
     struct wpa_ssid_value wpa_ssid = {0};
     struct wifi_ssid *ssid;
 
+    if (s_rrm_feature_disable_mask & ESP_RRM_FEATURE_DISABLE_NEIGHBOR_REPORT) {
+        wpa_printf(MSG_DEBUG, "RRM: Neighbor report request disabled by app");
+        return -1;
+    }
+
     if (!wpa_s->current_bss) {
         wpa_printf(MSG_ERROR, "STA not associated, return");
         return -2;
@@ -457,6 +484,54 @@ int esp_rrm_send_neighbor_report_request(void)
     wpa_ssid.ssid_len = ssid->len;
 
     return wpas_rrm_send_neighbor_rep_request(wpa_s, &wpa_ssid, 0, 0, neighbor_report_recvd_cb, NULL);
+}
+
+static int rrm_clear_beacon_rep_data_handler(void *eloop_data, void *user_ctx)
+{
+    (void) eloop_data;
+    (void) user_ctx;
+    wpas_clear_beacon_rep_data(&g_wpa_supp);
+    return 0;
+}
+
+esp_err_t esp_rrm_set_feature_disable_mask(uint32_t disable_mask)
+{
+    bool newly_disable_beacon;
+
+    if (disable_mask & ~ESP_RRM_FEATURE_DISABLE_MASK_SUPPORTED) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    newly_disable_beacon = (disable_mask & ESP_RRM_FEATURE_DISABLE_BEACON_MEASUREMENT) &&
+                           !(s_rrm_feature_disable_mask & ESP_RRM_FEATURE_DISABLE_BEACON_MEASUREMENT);
+
+    /* Publish first so handle_rrm_frame() rejects new beacon requests. */
+    s_rrm_feature_disable_mask = disable_mask;
+
+    if (newly_disable_beacon) {
+        if (current_task_is_wifi_task()) {
+            rrm_clear_beacon_rep_data_handler(NULL, NULL);
+        } else if (eloop_register_timeout_blocking(rrm_clear_beacon_rep_data_handler,
+                                                   NULL, NULL) < 0) {
+            /* eloop not running (pre-init / deinit): no in-flight measurement,
+             * and supplicant init clears beacon_rep_data. */
+            wpa_printf(MSG_DEBUG, "RRM: beacon report clear not dispatched (eloop down)");
+        }
+    }
+
+    wpa_printf(MSG_DEBUG, "RRM: feature disable mask set to 0x%08x",
+               (unsigned int) disable_mask);
+    return ESP_OK;
+}
+
+esp_err_t esp_rrm_get_feature_disable_mask(uint32_t *disable_mask)
+{
+    if (!disable_mask) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    *disable_mask = s_rrm_feature_disable_mask;
+    return ESP_OK;
 }
 
 static size_t get_rm_enabled_ie(uint8_t *ie, size_t len)
@@ -828,6 +903,24 @@ bool esp_rrm_is_rrm_supported_connection(void)
 int esp_rrm_send_neighbor_report_request(void)
 {
     return -1;
+}
+
+esp_err_t esp_rrm_set_feature_disable_mask(uint32_t disable_mask)
+{
+    if (disable_mask != 0) {
+        return ESP_ERR_INVALID_ARG;
+    }
+    s_rrm_feature_disable_mask = 0;
+    return ESP_OK;
+}
+
+esp_err_t esp_rrm_get_feature_disable_mask(uint32_t *disable_mask)
+{
+    if (!disable_mask) {
+        return ESP_ERR_INVALID_ARG;
+    }
+    *disable_mask = 0;
+    return ESP_OK;
 }
 #endif
 
