@@ -1472,7 +1472,15 @@ static void prvAddNewTaskToReadyList( TCB_t * pxNewTCB )
                 if( xSelfDelete == pdTRUE )
                 {
                     configASSERT( taskIS_SCHEDULER_SUSPENDED() == pdFALSE );
-                    portYIELD_WITHIN_API();
+
+                    /* On unicore there is no SMP lock to release, and self-deletion
+                     * must not return to the deleted task while waiting for a deferred yield.
+                     * See https://github.com/espressif/esp-idf/issues/18460 */
+                    #if ( configNUMBER_OF_CORES == 1 )
+                        portYIELD();
+                    #else
+                        portYIELD_WITHIN_API();
+                    #endif
                 }
                 else
                 {
