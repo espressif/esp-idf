@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -20,6 +20,7 @@
 #include <catch2/matchers/catch_matchers_all.hpp>
 #include "esp_transport.h"
 #include "esp_transport_socks_proxy.h"
+#include "cmock_reset.hpp"
 
 extern "C" {
 #include "Mockmock_transport.h"
@@ -65,13 +66,11 @@ auto make_response(socks_transport_error_t response)
 }
 }
 
-TEST_CASE("Initial", "[Initialization]")
+TEST_CASE_METHOD(HostTestCMockReset, "Initial", "[Initialization]")
 {
     esp_transport_socks_proxy_config_t config{ .version = SOCKS4,
             .address = "test_socks4_proxy",
             .port = 1080};
-
-    mock_destroy_IgnoreAndReturn(ESP_OK);
     unique_transport test_parent{esp_transport_init(), esp_transport_destroy};
     esp_transport_set_func(test_parent.get(), mock_connect, mock_read, mock_write, mock_close, mock_poll_read, mock_poll_write, mock_destroy);
 
@@ -99,7 +98,7 @@ TEST_CASE("Initial", "[Initialization]")
     }
 }
 
-TEST_CASE("Requests to Proxy", "[Requests]")
+TEST_CASE_METHOD(HostTestCMockReset, "Requests to Proxy", "[Requests]")
 {
     constexpr auto timeout = 50;
     esp_transport_socks_proxy_config_t config{ .version = SOCKS4,
@@ -113,7 +112,6 @@ TEST_CASE("Requests to Proxy", "[Requests]")
     esp_transport_set_func(test_parent.get(), mock_connect, mock_read, mock_write, mock_close, mock_poll_read, mock_poll_write, mock_destroy);
     unique_transport socks_transport{esp_transport_socks_proxy_init(test_parent.get(), &config), esp_transport_destroy};
 
-    mock_destroy_IgnoreAndReturn(ESP_OK);
     esp_timer_get_time_IgnoreAndReturn(0);
 
     SECTION("Failure to connect to proxy") {

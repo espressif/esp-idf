@@ -21,6 +21,7 @@
 #include "esp_transport.h"
 #include "esp_transport_tcp.h"
 #include "esp_transport_ws.h"
+#include "cmock_reset.hpp"
 
 #define WS_BUFFER_SIZE CONFIG_WS_BUFFER_SIZE
 
@@ -308,16 +309,11 @@ bool close_frame_written()
 
 }
 
-TEST_CASE("WebSocket Transport Connection", "[success]")
+TEST_CASE_METHOD(HostTestCMockReset, "WebSocket Transport Connection", "[success]")
 {
-    // CMock state is global and test cases run in random order, so start each one from clean mocks
-    Mockmock_transport_Init();
-    Mocknetdb_Init();
-    Mockesp_timer_Init();
     constexpr static auto timeout = 50;
     constexpr static auto port = 8080;
     constexpr static auto host = "localhost";
-    mock_destroy_IgnoreAndReturn(ESP_OK);
     // Initialize the parent handle
     unique_transport parent_handle{esp_transport_init(), esp_transport_destroy};
     REQUIRE(parent_handle);
@@ -500,15 +496,11 @@ TEST_CASE("WebSocket Transport Connection", "[success]")
     }
 }
 
-TEST_CASE("WebSocket Transport Connection", "[failure]")
+TEST_CASE_METHOD(HostTestCMockReset, "WebSocket Transport Connection", "[failure]")
 {
-    Mockmock_transport_Init();
-    Mocknetdb_Init();
-    Mockesp_timer_Init();
     constexpr static auto timeout = 50;
     constexpr static auto port = 8080;
     constexpr static auto host = "localhost";
-    mock_destroy_IgnoreAndReturn(ESP_OK);
     // Initialize the parent handle
     unique_transport parent_handle{esp_transport_init(), esp_transport_destroy};
     REQUIRE(parent_handle);
@@ -613,15 +605,11 @@ TEST_CASE("WebSocket Transport Connection", "[failure]")
     }
 }
 
-TEST_CASE("WebSocket Transport fragmented messages", "[fragmentation]")
+TEST_CASE_METHOD(HostTestCMockReset, "WebSocket Transport fragmented messages", "[fragmentation]")
 {
-    Mockmock_transport_Init();
-    Mocknetdb_Init();
-    Mockesp_timer_Init();
     constexpr static auto timeout = 50;
     constexpr static auto port = 8080;
     constexpr static auto host = "localhost";
-    mock_destroy_IgnoreAndReturn(ESP_OK);
     unique_transport parent_handle{esp_transport_init(), esp_transport_destroy};
     REQUIRE(parent_handle);
     esp_transport_set_func(parent_handle.get(), mock_connect, mock_read, mock_write, mock_close, mock_poll_read, mock_poll_write, mock_destroy);
@@ -764,15 +752,11 @@ TEST_CASE("WebSocket Transport fragmented messages", "[fragmentation]")
     }
 }
 
-TEST_CASE("WebSocket Transport UTF-8 validation", "[utf8]")
+TEST_CASE_METHOD(HostTestCMockReset, "WebSocket Transport UTF-8 validation", "[utf8]")
 {
-    Mockmock_transport_Init();
-    Mocknetdb_Init();
-    Mockesp_timer_Init();
     constexpr static auto timeout = 50;
     constexpr static auto port = 8080;
     constexpr static auto host = "localhost";
-    mock_destroy_IgnoreAndReturn(ESP_OK);
     unique_transport parent_handle{esp_transport_init(), esp_transport_destroy};
     REQUIRE(parent_handle);
     esp_transport_set_func(parent_handle.get(), mock_connect, mock_read, mock_write, mock_close, mock_poll_read, mock_poll_write, mock_destroy);
