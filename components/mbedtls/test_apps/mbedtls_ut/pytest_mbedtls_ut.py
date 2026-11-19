@@ -16,10 +16,9 @@ PSRAM_ECC_DMA_TARGETS = [
 
 
 @pytest.mark.generic
-@pytest.mark.temp_skip_ci(targets=['esp32h4'], reason='can not pass')  # TODO: IDF-15675
 @idf_parametrize('target', ['supported_targets'], indirect=['target'])
 def test_mbedtls(dut: Dut) -> None:
-    dut.run_all_single_board_cases()
+    dut.run_all_single_board_cases(timeout=180)
 
 
 @pytest.mark.generic

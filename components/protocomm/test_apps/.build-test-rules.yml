@@ -3,7 +3,3 @@
 components/protocomm/test_apps:
   depends_components:
     - protocomm
-  disable_test:
-    - if: IDF_TARGET in ["esp32h4"]
-      temporary: true
-      reason: cannot pass # TODO: IDF-15614
