@@ -43,6 +43,8 @@ artifact namespace, so they cannot overwrite GCC firmware. Clang target tests
 are generated separately with `test_child_pipeline_clang.yml`. Only the normal
 GCC pipeline includes `tools/ci/dynamic_pipelines/templates/additional_jobs.yml`;
 Clang and buildv2 use the two shared YAML includes from `.idf_ci.toml`.
+The additional jobs generate `presigned.json` after all GCC build shards finish,
+including when a shard fails. A no-app child pipeline still runs only `fake_pass`.
 
 Manifest `supported_toolchains` controls which toolchains build an app:
 
