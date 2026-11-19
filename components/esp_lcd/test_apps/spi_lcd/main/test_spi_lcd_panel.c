@@ -265,19 +265,20 @@ TEST_CASE("spi_lcd_send_colors_to_fixed_region", "[lcd]")
     gpio_set_level(TEST_LCD_BK_LIGHT_GPIO, 1);
 
     printf("set the flush window for only once\r\n");
-    esp_lcd_panel_io_tx_param(io_handle, LCD_CMD_CASET, (uint8_t[]) {
+    TEST_ESP_OK(esp_lcd_panel_io_tx_param(io_handle, LCD_CMD_CASET, (uint8_t[]) {
         (x_start >> 8) & 0xFF,
         x_start & 0xFF,
         ((x_end - 1) >> 8) & 0xFF,
         (x_end - 1) & 0xFF,
-    }, 4);
-    esp_lcd_panel_io_tx_param(io_handle, LCD_CMD_RASET, (uint8_t[]) {
+    }, 4));
+    TEST_ESP_OK(esp_lcd_panel_io_tx_param(io_handle, LCD_CMD_RASET, (uint8_t[]) {
         (y_start >> 8) & 0xFF,
         y_start & 0xFF,
         ((y_end - 1) >> 8) & 0xFF,
         (y_end - 1) & 0xFF,
-    }, 4);
-    esp_lcd_panel_io_tx_param(io_handle, LCD_CMD_RAMWR, NULL, 0);
+    }, 4));
+    // RAMWR has no parameter; the following color transfers carry pixels only
+    TEST_ESP_OK(esp_lcd_panel_io_tx_param(io_handle, LCD_CMD_RAMWR, NULL, 0));
 
     printf("send colors to the fixed region in multiple steps\r\n");
     const int steps = 10;

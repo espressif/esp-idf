@@ -29,6 +29,8 @@
 #define I2S_LL_INST_NUM         1
 #define I2S_LL_SUPPORT_DMA_EXT_MEM 1
 #define I2S_LL_DMA_EXT_MEM_ALIGNMENT 16
+// LCD mode requires the parallel data bus to mirror the DMA buffer
+#define I2S_LL_SUPPORT_DMA_EQUAL 1
 
 #ifdef __cplusplus
 extern "C" {
