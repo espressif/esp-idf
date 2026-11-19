@@ -317,6 +317,20 @@ if WIFI_RMT_NAN_PAIRING
         default WIFI_RMT_NAN_PAIRING
 endif
 
+if WIFI_RMT_NAN_HANDSHAKE_FRAME_LOG
+    config ESP_WIFI_NAN_HANDSHAKE_FRAME_LOG # ignore: multiple-definition
+        bool
+        depends on WIFI_RMT_NAN_SECURITY
+        default WIFI_RMT_NAN_HANDSHAKE_FRAME_LOG
+endif
+
+if WIFI_RMT_NAN_SECURITY_KEY_LOG
+    config ESP_WIFI_NAN_SECURITY_KEY_LOG # ignore: multiple-definition
+        bool
+        depends on WIFI_RMT_NAN_HANDSHAKE_FRAME_LOG
+        default WIFI_RMT_NAN_SECURITY_KEY_LOG
+endif
+
 if WIFI_RMT_MBEDTLS_CRYPTO
     config ESP_WIFI_MBEDTLS_CRYPTO # ignore: multiple-definition
         bool

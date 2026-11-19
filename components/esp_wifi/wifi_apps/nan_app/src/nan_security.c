@@ -27,6 +27,9 @@
 #include "crypto/aes_wrap.h"
 #include "nan_i.h"
 #include "common/defs.h"
+#if defined(CONFIG_ESP_WIFI_NAN_PAIRING)
+#include "esp_private/esp_supp_nan.h"
+#endif
 
 static const char *TAG = "nan_sec";
 
@@ -224,7 +227,7 @@ static int nan_match_pmkid(struct own_svc_info *p_svc,
     }
 
 no_match:
-    ESP_LOGW(TAG, "PMKID not found in our cache (no match)");
+    ESP_LOGD(TAG, "Peer ND-PMKID matches no per-service credential");
     return -1;
 }
 
@@ -480,7 +483,7 @@ static bool nan_security_fill_from_paired_cache(struct ndl_info *ndl, const uint
             if (!ok) {
                 ESP_LOGE(TAG, "Paired ND-PMK rejected for peer "MACSTR": NDP-Request ND-PMKID does not match cached pairing key (csid=%u), secured NDP setup aborted",
                          MAC2STR(peer_nmi), paired->ndp_csid);
-                ESP_LOG_BUFFER_HEXDUMP(TAG, ndl->security_ctx.nd_pmkid, ESP_WIFI_NAN_NDP_PMKID_LEN, ESP_LOG_WARN);
+                ESP_LOG_BUFFER_HEXDUMP(TAG, ndl->security_ctx.nd_pmkid, ESP_WIFI_NAN_NDP_PMKID_LEN, ESP_LOG_ERROR);
                 return false;
             }
             ESP_LOGD(TAG, "Paired ND-PMK: peer ND-PMKID verified for "MACSTR, MAC2STR(peer_nmi));
@@ -528,7 +531,7 @@ static bool nan_ndp_resp_resolve_pmk(struct ndl_info *ndl, const uint8_t *peer_n
             memcpy(ndl->security_ctx.nd_pmk,
                    p_svc->derived_security[matched_idx].nd_pmk,
                    ESP_WIFI_NAN_NDP_PMK_LEN);
-            ESP_LOGD(TAG, "NDP Resp Key Desc: resolved PMK from cred slot %d", matched_idx);
+            ESP_LOGI(TAG, "NDP Resp Key Desc: resolved PMK from cred slot %d", matched_idx);
             pmk_resolved = true;
         }
     }
@@ -536,10 +539,16 @@ static bool nan_ndp_resp_resolve_pmk(struct ndl_info *ndl, const uint8_t *peer_n
 #if defined(CONFIG_ESP_WIFI_NAN_PAIRING)
     if (!pmk_resolved && need_pmk &&
             nan_security_fill_from_paired_cache(ndl, peer_nmi)) {
-        ESP_LOGD(TAG, "NDP Resp Key Desc: resolved PMK from paired-peer cache");
+        ESP_LOGI(TAG, "NDP Resp Key Desc: resolved PMK from paired-peer cache");
         pmk_resolved = true;
     }
 #endif
+
+    if (!pmk_resolved && need_pmk && have_peer_pmkid) {
+        ESP_LOGE(TAG, "Peer ND-PMKID matched neither service credentials nor paired-peer cache; secured NDP will fail (peer NMI "MACSTR", peer PMKID below)",
+                 MAC2STR(peer_nmi));
+        ESP_LOG_BUFFER_HEXDUMP(TAG, ndl->security_ctx.nd_pmkid, ESP_WIFI_NAN_NDP_PMKID_LEN, ESP_LOG_ERROR);
+    }
 
     return pmk_resolved;
 }
@@ -975,7 +984,7 @@ static int nan_append_own_group_kdes(struct ndl_info *ndl, uint8_t *key_desc, si
         memcpy(&key_desc[NAN_KEY_DESC_RSC_OFF], ndl->own_gtk_rsc, NAN_KEY_RSC_LEN);
     }
 
-    ESP_LOGI(TAG, "Group Key Data wrapped: %u plain -> %u wrapped bytes, KDEs=[%s%s%s]",
+    ESP_LOGD(TAG, "Group Key Data wrapped: %u plain -> %u wrapped bytes, KDEs=[%s%s%s]",
              (unsigned)plain_len, (unsigned)wrapped_len,
              want_gtk ? "GTK " : "", want_igtk ? "IGTK " : "", want_bigtk ? "BIGTK " : "");
     ret = NAN_KEY_DESC_MIN_LEN + (int)wrapped_len;
@@ -1172,6 +1181,246 @@ static uint8_t nan_keyinfo_to_msg_type(uint16_t key_info)
     }
     return 0;
 }
+
+/*-------------------------------------------------------------------------
+ * Handshake failure forensics: retain the M1-M4 bodies of the current
+ * handshake (one slot per message, direction-tagged) and dump them decoded
+ * when NDP setup fails, so vendor-interop failures in the field can be
+ * cross-checked against the spec from the DUT log alone.
+ *-----------------------------------------------------------------------*/
+
+#if CONFIG_ESP_WIFI_NAN_HANDSHAKE_FRAME_LOG
+
+/* Sized from measured traffic, not the spec: Wi-Fi Aware v4.0 sets no NAF body
+ * maximum (the bound is the 802.11 MMPDU, 2304 octets). Real ESP<->Android
+ * secured NDP setup frames run to 468 B, and the wrapped IGTK/BIGTK/GTK key
+ * data adds 96 B to the Shared Key Descriptor, so 512 already truncates - and
+ * the descriptor sits late in the frame, so truncation drops exactly the MIC
+ * and Key Data this log exists to capture. */
+#define NAN_HANDSHAKE_LOG_FRAME_BUFFER_MAX  1024
+
+struct nan_handshake_logged_frame {
+    bool valid;
+    bool is_tx;
+    uint8_t msg;                     /* handshake message 1..4 */
+    uint8_t ndp_id;
+    uint8_t peer_nmi[MACADDR_LEN];
+    uint16_t body_len;               /* on-air body length */
+    uint16_t cap_len;                /* bytes captured (<= NAN_HANDSHAKE_LOG_FRAME_BUFFER_MAX) */
+    uint8_t body[NAN_HANDSHAKE_LOG_FRAME_BUFFER_MAX];
+};
+
+/* One slot per message: each of M1-M4 flows only one direction per role. */
+static struct nan_handshake_logged_frame s_handshake_frame_log_buffer[4];
+
+/* Slots selected by a failure dump, printed once NAN_DATA_LOCK is released. */
+static uint8_t s_pending_frame_mask;
+static bool s_frame_report_pending;
+
+/* Caller must hold NAN_DATA_LOCK. This function does not take it: the mutex
+ * is not recursive, and M1 capture plus the RX verifies already hold it. */
+static void nan_handshake_record_frame(bool is_tx, uint8_t msg, uint8_t ndp_id,
+                                        const uint8_t *peer_nmi, const uint8_t *body, size_t body_len)
+{
+    struct nan_handshake_logged_frame *s;
+
+    if (!body || body_len == 0 || msg < 1 || msg > 4) {
+        return;
+    }
+    s = &s_handshake_frame_log_buffer[msg - 1];
+    s->is_tx = is_tx;
+    s->msg = msg;
+    s->ndp_id = ndp_id;
+    if (peer_nmi) {
+        MACADDR_COPY(s->peer_nmi, peer_nmi);
+    } else {
+        memset(s->peer_nmi, 0, MACADDR_LEN);
+    }
+    s->body_len = (uint16_t)body_len;
+    s->cap_len = (uint16_t)((body_len > NAN_HANDSHAKE_LOG_FRAME_BUFFER_MAX) ? NAN_HANDSHAKE_LOG_FRAME_BUFFER_MAX : body_len);
+    memcpy(s->body, body, s->cap_len);
+    s->valid = true;
+}
+
+/* Drop the frames recorded for one handshake (or all of them). Diagnostics-only
+ * housekeeping: touches the record buffer, never NDL or key state.
+ * all == true ignores ndp_id and peer_nmi. Otherwise both must match: NDP ID
+ * alone is the initiator's identifier, so two peers can share it. */
+void nan_security_clear_handshake_log(uint8_t ndp_id, const uint8_t *peer_nmi, bool all)
+{
+    for (int i = 0; i < 4; i++) {
+        struct nan_handshake_logged_frame *s = &s_handshake_frame_log_buffer[i];
+
+        if (all || (peer_nmi && s->ndp_id == ndp_id &&
+                    memcmp(s->peer_nmi, peer_nmi, MACADDR_LEN) == 0)) {
+            s->valid = false;
+        }
+    }
+}
+
+static const char *nan_attr_name(uint8_t id)
+{
+    switch (id) {
+    case 0x03: return "SDA";
+    case 0x0E: return "SDEA";
+    case 0x0F: return "DevCap";
+    case 0x10: return "NDP";
+    case 0x12: return "Availability";
+    case 0x13: return "NDC";
+    case 0x14: return "NDL";
+    case 0x15: return "NDL-QoS";
+    case 0x17: return "UnalignedSched";
+    case 0x1D: return "ElemContainer";
+    case NAN_ATTR_ID_CIPHER_SUITE_INFO: return "CSIA";
+    case NAN_ATTR_ID_SECURITY_CONTEXT: return "SCIA";
+    case NAN_ATTR_ID_SHARED_KEY_DESC: return "SharedKeyDesc";
+    case 0x29: return "NDPE";
+    case 0x2A: return "DCEA";
+    default: return "unknown";
+    }
+}
+
+static void nan_handshake_print_logged_frame(const struct nan_handshake_logged_frame *s)
+{
+    const char *dir = s->is_tx ? "TX" : "RX";
+
+    ESP_LOGE(TAG, "NAN_NDP_FAIL %s: M%u ndp_id=%u peer="MACSTR" body=%u bytes%s",
+             dir, s->msg, s->ndp_id, MAC2STR(s->peer_nmi), s->body_len,
+             s->cap_len < s->body_len ? " (truncated)" : "");
+
+    /* Structural walk only (attr id/name/len) — field-level parsing is done
+     * offline from the raw dump below, so a host decode bug can't mislead.
+     * The retained body starts at the NAF fixed header (Category, Action,
+     * OUI 50:6F:9A, OUI Type 0x18, OUI Subtype); attributes begin after it. */
+    size_t off = 0;
+    if (s->cap_len >= 7 && s->body[2] == 0x50 && s->body[3] == 0x6f && s->body[4] == 0x9a) {
+        off = 7;   /* Category(1)+Action(1)+OUI(3)+OUI Type(1)+OUI Subtype(1) */
+    }
+    while (off + 3 <= s->cap_len) {
+        uint8_t id = s->body[off];
+        uint16_t len = s->body[off + 1] | (s->body[off + 2] << 8);
+        if (off + 3 + len > s->cap_len) {
+            ESP_LOGE(TAG, "  attr 0x%02x len=%u overruns capture; stopping walk", id, len);
+            break;
+        }
+        ESP_LOGE(TAG, "  attr 0x%02x (%s) len=%u", id, nan_attr_name(id), len);
+        off += 3 + len;
+    }
+    ESP_LOGE(TAG, "NAN_NDP_FAIL %s raw body:", dir);
+    ESP_LOG_BUFFER_HEXDUMP(TAG, s->body, s->cap_len, ESP_LOG_ERROR);
+}
+
+#endif /* CONFIG_ESP_WIFI_NAN_HANDSHAKE_FRAME_LOG */
+
+/* Caller must hold NAN_DATA_LOCK (reads the NDL). Prints the failure cause,
+ * role, handshake state, and on-air ANonce/SNonce/PMKID. NM-TK and ND-PTK are
+ * printed only when CONFIG_ESP_WIFI_NAN_SECURITY_KEY_LOG is on.
+ *
+ * The retained M1-M4 bodies are selected but not printed: call
+ * nan_security_print_pending_frames() once the lock is released to emit those. */
+void nan_security_record_handshake_failure(uint8_t ndp_id, const uint8_t *peer_nmi, const char *cause)
+{
+    static const uint8_t zero_mac[MACADDR_LEN] = {0};
+    struct ndl_info *ndl = peer_nmi ? nan_find_ndl(ndp_id, (uint8_t *)peer_nmi) : NULL;
+    /* An open NDP has no nonces, PMKID or handshake frames; printing them would
+     * just be zeros. Its cause, role and state are still worth logging. */
+    bool secured = ndl && ndl->security_ctx.type == WIFI_NAN_SECURITY_ENCRYPTED;
+
+    ESP_LOGE(TAG, "NAN_NDP_FAIL ndp_id=%u peer="MACSTR" cause=%s", ndp_id,
+             MAC2STR(peer_nmi ? peer_nmi : zero_mac), cause ? cause : "?");
+
+    if (ndl) {
+        uint8_t i_addr[6] = {0};
+        uint8_t r_addr[6] = {0};
+        nan_ndp_ptk_addrs(ndl, ndl->own_role != ESP_WIFI_NDP_ROLE_INITIATOR, i_addr, r_addr);
+        ESP_LOGE(TAG, "  role=%s handshake_state=%u sec_type=%d csid_bitmap=0x%04x ptk_set=%d gtk/igtk/bigtk_req=%d/%d/%d",
+                 ndl->own_role == ESP_WIFI_NDP_ROLE_INITIATOR ? "initiator" : "responder",
+                 ndl->handshake_state, ndl->security_ctx.type, ndl->security_ctx.csid_bitmap,
+                 ndl->ptk_set, ndl->gtk_required, ndl->igtk_required, ndl->bigtk_required);
+        ESP_LOGE(TAG, "  PTK tuple: IAddr="MACSTR" RAddr="MACSTR" (peer_ndi="MACSTR"; PMKID uses NMIs, PTK uses NDIs)",
+                 MAC2STR(i_addr), MAC2STR(r_addr), MAC2STR(ndl->peer_ndi));
+        if (secured) {
+            ESP_LOGE(TAG, "  ANonce / SNonce / peer ND-PMKID:");
+            ESP_LOG_BUFFER_HEXDUMP(TAG, ndl->anonce, NAN_NONCE_LEN, ESP_LOG_ERROR);
+            ESP_LOG_BUFFER_HEXDUMP(TAG, ndl->snonce, NAN_NONCE_LEN, ESP_LOG_ERROR);
+            ESP_LOG_BUFFER_HEXDUMP(TAG, ndl->security_ctx.nd_pmkid, ESP_WIFI_NAN_NDP_PMKID_LEN, ESP_LOG_ERROR);
+        }
+#if defined(CONFIG_ESP_WIFI_NAN_HANDSHAKE_FRAME_LOG) && defined(CONFIG_ESP_WIFI_NAN_SECURITY_KEY_LOG)
+        /* ND-PTK so the M2/M3/M4 MIC can be recomputed offline and compared to
+         * the on-air value: MIC = HMAC-SHA256(KCK, body|MIC=0)[0:16] (M3 scope
+         * = Auth_Token||body). Confirms whether a stalled peer rejected our MIC. */
+        if (ndl->ptk_set) {
+            ESP_LOGE(TAG, "  ND-PTK KCK / KEK / TK (MIC = HMAC-SHA256(KCK, body|MIC=0)[0:16]):");
+            ESP_LOG_BUFFER_HEXDUMP(TAG, ndl->nd_kck, ndl->kck_len, ESP_LOG_ERROR);
+            ESP_LOG_BUFFER_HEXDUMP(TAG, ndl->nd_kek, ndl->kek_len, ESP_LOG_ERROR);
+            ESP_LOG_BUFFER_HEXDUMP(TAG, ndl->nd_tk, ndl->tk_len, ESP_LOG_ERROR);
+        }
+#endif
+    }
+#if defined(CONFIG_ESP_WIFI_NAN_PAIRING) && defined(CONFIG_ESP_WIFI_NAN_HANDSHAKE_FRAME_LOG) && defined(CONFIG_ESP_WIFI_NAN_SECURITY_KEY_LOG)
+    if (peer_nmi) {
+        const struct nan_pasn_key_material *keys = nan_pasn_get_saved_keys();
+        if (keys && keys->tk_len &&
+                memcmp(keys->peer_addr, peer_nmi, MACADDR_LEN) == 0) {
+            ESP_LOGE(TAG, "  NM-TK (PASN, peer "MACSTR") — CCMP key to decrypt NDP handshake:",
+                     MAC2STR(peer_nmi));
+            ESP_LOG_BUFFER_HEXDUMP(TAG, keys->tk, keys->tk_len, ESP_LOG_ERROR);
+        }
+    }
+#endif
+#if defined(CONFIG_ESP_WIFI_NAN_HANDSHAKE_FRAME_LOG) && !defined(CONFIG_ESP_WIFI_NAN_SECURITY_KEY_LOG)
+    ESP_LOGE(TAG, "  (enable CONFIG_ESP_WIFI_NAN_SECURITY_KEY_LOG to print NM-TK/ND-PTK for sniffer decryption)");
+#endif
+#if CONFIG_ESP_WIFI_NAN_HANDSHAKE_FRAME_LOG
+    /* Pick this handshake's frames while the NDL is still locked, but leave the
+     * hex dumps to nan_security_print_pending_frames(): they are far too large
+     * to emit with NAN_DATA_LOCK held. */
+    s_pending_frame_mask = 0;
+    for (int i = 0; i < 4; i++) {
+        const struct nan_handshake_logged_frame *s = &s_handshake_frame_log_buffer[i];
+
+        /* Only this handshake's frames: a stale or other-peer entry would
+         * otherwise be printed as if it belonged to this failure. */
+        if (!s->valid || s->ndp_id != ndp_id) {
+            continue;
+        }
+        if (peer_nmi && memcmp(s->peer_nmi, peer_nmi, MACADDR_LEN) != 0) {
+            continue;
+        }
+        s_pending_frame_mask |= (uint8_t)(1U << i);
+    }
+    s_frame_report_pending = secured;
+#else
+    ESP_LOGE(TAG, "  (enable CONFIG_ESP_WIFI_NAN_HANDSHAKE_FRAME_LOG to dump the M1-M4 frames)");
+#endif
+}
+
+#if CONFIG_ESP_WIFI_NAN_HANDSHAKE_FRAME_LOG
+/* Print the frames selected by the last nan_security_record_handshake_failure().
+ * Must be called after NAN_DATA_LOCK is released: this emits up to four full
+ * frame bodies at ERROR level, which is far too much work to do under the lock
+ * the datapath and DW handling need. Slots are addressed by the index recorded
+ * under the lock, so an NDL reset in between - which only clears the valid flag
+ * and never overwrites a body - cannot make the frames disappear. */
+void nan_security_print_pending_frames(void)
+{
+    if (!s_frame_report_pending) {
+        return;
+    }
+    s_frame_report_pending = false;
+
+    if (!s_pending_frame_mask) {
+        ESP_LOGE(TAG, "NAN_NDP_FAIL: no handshake frames retained");
+        return;
+    }
+    for (int i = 0; i < 4; i++) {
+        if (s_pending_frame_mask & (1U << i)) {
+            nan_handshake_print_logged_frame(&s_handshake_frame_log_buffer[i]);
+        }
+    }
+    s_pending_frame_mask = 0;
+}
+#endif /* CONFIG_ESP_WIFI_NAN_HANDSHAKE_FRAME_LOG */
 
 /*-------------------------------------------------------------------------
  * Public API: PMK/PMKID derivation for publish
@@ -1552,7 +1801,7 @@ esp_err_t nan_security_populate_initiator_ndl(struct ndl_info *ndl,
         ndl->security_ctx.csid_bitmap |= NAN_CSID_GTK_DEFAULT;
     }
     if (cfg->group_data_prot) {
-        ESP_LOGI(TAG, "NDP GTK: %s (initiator) - own group_prot=1, peer NCS-GTK=%d",
+        ESP_LOGD(TAG, "NDP GTK: %s (initiator) - own group_prot=1, peer NCS-GTK=%d",
                  ndl->gtk_required ? "negotiated" : "NOT negotiated",
                  (peer_svc && peer_svc->peer_group_data_cap) ? 1 : 0);
     }
@@ -1563,7 +1812,7 @@ esp_err_t nan_security_populate_initiator_ndl(struct ndl_info *ndl,
     ndl->igtk_required  = (s_nan_ctx.group_mgmt_prot && peer_igtk) ? 1 : 0;
     ndl->bigtk_required = (s_nan_ctx.group_mgmt_prot && peer_bigtk) ? 1 : 0;
     if (s_nan_ctx.group_mgmt_prot) {
-        ESP_LOGI(TAG, "NDP IGTK/BIGTK: igtk=%s bigtk=%s (initiator) - peer igtk=%d bigtk=%d",
+        ESP_LOGD(TAG, "NDP IGTK/BIGTK: igtk=%s bigtk=%s (initiator) - peer igtk=%d bigtk=%d",
                  ndl->igtk_required ? "yes" : "no", ndl->bigtk_required ? "yes" : "no",
                  peer_igtk, peer_bigtk);
     }
@@ -1781,10 +2030,10 @@ static void nan_log_group_desc_len(const char *msg, uint8_t ndp_id, int ret,
         ESP_LOGW(TAG, "%s desc len: no NDL (ndp_id=%d) -> len=%d (no Key Data)",
                  msg, ndp_id, ret);
     } else if (key_data_len == 0) {
-        ESP_LOGI(TAG, "%s desc len=%d (ndp_id=%d): no group KDEs (ptk_set=%d)",
+        ESP_LOGD(TAG, "%s desc len=%d (ndp_id=%d): no group KDEs (ptk_set=%d)",
                  msg, ret, ndp_id, ptk_set);
     } else {
-        ESP_LOGI(TAG, "%s desc len=%d (ndp_id=%d): Key Data=%u KDEs=[%s%s%s]",
+        ESP_LOGD(TAG, "%s desc len=%d (ndp_id=%d): Key Data=%u KDEs=[%s%s%s]",
                  msg, ret, ndp_id, key_data_len,
                  (kde_mask & NAN_KDE_PRESENT_GTK)   ? "GTK "   : "",
                  (kde_mask & NAN_KDE_PRESENT_IGTK)  ? "IGTK "  : "",
@@ -1854,8 +2103,12 @@ int esp_nan_get_ndp_resp_shared_key_desc(uint8_t *buf, size_t buf_len, uint8_t n
         return 0;
     }
     if (!nan_ndp_resp_resolve_pmk(ndl, peer_nmi)) {
+        ESP_LOGE(TAG, "NDP Resp Key Desc: no PMK for peer PMKID - M2 will carry no Shared Key Descriptor and the initiator will abort; ensure matching credential/pairing on both devices");
+        nan_security_record_handshake_failure(ndp_id, peer_nmi, "PMK resolution failed at M2 build (responder)");
         NAN_DATA_UNLOCK();
-        ESP_LOGW(TAG, "NDP Resp Key Desc: no PMK for peer PMKID; ensure matching credential on both devices");
+#if CONFIG_ESP_WIFI_NAN_HANDSHAKE_FRAME_LOG
+    nan_security_print_pending_frames();
+#endif
         return 0;
     }
 
@@ -1983,13 +2236,29 @@ int esp_nan_get_ndp_security_install_key_desc(uint8_t *buf, size_t buf_len, uint
 int esp_nan_update_ndp_resp_mic(uint8_t *m2_body, size_t body_len, uint8_t *key_desc_attr,
                                 uint8_t ndp_id, const uint8_t *peer_nmi)
 {
-    return nan_update_kd_mic(m2_body, body_len, key_desc_attr, ndp_id, peer_nmi, "M2", false);
+    int rc = nan_update_kd_mic(m2_body, body_len, key_desc_attr, ndp_id, peer_nmi, "M2", false);
+#if CONFIG_ESP_WIFI_NAN_HANDSHAKE_FRAME_LOG
+    if (rc == 0) {
+        NAN_DATA_LOCK();
+        nan_handshake_record_frame(true, 2, ndp_id, peer_nmi, m2_body, body_len);
+        NAN_DATA_UNLOCK();
+    }
+#endif
+    return rc;
 }
 
 int esp_nan_update_ndp_security_install_mic(uint8_t *m4_body, size_t body_len, uint8_t *key_desc_attr,
                                             uint8_t ndp_id, const uint8_t *peer_nmi)
 {
-    return nan_update_kd_mic(m4_body, body_len, key_desc_attr, ndp_id, peer_nmi, "M4", false);
+    int rc = nan_update_kd_mic(m4_body, body_len, key_desc_attr, ndp_id, peer_nmi, "M4", false);
+#if CONFIG_ESP_WIFI_NAN_HANDSHAKE_FRAME_LOG
+    if (rc == 0) {
+        NAN_DATA_LOCK();
+        nan_handshake_record_frame(true, 4, ndp_id, peer_nmi, m4_body, body_len);
+        NAN_DATA_UNLOCK();
+    }
+#endif
+    return rc;
 }
 
 /*-------------------------------------------------------------------------
@@ -2281,11 +2550,11 @@ void esp_nan_parse_ndp_key_desc(void *frm, size_t buf_len, uint8_t ndp_id, const
                             ndl->gtk_len = gtk_len;
                             memcpy(ndl->gtk_rsc, key_rsc, NAN_KEY_RSC_LEN);
                             ndl->gtk_set = 1;
-                            ESP_LOGI(TAG, "KDE: peer GTK stored (keyid=%d, len=%d)",
+                            ESP_LOGD(TAG, "KDE: peer GTK stored (keyid=%d, len=%d)",
                                      ndl->gtk_keyid, gtk_len);
                         }
                     } else if (data_type == NAN_KDE_TYPE_MAC && body_len >= 6) {
-                        ESP_LOGI(TAG, "KDE: MAC Address: " MACSTR, MAC2STR(body));
+                        ESP_LOGD(TAG, "KDE: MAC Address: " MACSTR, MAC2STR(body));
                     } else if (data_type == NAN_KDE_TYPE_IGTK && body_len > NAN_IGTK_KDE_PREFIX_LEN) {
                         /* IGTK KDE: KeyID(2 LE) IPN(6) IGTK(var) */
                         uint8_t igtk_len = body_len - NAN_IGTK_KDE_PREFIX_LEN;
@@ -2295,7 +2564,7 @@ void esp_nan_parse_ndp_key_desc(void *frm, size_t buf_len, uint8_t ndp_id, const
                             memcpy(ndl->igtk, body + NAN_IGTK_KDE_PREFIX_LEN, igtk_len);
                             ndl->igtk_len = igtk_len;
                             ndl->igtk_set = 1;
-                            ESP_LOGI(TAG, "KDE: peer IGTK stored (keyid=%d, len=%d)",
+                            ESP_LOGD(TAG, "KDE: peer IGTK stored (keyid=%d, len=%d)",
                                      ndl->igtk_keyid, igtk_len);
                         }
                     } else if (data_type == NAN_KDE_TYPE_BIGTK && body_len > NAN_BIGTK_KDE_PREFIX_LEN) {
@@ -2307,18 +2576,18 @@ void esp_nan_parse_ndp_key_desc(void *frm, size_t buf_len, uint8_t ndp_id, const
                             memcpy(ndl->bigtk, body + NAN_BIGTK_KDE_PREFIX_LEN, bigtk_len);
                             ndl->bigtk_len = bigtk_len;
                             ndl->bigtk_set = 1;
-                            ESP_LOGI(TAG, "KDE: peer BIGTK stored (keyid=%d, len=%d)",
+                            ESP_LOGD(TAG, "KDE: peer BIGTK stored (keyid=%d, len=%d)",
                                      ndl->bigtk_keyid, bigtk_len);
                         }
                     }
                 } else if (oui == NAN_KDE_OUI_WFA) {
                     if (data_type == NAN_KDE_TYPE_NIK && body_len >= 1) {
-                        ESP_LOGI(TAG, "KDE: NIK (Cipher Ver: %d)", body[0]);
+                        ESP_LOGD(TAG, "KDE: NIK (Cipher Ver: %d)", body[0]);
                     } else if (data_type == NAN_KDE_TYPE_KEY_LIFE && body_len >= 6) {
                         uint16_t key_bitmap = body[0] | (body[1] << 8);
                         uint32_t lifetime = (body[2] << 24) | (body[3] << 16) |
                                             (body[4] << 8) | body[5];
-                        ESP_LOGI(TAG, "KDE: NAN Key Lifetime: %lu s, Bitmap: 0x%04x",
+                        ESP_LOGD(TAG, "KDE: NAN Key Lifetime: %lu s, Bitmap: 0x%04x",
                                  (unsigned long)lifetime, key_bitmap);
                     }
                 }
@@ -2445,7 +2714,7 @@ void nan_security_apply_pending(struct ndl_info *ndl,
             ndl->gtk_required = (p_own_svc && p_own_svc->user_cfg.group_data_prot &&
                                  s_pending_scia.peer_group_data) ? 1 : 0;
             if (p_own_svc && p_own_svc->user_cfg.group_data_prot) {
-                ESP_LOGI(TAG, "NDP GTK: %s (responder) - own group_prot=1, peer group_data=%d",
+                ESP_LOGD(TAG, "NDP GTK: %s (responder) - own group_prot=1, peer group_data=%d",
                          ndl->gtk_required ? "negotiated" : "NOT negotiated",
                          s_pending_scia.peer_group_data);
             }
@@ -2459,7 +2728,7 @@ void nan_security_apply_pending(struct ndl_info *ndl,
                 ndl->igtk_required  = (own_mgmt && peer_igtk) ? 1 : 0;
                 ndl->bigtk_required = (own_mgmt && peer_bigtk) ? 1 : 0;
                 if (own_mgmt) {
-                    ESP_LOGI(TAG, "NDP IGTK/BIGTK: igtk=%s bigtk=%s (responder) - peer caps=0x%02x",
+                    ESP_LOGD(TAG, "NDP IGTK/BIGTK: igtk=%s bigtk=%s (responder) - peer caps=0x%02x",
                              ndl->igtk_required ? "yes" : "no", ndl->bigtk_required ? "yes" : "no",
                              s_pending_scia.peer_caps);
                 }
@@ -2480,18 +2749,20 @@ void nan_security_apply_pending(struct ndl_info *ndl,
                        p_own_svc->derived_security[matched_idx].nd_pmk,
                        ESP_WIFI_NAN_NDP_PMK_LEN);
                 ndl->key_source_akmp = 0;   /* passphrase/PMK credential */
-                ESP_LOGD(TAG, "NDP Indication: PMKID validated via cred slot %d", matched_idx);
+                ESP_LOGI(TAG, "ND-PMK source: service credential slot %d (peer PMKID matched)", matched_idx);
                 pmk_resolved = true;
             }
 #if defined(CONFIG_ESP_WIFI_NAN_PAIRING)
             else if (nan_security_fill_from_paired_cache(ndl, peer_nmi)) {
                 /* fill_from_paired_cache sets ndl->key_source_akmp from the paired entry */
-                ESP_LOGD(TAG, "NDP Indication: PMK sourced from paired-peer cache");
+                ESP_LOGI(TAG, "ND-PMK source: paired-peer cache (PASN pairing)");
                 pmk_resolved = true;
             }
 #endif
             if (!pmk_resolved) {
-                ESP_LOGW(TAG, "NDP Indication: PMKID validation failed");
+                ESP_LOGE(TAG, "NDP Indication: peer ND-PMKID matched no service credential and no paired peer - secured NDP will fail (peer NMI "MACSTR", peer PMKID below)",
+                         MAC2STR(peer_nmi));
+                ESP_LOG_BUFFER_HEXDUMP(TAG, s_pending_scia.pmkid, ESP_WIFI_NAN_NDP_PMKID_LEN, ESP_LOG_ERROR);
             }
         }
 
@@ -2752,6 +3023,10 @@ int esp_nan_capture_m1_auth_token(const uint8_t *m1_body, size_t body_len,
     /* NCS-SK-128: Auth_Token length is 16 bytes (NCS-SK-HASH = SHA-256, L() takes 128 bits). */
     memcpy(ndl->auth_token, hash, NAN_NCS_SK_128_MIC_LEN);
     ndl->auth_token_len = NAN_NCS_SK_128_MIC_LEN;
+    /* M1 flows through here on both roles: initiator captures its own TX, responder the RX. */
+#if CONFIG_ESP_WIFI_NAN_HANDSHAKE_FRAME_LOG
+    nan_handshake_record_frame(ndl->own_role == ESP_WIFI_NDP_ROLE_INITIATOR, 1, ndp_id, peer_nmi, m1_body, body_len);
+#endif
     ESP_LOGD(TAG, "Auth_Token captured (16 bytes) for ndp_id=%d, body_len=%u", ndp_id, (unsigned)body_len);
     ESP_LOG_BUFFER_HEXDUMP(TAG, ndl->auth_token, NAN_NCS_SK_128_MIC_LEN, ESP_LOG_DEBUG);
     NAN_DATA_UNLOCK();
@@ -2879,10 +3154,19 @@ int esp_nan_verify_ndp_resp_mic(uint8_t *m2_body, size_t body_len, uint8_t *key_
         return -1;
     }
 
+#if CONFIG_ESP_WIFI_NAN_HANDSHAKE_FRAME_LOG
+    nan_handshake_record_frame(false, 2, ndp_id, peer_nmi, m2_body, body_len);
+#endif
     int rc = nan_verify_kck_mic(m2_body, body_len, key_desc_attr,
                                 ndl->nd_kck, NAN_NCS_SK_128_KCK_LEN,
                                 NULL, 0, "NDP M2");
+    if (rc != 0) {
+        nan_security_record_handshake_failure(ndp_id, peer_nmi, "M2 MIC verify failed (initiator)");
+    }
     NAN_DATA_UNLOCK();
+#if CONFIG_ESP_WIFI_NAN_HANDSHAKE_FRAME_LOG
+    nan_security_print_pending_frames();
+#endif
     return rc;
 }
 
@@ -2898,7 +3182,15 @@ int esp_nan_verify_ndp_resp_mic(uint8_t *m2_body, size_t body_len, uint8_t *key_
 int esp_nan_update_ndp_confirm_mic(uint8_t *m3_body, size_t body_len, uint8_t *key_desc_attr,
                                    uint8_t ndp_id, const uint8_t *peer_nmi)
 {
-    return nan_update_kd_mic(m3_body, body_len, key_desc_attr, ndp_id, peer_nmi, "M3", true);
+    int rc = nan_update_kd_mic(m3_body, body_len, key_desc_attr, ndp_id, peer_nmi, "M3", true);
+#if CONFIG_ESP_WIFI_NAN_HANDSHAKE_FRAME_LOG
+    if (rc == 0) {
+        NAN_DATA_LOCK();
+        nan_handshake_record_frame(true, 3, ndp_id, peer_nmi, m3_body, body_len);
+        NAN_DATA_UNLOCK();
+    }
+#endif
+    return rc;
 }
 
 /**
@@ -2949,6 +3241,9 @@ int esp_nan_verify_ndp_confirm_mic(uint8_t *m3_body, size_t body_len, uint8_t *k
         return -1;
     }
 
+#if CONFIG_ESP_WIFI_NAN_HANDSHAKE_FRAME_LOG
+    nan_handshake_record_frame(false, 3, ndp_id, peer_nmi, m3_body, body_len);
+#endif
     int rc = nan_verify_kck_mic(m3_body, body_len, key_desc_attr,
                                 ndl->nd_kck, NAN_NCS_SK_128_KCK_LEN,
                                 ndl->auth_token, ndl->auth_token_len,
@@ -2956,8 +3251,13 @@ int esp_nan_verify_ndp_confirm_mic(uint8_t *m3_body, size_t body_len, uint8_t *k
     if (rc == 0) {
         ndl->handshake_state = NAN_HANDSHAKE_M3_RCVD;
         ESP_LOGD(TAG, "NDP M3 Verify MIC: pass; handshake_state=M3_RCVD (ready to TX M4)");
+    } else {
+        nan_security_record_handshake_failure(ndp_id, peer_nmi, "M3 MIC verify failed (responder)");
     }
     NAN_DATA_UNLOCK();
+#if CONFIG_ESP_WIFI_NAN_HANDSHAKE_FRAME_LOG
+    nan_security_print_pending_frames();
+#endif
     return rc;
 }
 
@@ -2997,14 +3297,25 @@ int esp_nan_verify_ndp_security_install_mic(uint8_t *m4_body, size_t body_len, u
         return -1;
     }
 
+#if CONFIG_ESP_WIFI_NAN_HANDSHAKE_FRAME_LOG
+    nan_handshake_record_frame(false, 4, ndp_id, peer_nmi, m4_body, body_len);
+#endif
     int rc = nan_verify_kck_mic(m4_body, body_len, key_desc_attr,
                                 ndl->nd_kck, NAN_NCS_SK_128_KCK_LEN,
                                 NULL, 0, "NDP M4");
     if (rc == 0) {
         ndl->handshake_state = NAN_HANDSHAKE_COMPLETE;
+#if CONFIG_ESP_WIFI_NAN_HANDSHAKE_FRAME_LOG
+        nan_security_clear_handshake_log(ndp_id, peer_nmi, false);
+#endif
         ESP_LOGD(TAG, "NDP M4 Verify MIC: handshake_state=COMPLETE (initiator)");
+    } else {
+        nan_security_record_handshake_failure(ndp_id, peer_nmi, "M4 MIC verify failed (initiator)");
     }
     NAN_DATA_UNLOCK();
+#if CONFIG_ESP_WIFI_NAN_HANDSHAKE_FRAME_LOG
+    nan_security_print_pending_frames();
+#endif
     return rc;
 }
 

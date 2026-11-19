@@ -529,6 +529,31 @@ void nan_security_apply_pending(struct ndl_info *ndl,
  * NDP indication callback without consuming the pending state. */
 void nan_security_discard_pending(void);
 
+/*
+ * Log a secured-NDP failure under the NAN_NDP_FAIL prefix: cause, role,
+ * handshake state, nonces and PMKID, plus NM-TK and ND-PTK when
+ * CONFIG_ESP_WIFI_NAN_SECURITY_KEY_LOG is on. Selects this handshake's
+ * retained M1-M4 frames and does not print them. Caller must hold
+ * NAN_DATA_LOCK, then call nan_security_print_pending_frames() after
+ * releasing it.
+ */
+void nan_security_record_handshake_failure(uint8_t ndp_id, const uint8_t *peer_nmi,
+                                           const char *cause);
+
+/* Drop the M1-M4 frames recorded for (ndp_id, peer_nmi). all = every
+ * handshake, and then peer_nmi is ignored. Diagnostics housekeeping only;
+ * does not touch NDL or key state. Call once a handshake completes and
+ * whenever an NDL is torn down. */
+#if CONFIG_ESP_WIFI_NAN_HANDSHAKE_FRAME_LOG
+void nan_security_clear_handshake_log(uint8_t ndp_id, const uint8_t *peer_nmi, bool all);
+
+/* Print the handshake frames selected by the last
+ * nan_security_record_handshake_failure(). Call after releasing NAN_DATA_LOCK.
+ * The record itself only selects them, so the frame bodies are not hex-dumped
+ * with the lock held. No-op if none pending. */
+void nan_security_print_pending_frames(void);
+#endif
+
 /* PMK / PMKID derivation entry point used by the publish path. Derives from
  * (service_name, sec_cfg) (passphrase or PMK) and writes the result into
  * out_derived. */

@@ -36,6 +36,12 @@
 #include "esp_event.h"
 #include "esp_private/wifi.h"
 
+#ifdef CONFIG_ESP_WIFI_NAN_SECURITY_KEY_LOG
+/* wpa_debug.h (via utils/common.h) already pulls in esp_log.h and #defines
+ * TAG "wpa"; use a distinct tag here so NAN PASN logs are greppable. */
+static const char *NAN_PASN_TAG = "nan_pasn";
+#endif
+
 #define IEEE80211_MGMT_HDRLEN 24
 
 /* Default NAN pairing PIN used when caller does not configure one. */
@@ -318,7 +324,14 @@ static int nan_pasn_install_nan_pairwise_tk(struct nan_pasn_data *nan, struct pa
         return -1;
     }
 
+#ifdef CONFIG_ESP_WIFI_NAN_SECURITY_KEY_LOG
+    /* INFO: needed to decrypt PMF-protected NDP handshake frames in a sniffer. */
+    ESP_LOGI(NAN_PASN_TAG, "NM-TK for peer " MACSTR " (CCMP key):",
+             MAC2STR(pasn->peer_addr));
+    ESP_LOG_BUFFER_HEXDUMP(NAN_PASN_TAG, ptk->tk, ptk->tk_len, ESP_LOG_INFO);
+#else
     wpa_hexdump_key(MSG_DEBUG, "NAN PASN: NM-TK", ptk->tk, ptk->tk_len);
+#endif
     kret = esp_wifi_set_nan_key_internal(
                NAN_PASN_WIFI_ALG_CCMP, pasn->peer_addr, 1, 1, key_rsc, sizeof(key_rsc),
                ptk->tk, ptk->tk_len,
@@ -475,6 +488,11 @@ static void nan_pasn_copy_keys_from_pasn(struct nan_pasn_data *nan, struct pasn_
     if (ptk->kek_len && ptk->kek_len <= sizeof(g_nan_pasn_saved_keys.kek)) {
         os_memcpy(g_nan_pasn_saved_keys.kek, ptk->kek, ptk->kek_len);
         g_nan_pasn_saved_keys.kek_len = ptk->kek_len;
+    }
+
+    if (ptk->tk_len && ptk->tk_len <= sizeof(g_nan_pasn_saved_keys.tk)) {
+        os_memcpy(g_nan_pasn_saved_keys.tk, ptk->tk, ptk->tk_len);
+        g_nan_pasn_saved_keys.tk_len = ptk->tk_len;
     }
 
     g_nan_pasn_saved_keys.valid = 1;
