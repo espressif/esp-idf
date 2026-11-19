@@ -182,6 +182,15 @@ FORCE_INLINE_ATTR void *esp_cpu_get_sp(void)
  * Each CPU core maintains an internal counter (i.e., cycle count) that increments
  * every CPU clock cycle.
  *
+ * @note On targets with SOC_CPU_CCOUNT_STOPS_IN_WFI (ESP32-C2, ESP32-C3, ESP32-C6,
+ *       ESP32-H2, ESP32-H21) the counter only advances while the core executes:
+ *       WFI halts it, so it stops whenever the idle task puts the core to sleep.
+ *       There it measures CPU activity, not elapsed time -- an idle ESP32-C6 at
+ *       160 MHz advances it by roughly 170 kHz. It is still suitable for
+ *       measuring the cost of a code path that runs to completion without
+ *       sleeping, but for elapsed time use esp_timer_get_time() or a GPTimer.
+ *       On other targets the counter keeps running while the core is idle.
+ *
  * @return Current CPU's cycle count, 0 if not supported.
  */
 FORCE_INLINE_ATTR esp_cpu_cycle_count_t esp_cpu_get_cycle_count(void)
