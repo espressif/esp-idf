@@ -176,7 +176,7 @@ TEMP_SENSOR_DOCS = ['api-reference/peripherals/temp_sensor.rst']
 
 TOUCH_SENSOR_DOCS = ['api-reference/peripherals/cap_touch_sens.rst']
 
-SPIRAM_DOCS = ['api-guides/external-ram.rst']
+SPIRAM_DOCS = ['api-guides/external-ram.rst', 'migration-guides/release-6.x/6.1/system.rst']
 
 I80_LCD_DOCS = ['api-reference/peripherals/lcd/i80_lcd.rst']
 RGB_LCD_DOCS = ['api-reference/peripherals/lcd/rgb_lcd.rst']

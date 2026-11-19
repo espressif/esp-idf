@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -47,7 +47,7 @@ TEST_CASE("Allocate new heap with new capability", "[heap]")
     const size_t BUF_SZ = 3500;
     const size_t ALLOC_SZ = 64;
 
-    const uint32_t MALLOC_CAP_INVENTED = (1 << 30); /* this must be unused in esp_heap_caps.h */
+    const uint32_t MALLOC_CAP_INVENTED = (1 << 28); /* this must be unused in esp_heap_caps.h */
 
     /* no memory exists to provide this capability */
     TEST_ASSERT_NULL( heap_caps_malloc(ALLOC_SZ, MALLOC_CAP_INVENTED) );
