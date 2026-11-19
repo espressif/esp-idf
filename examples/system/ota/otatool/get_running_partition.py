@@ -15,9 +15,14 @@ import rich_click as click
 import serial
 from esp_pylib.cli_types import SerialPortType
 from esp_pylib.constants import ESP_ROM_BAUD
+from esp_pylib.errors import FatalError
+from esp_pylib.errors import NoSerialPortFoundError
 from esp_pylib.excepthook import install_exception_reporting
 from esp_pylib.logger import log
 from rich.markup import escape
+
+# Max time to wait for the firmware to print 'Example end' after reset
+SERIAL_READ_TIMEOUT = 30
 
 
 def get_running_partition(port=None):
@@ -38,11 +43,11 @@ def get_running_partition(port=None):
 
             port = re.search(pattern, output).group(1).decode('utf-8')  # may raise AttributeError
         except CalledProcessError as e:
-            raise Exception(error_message + e.output.decode('utf-8', errors='replace'))
+            raise FatalError(error_message + e.output.decode('utf-8', errors='replace'))
         except AttributeError:
-            raise Exception(error_message + output.decode('utf-8', errors='replace'))
+            raise NoSerialPortFoundError(error_message + output.decode('utf-8', errors='replace'))
 
-    serial_instance = serial.serial_for_url(port, baud, do_not_open=True)
+    serial_instance = serial.serial_for_url(port, baud, timeout=SERIAL_READ_TIMEOUT, do_not_open=True)
 
     serial_instance.dtr = False
     serial_instance.rts = False
@@ -54,9 +59,14 @@ def get_running_partition(port=None):
     # Read until example end and find the currently running partition string
     content = serial_instance.read_until(b'Example end')
     pattern = re.compile(b'Running partition: ([a-z0-9_]+)')
-    running = re.search(pattern, content).group(1)
+    match = re.search(pattern, content)
+    if match is None:
+        raise FatalError(
+            'Unable to find running partition in serial output.\nSerial log:\n\n'
+            + content.decode('utf-8', errors='replace')
+        )
 
-    return running.decode('utf-8')
+    return match.group(1).decode('utf-8')
 
 
 @click.command(context_settings={'help_option_names': ['-h', '--help']})
