@@ -1365,7 +1365,8 @@ endfunction()
     *FLASH[in,opt]*
 
         If specified, the binary will also be added to the global ``flash``
-        target.
+        target. It is an error if the global ``flash`` target already contains
+        an image at the binary's offset.
 
     Create a new flash target for ``binary`` using the name specified in the
     ``TARGET`` option. The file path of the binary image should be stored in
@@ -1410,7 +1411,18 @@ function(idf_flash_binary binary)
     esptool_py_flash_target_image("${ARG_TARGET}" "${ARG_NAME}" "${offset}" "${binary_path}")
     add_dependencies("${ARG_TARGET}" "${binary}")
 
+    # Used by the idf_build_generate_flasher_args function.
+    set_target_properties("${binary}" PROPERTIES FLASH_TARGET "${ARG_TARGET}"
+                                                 FLASH_OFFSET "${offset}")
+
     if(ARG_FLASH)
+        # The global flash target can contain only one image at an offset.
+        get_target_property(images flash FLASH_FILE)
+        list(FILTER images INCLUDE REGEX "^\"${offset}\"")
+        if(images)
+            idf_die("Binary target '${binary}' cannot be added to the global 'flash' target, "
+                    "offset ${offset} is already used: ${images}")
+        endif()
         esptool_py_flash_target_image(flash ${ARG_NAME} "${offset}" "${binary_path}")
         add_dependencies(flash "${binary}")
     endif()

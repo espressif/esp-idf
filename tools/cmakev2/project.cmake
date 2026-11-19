@@ -766,12 +766,37 @@ endmacro()
 
     .. code-block:: cmake
 
-        idf_build_generate_flasher_args()
+        idf_build_generate_flasher_args([BINARY <binary>]
+                                        [OUTPUT_FILE <file>])
+
+    *BINARY[in,opt]*
+
+        Binary target passed to :cmakev2:ref:`idf_flash_binary`. If specified,
+        the file contains the images of the global ``flash`` target, with the
+        image at the binary's offset replaced by the binary.
+
+    *OUTPUT_FILE[in,opt]*
+
+        Optional output file path. If not provided, the default path
+        ``<build>/flasher_args.json`` is used. A relative path is relative to
+        the build directory. The file must be in the build directory, because
+        the image paths in the file are relative to the build directory. Some
+        tools resolve these paths against the directory of the file
+        (``mkuf2.py``, ``mkdfu.py``), and others against the build directory
+        (OpenOCD ``program_esp_bins``). Both give the same result only for a
+        file in the build directory.
 
     Generate the flasher_args.json file for the global flash target for tools
-    that require it.
+    that require it. Use ``BINARY`` and ``OUTPUT_FILE`` for a binary that is
+    not added to the global ``flash`` target, for example a second application
+    for the same partition.
 #]]
 function(idf_build_generate_flasher_args)
+    set(options)
+    set(one_value BINARY OUTPUT_FILE)
+    set(multi_value)
+    cmake_parse_arguments(ARG "${options}" "${one_value}" "${multi_value}" ${ARGN})
+
     # The variables listed below are used to configure the template
     # flasher_args.json.in. Some of these variables, such as flash mode, size,
     # and frequency, are set as properties of the esptool_py component.
@@ -796,18 +821,51 @@ function(idf_build_generate_flasher_args)
     idf_component_get_property(ESPFLASHSIZE esptool_py ESPFLASHSIZE)
     idf_component_get_property(esptool_py_dir esptool_py COMPONENT_DIR)
 
-    # Generate flasher args files
     idf_build_get_property(build_dir BUILD_DIR)
+    if(NOT DEFINED ARG_OUTPUT_FILE)
+        set(ARG_OUTPUT_FILE "${build_dir}/flasher_args.json")
+    endif()
+    get_filename_component(output "${ARG_OUTPUT_FILE}" ABSOLUTE BASE_DIR "${build_dir}")
+    get_filename_component(output_dir "${output}" DIRECTORY)
+    if(NOT output_dir STREQUAL build_dir)
+        idf_die("OUTPUT_FILE '${ARG_OUTPUT_FILE}' must be in the build directory '${build_dir}', "
+                "because the image paths in the file are relative to the build directory.")
+    endif()
+
+    set(FLASHER_ARGS_FILES "$<TARGET_PROPERTY:flash,FLASH_FILE>")
+    set(FLASHER_ARGS_ENTRIES "$<TARGET_PROPERTY:flash,FLASH_ENTRY>")
+
+    if(DEFINED ARG_BINARY)
+        # The FLASH_TARGET and FLASH_OFFSET properties are set by the
+        # idf_flash_binary function.
+        get_target_property(flash_target "${ARG_BINARY}" FLASH_TARGET)
+        if(NOT flash_target)
+            idf_die("Binary target '${ARG_BINARY}' has no flash target, call idf_flash_binary first.")
+        endif()
+        get_target_property(offset "${ARG_BINARY}" FLASH_OFFSET)
+
+        # Images of the global flash target without the image at the binary's
+        # offset, followed by the binary.
+        set(files "$<FILTER:${FLASHER_ARGS_FILES},EXCLUDE,^\"${offset}\">")
+        set(entries "$<FILTER:${FLASHER_ARGS_ENTRIES},EXCLUDE,\"offset\" : \"${offset}\">")
+        list(APPEND files "$<TARGET_PROPERTY:${flash_target},FLASH_FILE>")
+        list(APPEND entries "$<TARGET_PROPERTY:${flash_target},FLASH_ENTRY>")
+        # Remove empty items, so that the JSON does not get an extra comma.
+        set(FLASHER_ARGS_FILES "$<FILTER:${files},INCLUDE,.>")
+        set(FLASHER_ARGS_ENTRIES "$<FILTER:${entries},INCLUDE,.>")
+    endif()
+
+    # Generate flasher args files
     file(READ "${esptool_py_dir}/flasher_args.json.in" flasher_args_content)
     string(CONFIGURE "${flasher_args_content}" flasher_args_content)
 
     # We need to create a flasher_args.json.in to create the final flasher_args.json
     # because CMake only resolves generator expressions in the file_generate command
     # with the INPUT keyword during the generation phase.
-    file_generate("${build_dir}/flasher_args.json.in"
+    file_generate("${output}.in"
                  CONTENT "${flasher_args_content}")
-    file_generate("${build_dir}/flasher_args.json"
-                 INPUT "${build_dir}/flasher_args.json.in")
+    file_generate("${output}"
+                 INPUT "${output}.in")
 endfunction()
 
 #[[api
@@ -946,7 +1004,7 @@ function(__project_default)
                    TARGET uf2)
     idf_create_uf2("${executable}"
                    TARGET uf2-app
-                   APP_ONLY)
+                   APP_NAME app)
 
     if(TARGET "${executable}_mapfile")
         idf_create_size_report("${executable}_mapfile"

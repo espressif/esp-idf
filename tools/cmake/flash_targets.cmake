@@ -54,6 +54,8 @@ function(__idf_build_generate_flasher_args)
     idf_component_get_property(ESPFLASHFREQ esptool_py ESPFLASHFREQ)
     idf_component_get_property(ESPFLASHSIZE esptool_py ESPFLASHSIZE)
     idf_component_get_property(esptool_py_dir esptool_py COMPONENT_DIR)
+    set(FLASHER_ARGS_FILES "$<TARGET_PROPERTY:flash,FLASH_FILE>")
+    set(FLASHER_ARGS_ENTRIES "$<TARGET_PROPERTY:flash,FLASH_ENTRY>")
 
     # Generate flasher args files
     idf_build_get_property(build_dir BUILD_DIR)
