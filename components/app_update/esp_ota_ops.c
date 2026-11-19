@@ -152,6 +152,23 @@ static ota_ops_entry_t* esp_ota_init_entry(const esp_partition_t *partition)
     return new_entry;
 }
 
+static bool is_dangerous_region_partition(const esp_partition_t *p)
+{
+    return p->type == ESP_PARTITION_TYPE_BOOTLOADER || p->type == ESP_PARTITION_TYPE_PARTITION_TABLE;
+}
+
+static void esp_ota_restore_dangerous_write_protection(void)
+{
+    ota_ops_entry_t *it;
+    for (it = LIST_FIRST(&s_ota_ops_entries_head); it != NULL; it = LIST_NEXT(it, entries)) {
+        if (is_dangerous_region_partition(it->partition.staging) ||
+                is_dangerous_region_partition(it->partition.final)) {
+            return;
+        }
+    }
+    esp_flash_set_dangerous_write_protection(esp_flash_default_chip, true);
+}
+
 
 esp_err_t esp_ota_begin(const esp_partition_t *partition, size_t image_size, esp_ota_handle_t *out_handle)
 {
@@ -198,11 +215,7 @@ esp_err_t esp_ota_begin(const esp_partition_t *partition, size_t image_size, esp
         return ESP_ERR_NO_MEM;
     }
     new_entry->need_erase = (image_size == OTA_WITH_SEQUENTIAL_WRITES);
-    *out_handle = new_entry->handle;
 
-    if (partition->type == ESP_PARTITION_TYPE_BOOTLOADER) {
-        esp_image_bootloader_offset_set(partition->address);
-    }
     if (partition->type == ESP_PARTITION_TYPE_BOOTLOADER || partition->type == ESP_PARTITION_TYPE_PARTITION_TABLE) {
         esp_flash_set_dangerous_write_protection(esp_flash_default_chip, false);
     }
@@ -217,8 +230,17 @@ esp_err_t esp_ota_begin(const esp_partition_t *partition, size_t image_size, esp
         }
         esp_err_t err = esp_partition_erase_range(partition, 0, erase_size);
         if (err != ESP_OK) {
+            LIST_REMOVE(new_entry, entries);
+            free(new_entry);
+            if (is_dangerous_region_partition(partition)) {
+                esp_ota_restore_dangerous_write_protection();
+            }
             return err;
         }
+    }
+
+    if (partition->type == ESP_PARTITION_TYPE_BOOTLOADER) {
+        esp_image_bootloader_offset_set(partition->address);
     }
 
 #ifdef CONFIG_BOOTLOADER_APP_ROLLBACK
@@ -227,6 +249,7 @@ esp_err_t esp_ota_begin(const esp_partition_t *partition, size_t image_size, esp
     }
 #endif
 
+    *out_handle = new_entry->handle;
     return ESP_OK;
 }
 
@@ -487,8 +510,17 @@ esp_err_t esp_ota_abort(esp_ota_handle_t handle)
     if (it == NULL) {
         return ESP_ERR_NOT_FOUND;
     }
+    bool was_dangerous = is_dangerous_region_partition(it->partition.staging) || is_dangerous_region_partition(it->partition.final);
+    bool was_bootloader = it->partition.staging->type == ESP_PARTITION_TYPE_BOOTLOADER || it->partition.final->type == ESP_PARTITION_TYPE_BOOTLOADER;
     LIST_REMOVE(it, entries);
     free(it);
+    if (was_dangerous) {
+        esp_ota_restore_dangerous_write_protection();
+    }
+    if (was_bootloader) {
+        // Reset the bootloader offset so an aborted slot is no longer treated as a bootloader.
+        esp_image_bootloader_offset_set(ESP_PRIMARY_BOOTLOADER_OFFSET);
+    }
     return ESP_OK;
 }
 
@@ -654,12 +686,18 @@ esp_err_t esp_ota_end(esp_ota_handle_t handle)
     }
 
  cleanup:
-    if (it->partition.final->type == ESP_PARTITION_TYPE_BOOTLOADER) {
+    if (it->partition.final->type == ESP_PARTITION_TYPE_BOOTLOADER || it->partition.staging->type == ESP_PARTITION_TYPE_BOOTLOADER) {
         // In esp_ota_begin, bootloader offset was updated, here we return it to default.
         esp_image_bootloader_offset_set(ESP_PRIMARY_BOOTLOADER_OFFSET);
     }
+    bool was_dangerous = is_dangerous_region_partition(it->partition.staging) || is_dangerous_region_partition(it->partition.final);
+    // Keep protection off when the caller still has to copy the staged image to the final partition.
+    bool pending_manual_copy = (it->partition.staging != it->partition.final) && !it->partition.finalize_with_copy;
     LIST_REMOVE(it, entries);
     free(it);
+    if (was_dangerous && !pending_manual_copy) {
+        esp_ota_restore_dangerous_write_protection();
+    }
     return ret;
 }
 
