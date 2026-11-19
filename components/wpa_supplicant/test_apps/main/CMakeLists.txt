@@ -19,6 +19,20 @@ if(CONFIG_ESP_WIFI_TESTING_OPTIONS)
     target_compile_definitions(${COMPONENT_LIB} PRIVATE CONFIG_TESTING_OPTIONS)
 endif()
 
+if(CONFIG_ESP_WIFI_ENABLE_WPA3_OWE_STA)
+    target_compile_definitions(${COMPONENT_LIB} PRIVATE
+        CONFIG_OWE_STA
+        IEEE8021X_EAPOL
+        CONFIG_IEEE80211W
+    )
+    if(CONFIG_ESP_WIFI_WPA3_COMPATIBLE_SUPPORT)
+        target_compile_definitions(${COMPONENT_LIB} PRIVATE CONFIG_WPA3_COMPAT)
+    endif()
+    if(CONFIG_ESP_WIFI_11R_SUPPORT)
+        target_compile_definitions(${COMPONENT_LIB} PRIVATE CONFIG_IEEE80211R)
+    endif()
+endif()
+
 # Calculate MD5 value of header file esp_wifi_driver.h
 file(MD5 ${esp_supplicant_dir}/esp_supplicant/src/esp_wifi_driver.h WIFI_SUPPLICANT_MD5)
 string(SUBSTRING "${WIFI_SUPPLICANT_MD5}" 0 7 WIFI_SUPPLICANT_MD5)
