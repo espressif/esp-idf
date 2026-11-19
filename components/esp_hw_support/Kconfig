@@ -77,11 +77,22 @@ menu "Hardware Settings"
     menu "RTC Clock Config"
         orsource "./port/$IDF_TARGET/Kconfig.rtc"
 
+        # CPU frequency switch isolation suspends the ext-mem cache, which also
+        # serves flash XIP on ESP32-P4. Keep rtc_clk in IRAM until that hang is diagnosed.
+        config RTC_CLK_FUNC_IN_IRAM_ESP32P4
+            bool
+            depends on IDF_TARGET_ESP32P4
+            default y
+            select RTC_CLK_FUNC_IN_IRAM
+
         config RTC_CLK_FUNC_IN_IRAM
             bool "Place RTC clock module functions into IRAM"
             default y
             help
                 Place RTC clock module (all rtc clock functions and const data) into IRAM.
+
+                On ESP32-P4 this option is always enabled. CPU frequency switch isolation
+                suspends the ext-mem cache, which also serves flash XIP.
 
         config RTC_TIME_FUNC_IN_IRAM
             bool "Place RTC time module functions into IRAM"
