@@ -422,6 +422,7 @@ esp_err_t esp_vfs_fat_spiflash_unmount_ro(const char* base_path, const char* par
     return err;
 }
 
+#ifndef CONFIG_IDF_TARGET_LINUX
 esp_err_t esp_vfs_fat_spiflash_mount(const char* base_path,
     const char* partition_label,
     const esp_vfs_fat_mount_config_t* mount_config,
@@ -435,3 +436,30 @@ esp_err_t esp_vfs_fat_rawflash_mount(const char* base_path,
     __attribute__((alias("esp_vfs_fat_spiflash_mount_ro")));
 esp_err_t esp_vfs_fat_rawflash_unmount(const char* base_path, const char* partition_label)
     __attribute__((alias("esp_vfs_fat_spiflash_unmount_ro")));
+#else
+// Avoid using __attribute__((alias)) here since linux target builds on macOS fail to compile.
+esp_err_t esp_vfs_fat_spiflash_mount(const char* base_path,
+    const char* partition_label,
+    const esp_vfs_fat_mount_config_t* mount_config,
+    wl_handle_t* wl_handle)
+{
+    return esp_vfs_fat_spiflash_mount_rw_wl(base_path, partition_label, mount_config, wl_handle);
+}
+
+esp_err_t esp_vfs_fat_spiflash_unmount(const char* base_path, wl_handle_t wl_handle)
+{
+    return esp_vfs_fat_spiflash_unmount_rw_wl(base_path, wl_handle);
+}
+
+esp_err_t esp_vfs_fat_rawflash_mount(const char* base_path,
+    const char* partition_label,
+    const esp_vfs_fat_mount_config_t* mount_config)
+{
+    return esp_vfs_fat_spiflash_mount_ro(base_path, partition_label, mount_config);
+}
+
+esp_err_t esp_vfs_fat_rawflash_unmount(const char* base_path, const char* partition_label)
+{
+    return esp_vfs_fat_spiflash_unmount_ro(base_path, partition_label);
+}
+#endif
