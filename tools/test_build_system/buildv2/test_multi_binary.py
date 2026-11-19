@@ -122,6 +122,23 @@ def test_multi_binary_all_features(idf_py: IdfPyFunc) -> None:
         f'unexpected app2 entry in flasher_args_app2.json: {flasher_args_app2["app2"]}'
     )
 
+    # Verify project_index.json lists the generated files of each executable, in the order of the calls.
+    # flasher_args.json belongs to app1, because app1_bin is added to the global flash target.
+    project_index = json.loads(Path('build/project_index.json').read_text())
+    assert project_index == {
+        'version': 1,
+        'apps': {
+            'app1': {
+                'project_description': ['project_description.json', 'project_description_bin.json'],
+                'flasher_args': ['flasher_args.json'],
+            },
+            'app2': {
+                'project_description': ['project_description_app2.json'],
+                'flasher_args': ['flasher_args_app2.json'],
+            },
+        },
+    }, f'unexpected project_index.json: {project_index}'
+
     # Read build.ninja once for all checks
     ninja = Path('build/build.ninja').read_text()
 

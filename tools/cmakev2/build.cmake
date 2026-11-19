@@ -1086,6 +1086,11 @@ function(idf_build_generate_metadata)
     file(GENERATE OUTPUT "${ARG_OUTPUT_FILE}"
          CONTENT "${project_description_json_templ}")
 
+    # Used by the __generate_project_index function.
+    file(RELATIVE_PATH index_file "${BUILD_DIR}" "${ARG_OUTPUT_FILE}")
+    set_property(TARGET "${ARG_EXECUTABLE}" APPEND PROPERTY __PROJECT_DESCRIPTION_FILES "${index_file}")
+    idf_build_set_property(__PROJECT_INDEX_EXECUTABLES "${ARG_EXECUTABLE}" APPEND)
+
     # Assumption: all hints.yml files are bare YAML lists (no "---" document
     # separators). Plain string concatenation is safe under this assumption.
     # Note for consumers: yaml.safe_load() only parses the first YAML document,
@@ -1425,6 +1430,12 @@ function(idf_flash_binary binary)
         endif()
         esptool_py_flash_target_image(flash ${ARG_NAME} "${offset}" "${binary_path}")
         add_dependencies(flash "${binary}")
+
+        # Used by the __generate_project_index function.
+        get_target_property(executable "${binary}" EXECUTABLE_TARGET)
+        if(executable)
+            idf_build_set_property(__PROJECT_INDEX_FLASH_EXECUTABLES "${executable}" APPEND)
+        endif()
     endif()
 endfunction()
 
