@@ -162,7 +162,9 @@ static size_t esp_partition_calc_required_flash_size_from_file(const char *parti
         if (r != sizeof(entry) || entry.magic != ESP_PARTITION_MAGIC) {
             break;
         }
-        uint32_t end = entry.pos.offset + entry.pos.size;
+        // Both fields are uint32_t from the partition-table file; a wrapping
+        // sum would undersize the emulated flash mapping.
+        uint64_t end = (uint64_t)entry.pos.offset + entry.pos.size;
         if (end > max_end) {
             max_end = end;
         }
