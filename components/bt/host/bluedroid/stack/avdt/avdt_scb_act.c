@@ -272,10 +272,10 @@ void avdt_scb_hdl_pkt_no_frag(tAVDT_SCB *p_scb, tAVDT_SCB_EVT *p_data)
 
     /* skip over any csrc's in packet */
     offset += o_cc * 4;
-    p += o_cc * 4;
     if (len < offset) {
         goto length_error;
     }
+    p += o_cc * 4;
 
     /* check for and skip over extension header */
     if (o_x) {
