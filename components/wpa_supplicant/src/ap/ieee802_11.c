@@ -863,8 +863,8 @@ uint16_t owe_process_assoc_req(struct hostapd_data *hapd, struct sta_info *sta, 
     if (sta->owe_group != OWE_DH_GRP19)
         return WLAN_STATUS_FINITE_CYCLIC_GROUP_NOT_SUPPORTED;
 
-    if (owe_dh_len < OWE_DHIE_LEN - 2) {
-        wpa_printf(MSG_ERROR, "OWE: Invalid DH data received (len=%u)", owe_dh_len);
+    if (owe_dh_len != OWE_DHIE_LEN - 2) {
+        wpa_printf(MSG_ERROR, "OWE: Invalid peer DH public key length (len=%u)", owe_dh_len);
         return WLAN_STATUS_UNSPECIFIED_FAILURE;
     }
 
