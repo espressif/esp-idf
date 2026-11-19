@@ -147,19 +147,12 @@ int bt_mesh_host_init(void)
 
 int bt_mesh_host_deinit(void)
 {
-    int rc;
-
     if (g_host_init == false) {
         return -EALREADY;
     }
 
     osi_alarm_deinit();
-
-    rc = osi_alarm_delete_mux();
-    if (rc != 0) {
-        return -1;
-    }
-
+    (void)osi_alarm_delete_mux();
     btc_deinit();
 
     g_host_init = false;

@@ -104,6 +104,11 @@ void hci_shut_down(void);
 void hci_drop_inbound_acl_reassembly(uint16_t handle);
 osi_thread_t *hci_get_current_thread(void);
 
+#if defined(BT_BLUEDROID_UNIT_TEST)
+/* Stand in for hci_start_up(). Pass NULL before freeing the thread. */
+void hci_test_set_host_thread(osi_thread_t *thread);
+#endif
+
 bool hci_downstream_data_post(uint32_t timeout);
 
 #if (BLE_42_SCAN_EN == TRUE)

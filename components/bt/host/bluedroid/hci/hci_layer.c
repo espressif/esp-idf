@@ -50,8 +50,17 @@
 #define HCI_HOST_TASK_PRIO              (BT_TASK_MAX_PRIORITIES - 3)
 #define HCI_HOST_TASK_NAME              "hciT"
 #define HCI_HOST_TASK_WORKQUEUE_NUM     (2)
-#define HCI_HOST_TASK_WORKQUEUE0_LEN    (3) // for downstream datapath + c2h_flush + flush_reassemble
-#define HCI_HOST_TASK_WORKQUEUE1_LEN    (1) // for upstream datapath
+/*
+ * workqueue0:
+ * - downstream datapath
+ * - c2h_flush
+ * - c2h_flush_alarm
+ * - flush_reassemble
+ * workqueue1:
+ * - upstream datapath
+*/
+#define HCI_HOST_TASK_WORKQUEUE0_LEN    (4)
+#define HCI_HOST_TASK_WORKQUEUE1_LEN    (1)
 
 #define HCI_DOWNSTREAM_DATA_QUEUE_IDX   (0)
 #define HCI_UPSTREAM_DATA_QUEUE_IDX     (1)
@@ -181,7 +190,7 @@ void hci_drop_inbound_acl_reassembly(uint16_t handle)
     }
 
     /* BTU must not touch partial_packets; run flush_reassembly on HCI thread. */
-    if (!osi_thread_post(hci_host_thread, flush_reassembly_work, (void *)(uintptr_t)handle,
+    if (!osi_thread_post(hci_host_thread, flush_reassembly_work, (void *)(uintptr_t)handle, NULL,
                          HCI_DOWNSTREAM_DATA_QUEUE_IDX, OSI_THREAD_MAX_TIMEOUT)) {
         HCI_TRACE_WARNING("%s post flush_reassembly failed handle=0x%x", __func__, handle);
         assert(0);
@@ -220,6 +229,13 @@ osi_thread_t *hci_get_current_thread(void)
 {
     return hci_host_thread;
 }
+
+#if defined(BT_BLUEDROID_UNIT_TEST)
+void hci_test_set_host_thread(osi_thread_t *thread)
+{
+    hci_host_thread = thread;
+}
+#endif
 
 bool hci_downstream_data_post(uint32_t timeout)
 {
@@ -277,7 +293,7 @@ static int hci_layer_init_env(void)
         return -1;
     }
     osi_mutex_new(&cmd_wait_q->commands_pending_response_lock);
-    cmd_wait_q->command_response_timer = osi_alarm_new("cmd_rsp_to", command_timed_out, cmd_wait_q, COMMAND_PENDING_TIMEOUT);
+    cmd_wait_q->command_response_timer = osi_alarm_new("cmd_rsp_to", command_timed_out, cmd_wait_q, NULL);
     if (!cmd_wait_q->command_response_timer) {
         HCI_TRACE_ERROR("%s unable to create command response timer.", __func__);
         return -1;

@@ -16,6 +16,8 @@
  *
  ******************************************************************************/
 
+#include <stdbool.h>
+#include <stdint.h>
 #include <string.h>
 
 #include "freertos/FreeRTOS.h"
@@ -24,11 +26,15 @@
 #include "osi/list.h"
 #include "osi/mutex.h"
 #include "osi/semaphore.h"
+#include "osi/slist.h"
 #include "osi/thread.h"
 
 struct work_item {
     osi_thread_func_t func;
     void *context;
+    /* Called when the drain discards an undelivered item; NULL means the
+     * context is not queue-owned. */
+    osi_thread_free_cb_t free_cb;
 };
 
 struct work_queue {
@@ -381,12 +387,63 @@ _err:
     return NULL;
 }
 
+static slist_t *s_listener_list;
+static osi_mutex_t s_listener_lock;
+
+bool osi_thread_listener_register(struct osi_thread_listener_node *node)
+{
+    if (node == NULL || node->listener == NULL || s_listener_lock == NULL) {
+        return false;
+    }
+
+    osi_mutex_lock(&s_listener_lock, OSI_MUTEX_MAX_TIMEOUT);
+    if (slist_contains(s_listener_list, &node->node)) {
+        osi_mutex_unlock(&s_listener_lock);
+        return false;
+    }
+    slist_prepend(s_listener_list, &node->node);
+    osi_mutex_unlock(&s_listener_lock);
+    return true;
+}
+
+void osi_thread_listener_unregister(struct osi_thread_listener_node *node)
+{
+    if (node == NULL || s_listener_lock == NULL) {
+        return;
+    }
+
+    osi_mutex_lock(&s_listener_lock, OSI_MUTEX_MAX_TIMEOUT);
+    slist_delete(s_listener_list, &node->node);
+    osi_mutex_unlock(&s_listener_lock);
+}
+
+/* The lock is held across callbacks. Listeners must not register, unregister,
+ * or publish again. A concurrent unregister therefore waits until publish returns. */
+static void osi_thread_listener_publish(osi_thread_t *thread, osi_thread_evt_t evt)
+{
+    if (s_listener_lock == NULL) {
+        return;
+    }
+
+    osi_mutex_lock(&s_listener_lock, OSI_MUTEX_MAX_TIMEOUT);
+    for (slist_node_t *list_node = slist_begin(s_listener_list);
+            list_node != slist_end(s_listener_list);
+            list_node = slist_next(list_node)) {
+        struct osi_thread_listener_node *node = (struct osi_thread_listener_node *)list_node;
+        node->listener(thread, evt);
+    }
+    osi_mutex_unlock(&s_listener_lock);
+}
+
 void osi_thread_free(osi_thread_t *thread)
 {
     if (!thread)
         return;
 
+    osi_thread_listener_publish(thread, OSI_THREAD_EVT_PRE_STOP);
     osi_thread_stop(thread);
+    /* Queues and the thread object are still valid. */
+    osi_thread_listener_publish(thread, OSI_THREAD_EVT_STOPPED);
 
     /* The thread has stopped, so any work items still queued will never be
      * drained by osi_thread_run. We must reclaim them here before the queues
@@ -406,19 +463,25 @@ void osi_thread_free(osi_thread_t *thread)
      *    arbitrary handler (e.g. btu_hci_msg_process, bta_sys_event, alarm
      *    handlers). Running such a handler here would dispatch into
      *    protocol-stack state (L2CAP/BTA/...) that may already have been freed
-     *    by the caller before osi_thread_free() (e.g. BTU_ShutDown() calls
-     *    btu_task_shut_down() first), turning the drain into a use-after-free.
-     *    These items are therefore discarded, matching the pre-existing
-     *    behavior where a destroyed queue silently dropped its contents. */
+     *    by the caller before osi_thread_free() (btc_deinit() runs
+     *    btc_gap_ble_deinit() and btc_deinit_mem() first), turning the drain
+     *    into a use-after-free.
+     *    These items are therefore discarded, except those posted with a
+     *    free_cb, which reclaims the owned context. */
     for (int i = 0; i < thread->work_queue_num; i++) {
         struct work_item item;
         while (thread->work_queues[i] &&
                osi_thead_work_queue_get(thread->work_queues[i], &item) == true) {
             if (item.func == osi_thread_generic_event_handler) {
                 osi_thread_generic_event_drain(item.context);
+            } else if (item.free_cb != NULL) {
+                /* Owned item: reclaim the context instead of leaking it. */
+                item.free_cb(item.context);
             }
         }
     }
+
+    osi_thread_listener_publish(thread, OSI_THREAD_EVT_PRE_FREE);
 
     for (int i = 0; i < thread->work_queue_num; i++) {
         if (thread->work_queues[i]) {
@@ -454,8 +517,11 @@ void osi_thread_free(osi_thread_t *thread)
     osi_free(thread);
 }
 
-bool osi_thread_post(osi_thread_t *thread, osi_thread_func_t func, void *context, int queue_idx, uint32_t timeout)
+bool osi_thread_post(osi_thread_t *thread, osi_thread_func_t func, void *context,
+                     osi_thread_free_cb_t free_cb, int queue_idx, uint32_t timeout)
 {
+    struct work_item item;
+
     assert(thread != NULL);
     assert(func != NULL);
 
@@ -463,10 +529,9 @@ bool osi_thread_post(osi_thread_t *thread, osi_thread_func_t func, void *context
         return false;
     }
 
-    struct work_item item;
-
     item.func = func;
     item.context = context;
+    item.free_cb = free_cb;
 
     if (osi_thead_work_queue_put(thread->work_queues[queue_idx], &item, timeout) == false) {
         return false;
@@ -824,7 +889,7 @@ bool osi_thread_post_event(struct osi_event *event, uint32_t timeout)
     queue_idx = core->queue_idx;
     osi_mutex_unlock(&core->lock);
 
-    ret = osi_thread_post(thread, osi_thread_generic_event_handler, core, queue_idx, timeout);
+    ret = osi_thread_post(thread, osi_thread_generic_event_handler, core, NULL, queue_idx, timeout);
 
     osi_mutex_lock(&core->lock, OSI_MUTEX_MAX_TIMEOUT);
     if (!ret) {
@@ -836,6 +901,20 @@ bool osi_thread_post_event(struct osi_event *event, uint32_t timeout)
     }
     osi_event_unlock_and_maybe_free(core, should_free);
     return ret;
+}
+
+bool osi_event_is_queued(struct osi_event *event)
+{
+    bool queued;
+
+    if (event == NULL) {
+        return false;
+    }
+
+    osi_mutex_lock(&event->core.lock, OSI_MUTEX_MAX_TIMEOUT);
+    queued = OSI_EVENT_HAS_FLAG(&event->core, OSI_EVENT_FLAG_QUEUED);
+    osi_mutex_unlock(&event->core.lock);
+    return queued;
 }
 
 bool osi_dynamic_event_post(struct osi_dynamic_event *event, uint32_t timeout)
@@ -865,7 +944,7 @@ bool osi_dynamic_event_post(struct osi_dynamic_event *event, uint32_t timeout)
     queue_idx = core->queue_idx;
     osi_mutex_unlock(&core->lock);
 
-    ret = osi_thread_post(thread, osi_thread_generic_event_handler, core, queue_idx, timeout);
+    ret = osi_thread_post(thread, osi_thread_generic_event_handler, core, NULL, queue_idx, timeout);
 
     osi_mutex_lock(&core->lock, OSI_MUTEX_MAX_TIMEOUT);
     if (!ret) {
@@ -899,14 +978,23 @@ int osi_thread_event_init(void)
     if (osi_mutex_new(&s_osi_event_lock) != 0) {
         return -1;
     }
+    if (osi_mutex_new(&s_listener_lock) != 0) {
+        osi_mutex_free(&s_osi_event_lock);
+        return -1;
+    }
 
+    s_listener_list = slist_new(NULL);
     s_osi_session_event_list = list_new(NULL);
     s_osi_dynamic_event_list = list_new(NULL);
-    if (s_osi_session_event_list == NULL || s_osi_dynamic_event_list == NULL) {
+    if (s_listener_list == NULL || s_osi_session_event_list == NULL ||
+            s_osi_dynamic_event_list == NULL) {
+        slist_free(s_listener_list);
         list_free(s_osi_session_event_list);
         list_free(s_osi_dynamic_event_list);
+        s_listener_list = NULL;
         s_osi_session_event_list = NULL;
         s_osi_dynamic_event_list = NULL;
+        osi_mutex_free(&s_listener_lock);
         osi_mutex_free(&s_osi_event_lock);
         return -1;
     }
@@ -918,6 +1006,8 @@ void osi_thread_event_deinit(void)
     if (s_osi_event_lock == NULL) {
         return;
     }
+
+    assert(slist_is_empty(s_listener_list));
 
     osi_event_lock();
     while (s_osi_session_event_list != NULL && !list_is_empty(s_osi_session_event_list)) {
@@ -936,7 +1026,10 @@ void osi_thread_event_deinit(void)
     s_osi_session_event_list = NULL;
     s_osi_dynamic_event_list = NULL;
     osi_event_unlock();
+    slist_free(s_listener_list);
+    s_listener_list = NULL;
     osi_mutex_free(&s_osi_event_lock);
+    osi_mutex_free(&s_listener_lock);
 }
 
 #if OSI_THREAD_DEBUG
