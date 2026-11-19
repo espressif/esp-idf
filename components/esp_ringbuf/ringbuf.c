@@ -1305,9 +1305,17 @@ esp_err_t vRingbufferReset(RingbufHandle_t xRingbuffer)
     configASSERT(pxRingbuffer);
 
     portENTER_CRITICAL(&pxRingbuffer->mux);
-    // Check for unreturned buffers
+    // Check for unsent and unreturned items. In a full ring buffer, all four pointers can
+    // coincide while items are still held: when every item has been retrieved (none waiting),
+    // or, in a no-split buffer, when the oldest item is acquired but not yet sent (no written
+    // flag in its header at pucWrite).
+    BaseType_t xFull = (pxRingbuffer->uxRingbufferFlags & rbBUFFER_FULL_FLAG) ? pdTRUE : pdFALSE;
+    BaseType_t xNoSplit = (pxRingbuffer->uxRingbufferFlags & (rbBYTE_BUFFER_FLAG | rbALLOW_SPLIT_FLAG)) ? pdFALSE : pdTRUE;
     if ((pxRingbuffer->pucAcquire != pxRingbuffer->pucWrite) ||
-            (pxRingbuffer->pucRead != pxRingbuffer->pucFree)) {
+            (pxRingbuffer->pucRead != pxRingbuffer->pucFree) ||
+            (xFull && (pxRingbuffer->xItemsWaiting == 0)) ||
+            (xFull && xNoSplit &&
+             (((ItemHeader_t *)pxRingbuffer->pucWrite)->uxItemFlags & (rbITEM_WRITTEN_FLAG | rbITEM_DUMMY_DATA_FLAG)) == 0)) {
         portEXIT_CRITICAL(&pxRingbuffer->mux);
         return ESP_ERR_INVALID_STATE;
     }

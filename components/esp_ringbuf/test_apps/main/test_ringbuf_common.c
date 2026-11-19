@@ -1487,6 +1487,11 @@ TEST_CASE("Test no-split full buffer becomes empty when oldest is returned last"
 
 /* ----------------------------------- Test ring buffer reset --------------------------------------
  * Reset Case: Test that vRingbufferReset() empties the ring buffer
+ * Reset refuses unreturned items: Test that vRingbufferReset() fails while retrieved items are not returned,
+ *                                 including when every item of a full ring buffer has been retrieved
+ * Reset refuses uncompleted acquisitions: Test that vRingbufferReset() fails while acquired items are not
+ *                                         sent, including when they fill the ring buffer and later
+ *                                         acquisitions are sent first
  * Reset unblocks sender: Test that vRingbufferReset() will unblock a previously blocked sender
  */
 
@@ -1506,6 +1511,108 @@ TEST_CASE("Test ring buffer reset", "[esp_ringbuf][linux]")
     // Confirm buffer is empty
     TEST_ASSERT_EQUAL(SMALL_ITEM_SIZE, xRingbufferGetCurFreeSize(rb));
     // Cleanup
+    vRingbufferDelete(rb);
+}
+
+TEST_CASE("Test ring buffer reset refuses unreturned items", "[esp_ringbuf][linux]")
+{
+    size_t item_size;
+    void *retrieved;
+
+    // Byte buffer with part of its data retrieved
+    RingbufHandle_t rb = xRingbufferCreate(2 * SMALL_ITEM_SIZE, RINGBUF_TYPE_BYTEBUF);
+    TEST_ASSERT_MESSAGE(rb != NULL, "Failed to create ring buffer");
+    TEST_ASSERT_EQUAL(pdTRUE, xRingbufferSend(rb, item, SMALL_ITEM_SIZE, 0));
+    retrieved = xRingbufferReceive(rb, &item_size, 0);
+    TEST_ASSERT_NOT_NULL(retrieved);
+    TEST_ASSERT_EQUAL(ESP_ERR_INVALID_STATE, vRingbufferReset(rb));
+    vRingbufferReturnItem(rb, retrieved);
+    TEST_ASSERT_EQUAL(ESP_OK, vRingbufferReset(rb));
+    vRingbufferDelete(rb);
+
+    // Full byte buffer with all of its data retrieved
+    rb = xRingbufferCreate(SMALL_ITEM_SIZE, RINGBUF_TYPE_BYTEBUF);
+    TEST_ASSERT_MESSAGE(rb != NULL, "Failed to create ring buffer");
+    TEST_ASSERT_EQUAL(pdTRUE, xRingbufferSend(rb, item, SMALL_ITEM_SIZE, 0));
+    retrieved = xRingbufferReceive(rb, &item_size, 0);
+    TEST_ASSERT_NOT_NULL(retrieved);
+    TEST_ASSERT_EQUAL(SMALL_ITEM_SIZE, item_size);
+    TEST_ASSERT_EQUAL(ESP_ERR_INVALID_STATE, vRingbufferReset(rb));
+    vRingbufferReturnItem(rb, retrieved);
+    TEST_ASSERT_EQUAL(ESP_OK, vRingbufferReset(rb));
+    vRingbufferDelete(rb);
+
+    // Full no-split buffer with all of its items retrieved
+    void *items[4];
+    rb = xRingbufferCreate(4 * (ITEM_HDR_SIZE + MEDIUM_ITEM_SIZE), RINGBUF_TYPE_NOSPLIT);
+    TEST_ASSERT_MESSAGE(rb != NULL, "Failed to create ring buffer");
+    for (int i = 0; i < 4; i++) {
+        TEST_ASSERT_EQUAL(pdTRUE, xRingbufferSend(rb, large_item, MEDIUM_ITEM_SIZE, 0));
+    }
+    TEST_ASSERT_EQUAL(0, xRingbufferGetCurFreeSize(rb));
+    for (int i = 0; i < 4; i++) {
+        items[i] = xRingbufferReceive(rb, &item_size, 0);
+        TEST_ASSERT_NOT_NULL(items[i]);
+    }
+    TEST_ASSERT_EQUAL(ESP_ERR_INVALID_STATE, vRingbufferReset(rb));
+    for (int i = 0; i < 4; i++) {
+        vRingbufferReturnItem(rb, items[i]);
+    }
+    TEST_ASSERT_EQUAL(ESP_OK, vRingbufferReset(rb));
+    vRingbufferDelete(rb);
+
+    // Full allow-split buffer with all of its items retrieved
+    void *tails[4];
+    size_t tail_size;
+    rb = xRingbufferCreate(4 * (ITEM_HDR_SIZE + MEDIUM_ITEM_SIZE), RINGBUF_TYPE_ALLOWSPLIT);
+    TEST_ASSERT_MESSAGE(rb != NULL, "Failed to create ring buffer");
+    for (int i = 0; i < 4; i++) {
+        TEST_ASSERT_EQUAL(pdTRUE, xRingbufferSend(rb, large_item, MEDIUM_ITEM_SIZE, 0));
+    }
+    TEST_ASSERT_EQUAL(0, xRingbufferGetCurFreeSize(rb));
+    for (int i = 0; i < 4; i++) {
+        TEST_ASSERT_EQUAL(pdTRUE, xRingbufferReceiveSplit(rb, &items[i], &tails[i], &item_size, &tail_size, 0));
+    }
+    TEST_ASSERT_EQUAL(ESP_ERR_INVALID_STATE, vRingbufferReset(rb));
+    for (int i = 0; i < 4; i++) {
+        vRingbufferReturnItem(rb, items[i]);
+        if (tails[i] != NULL) {
+            vRingbufferReturnItem(rb, tails[i]);
+        }
+    }
+    TEST_ASSERT_EQUAL(ESP_OK, vRingbufferReset(rb));
+    vRingbufferDelete(rb);
+}
+
+TEST_CASE("Test ring buffer reset refuses uncompleted acquisitions", "[esp_ringbuf][linux]")
+{
+    void *slots[4];
+    RingbufHandle_t rb = xRingbufferCreate(4 * (ITEM_HDR_SIZE + MEDIUM_ITEM_SIZE), RINGBUF_TYPE_NOSPLIT);
+    TEST_ASSERT_MESSAGE(rb != NULL, "Failed to create ring buffer");
+
+    // Part of the buffer acquired
+    TEST_ASSERT_EQUAL(pdTRUE, xRingbufferSendAcquire(rb, &slots[0], MEDIUM_ITEM_SIZE, 0));
+    TEST_ASSERT_EQUAL(ESP_ERR_INVALID_STATE, vRingbufferReset(rb));
+    TEST_ASSERT_EQUAL(pdTRUE, xRingbufferSendComplete(rb, slots[0]));
+    TEST_ASSERT_EQUAL(ESP_OK, vRingbufferReset(rb));
+
+    // Whole buffer acquired, none sent
+    for (int i = 0; i < 4; i++) {
+        TEST_ASSERT_EQUAL(pdTRUE, xRingbufferSendAcquire(rb, &slots[i], MEDIUM_ITEM_SIZE, 0));
+    }
+    TEST_ASSERT_EQUAL(0, xRingbufferGetCurFreeSize(rb));
+    TEST_ASSERT_EQUAL(ESP_ERR_INVALID_STATE, vRingbufferReset(rb));
+
+    // Whole buffer acquired, only a later acquisition sent
+    TEST_ASSERT_EQUAL(pdTRUE, xRingbufferSendComplete(rb, slots[1]));
+    TEST_ASSERT_EQUAL(ESP_ERR_INVALID_STATE, vRingbufferReset(rb));
+
+    // Whole buffer acquired, all sent
+    TEST_ASSERT_EQUAL(pdTRUE, xRingbufferSendComplete(rb, slots[0]));
+    TEST_ASSERT_EQUAL(pdTRUE, xRingbufferSendComplete(rb, slots[2]));
+    TEST_ASSERT_EQUAL(pdTRUE, xRingbufferSendComplete(rb, slots[3]));
+    TEST_ASSERT_EQUAL(ESP_OK, vRingbufferReset(rb));
+
     vRingbufferDelete(rb);
 }
 
