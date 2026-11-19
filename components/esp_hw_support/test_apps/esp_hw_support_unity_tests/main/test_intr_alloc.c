@@ -20,6 +20,7 @@
 #include "driver/gptimer.h"
 #include "hal/timer_periph.h"
 #include "soc/system_intr.h"
+#include "soc/soc.h"
 #if SOC_GPSPI_SUPPORTED
 #include "soc/spi_periph.h"
 #include "hal/spi_ll.h"
@@ -485,55 +486,116 @@ TEST_CASE("Intr_alloc test, shared ints fails giving both handler and name", "[i
     TEST_ESP_OK(esp_intr_free(handle_1));
 }
 
-/* Allocate an interrupt on the other core */
+/* Allocate an interrupt bound to a group owned by the other core */
 #if !CONFIG_ESP_SYSTEM_SINGLE_CORE_MODE
+
+#if __XTENSA__
+#define TEST_FROM_CPU_REG_WRITE(reg, val) DPORT_REG_WRITE((reg), (val))
+#else
+#define TEST_FROM_CPU_REG_WRITE(reg, val) REG_WRITE((reg), (val))
+#endif
 
 typedef struct {
     TaskHandle_t main_task;
     esp_intr_alloc_info_t info;
+    intr_handle_t handle;
+    esp_err_t result;
 } args_t;
 
-void IRAM_ATTR test_isr_other_core(void *arg)
+static volatile int s_remote_bind_isr_cpu;
+static volatile int s_remote_bind_isr_count;
+
+static void IRAM_ATTR test_remote_bind_isr(void *arg)
+{
+    (void)arg;
+    s_remote_bind_isr_cpu = (int)esp_cpu_get_core_id();
+    s_remote_bind_isr_count++;
+    TEST_FROM_CPU_REG_WRITE(SYSTEM_CPU_INTR_FROM_CPU_3_REG, 0);
+}
+
+static void test_alloc_other_core(void *arg)
 {
     args_t *args = (args_t *)arg;
-    printf("Interrupt on other core called.\n");
+    printf("Binding to the interrupt group from CPU%d, group is on CPU%d.\n",
+           esp_cpu_get_core_id(), esp_cpu_get_core_id() == 0 ? 1 : 0);
 
-    /* Should return an error */
-    esp_err_t err = esp_intr_alloc_info(&args->info, NULL);
-    TEST_ESP_ERR(ESP_ERR_INVALID_STATE, err);
+    /* The group resides on the other core: the allocator must still attach
+     * this source to that group and keep the interrupt on the group's core */
+    args->result = esp_intr_alloc_info(&args->info, &args->handle);
 
     /* Send a signal to the main task to continue */
     xTaskNotifyGive(args->main_task);
     vTaskDelete(NULL);
 }
 
-TEST_CASE("Intr_alloc test, shared ints fails giving a handler on other core", "[intr_alloc]")
+TEST_CASE("Intr_alloc test, shared ints bind to a group owned by the other core", "[intr_alloc]")
 {
     intr_handle_t isr_handle;
     args_t args = {
         .main_task = NULL,
         .info = {
             .source = SYS_CPU_INTR_FROM_CPU_2_SOURCE,
-            .flags = ESP_INTR_FLAG_LEVEL1 | ESP_INTR_FLAG_SHARED_PRIVATE,
+            /* Leave this source disabled so firing FROM_CPU_3 does not walk it. */
+            .flags = ESP_INTR_FLAG_LEVEL1 | ESP_INTR_FLAG_SHARED_PRIVATE | ESP_INTR_FLAG_INTRDISABLED,
             .handler = test_isr,
             .arg = NULL,
             .bind_by.name = "test_shared_interrupt_line",
         },
+        .handle = NULL,
+        .result = ESP_FAIL,
     };
     args.main_task = xTaskGetCurrentTaskHandle();
 
+    /* Create the named group on the current core */
     esp_err_t err = esp_intr_alloc_info(&args.info, &isr_handle);
     TEST_ESP_OK(err);
+    const int core_id = esp_cpu_get_core_id();
+    const int other_core = core_id == 0 ? 1 : 0;
 
-    int core_id = esp_cpu_get_core_id();
-    TEST_ASSERT_EQUAL(pdPASS, xTaskCreatePinnedToCore(test_isr_other_core, "test_isr_other_core",
-                                                      2048, (void *)&args, 10, NULL, core_id == 0 ? 1 : 0));
+    /* Attach another source to the same group from a task pinned to the other core */
+    args.info.source = SYS_CPU_INTR_FROM_CPU_3_SOURCE;
+    args.info.flags = ESP_INTR_FLAG_LEVEL1 | ESP_INTR_FLAG_SHARED_PRIVATE;
+    args.info.handler = test_remote_bind_isr;
+    TEST_ASSERT_EQUAL(pdPASS, xTaskCreatePinnedToCore(test_alloc_other_core, "test_alloc_other_core",
+                                                      2048, (void *)&args, 10, NULL, other_core));
 
     /* Wait for the task to finish */
     TEST_ASSERT_NOT_EQUAL(0, ulTaskNotifyTake(pdTRUE, portMAX_DELAY));
 
-    /* Free the remaining handler */
+    /* The cross-core allocation must have succeeded, on the same interrupt line,
+     * owned by the core the group was created on */
+    TEST_ESP_OK(args.result);
+    TEST_ASSERT_NOT_NULL(args.handle);
+    TEST_ASSERT_EQUAL(esp_intr_get_intno(isr_handle), esp_intr_get_intno(args.handle));
+    TEST_ASSERT_EQUAL(core_id, esp_intr_get_cpu(args.handle));
+
+    /* FROM_CPU_3 is also the IPC ISR source on CPU1. Disconnect it there so
+     * triggering the bit only hits the group we just bound on `core_id`. */
+    esp_rom_route_intr_matrix(other_core, SYS_CPU_INTR_FROM_CPU_3_SOURCE, ETS_INVALID_INUM);
+
+    s_remote_bind_isr_cpu = -1;
+    s_remote_bind_isr_count = 0;
+    TEST_FROM_CPU_REG_WRITE(SYSTEM_CPU_INTR_FROM_CPU_3_REG, SYSTEM_CPU_INTR_FROM_CPU_3);
+    for (int i = 0; i < 10 && s_remote_bind_isr_count == 0; i++) {
+        vTaskDelay(1);
+    }
+    TEST_FROM_CPU_REG_WRITE(SYSTEM_CPU_INTR_FROM_CPU_3_REG, 0);
+    const int isr_count = s_remote_bind_isr_count;
+    const int isr_cpu = s_remote_bind_isr_cpu;
+
+    /* Free the handlers */
+    TEST_ESP_OK(esp_intr_free(args.handle));
     TEST_ESP_OK(esp_intr_free(isr_handle));
+
+#if CONFIG_ESP_IPC_ISR_ENABLE
+    /* Restore CPU1's IPC ISR routing if this test had to steal FROM_CPU_3 from it. */
+    if (other_core == 1) {
+        esp_rom_route_intr_matrix(1, SYS_CPU_INTR_FROM_CPU_3_SOURCE, ETS_IPC_ISR_INUM);
+    }
+#endif
+
+    TEST_ASSERT_EQUAL(1, isr_count);
+    TEST_ASSERT_EQUAL(core_id, isr_cpu);
 }
 #endif
 
