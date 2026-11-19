@@ -196,7 +196,7 @@ def main():
 
     fragments_group.add_argument(
         '--fragments-list-file',
-        type=argparse.FileType('r'),
+        type=_file_type('r'),
         help='File containing fragment file paths, one per line',
     )
 
