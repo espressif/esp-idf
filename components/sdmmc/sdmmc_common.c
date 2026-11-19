@@ -463,6 +463,33 @@ void sdmmc_poll_delay_and_backoff(uint32_t* period_us)
     *period_us = MIN(delay_us * 2, us_per_tick);
 }
 
+esp_err_t sdmmc_stop_transmission_if_needed(sdmmc_card_t* card)
+{
+    assert(!host_is_spi(card));
+    uint32_t status = 0;
+    esp_err_t err = sdmmc_send_cmd_send_status(card, &status);
+    if (err != ESP_OK) {
+        ESP_LOGE(TAG, "%s: sdmmc_send_cmd_send_status returned 0x%x", __func__, err);
+        return err;
+    }
+    uint32_t state = MMC_R1_CURRENT_STATE_STATUS(status);
+    if (state != MMC_R1_CURRENT_STATE_DATA && state != MMC_R1_CURRENT_STATE_RCV) {
+        return ESP_OK;
+    }
+    sdmmc_command_t cmd = {
+        .opcode = MMC_STOP_TRANSMISSION,
+        .flags = SCF_CMD_AC | SCF_RSP_R1B | SCF_WAIT_BUSY,
+        .timeout_ms = SDMMC_WRITE_CMD_TIMEOUT_MS,
+    };
+    err = sdmmc_send_cmd(card, &cmd);
+    if (err != ESP_OK) {
+        ESP_LOGE(TAG, "%s: card in state %" PRIu32 ", CMD12 returned 0x%x", __func__, state, err);
+    } else {
+        ESP_LOGD(TAG, "%s: card in state %" PRIu32 ", CMD12 sent", __func__, state);
+    }
+    return err;
+}
+
 esp_err_t sdmmc_wait_for_idle(sdmmc_card_t* card, uint32_t status)
 {
     assert(!host_is_spi(card));
