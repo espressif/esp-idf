@@ -1,0 +1,21 @@
+# Now the runners are massively using xmc-c chips, to be removed when xmc-d goes massive production.
+CONFIG_SPI_FLASH_FORCE_ENABLE_XMC_C_SUSPEND=y
+
+# Force RTC clock functions into flash to reproduce the ESP32-P4 cache-suspend
+# hang (IDFCI-13855). The shared IRAM-reduction template already sets
+# CONFIG_RTC_CLK_FUNC_IN_IRAM=n, but a Kconfig `select` overrides that `n`, so
+# we must break the whole select chain that pulls it back into IRAM:
+#
+#   ESP_WIFI_SLP_IRAM_OPT   (native Wi-Fi chips, default y)  --\
+#                                                              >-- select PM_SLEEP_FUNC_IN_IRAM -- select RTC_CLK_FUNC_IN_IRAM
+#   WIFI_RMT_SLP_IRAM_OPT   (wireless-host chips e.g. P4)    --/
+#
+# Disable both leaf selectors so PM_SLEEP_FUNC_IN_IRAM (and thus
+# RTC_CLK_FUNC_IN_IRAM) can honor the =n below. ESP32-P4 still forces the
+# option on via RTC_CLK_FUNC_IN_IRAM_ESP32P4. The other direct selector,
+# ESP_HW_SUPPORT_FUNC_IN_IRAM, is `default n` under SPI_FLASH_AUTO_SUSPEND
+# and unselected, so it needs no override here.
+CONFIG_ESP_WIFI_SLP_IRAM_OPT=n
+CONFIG_WIFI_RMT_SLP_IRAM_OPT=n
+CONFIG_PM_SLEEP_FUNC_IN_IRAM=n
+CONFIG_RTC_CLK_FUNC_IN_IRAM=n
