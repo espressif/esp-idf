@@ -45,3 +45,24 @@ if [[ "${version_from_cmake}" != "${version_from_git}" ]]; then
     echo "version.cmake does not match 'git describe' output"
     exit 1
 fi
+
+echo "Checking if ESP-TEE version in esp_tee_version.h matches version.cmake"
+
+function get_tee_ver_from_header() {
+    grep -E "^#define ${1}" components/esp_tee/include/esp_tee_version.h | awk '{print $3;}'
+}
+
+function get_tee_ver_from_cmake() {
+    grep -E "^set\(${1}" components/esp_tee/version.cmake | sed -En "s/set\(${1} ([0-9]+)\)/\1/p"
+}
+
+tee_ver_from_header="$(get_tee_ver_from_header ESP_TEE_VERSION_MAJOR).$(get_tee_ver_from_header ESP_TEE_VERSION_MINOR).$(get_tee_ver_from_header ESP_TEE_VERSION_PATCH)"
+tee_ver_from_cmake="$(get_tee_ver_from_cmake ESP_TEE_VERSION_MAJOR).$(get_tee_ver_from_cmake ESP_TEE_VERSION_MINOR).$(get_tee_ver_from_cmake ESP_TEE_VERSION_PATCH)"
+
+echo "From esp_tee_version.h: ${tee_ver_from_header}"
+echo "From components/esp_tee/version.cmake: ${tee_ver_from_cmake}"
+
+if [[ "${tee_ver_from_header}" != "${tee_ver_from_cmake}" ]]; then
+    echo "esp_tee_version.h does not match components/esp_tee/version.cmake"
+    exit 1
+fi

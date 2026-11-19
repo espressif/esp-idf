@@ -21,7 +21,7 @@ extern "C" {
 #define PSA_INITIAL_ATTEST_API_VERSION_MAJOR  1 /*!< Major version of this implementation of the Attestation API */
 #define PSA_INITIAL_ATTEST_API_VERSION_MINOR  0 /*!< Minor version of this implementation of the Attestation API */
 
-#define PSA_INITIAL_ATTEST_MAX_TOKEN_SIZE     2048 /*!< Maximum size of an attestation token in bytes */
+#define PSA_INITIAL_ATTEST_MAX_TOKEN_SIZE     2304 /*!< Maximum size of an attestation token in bytes */
 
 #define PSA_INITIAL_ATTEST_CHALLENGE_SIZE_32  (32u)
 #define PSA_INITIAL_ATTEST_CHALLENGE_SIZE_48  (48u)

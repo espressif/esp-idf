@@ -232,6 +232,11 @@ esp_err_t esp_att_generate_token(const uint8_t *auth_challenge, size_t challenge
         ESP_LOGE(TAG, "Failed to format the token header as JSON!");
         goto exit;
     }
+    if (hdr_len <= 0) {
+        ESP_LOGE(TAG, "The token header JSON exceeds its buffer!");
+        err = ESP_ERR_INVALID_SIZE;
+        goto exit;
+    }
     json_gen_push_object_str(&jstr, "header", hdr_json);
 
     status = psa_hash_update(&hash_op, (const unsigned char *)hdr_json, hdr_len - 1);
@@ -249,6 +254,11 @@ esp_err_t esp_att_generate_token(const uint8_t *auth_challenge, size_t challenge
         ESP_LOGE(TAG, "Failed to format the EAT data to JSON!");
         goto exit;
     }
+    if (eat_len <= 0) {
+        ESP_LOGE(TAG, "The EAT data JSON exceeds its buffer!");
+        err = ESP_ERR_INVALID_SIZE;
+        goto exit;
+    }
     json_gen_push_object_str(&jstr, "eat", eat_json);
 
     status = psa_hash_update(&hash_op, (const unsigned char *)eat_json, eat_len - 1);
@@ -263,6 +273,11 @@ esp_err_t esp_att_generate_token(const uint8_t *auth_challenge, size_t challenge
     err = esp_att_utils_pubkey_to_json(&keypair, &pubkey_json, &pubkey_len);
     if (err != ESP_OK) {
         ESP_LOGE(TAG, "Failed to format the public key data to JSON!");
+        goto exit;
+    }
+    if (pubkey_len <= 0) {
+        ESP_LOGE(TAG, "The public key data JSON exceeds its buffer!");
+        err = ESP_ERR_INVALID_SIZE;
         goto exit;
     }
     json_gen_push_object_str(&jstr, "public_key", pubkey_json);
@@ -287,6 +302,11 @@ esp_err_t esp_att_generate_token(const uint8_t *auth_challenge, size_t challenge
     err = esp_att_utils_sign_to_json(&keypair, digest, sizeof(digest), &sign_json, &sign_len);
     if (err != ESP_OK) {
         ESP_LOGE(TAG, "Failed to format the token signature to JSON!");
+        goto exit;
+    }
+    if (sign_len <= 0) {
+        ESP_LOGE(TAG, "The token signature JSON exceeds its buffer!");
+        err = ESP_ERR_INVALID_SIZE;
         goto exit;
     }
     json_gen_push_object_str(&jstr, "sign", sign_json);
