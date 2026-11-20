@@ -467,8 +467,8 @@ bool pmu_sleep_finish(bool dslp)
             if (!ref_160_enabled) {
                 _clk_gate_ll_ref_160m_clk_en(true);
             }
-            _modem_clock_ll_enable_pll_clock_source(true);
-            _modem_clock_ll_enable_pll_clock_source(false);
+            _modem_clock_ll_select_clock_source(SOC_MOD_CLK_PLL_F160M);
+            _modem_clock_ll_select_clock_source(SOC_MOD_CLK_XTAL);
             if (!ref_160_enabled) {
                 _clk_gate_ll_ref_160m_clk_en(false);
             }

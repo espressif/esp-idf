@@ -55,7 +55,7 @@ static inline void bootloader_hardware_init(void)
     /* SW_CPU_RESET retains modem_conf; ungate bus/root clock and clear reset. */
     _modem_clock_ll_ungate();
     /* BBPLL may be disabled, reset clock selection to XTAL. */
-    _modem_clock_ll_enable_pll_clock_source(false);
+    _modem_clock_ll_select_clock_source(SOC_MOD_CLK_XTAL);
 
 #if !CONFIG_IDF_ENV_FPGA
     /* Enable analog i2c master clock */

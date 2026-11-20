@@ -221,7 +221,7 @@ static void IRAM_ATTR modem_clock_soc_pll_source_cg_configure(modem_clock_contex
         ESP_ERROR_CHECK(esp_clk_tree_acquire_src(SOC_MOD_CLK_PLL_F160M, NULL));
     }
     PERIPH_RCC_ATOMIC() {
-        modem_clock_ll_enable_pll_clock_source(enable);
+        modem_clock_ll_select_clock_source(enable ? SOC_MOD_CLK_PLL_F160M : SOC_MOD_CLK_XTAL);
     }
     if (!enable) {
         ESP_ERROR_CHECK(esp_clk_tree_release_src(SOC_MOD_CLK_PLL_F160M));
