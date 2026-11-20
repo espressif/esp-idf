@@ -55,6 +55,10 @@ If you use your custom ADC calibration schemes, you could either modify this fun
 
         Only :c:macro:`ADC_ATTEN_DB_0` is supported. Convert the raw result with :cpp:func:`adc_cali_chan_raw_to_voltage`. Each channel belongs to one side of a differential pair: even-numbered channels are N-side (polarity inverted in single-ended use), odd-numbered channels are P-side. If the calibration eFuse is not burnt, scheme creation still succeeds and applies an identity transform (``k = 1``, ``b = 0``).
 
+    .. only:: esp32s2
+
+        ESP32-S2 oneshot conversions produce 13-bit raw results, whereas continuous conversions produce 12-bit raw results. Set :cpp:member:`adc_cali_line_fitting_config_t::bitwidth` to match the source of the raw result. The driver normalizes 12-bit continuous results internally before applying the calibration coefficients.
+
     .. only:: esp32
 
         There is also a configuration :cpp:member:`adc_cali_line_fitting_config_t::default_vref`. Normally this can be simply set to 0. Line Fitting scheme does not rely on this value. However, if the Line Fitting scheme required eFuse bits are not burned on your board, the driver will rely on this value to do the calibration.
