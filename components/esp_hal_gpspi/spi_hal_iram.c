@@ -223,7 +223,10 @@ void spi_hal_setup_trans(spi_hal_context_t *hal, const spi_hal_dev_config_t *dev
     spi_ll_set_address(hw, trans->addr, addrlen, dev->tx_lsbfirst);
 
     //Configure keep active CS
-    spi_ll_master_keep_cs(hw, trans->cs_keep_active);
+    //For sct split long trans, cs_keep must be true during SCT
+    //Set it first before sct start, to avoid CS breaking from previous cs_keep in the sct conf phase.
+    bool sct_long_trans = !!(trans->tx_bitlen > SPI_LL_DMA_MAX_BIT_LEN);
+    spi_ll_master_keep_cs(hw, trans->cs_keep_active || sct_long_trans);
 }
 
 void spi_hal_enable_data_line(spi_dev_t *hw, bool mosi_ena, bool miso_ena)
