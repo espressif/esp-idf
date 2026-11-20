@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -8,8 +8,11 @@
 #include <exception>
 #include <bits/functexcept.h>
 #include <sdkconfig.h>
+#include <esp_compiler.h>
 
 #ifndef CONFIG_COMPILER_CXX_EXCEPTIONS
+
+ESP_COMPILER_DIAGNOSTIC_PUSH_IGNORE("-Wattribute-alias")
 
 extern "C" void abort_expect_void(const void *context)
 {
@@ -189,5 +192,7 @@ extern "C" void __wrap___cxa_throw(void)
 {
     abort();
 }
+
+ESP_COMPILER_DIAGNOSTIC_POP("-Wattribute-alias")
 
 #endif // CONFIG_COMPILER_CXX_EXCEPTIONS
