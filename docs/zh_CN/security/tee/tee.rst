@@ -176,6 +176,8 @@ TEE 固件在其应用程序描述符 (:cpp:type:`esp_app_desc_t`) 的 ``version
      - v6.0、v6.1
    * - ``1.2.x``
      - v6.2
+   * - ``1.3.x``
+     - v6.3
 
 .. note::
 
