@@ -260,6 +260,28 @@
 #endif
 #endif
 
+/**
+ *
+ * Define as 1 to enable support for allocating message pool buffer in PSRAM
+ *
+ */
+ #ifdef OPENTHREAD_CONFIG_PLATFORM_MESSAGE_MANAGEMENT
+ #error `OPENTHREAD_CONFIG_PLATFORM_MESSAGE_MANAGEMENT` is redefined.
+ #endif
+ #if CONFIG_OPENTHREAD_PLATFORM_MSGPOOL_MANAGEMENT
+ /**
+  * @def OPENTHREAD_CONFIG_PLATFORM_MESSAGE_MANAGEMENT
+  *
+  * The message pool is managed by platform defined logic when this flag is set.
+  * This feature would typically be used when operating in a multi-threaded system
+  * and multiple threads need to access the message pool.
+  *
+  */
+ #define OPENTHREAD_CONFIG_PLATFORM_MESSAGE_MANAGEMENT 1
+ #else
+ #define OPENTHREAD_CONFIG_PLATFORM_MESSAGE_MANAGEMENT 0
+ #endif
+
 /*----The following options set fixed default values but can be overridden by the user header file.----*/
 
 /**

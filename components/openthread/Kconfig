@@ -97,44 +97,83 @@ menu "OpenThread"
         depends on OPENTHREAD_ENABLED
 
         menu "Thread Operational Dataset"
-            config OPENTHREAD_NETWORK_NAME
-                string "OpenThread network name"
-                default "OpenThread-ESP"
-
-            config OPENTHREAD_MESH_LOCAL_PREFIX
-                string "OpenThread mesh local prefix, format <address>/<plen>"
-                default "fd00:db8:a0:0::/64"
+            choice OPENTHREAD_AUTO_START_DATASET_MODE
+                prompt "Auto-start dataset configuration"
+                default OPENTHREAD_AUTO_START_DATASET_FIELDS
                 help
-                    A string in the format "<address>/<plen>", where `<address>` is an IPv6
-                    address and `<plen>` is a prefix length. For example "fd00:db8:a0:0::/64"
+                    Select how esp_openthread_auto_start() obtains the active dataset when no
+                    dataset is passed in.
 
-            config OPENTHREAD_NETWORK_CHANNEL
-                int "OpenThread network channel"
-                range 11 26
-                default 15
+                config OPENTHREAD_AUTO_START_DATASET_RANDOM
+                    depends on OPENTHREAD_FTD
+                    bool "Generate a random dataset"
+                    help
+                        Generate a random dataset. This requires a Full Thread Device.
 
-            config OPENTHREAD_NETWORK_PANID
-                hex "OpenThread network pan id"
-                range 0x0 0xFFFE
-                default 0x1234
+                config OPENTHREAD_AUTO_START_DATASET_FIELDS
+                    bool "Use individual dataset parameters from Kconfig"
+                    help
+                        Configure the network name, channel, PAN ID, keys, and related fields separately.
 
-            config OPENTHREAD_NETWORK_EXTPANID
-                string "OpenThread extended pan id"
-                default "dead00beef00cafe"
-                help
-                    The OpenThread network extended pan id in hex string format
+                config OPENTHREAD_AUTO_START_DATASET_TLVS
+                    bool "Use dataset TLVs from Kconfig"
+                    help
+                        Provide the Active Operational Dataset as one hexadecimal TLV string.
+            endchoice
 
-            config OPENTHREAD_NETWORK_MASTERKEY
-                string "OpenThread network key"
-                default "00112233445566778899aabbccddeeff"
-                help
-                    The OpenThread network network key in hex string format
+            menu "Individual dataset parameters"
+                depends on OPENTHREAD_AUTO_START_DATASET_FIELDS
 
-            config OPENTHREAD_NETWORK_PSKC
-                string "OpenThread pre-shared commissioner key"
-                default "104810e2315100afd6bc9215a6bfac53"
-                help
-                    The OpenThread pre-shared commissioner key in hex string format
+                config OPENTHREAD_NETWORK_NAME
+                    string "OpenThread network name"
+                    default "OpenThread-ESP"
+
+                config OPENTHREAD_MESH_LOCAL_PREFIX
+                    string "OpenThread mesh local prefix, format <address>/<plen>"
+                    default "fd00:db8:a0:0::/64"
+                    help
+                        A string in the format "<address>/<plen>", where `<address>` is an IPv6
+                        address and `<plen>` is a prefix length. For example "fd00:db8:a0:0::/64"
+
+                config OPENTHREAD_NETWORK_CHANNEL
+                    int "OpenThread network channel"
+                    range 11 26
+                    default 15
+
+                config OPENTHREAD_NETWORK_PANID
+                    hex "OpenThread network pan id"
+                    range 0x0 0xFFFE
+                    default 0x1234
+
+                config OPENTHREAD_NETWORK_EXTPANID
+                    string "OpenThread extended pan id"
+                    default "dead00beef00cafe"
+                    help
+                        The OpenThread network extended pan id in hex string format
+
+                config OPENTHREAD_NETWORK_MASTERKEY
+                    string "OpenThread network key"
+                    default "00112233445566778899aabbccddeeff"
+                    help
+                        The OpenThread network network key in hex string format
+
+                config OPENTHREAD_NETWORK_PSKC
+                    string "OpenThread pre-shared commissioner key"
+                    default "104810e2315100afd6bc9215a6bfac53"
+                    help
+                        The OpenThread pre-shared commissioner key in hex string format
+            endmenu
+
+            menu "Dataset TLV"
+                depends on OPENTHREAD_AUTO_START_DATASET_TLVS
+
+                config OPENTHREAD_ACTIVE_DATASET_TLV
+                    string "Active operational dataset TLV"
+                    default ""
+                    help
+                        Active Operational Dataset encoded as a hexadecimal TLV string, without a 0x prefix.
+                        The length must be even and at most 508 characters (254 bytes).
+            endmenu
         endmenu
 
         choice OPENTHREAD_DEVICE_TYPE
@@ -462,7 +501,7 @@ menu "OpenThread"
 
             config OPENTHREAD_PLATFORM_MSGPOOL_MANAGEMENT
                 bool 'Allocate message pool buffer from platform'
-                default n
+                default y if OPENTHREAD_PLATFORM_MALLOC_CAP_SPIRAM
                 help
                     If enabled, the message pool is managed by platform defined logic.
         endmenu
@@ -497,7 +536,7 @@ menu "OpenThread"
             config OPENTHREAD_NUM_MESSAGE_BUFFERS
                 int "The number of openthread message buffers"
                 default 65 if !OPENTHREAD_PLATFORM_MALLOC_CAP_SPIRAM
-                default 1024 if OPENTHREAD_PLATFORM_MALLOC_CAP_SPIRAM
+                default 512 if OPENTHREAD_PLATFORM_MALLOC_CAP_SPIRAM
 
             config OPENTHREAD_XTAL_ACCURACY
                 int "The accuracy of the XTAL"
@@ -513,7 +552,8 @@ menu "OpenThread"
 
             config OPENTHREAD_MLE_MAX_CHILDREN
                 int "The size of max MLE children entries"
-                default 10
+                default 100 if OPENTHREAD_PLATFORM_MALLOC_CAP_SPIRAM
+                default 30 if !OPENTHREAD_PLATFORM_MALLOC_CAP_SPIRAM
 
             config OPENTHREAD_TMF_ADDR_CACHE_ENTRIES
                 int "The size of max TMF address cache entries"
@@ -660,6 +700,7 @@ menu "OpenThread"
         config OPENTHREAD_SPINEL_RX_FRAME_BUFFER_SIZE
             int "The size of openthread spinel rx frame buffer"
             depends on OPENTHREAD_ENABLED || OPENTHREAD_SPINEL_ONLY
+            default 8192 if SPIRAM
             default 1024 if OPENTHREAD_MTD || OPENTHREAD_RADIO
             default 2048 if OPENTHREAD_FTD || OPENTHREAD_SPINEL_ONLY
 
@@ -674,6 +715,7 @@ menu "OpenThread"
         config OPENTHREAD_SPINEL_UART_DRIVER_BUFFER_SIZE
             int "UART driver buffer size for radio spinel interface"
             depends on OPENTHREAD_SPINEL_ONLY || OPENTHREAD_RADIO_SPINEL_UART
+            default 8192 if SPIRAM
             default 1024
             help
                 RX buffer size passed to uart_driver_install() for the radio spinel UART interface.

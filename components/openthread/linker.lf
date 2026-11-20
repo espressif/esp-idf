@@ -15,3 +15,18 @@ entries:
 
   if OPENTHREAD_RCP_SPI = y:
     ncp_spi (noflash)
+
+  if ESP_ALLOW_BSS_SEG_EXTERNAL_MEMORY = y && (OPENTHREAD_FTD = y || OPENTHREAD_MTD = y) && (OPENTHREAD_RADIO_SPINEL_UART = y || OPENTHREAD_RADIO_SPINEL_SPI = y || OPENTHREAD_RADIO_SPINEL_CUSTOM = y):
+    esp_openthread_radio_spinel (extram_bss)
+
+  if ESP_ALLOW_BSS_SEG_EXTERNAL_MEMORY = y && (OPENTHREAD_SPINEL_ONLY = y || OPENTHREAD_MULTIPAN_HOST_ENABLE = y):
+    esp_radio_spinel (extram_bss)
+
+  if ESP_ALLOW_BSS_SEG_EXTERNAL_MEMORY = y && OPENTHREAD_MULTIPAN_HOST_ENABLE = y:
+    esp_radio_spinel_multipan (extram_bss)
+
+  if ESP_ALLOW_BSS_SEG_EXTERNAL_MEMORY = y && (OPENTHREAD_FTD = y || OPENTHREAD_MTD = y || OPENTHREAD_RCP_UART = y || OPENTHREAD_RCP_USB_SERIAL_JTAG = y):
+    esp_openthread_uart (extram_bss)
+
+  if ESP_ALLOW_BSS_SEG_EXTERNAL_MEMORY = y && OPENTHREAD_RCP_CUSTOM = y:
+    esp_openthread_transport_rcp (extram_bss)

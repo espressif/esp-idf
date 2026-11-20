@@ -45,6 +45,9 @@ If you are using the ESP32-P4-Function-EV-Board, you may refer to the [OpenThrea
 ```
 idf.py menuconfig
 ```
+
+This example enables PSRAM by default, which is recommended for production Thread Border Routers to improve performance. If your board does not have PSRAM, disable this option.
+
 OpenThread Command Line is enabled with UART as the default interface. Additionally, USB JTAG is also supported and can be activated through the menuconfig:
 
 ```

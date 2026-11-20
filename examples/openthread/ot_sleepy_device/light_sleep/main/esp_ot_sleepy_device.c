@@ -68,7 +68,9 @@ static void create_config_network(otInstance *instance)
     }
 
     otOperationalDatasetTlvs dataset;
+    esp_openthread_lock_acquire(portMAX_DELAY);
     otError error = otDatasetGetActiveTlvs(esp_openthread_get_instance(), &dataset);
+    esp_openthread_lock_release();
     ESP_ERROR_CHECK(esp_openthread_auto_start((error == OT_ERROR_NONE) ? &dataset : NULL));
 }
 #endif // CONFIG_OPENTHREAD_NETWORK_AUTO_START
