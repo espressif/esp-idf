@@ -1,10 +1,12 @@
 TEE Over-the-Air Updates (OTA)
 ==============================
 
+:link_to_translation:`zh_CN:[中文]`
+
 Overview
 --------
 
-The OTA update mechanism allows a device to update itself based on data received while the normal firmware is running (for example, over Wi-Fi or Bluetooth). While OTA updates for application images are extensively documented :doc:`here <../../api-reference/system/ota>`, this section specifically details how OTA updates for the TEE image are securely managed.
+The OTA update mechanism allows a device to update itself based on data received (for example, over Wi-Fi or Bluetooth) while the normal firmware is running. While OTA updates for application images are extensively documented in :doc:`Over The Air Updates (OTA) <../../api-reference/system/ota>`, this section specifically details how OTA updates for the TEE image are securely managed.
 
 TEE OTA requires configuring the partition table of the device with at least two TEE OTA app slot partitions (i.e., ``tee_0`` and ``tee_1``) and a TEE OTA Data Partition (type ``data`` and subtype ``tee_ota``).
 
@@ -14,7 +16,7 @@ TEE OTA requires configuring the partition table of the device with at least two
         :alt: ESP TEE OTA Flash Partition
         :figclass: align-center
 
-        Sample flash partition layout with TEE and application OTA support
+        Sample Flash Partition Layout with TEE and Application OTA Support
 
 .. _tee-ota-data-partition:
 
@@ -25,7 +27,7 @@ An OTA data partition (type ``data``, subtype ``tee_ota``) for the TEE image mus
 
 For factory boot settings, the TEE OTA data partition should contain no data (all bytes erased to 0xFF). In this case, the second stage bootloader will boot the first available TEE OTA slot (usually ``tee_0``). After the first OTA update, the TEE OTA data partition is updated to specify which OTA app slot partition should be booted next.
 
-The TEE OTA data partition is two flash sectors (0x2000 bytes) in size, to prevent problems if there is a power failure while it is being written. Sectors are independently erased and written with matching data, and if they disagree a counter field is used to determine which sector was written more recently.
+The TEE OTA data partition is two flash sectors (0x2000 bytes) in size, to prevent problems if there is a power failure while it is being written. Sectors are independently erased and written with matching data, and if they disagree, the sector with a valid CRC is used and copied over the other one.
 
     .. figure:: ../../../_static/esp_tee/tee_ota_data_entry.png
         :align: center
@@ -33,7 +35,7 @@ The TEE OTA data partition is two flash sectors (0x2000 bytes) in size, to preve
         :alt: ESP TEE OTA Data Entry
         :figclass: align-center
 
-        ESP-TEE: OTA Data partition entry
+        ESP-TEE: OTA Data Partition Entry
 
 
 OTA Process: Boot-up Flow and Image Rollback
@@ -45,18 +47,16 @@ OTA Process: Boot-up Flow and Image Rollback
 #. If the application state is ``PENDING_VERIFY``, it will be overwritten to ``INVALID``. The bootloader will not select any image marked as ``INVALID`` for booting.
 #. If the application state is ``NEW``, it will be overwritten to ``PENDING_VERIFY``. This means that the application requires a confirmation to be considered as operable. If this does not happen and a reboot occurs, the state will be overwritten to ``INVALID`` and this application will no longer be able to boot, i.e., there will be a rollback to the previous working application.
 #. The new TEE application starts executing, but it needs a self-test to confirm its operability. As we reach the point of entry of the non-secure app, we consider the rollback self-test to be successful. The application is then marked as valid (state ``VALID``) and selected across further reboots if there are no updates to the device.
-#. If the self-test fails - the device did not reach the non-secure app entry point as there was some issue with the TEE image. This is considered as a critical exception and the device will reboot.
+#. If a problem with the TEE image prevents the device from reaching the non-secure app entry point, the self-test fails. The device treats the failure as a critical exception and reboots.
 
 .. note::
 
     Resets triggered by the TEE (after a successful TEE OTA update or on a TEE/REE panic) also reset the RTC domain.
 
-  .. note::
+.. note::
 
     - Any partition flashed serially will be automatically marked as valid during its first boot.
-
     - If the first ``tee_otadata`` sector is valid but does not match with a valid second ``tee_otadata`` sector (or vice versa), it is the responsibility of the bootloader to make the ``tee_otadata`` sectors the same before handing control to TEE.
-
     - If :ref:`Secure Boot <secure_boot-guide>` is enabled, the bootloader will verify the TEE and the non-secure app.
 
 
@@ -66,12 +66,12 @@ OTA Process: Boot-up Flow and Image Rollback
     :alt: ESP TEE OTA Flow
     :figclass: align-center
 
-    TEE OTA process flow
+    TEE OTA Process Flow
 
 Application Example
 -------------------
 
-The :example:`tee_secure_ota <security/tee/tee_secure_ota>` example demonstrates how to perform an Over-the-Air updates with HTTP/S for the TEE.
+The :example:`tee_secure_ota <security/tee/tee_secure_ota>` example demonstrates how to perform an Over-the-Air update with HTTP/S for the TEE.
 
 API Reference
 -------------
