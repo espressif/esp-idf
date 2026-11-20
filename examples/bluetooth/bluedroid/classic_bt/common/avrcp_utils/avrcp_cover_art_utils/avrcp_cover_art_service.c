@@ -63,7 +63,6 @@ typedef struct {
     uint8_t image_hdl_old[7];                /* Previous image handle, used to detect image changes */
     uint32_t image_size;                     /* Size of the image data in bytes */
     uint8_t *image_data;                     /* Pointer to the image data buffer */
-    bool image_final;                        /* Indicate whether the image reception has been completed */
     uint16_t *pixels;                        /* Pointer to decoded pixel data */
     esp_lcd_panel_io_handle_t io_handle;     /* LCD panel IO handle */
     esp_lcd_panel_handle_t panel_handle;     /* LCD panel handle */
@@ -295,8 +294,7 @@ void avrc_cover_art_srv_connect(uint16_t mtu)
 
 void avrc_cover_art_srv_set_image_final(bool final)
 {
-    s_avrc_cover_art_srv_cb.image_final = final;
-    if (s_avrc_cover_art_srv_cb.image_final) {
+    if (final) {
         ESP_LOGI(RC_CA_SRV_TAG, "Cover Art Client final data event, image size: %lu bytes", s_avrc_cover_art_srv_cb.image_size);
 
         /* decode and display the image */

@@ -76,7 +76,7 @@ static void bt_av_hdl_stack_evt(uint16_t event, void *p_param)
         assert(esp_a2d_sink_init() == ESP_OK);
 
 #if CONFIG_EXAMPLE_A2DP_SINK_STREAM_ENABLE
-#if CONFIG_EXAMPLE_A2DP_SINK_USE_EXTERNAL_CODEC == FALSE
+#if !CONFIG_EXAMPLE_A2DP_SINK_USE_EXTERNAL_CODEC
         esp_a2d_sink_register_data_callback(bt_app_a2d_data_cb);
 #else
         esp_a2d_sink_register_audio_data_callback(bt_app_a2d_audio_data_cb);
