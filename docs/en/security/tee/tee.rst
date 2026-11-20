@@ -176,6 +176,8 @@ The version is defined in :component_file:`esp_tee/version.cmake` and :component
      - v6.0, v6.1
    * - ``1.2.x``
      - v6.2
+   * - ``1.3.x``
+     - v6.3
 
 .. note::
 

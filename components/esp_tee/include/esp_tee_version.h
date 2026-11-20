@@ -17,7 +17,7 @@ extern "C" {
 /** Major version number (X.x.x) */
 #define ESP_TEE_VERSION_MAJOR   1
 /** Minor version number (x.X.x) */
-#define ESP_TEE_VERSION_MINOR   2
+#define ESP_TEE_VERSION_MINOR   3
 /** Patch version number (x.x.X) */
 #define ESP_TEE_VERSION_PATCH   0
 
