@@ -124,7 +124,7 @@ typedef struct {
 
 #if SOC_EMAC_USE_MULTI_IO_MUX || SOC_EMAC_MII_USE_GPIO_MATRIX
 /**
- * @brief Ethernet MAC MII/RMII data plane GPIO configuration
+ * @brief Ethernet MAC MII/RMII/RGMII data plane GPIO configuration
  *
  */
 typedef union {
@@ -140,12 +140,12 @@ typedef union {
 */
 typedef struct {
     emac_esp_smi_gpio_config_t smi_gpio;            /*!< SMI GPIO numbers */
-    eth_data_interface_t interface;                 /*!< EMAC Data interface to PHY (MII/RMII) */
+    eth_data_interface_t interface;                 /*!< EMAC Data interface to PHY (MII/RMII/RGMII, depending on target support) */
     eth_mac_clock_config_t clock_config;            /*!< EMAC Interface clock configuration */
     eth_mac_dma_burst_len_t dma_burst_len;          /*!< EMAC DMA burst length for both Tx and Rx */
     int intr_priority;                              /*!< EMAC interrupt priority, if set to 0 or a negative value, the driver will try to allocate an interrupt with a default priority */
 #if SOC_EMAC_USE_MULTI_IO_MUX || SOC_EMAC_MII_USE_GPIO_MATRIX
-    eth_mac_dataif_gpio_config_t emac_dataif_gpio;  /*!< EMAC MII/RMII data plane GPIO configuration */
+    eth_mac_dataif_gpio_config_t emac_dataif_gpio;  /*!< EMAC MII/RMII/RGMII data plane GPIO configuration */
 #endif // SOC_EMAC_USE_MULTI_IO_MUX
 #if !SOC_EMAC_RMII_CLK_OUT_INTERNAL_LOOPBACK
     eth_mac_clock_config_t clock_config_out_in;     /*!< EMAC input clock configuration for internally generated output clock (when output clock is looped back externally) */

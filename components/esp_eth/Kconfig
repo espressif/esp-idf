@@ -98,7 +98,8 @@ menu "Ethernet"
                 default ETH_EMAC_PHY_REF_CLK_SRC_AUTO
                 help
                     Select the PLL clock source used to drive the PHY reference clock output
-                    (PLL_F50M). This applies to two scenarios: RMII mode with EMAC_CLK_OUT when
+                    (PLL_F50M).
+                    This applies to two scenarios: RMII mode with EMAC_CLK_OUT when
                     the output clock is looped back externally, and RGMII mode when an optional
                     50 MHz PHY_REF_CLK output is enabled (clock_phy_ref_gpio != -1).
 
@@ -119,33 +120,36 @@ menu "Ethernet"
                         Use CPLL as the PHY reference clock source.
             endchoice
 
-            choice ETH_EMAC_RGMII_TX_CLK_SRC
-                prompt "RGMII Tx clock source"
+            choice ETH_EMAC_INTERNAL_OUT_CLK_SRC
+                prompt "Internal EMAC REF clock source"
                 depends on SOC_EMAC_SUPPORT_1000M
-                default ETH_EMAC_RGMII_TX_CLK_SRC_AUTO
+                default ETH_EMAC_INTERNAL_OUT_CLK_SRC_AUTO
                 help
-                    Select the PLL clock source used to generate the EMAC RGMII Tx clock output.
+                    Select the PLL clock source used to generate the internal EMAC REF RMII clock
+                    output (internally looped-back) in RMII mode or RGMII Tx clock output in RGMII mode.
+                    This applies to two scenarios: when RGMII is used, or RMII clock source mode
+                    is selected and the output clock is NOT looped back externally.
 
-                config ETH_EMAC_RGMII_TX_CLK_SRC_AUTO
+                config ETH_EMAC_INTERNAL_OUT_CLK_SRC_AUTO
                     bool "Auto"
                     help
                         Let the driver select the clock source automatically based on the
                         hardware abstraction layer defaults.
-                config ETH_EMAC_RGMII_TX_CLK_SRC_MPLL
+                config ETH_EMAC_INTERNAL_OUT_CLK_SRC_MPLL
                     bool "MPLL"
                     depends on IDF_TARGET_ESP32S31
                     help
-                        Use MPLL as the RGMII Tx clock source.
-                config ETH_EMAC_RGMII_TX_CLK_SRC_CPLL
+                        Use MPLL as the internal clock source.
+                config ETH_EMAC_INTERNAL_OUT_CLK_SRC_CPLL
                     bool "CPLL"
                     depends on IDF_TARGET_ESP32S31
                     help
-                        Use CPLL as the RGMII Tx clock source.
-                config ETH_EMAC_RGMII_TX_CLK_SRC_APLL
+                        Use CPLL as the internal clock source.
+                config ETH_EMAC_INTERNAL_OUT_CLK_SRC_APLL
                     bool "APLL"
                     depends on IDF_TARGET_ESP32S31
                     help
-                        Use Audio PLL (APLL) as the RGMII Tx clock source.
+                        Use Audio PLL (APLL) as the internal clock source.
             endchoice
 
         endmenu

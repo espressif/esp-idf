@@ -234,6 +234,49 @@ typedef struct {
 } emac_hal_ptp_config_t;
 #endif
 
+#if SOC_IS(ESP32)
+#define EMAC_HAL_EXT_REGS_DEFAULT  (&EMAC_EXT)
+#else
+#define EMAC_HAL_EXT_REGS_DEFAULT  (NULL)
+#endif
+
+#if SOC_EMAC_IEEE1588V2_SUPPORTED
+#define EMAC_HAL_PTP_REGS_DEFAULT  .ptp_regs = &EMAC_PTP,
+#else
+#define EMAC_HAL_PTP_REGS_DEFAULT
+#endif
+
+/**
+ * @brief Default EMAC HAL context bound to the on-chip register blocks
+ *
+ * Does not configure hardware. Suitable for file-scope initialization.
+ */
+#define EMAC_HAL_CONTEXT_DEFAULT() {       \
+    .mac_regs = &EMAC_MAC,                 \
+    .dma_regs = &EMAC_DMA,                 \
+    .ext_regs = EMAC_HAL_EXT_REGS_DEFAULT, \
+    EMAC_HAL_PTP_REGS_DEFAULT              \
+}
+
+/**
+ * @brief Return an EMAC HAL context bound to the on-chip register blocks
+ *
+ * Does not configure hardware. Use when a HAL call needs a context but the
+ * peripheral itself is not being initialized.
+ */
+static inline emac_hal_context_t emac_hal_get_context(void)
+{
+    emac_hal_context_t hal = EMAC_HAL_CONTEXT_DEFAULT();
+    return hal;
+}
+
+/**
+ * @brief Initialize an EMAC HAL context with the on-chip register addresses
+ *
+ * Does not configure hardware. Equivalent to assigning emac_hal_get_context().
+ *
+ * @param hal EMAC HAL context to initialize
+ */
 void emac_hal_init(emac_hal_context_t *hal);
 
 #define emac_hal_get_phy_intf(hal) emac_ll_get_phy_intf((hal)->ext_regs)
@@ -247,6 +290,7 @@ void emac_hal_init(emac_hal_context_t *hal);
 #endif // SOC_EMAC_SUPPORT_1000M
 
 #define emac_hal_gpio_init(hal, gpio_num) emac_ll_gpio_init((hal)->ext_regs, gpio_num)
+#define emac_hal_gpio_deinit(hal, gpio_num) emac_ll_gpio_deinit((hal)->ext_regs, gpio_num)
 #if SOC_EMAC_DEDICATED_GPIO_CTRL_SUPPORTED
 #define emac_hal_dedicated_pad_ctrl_enable(hal, enable) emac_ll_dedicated_pad_ctrl_enable((hal)->ext_regs, enable)
 #define emac_hal_dedicated_pad_pullup_enable(hal, pad, enable) emac_ll_dedicated_pad_pullup_enable((hal)->ext_regs, pad, enable)
