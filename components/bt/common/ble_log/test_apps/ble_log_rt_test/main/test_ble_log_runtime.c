@@ -16,6 +16,8 @@
 #include "ble_log_lbm_v2.h"
 #include "ble_log_prph_test.h"
 #include "ble_log_rt.h"
+#include "ble_log_sync.h"
+#include "driver/uart.h"
 #include "esp_cpu.h"
 #include "esp_timer.h"
 #include "freertos/FreeRTOS.h"
@@ -148,6 +150,9 @@ static void observe_periodic_snapshot(const test_ble_log_frame_t *frame,
                         BLE_LOG_SNAPSHOT_REASON_TS_VALID;
     if (snapshot.int_src_code == BLE_LOG_INT_SRC_SNAPSHOT &&
             (snapshot.reason_flags & expected) == expected) {
+        uint32_t timestamp;
+        memcpy(&timestamp, frame->payload, sizeof(timestamp));
+        TEST_ASSERT_EQUAL_UINT32(timestamp, snapshot.ts.esp_ts);
         observer->found = true;
         observer->io_level = snapshot.ts.io_level;
     }
@@ -547,11 +552,9 @@ TEST_CASE("BLE Log periodic timestamp skips light sleep wakeups",
 
     TEST_ASSERT_TRUE(ble_log_enable(true));
     TEST_ASSERT_TRUE(runtime_stream_is_quiet());
-    TEST_ASSERT_TRUE(ble_log_sync_enable(true));
     for (int i = 0; i < 3; i++) {
         vTaskDelay(runtime_timeout_ticks(BLE_LOG_TS_TRIGGER_TIMEOUT_MS));
     }
-    TEST_ASSERT_TRUE(ble_log_sync_enable(false));
 
     /* A full marker rolls the partial timestamp transport through the normal
      * LBM submission path without making runtime dispatch the TS trigger. */
@@ -565,7 +568,36 @@ TEST_CASE("BLE Log periodic timestamp skips light sleep wakeups",
         "Periodic ESP timer did not emit a timestamp frame");
 }
 
-TEST_CASE("BLE Log sync IO control leaves periodic snapshots running",
+TEST_CASE("BLE Log keeps logging and sampling when sync UART is occupied",
+          "[ble_log][runtime][timestamp]")
+{
+#if !CONFIG_BLE_LOG_TS_SYNC_TOGGLE_IO_ENABLED || CONFIG_ESP_CONSOLE_UART_NUM == 1
+    TEST_IGNORE_MESSAGE("Requires sync enabled and UART1 available for the test");
+#else
+    ble_log_deinit();
+    TEST_ASSERT_EQUAL(ESP_OK, uart_driver_install(UART_NUM_1, 256, 0, 0, NULL, 0));
+    bool initialized = ble_log_init();
+    uint32_t seq = 0;
+    uint8_t io_level = 255;
+    bool logged = initialized && write_runtime_marker(0x42000, NULL) &&
+                  read_runtime_marker(&seq, NULL, NULL);
+    bool sampled = initialized && read_periodic_snapshot(&io_level);
+    ble_log_deinit();
+    bool preserved = uart_is_driver_installed(UART_NUM_1);
+    if (preserved) {
+        TEST_ASSERT_EQUAL(ESP_OK, uart_driver_delete(UART_NUM_1));
+    }
+    TEST_ASSERT_TRUE(ble_log_init());
+    TEST_ASSERT_TRUE(initialized);
+    TEST_ASSERT_TRUE(logged);
+    TEST_ASSERT_EQUAL_UINT32(0x42000, seq);
+    TEST_ASSERT_TRUE(sampled);
+    TEST_ASSERT_EQUAL_UINT8(0, io_level);
+    TEST_ASSERT_TRUE_MESSAGE(preserved, "Sync cleanup deleted another user's UART driver");
+#endif
+}
+
+TEST_CASE("BLE Log compatibility sync APIs leave periodic snapshots running",
           "[ble_log][runtime][timestamp][ignore]")
 {
 #if !CONFIG_BLE_LOG_TS_SYNC_TOGGLE_IO_ENABLED
@@ -579,8 +611,7 @@ TEST_CASE("BLE Log sync IO control leaves periodic snapshots running",
     TEST_ASSERT_TRUE(ble_log_ts_sync_io_toggle_enable(false));
     TEST_ASSERT_TRUE(runtime_stream_is_quiet());
     TEST_ASSERT_TRUE_MESSAGE(read_periodic_snapshot(&io_level),
-                             "No periodic clock snapshot while sync IO was disabled");
-    TEST_ASSERT_EQUAL_UINT8(0, io_level);
+                             "No periodic clock snapshot after compatibility API call");
     TEST_ASSERT_TRUE(runtime_stream_is_quiet());
 
     /* Establish the timer phase above, then park a partial OPEN transport and
@@ -603,24 +634,17 @@ TEST_CASE("BLE Log sync IO control leaves periodic snapshots running",
     TEST_ASSERT_TRUE_MESSAGE(
         snapshot_received,
         "Producer disable stopped periodic Internal Snapshots");
-    TEST_ASSERT_EQUAL_UINT8(0, io_level);
 
     TEST_ASSERT_TRUE(runtime_stream_is_quiet());
     TEST_ASSERT_TRUE(ble_log_ts_sync_io_toggle_enable(true));
-    bool high_seen = false;
-    for (int i = 0; i < 3 && !high_seen; i++) {
-        TEST_ASSERT_TRUE_MESSAGE(read_periodic_snapshot(&io_level),
-                                 "No periodic snapshot while sync IO was enabled");
-        high_seen = io_level != 0;
-    }
-    TEST_ASSERT_TRUE_MESSAGE(high_seen, "Enabled sync IO never toggled high");
+    TEST_ASSERT_TRUE_MESSAGE(read_periodic_snapshot(&io_level),
+                             "No periodic snapshot after compatibility API call");
 
-    /* Exercise the compatibility shim on disable. */
+    /* Both compatibility names ignore the enable argument. */
     TEST_ASSERT_TRUE(ble_log_sync_enable(false));
     TEST_ASSERT_TRUE(runtime_stream_is_quiet());
     TEST_ASSERT_TRUE_MESSAGE(read_periodic_snapshot(&io_level),
-                             "Sync IO disable stopped periodic snapshots");
-    TEST_ASSERT_EQUAL_UINT8(0, io_level);
+                             "Compatibility API stopped periodic snapshots");
 #endif
 }
 
@@ -866,7 +890,7 @@ TEST_CASE("BLE Log LBM inflight peak stays bounded under bursts",
 
     /* Snapshot the retained peak through the dedicated Internal transport. */
     ble_log_ts_info_t ts_info;
-    ble_log_rt_ts_sample(&ts_info, false);
+    ble_log_sync_sample(&ts_info);
     TEST_ASSERT_TRUE(ble_log_internal_snapshot(
         BLE_LOG_SNAPSHOT_REASON_PERIODIC, &ts_info, true));
     TEST_ASSERT_TRUE(ble_log_rt_drain());

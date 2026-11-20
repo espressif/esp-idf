@@ -16,6 +16,7 @@
 /* INCLUDE */
 #include "ble_log.h"
 #include "ble_log_prph.h"
+#include "ble_log_sync.h"
 
 #include "freertos/FreeRTOS.h"
 #include "freertos/semphr.h"
@@ -137,15 +138,6 @@ typedef struct {
 /* -------------------------------- */
 /*     Internal Snapshot Frame      */
 /* -------------------------------- */
-/* Clock sample captured at one instant by the runtime periodic tick. */
-typedef struct {
-    uint8_t int_src_code;
-    uint8_t io_level;
-    uint32_t lc_ts;
-    uint32_t esp_ts;
-    uint32_t os_ts;
-} __attribute__((packed)) ble_log_ts_info_t;
-
 #define BLE_LOG_SNAPSHOT_REASON_INIT            BIT(0)
 #define BLE_LOG_SNAPSHOT_REASON_PERIODIC        BIT(1)
 #define BLE_LOG_SNAPSHOT_REASON_FLUSH           BIT(2)
@@ -264,6 +256,9 @@ void ble_log_lbm_recycle_trans(ble_log_prph_trans_t *trans);
 void ble_log_lbm_take_loss_window(uint32_t by_source[BLE_LOG_SRC_MAX]);
 /* System output: gated by the LBM lifetime, not ble_log_enable(). A false
  * wait_for_transport makes a busy dedicated transport a lossy fast path. */
+/* NULL ts_info requests a periodic sample after acquiring the transport and
+ * allocating its ID; busy attempts produce no marker. Explicit INIT/FLUSH
+ * samples keep their caller-provided timestamps and never emit a marker. */
 bool ble_log_internal_snapshot(uint16_t reason_flags,
                                const ble_log_ts_info_t *ts_info,
                                bool wait_for_transport);

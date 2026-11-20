@@ -45,7 +45,7 @@ esp_err_t bluetooth_init(void)
      * Init manually here so HOST/ISO/AUDIO compressed logs aren't dropped
      * during host bring-up. The function is idempotent.
      *
-     * TODO: Remove this block (and the ble_log_flush() below) once
+     * TODO: Remove this block once
      *       ble_log_init() is decoupled from the controller log path and
      *       owns its own initialization independently. */
 #if CONFIG_BLE_LOG_ENABLED && \
@@ -101,15 +101,6 @@ esp_err_t bluetooth_init(void)
     esp_ble_gap_set_security_param(ESP_BLE_SM_MAX_KEY_SIZE, &key_size, sizeof(key_size));
     esp_ble_gap_set_security_param(ESP_BLE_SM_SET_INIT_KEY, &init_key, sizeof(init_key));
     esp_ble_gap_set_security_param(ESP_BLE_SM_SET_RSP_KEY, &rsp_key, sizeof(rsp_key));
-
-    /* Drain startup-phase log buffers and emit a FLUSH boundary so the
-     * parser resets stats here — the example's runtime logs start clean.
-     *
-     * TODO: Remove together with the manual ble_log_init() above once
-     *       ble_log_init() is decoupled from the controller log path. */
-#if CONFIG_BLE_LOG_ENABLED
-    ble_log_flush();
-#endif
 
     return ESP_OK;
 
@@ -170,7 +161,7 @@ esp_err_t bluetooth_init(void)
      * Init manually here so HOST/ISO/AUDIO compressed logs aren't dropped
      * during host bring-up. The function is idempotent.
      *
-     * TODO: Remove this block (and the ble_log_flush() below) once
+     * TODO: Remove this block once
      *       ble_log_init() is decoupled from the controller log path and
      *       owns its own initialization independently. */
 #if CONFIG_BLE_LOG_ENABLED && \
@@ -212,15 +203,6 @@ esp_err_t bluetooth_init(void)
     nimble_port_freertos_init(example_iso_host_task);
 
     xSemaphoreTake(example_iso_sem, portMAX_DELAY);
-
-    /* Drain startup-phase log buffers and emit a FLUSH boundary so the
-     * parser resets stats here — the example's runtime logs start clean.
-     *
-     * TODO: Remove together with the manual ble_log_init() above once
-     *       ble_log_init() is decoupled from the controller log path. */
-#if CONFIG_BLE_LOG_ENABLED
-    ble_log_flush();
-#endif
 
     return ESP_OK;
 

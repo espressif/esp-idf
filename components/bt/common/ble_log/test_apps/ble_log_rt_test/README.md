@@ -65,3 +65,15 @@ python3 ../ble_log_perf_test/tools/parse_perf_log.py capture.log --csv out.csv
 | ----------------- | ----- | -------- | -------- | -------- | -------- | --------- | -------- | --------- | -------- | -------- | -------- | -------- | --------- |
 
 CI builds are temporarily disabled until BLE Log test runners are available.
+
+## Sync marker regression checks
+
+Run from the repository root with Python 3 and a C compiler supporting UBSan:
+
+```bash
+python3 components/bt/common/ble_log/test_apps/ble_log_rt_test/host/run_sync_test.py
+```
+
+The host tests compile the sender with peripheral and clock fakes. They check
+encoding, sampling order, idle spacing, busy/error handling, cleanup and timer
+wrap, using XTAL and REF_TICK clock configurations.
