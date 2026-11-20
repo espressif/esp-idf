@@ -113,13 +113,13 @@ static void test_fatfs_create_file_with_text(const char* name, const char* text)
 
 static void test_open_read_write_file()
 {
-    constexpr const char *test_str = "0123456789\n";
+    constexpr char test_str[] = "0123456789\n";
     const char *filename = "/linux/test.txt";
     test_fatfs_create_file_with_text(filename, test_str);
 
     int fd = open(filename, O_RDWR);
 
-    char data[strlen(test_str)];
+    char data[sizeof(test_str) - 1];
     size_t sz = read(fd, data, strlen(test_str));
     REQUIRE(sz == strlen(test_str));
     REQUIRE(0 == strncmp(data, test_str, strlen(test_str)));

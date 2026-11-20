@@ -239,7 +239,15 @@ esp_err_t esp_vfs_fat_register(const esp_vfs_fat_conf_t* conf, FATFS** out_fs)
     return ESP_OK;
 }
 
+#ifndef CONFIG_IDF_TARGET_LINUX
 esp_err_t esp_vfs_fat_register_cfg(const esp_vfs_fat_conf_t* conf, FATFS** out_fs) __attribute__((alias("esp_vfs_fat_register")));
+#else
+// Avoid using __attribute__((alias)) here since linux target builds on macOS fail to compile.
+esp_err_t esp_vfs_fat_register_cfg(const esp_vfs_fat_conf_t* conf, FATFS** out_fs)
+{
+    return esp_vfs_fat_register(conf, out_fs);
+}
+#endif
 
 esp_err_t esp_vfs_fat_unregister_path(const char* base_path)
 {

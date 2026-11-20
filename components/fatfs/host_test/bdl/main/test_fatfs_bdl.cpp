@@ -57,10 +57,10 @@ TEST_CASE("BDL: Create volume on memory BDL, write and read back data", "[fatfs]
     const MKFS_PARM opt = {(BYTE)(FM_ANY | FM_SFD), 0, 0, 128, 0};
     REQUIRE(f_mkfs(drv, &opt, work_area, sizeof(work_area)) == FR_OK);
 
-    FATFS fs;
+    FATFS fs = {};
     REQUIRE(f_mount(&fs, drv, 1) == FR_OK);
 
-    FIL file;
+    FIL file = {};
     UINT bw;
     REQUIRE(f_open(&file, "test.txt", FA_OPEN_ALWAYS | FA_READ | FA_WRITE) == FR_OK);
 
