@@ -17,6 +17,9 @@
 #include "esp_rom_sys.h"
 #include "riscv/rvruntime-frames.h"
 #include "riscv/libunwind-riscv.h"
+#if CONFIG_RISCV_USER_MODE_TRAPS
+#include "esp_private/privilege_trap.h"
+#endif /* CONFIG_RISCV_USER_MODE_TRAPS */
 #include <string.h>
 #include <sys/param.h>
 
@@ -55,6 +58,21 @@ static void ESP_SYSTEM_IRAM_ATTR print_task_backtrace(const char *task_name, con
         esp_rom_printf("%s\r\n", task_name);
     }
 
+#if CONFIG_RISCV_USER_MODE_TRAPS
+    /* A task interrupted in U-mode has a saved frame taken from U-mode. Print its registers, which hold the U-mode pc,
+     * then unwind the M-mode code from the call that entered U-mode. The saved frame is not changed, as the task
+     * resumes from it. */
+    RvExcFrame entry;
+    if (rv_user_frame_from_user(frame)) {
+        RvExcFrame user_frame = *frame;
+        panic_prepare_frame_from_ctx(&user_frame);
+        panic_print_registers(&user_frame, core_id);
+        esp_rom_printf("\r\nBacktrace of the M-mode code that entered U-mode:\r\n");
+        rv_user_entry_frame(frame, &entry);
+        frame = &entry;
+    }
+#endif /* CONFIG_RISCV_USER_MODE_TRAPS */
+
 #if CONFIG_ESP_SYSTEM_USE_EH_FRAME
     (void)core_id;
     esp_eh_frame_print_backtrace(frame);
@@ -83,9 +101,14 @@ esp_err_t ESP_SYSTEM_IRAM_ATTR esp_backtrace_print(int depth)
 
     if (!xPortInIsrContext()) {
         /* pxTopOfStack of the running task holds the frame of the last interrupt that the task took, which is stale
-         * in task context. Unwind from here. */
+         * in task context, and may be from U-mode code that has since returned. Unwind from here. */
         RvExcFrame frame = { 0 };
         UNW_GET_CONTEXT(&frame);
+#if CONFIG_RISCV_USER_MODE_TRAPS
+        /* UNW_GET_CONTEXT() does not save mstatus. Set MPP to M, so that the frame is not taken as a trap from
+         * U-mode. */
+        frame.mstatus = MSTATUS_MPP;
+#endif /* CONFIG_RISCV_USER_MODE_TRAPS */
         print_task_backtrace(NULL, &frame, current_core);
         return ESP_OK;
     }
@@ -199,6 +222,11 @@ esp_err_t esp_backtrace_print_all_tasks(int depth)
              * yet reflect the suspended state.
              */
             memcpy(&saved_frame, &ctrl.cur_tasks[running_core_id].frame, sizeof(RvExcFrame));
+#if CONFIG_RISCV_USER_MODE_TRAPS
+            /* UNW_GET_CONTEXT() does not save mstatus. Set MPP to M, so that the running task is not printed as one
+             * interrupted in U-mode. */
+            saved_frame.mstatus |= MSTATUS_MPP;
+#endif /* CONFIG_RISCV_USER_MODE_TRAPS */
             frame_ptr = &saved_frame;
         } else {
             // Set the starting backtrace frame using the task's saved stack pointer

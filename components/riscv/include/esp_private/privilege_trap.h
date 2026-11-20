@@ -12,6 +12,7 @@
 #if !(defined(_ASMLANGUAGE) || defined(__ASSEMBLER__))
 #include <stdbool.h>
 #include <stdint.h>
+#include "riscv/encoding.h"
 #endif /* !(defined(_ASMLANGUAGE) || defined(__ASSEMBLER__)) */
 
 /*
@@ -70,6 +71,54 @@ STRUCT_END(RvUserCallCtx)
 static inline RvUserCallCtx *rv_user_call_ctx_from_frame(const void *frame)
 {
     return (RvUserCallCtx *)((uintptr_t)frame + RV_STK_FRMSZ);
+}
+
+/**
+ * @brief Check whether a trap frame was saved by a trap from U-mode
+ *
+ * @param frame Trap frame saved by the trap entry code
+ * @return true if the trap was taken from U-mode
+ */
+static inline bool rv_user_frame_from_user(const void *frame)
+{
+    return (((const RvExcFrame *)frame)->mstatus & MSTATUS_MPP) == (PRV_U << 11);
+}
+
+/**
+ * @brief Rebuild the M-mode frame at the call that entered U-mode, from a trap frame taken from U-mode
+ *
+ * The call context above the trap frame holds the return address and the callee-saved registers of the M-mode code
+ * that called esp_privilege_call_user_code(). Unwinding from the rebuilt frame gives the backtrace of that code.
+ * The pc is inside the call instruction, so that it belongs to the calling function. Registers that the call
+ * context does not hold are zero.
+ *
+ * @param frame Trap frame taken from U-mode, still on the M-mode stack below its call context
+ * @param[out] entry M-mode frame at the call that entered U-mode
+ */
+static inline void rv_user_entry_frame(const void *frame, RvExcFrame *entry)
+{
+    const RvUserCallCtx *ctx = rv_user_call_ctx_from_frame(frame);
+    *entry = (RvExcFrame) {
+        .mepc = ctx->ra - 2,
+        .ra = ctx->ra,
+        .sp = (uint32_t)ctx + RV_UCTX_SIZE,
+        .gp = ctx->gp,
+        .tp = ctx->tp,
+        .s0 = ctx->s0,
+        .s1 = ctx->s1,
+        .s2 = ctx->s2,
+        .s3 = ctx->s3,
+        .s4 = ctx->s4,
+        .s5 = ctx->s5,
+        .s6 = ctx->s6,
+        .s7 = ctx->s7,
+        .s8 = ctx->s8,
+        .s9 = ctx->s9,
+        .s10 = ctx->s10,
+        .s11 = ctx->s11,
+        .mstatus = MSTATUS_MPP,
+        .mhartid = ((const RvExcFrame *)frame)->mhartid,
+    };
 }
 
 /**

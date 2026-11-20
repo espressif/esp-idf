@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2020-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2020-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -12,6 +12,9 @@
 #include "riscv/rvruntime-frames.h"
 #include "riscv/rv_utils.h"
 #include "esp_private/cache_err_int.h"
+#if CONFIG_RISCV_USER_MODE_TRAPS
+#include "esp_private/privilege_trap.h"
+#endif /* CONFIG_RISCV_USER_MODE_TRAPS */
 
 #if CONFIG_ESP_SYSTEM_USE_EH_FRAME
 #include "esp_private/eh_frame_parser.h"
@@ -105,6 +108,12 @@ void panic_print_registers(const void *f, int core)
         "MSTATUS ", "MTVEC   ", "MCAUSE  ", "MTVAL   ", "MHARTID "
     };
 
+#if CONFIG_RISCV_USER_MODE_TRAPS
+    /* The registers of a trap from U-mode hold U-mode values, such as virtual addresses of the U-mode code */
+    if (rv_user_frame_from_user(f)) {
+        panic_print_str("Trap taken from U-mode\r\n");
+    }
+#endif /* CONFIG_RISCV_USER_MODE_TRAPS */
     panic_print_str("Core ");
     panic_print_dec(core);
     panic_print_str(" register dump:");
@@ -254,6 +263,21 @@ static void panic_print_basic_backtrace(const void *frame, int core)
 
 void panic_print_backtrace(const void *frame, int core)
 {
+#if CONFIG_RISCV_USER_MODE_TRAPS
+    /* The stack pointer of a trap from U-mode is a virtual address of the U-mode code, which the unwinders would read
+     * as an M-mode address. Unwind the M-mode code from the call that entered U-mode instead. */
+    RvExcFrame entry;
+    if (rv_user_frame_from_user(frame)) {
+        panic_print_str("Backtrace of the M-mode code that entered U-mode:\r\n");
+        rv_user_entry_frame(frame, &entry);
+        frame = &entry;
+#if !CONFIG_ESP_SYSTEM_USE_EH_FRAME && !CONFIG_ESP_SYSTEM_USE_FRAME_POINTER
+        /* idf.py monitor decodes the stack memory with the register dump right above it */
+        panic_print_registers(frame, core);
+        panic_print_str("\r\n");
+#endif
+    }
+#endif /* CONFIG_RISCV_USER_MODE_TRAPS */
 #if CONFIG_ESP_SYSTEM_USE_EH_FRAME
     if (!spi_flash_cache_enabled()) {
         panic_print_str("\r\nWarning: SPI Flash cache is disabled, cannot process eh_frame parsing. "
@@ -289,7 +313,11 @@ void panic_prepare_frame_from_ctx(void* frame)
     /* Cleanup the frame, status registers are not saved during context switches, so these will contain garbage
        values from the stack.
     */
+#if !CONFIG_RISCV_USER_MODE_TRAPS
+    /* With CONFIG_RISCV_USER_MODE_TRAPS, the interrupt entry code saves mstatus, which holds the privilege mode that
+     * the task was interrupted in. The mstatus of this core holds the mode of whatever trapped last. */
     ((RvExcFrame *)frame)->mstatus = RV_READ_CSR(mstatus);
+#endif /* !CONFIG_RISCV_USER_MODE_TRAPS */
     ((RvExcFrame *)frame)->mtvec = RV_READ_CSR(mtvec);
 
     ((RvExcFrame *)frame)->mcause = MCAUSE_INVALID_VALUE;
