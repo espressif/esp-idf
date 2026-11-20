@@ -213,6 +213,7 @@
         .. warning::
             如果 RMII 时钟模式配置为 :cpp:enumerator:`emac_rmii_clock_mode_t::EMAC_CLK_OUT`，且选择 {IDF_TARGET_SOC_PHY_REF_CLK_GPIO}，则必须从外部将 ``REF_CLK`` 输出信号回环到 EMAC。请将 :cpp:member:`eth_esp32_emac_config_t::clock_config_out_in` 中的 :cpp:member:`eth_mac_clock_config_t::clock_mode` 配置为 :cpp:enumerator:`emac_rmii_clock_mode_t::EMAC_CLK_EXT_IN`，并选择与 ``REF_CLK`` 输入 GPIO ({IDF_TARGET_SOC_REF_CLK_IN_GPIO}) 相关联的 GPIO 编号。
 
+
             .. figure:: ../../../_static/rmii_ref_clk.png
                 :scale: 95 %
                 :alt: RMII REF_CLK 输出回环
@@ -479,6 +480,7 @@ ESP-IDF 在宏 :c:macro:`ETH_MAC_DEFAULT_CONFIG` 和 :c:macro:`ETH_PHY_DEFAULT_C
             esp32_emac_config.clock_config.rmii.clock_mode = EMAC_CLK_OUT;
             esp32_emac_config.clock_config.rmii.clock_gpio = 13;
             esp_eth_mac_t *mac = esp_eth_mac_new_esp32(&esp32_emac_config, &mac_config);
+
 
 SPI-Ethernet 模块
 ^^^^^^^^^^^^^^^^^^^
@@ -809,6 +811,11 @@ ESP-IDF 在宏 :c:macro:`ETH_DEFAULT_CONFIG` 中为安装驱动程序提供了�
         * :cpp:enumerator:`EMAC_SLEEP_MODE_ALLOW_PD` 会在进入 Light-sleep 时停止 EMAC 并备份其寄存器，在唤醒时恢复寄存器。唤醒后，EMAC 必须在寄存器恢复前，在 **所有时钟均运行** 的情况下完成软件复位。因此，此模式需要使用 RMII 和外部参考时钟 (:cpp:enumerator:`EMAC_CLK_EXT_IN`)，且该时钟须在保留恢复序列期间保持可用。如果使用其他模式而非 RMII 时钟输入模式，:cpp:func:`esp_eth_mac_new_esp32` 将拒绝此配置。还需启用 :menuitem:`CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP`。
         :SOC_PM_SUPPORT_EMAC_WAKEUP: * :cpp:enumerator:`EMAC_SLEEP_MODE_MAC_WAKE_ON_LAN` 会在 MAC 对象存在期间，使 ``ESP_PD_DOMAIN_CNNT`` 保持供电和活动状态，并将 EMAC 启用为 Light-sleep 唤醒源。进入 Light-sleep 时，保留序列会停止发送路径、启用魔法包检测并使 EMAC 进入断电模式，以便 MAC 解码魔法包并唤醒芯片。唤醒时，EMAC 会退出断电模式。接收时钟必须在 Light-sleep 期间保持运行。由于 Light-sleep 会关闭 PLL，{IDF_TARGET_NAME} 生成的高速时钟也会停止。因此，请使用 RMII 和外部参考时钟 (:cpp:enumerator:`EMAC_CLK_EXT_IN`)，或使用由 PHY 自身参考时钟提供接收时钟的 MII/RGMII。此模式下，:cpp:func:`esp_eth_mac_new_esp32` 会拒绝 RMII 时钟输出配置。还需启用 :menuitem:`CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP`。
         :not SOC_PM_SUPPORT_EMAC_WAKEUP: * {IDF_TARGET_NAME} 不支持 :cpp:enumerator:`EMAC_SLEEP_MODE_MAC_WAKE_ON_LAN`。选择此模式会导致错误，且 :cpp:func:`esp_eth_mac_new_esp32` 返回 ``NULL``。
+
+    .. only:: esp32s31
+
+        .. note::
+            :cpp:enumerator:`EMAC_SLEEP_MODE_MAC_WAKE_ON_LAN` 只能通过 {IDF_TARGET_SOC_CNNT_GPIO_RANGE} 接收魔法包。Light-sleep 会关闭 TOP 电源域，因此接收路径的另一组 IO MUX 管脚在睡眠期间无法工作。请将接收信号分配到该范围：RMII 的 ``REF_CLK``、``CRS_DV``、``RXD0`` 和 ``RXD1``，或 RGMII 的 ``RX_CLK``、``RX_CTL`` 以及 ``RXD0`` 至 ``RXD3``。
 
     :c:macro:`ETH_ESP32_EMAC_DEFAULT_CONFIG` 默认选择 ``NO_SLEEP``。应用程序可以显式选择其他受支持的模式::
 
