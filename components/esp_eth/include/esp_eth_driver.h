@@ -317,6 +317,7 @@ esp_err_t esp_eth_update_input_path_info(
 *       - ESP_ERR_INVALID_ARG: transmit frame buffer failed because of some invalid argument
 *       - ESP_ERR_INVALID_STATE: invalid driver state (e.i., driver is not started)
 *       - ESP_ERR_TIMEOUT: transmit frame buffer failed because HW was not get available in predefined period
+*       - ESP_ERR_NO_MEM: insufficient memory to handle complete frame
 *       - ESP_FAIL: transmit frame buffer failed because some other error occurred
 */
 esp_err_t esp_eth_transmit(esp_eth_handle_t hdl, void *buf, size_t length);
