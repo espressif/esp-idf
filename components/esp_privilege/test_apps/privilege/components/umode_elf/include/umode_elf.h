@@ -59,6 +59,16 @@ esp_err_t umode_elf_load(esp_privilege_umode_domain_handle_t domain, const void 
                          umode_elf_image_t *image);
 
 /**
+ * @brief Load a program into a domain, into memory with the given heap capabilities
+ *
+ * Like umode_elf_load(), but allocates each segment with caps, for example MALLOC_CAP_SPIRAM. With caps 0,
+ * it allocates as umode_elf_load() does. esp_privilege_umode_domain_map() syncs the cache for executable
+ * segments in external RAM.
+ */
+esp_err_t umode_elf_load_caps(esp_privilege_umode_domain_handle_t domain, const void *file, size_t size, uint32_t base,
+                              uint32_t caps, umode_elf_image_t *image);
+
+/**
  * @brief Free the memory of a loaded program
  *
  * Call only after esp_privilege_umode_domain_destroy() returned ESP_OK for the domain that the program was loaded

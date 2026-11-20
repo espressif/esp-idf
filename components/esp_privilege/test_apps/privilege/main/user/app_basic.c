@@ -87,6 +87,8 @@ int user_main(uint32_t selector, uint32_t arg)
         return call_table(arg);
     case APP_BASIC_COUNT:
         return (int)++s_counter;
+    case APP_BASIC_LOAD:
+        return (int) * (volatile const uint32_t *)arg;
     default:
         return APP_BASIC_ERROR_SELECTOR;
     }

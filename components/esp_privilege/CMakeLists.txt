@@ -1,6 +1,14 @@
+idf_build_get_property(target IDF_TARGET)
+
+if(${target} STREQUAL "linux")
+    return() # This component is not supported by the POSIX/Linux simulator
+endif()
+
 set(srcs)
 set(requires)
-set(priv_requires)
+# esp_privilege_umode_domain_map() syncs the cache for code in external RAM. Requirements are
+# expanded before sdkconfig is known, so this does not depend on CONFIG_ESP_PRIVILEGE_MODE_USER_CODE.
+set(priv_requires esp_mm)
 idf_build_get_property(target_arch IDF_TARGET_ARCH)
 if(target_arch STREQUAL "riscv")
     # esp_privilege_umode_domain.h includes riscv/sv32.h

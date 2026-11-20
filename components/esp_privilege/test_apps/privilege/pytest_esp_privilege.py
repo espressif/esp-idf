@@ -16,6 +16,13 @@ def test_esp_privilege(dut: Dut) -> None:
 
 
 @pytest.mark.generic
+@pytest.mark.parametrize('config', ['psram'], indirect=True)
+@idf_parametrize('target', ['esp32s31'], indirect=['target'])
+def test_esp_privilege_psram(dut: Dut) -> None:
+    dut.run_all_single_board_cases(group='privilege')
+
+
+@pytest.mark.generic
 @pytest.mark.parametrize('config', ['default', 'release', 'unicore'], indirect=True)
 @idf_parametrize('target', UMODE_TARGETS, indirect=['target'])
 @pytest.mark.parametrize(

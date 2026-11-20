@@ -58,6 +58,27 @@ esp_err_t test_domain_destroy(esp_privilege_umode_domain_handle_t domain);
  */
 esp_err_t test_domain_load_app(const uint8_t *elf, size_t size, esp_privilege_umode_domain_handle_t *domain);
 
+/**
+ * @brief Like test_domain_load_app(), but allocates the program and its stack with the heap capabilities caps
+ *
+ * With caps 0, it allocates as test_domain_load_app() does.
+ */
+esp_err_t test_domain_load_app_caps(const uint8_t *elf, size_t size, uint32_t caps, esp_privilege_umode_domain_handle_t *domain);
+
+/** Memory that the caller owns, mapped into a domain by test_domain_load_app_with() */
+typedef struct {
+    uint32_t address;     /**< Virtual address */
+    void *memory;         /**< Page-aligned memory. The caller frees it, if needed, after the domain is destroyed */
+    size_t size;          /**< Size in bytes, a multiple of the page size */
+    uint32_t permissions; /**< ESP_PRIVILEGE_UMODE_DOMAIN_READ and so on */
+} test_region_t;
+
+/**
+ * @brief Like test_domain_load_app_caps(), and also maps the regions before the domain is finalized
+ */
+esp_err_t test_domain_load_app_with(const uint8_t *elf, size_t size, uint32_t caps, const test_region_t *regions,
+                                    size_t region_count, esp_privilege_umode_domain_handle_t *domain);
+
 #ifdef __cplusplus
 }
 #endif

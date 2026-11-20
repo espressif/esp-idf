@@ -295,6 +295,12 @@ static void free_memory(umode_elf_image_t *image)
 esp_err_t umode_elf_load(esp_privilege_umode_domain_handle_t domain, const void *file, size_t size, uint32_t base,
                          umode_elf_image_t *image)
 {
+    return umode_elf_load_caps(domain, file, size, base, 0, image);
+}
+
+esp_err_t umode_elf_load_caps(esp_privilege_umode_domain_handle_t domain, const void *file, size_t size, uint32_t base,
+                              uint32_t caps, umode_elf_image_t *image)
+{
     ESP_RETURN_ON_FALSE(domain != NULL && image != NULL, ESP_ERR_INVALID_ARG, TAG, "domain or image is NULL");
     memset(image, 0, sizeof(*image));
     ESP_RETURN_ON_FALSE(base % PAGE_SIZE == 0, ESP_ERR_INVALID_ARG, TAG, "base is not page-aligned");
@@ -306,9 +312,9 @@ esp_err_t umode_elf_load(esp_privilege_umode_domain_handle_t domain, const void 
     /* Copy each segment into zeroed pages of its own, which also covers .bss */
     for (size_t i = 0; i < p.load_count; i++) {
         const elf_phdr_t *s = &p.load[i];
-        const uint32_t caps = (s->flags & PF_X) ? MALLOC_CAP_INTERNAL | MALLOC_CAP_EXEC :
-                              MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT;
-        uint8_t *memory = heap_caps_aligned_calloc(PAGE_SIZE, 1, segment_size(s), caps);
+        const uint32_t segment_caps = caps ? caps : (s->flags & PF_X) ? MALLOC_CAP_INTERNAL | MALLOC_CAP_EXEC :
+                                      MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT;
+        uint8_t *memory = heap_caps_aligned_calloc(PAGE_SIZE, 1, segment_size(s), segment_caps);
         if (memory == NULL) {
             ESP_LOGE(TAG, "no memory for segment %u (%u bytes)", (unsigned)i, (unsigned)segment_size(s));
             free_memory(image);

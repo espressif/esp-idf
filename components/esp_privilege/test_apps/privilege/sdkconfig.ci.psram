@@ -1,0 +1,3 @@
+# U-mode programs with code, data and stack in PSRAM. Memory protection is off (sdkconfig.defaults), so the PMP
+# lets U-mode execute from PSRAM.
+CONFIG_SPIRAM=y
