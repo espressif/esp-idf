@@ -11,8 +11,7 @@ CONFIG_SPI_FLASH_FORCE_ENABLE_XMC_C_SUSPEND=y
 #   WIFI_RMT_SLP_IRAM_OPT   (wireless-host chips e.g. P4)    --/
 #
 # Disable both leaf selectors so PM_SLEEP_FUNC_IN_IRAM (and thus
-# RTC_CLK_FUNC_IN_IRAM) can honor the =n below. ESP32-P4 still forces the
-# option on via RTC_CLK_FUNC_IN_IRAM_ESP32P4. The other direct selector,
+# RTC_CLK_FUNC_IN_IRAM) can honor the =n below. The other direct selector,
 # ESP_HW_SUPPORT_FUNC_IN_IRAM, is `default n` under SPI_FLASH_AUTO_SUSPEND
 # and unselected, so it needs no override here.
 CONFIG_ESP_WIFI_SLP_IRAM_OPT=n
