@@ -10,10 +10,13 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "freertos/semphr.h"
+#include <stdlib.h>
 #include <string.h>
 #include "esp_heap_caps.h"
 #include "esp_memory_utils.h"
 #include "sdkconfig.h"
+#include "esp_task_wdt.h"
+#include "esp_debug_helpers.h"
 #include "privilege_test_fixture.h"
 #include "umode_elf.h"
 #include "user/app_basic.h"
@@ -169,6 +172,108 @@ TEST_CASE("M-mode fault with nonzero scratch retains the machine stack", "[privi
      * keep the M-mode stack. */
     __asm__ volatile("csrci mstatus, 8; li t0, 0x1234; csrw mscratch, t0; .word 0" ::: "t0", "memory");
 }
+
+TEST_CASE("a task watchdog timeout in U-mode code prints the M-mode backtrace", "[privilege_backtrace][ignore]")
+{
+    /* Watch the idle task of this core, which the spinning U-mode code starves, and print instead of panicking */
+    const esp_task_wdt_config_t config = {
+        .timeout_ms = 1000,
+        .idle_core_mask = BIT(xPortGetCoreID()),
+        .trigger_panic = false,
+    };
+#if CONFIG_ESP_TASK_WDT_INIT
+    TEST_ESP_OK(esp_task_wdt_reconfigure(&config));
+#else
+    TEST_ESP_OK(esp_task_wdt_init(&config));
+#endif
+    esp_privilege_umode_domain_handle_t domain = NULL;
+    TEST_ESP_OK(test_domain_load_app(app_basic_elf_start, APP_BASIC_SIZE, &domain));
+    esp_privilege_umode_domain_result_t result;
+    esp_privilege_umode_domain_run(domain, APP_BASIC_SPIN, 0, &result);
+    TEST_FAIL_MESSAGE("Should not return");
+}
+
+typedef struct {
+    esp_privilege_umode_domain_handle_t domain;
+    SemaphoreHandle_t done;
+    volatile bool returned;
+    esp_privilege_umode_domain_result_t result;
+} spin_for_ctx_t;
+
+/* Runs the program for a while, then gives ctx->done and waits to be deleted */
+static void spin_for_task(void *arg)
+{
+    spin_for_ctx_t *ctx = arg;
+    esp_privilege_umode_domain_run(ctx->domain, APP_BASIC_SPIN_FOR, 50 * 1000 * 1000, &ctx->result);
+    ctx->returned = true;
+    xSemaphoreGive(ctx->done);
+    vTaskSuspend(NULL);
+}
+
+TEST_CASE("the backtrace of all tasks prints a task preempted in U-mode code as a trap from U-mode", "[privilege_backtrace][ignore]")
+{
+    spin_for_ctx_t ctx = { .done = xSemaphoreCreateBinary() };
+    TEST_ASSERT_NOT_NULL(ctx.done);
+    TEST_ESP_OK(test_domain_load_app(app_basic_elf_start, APP_BASIC_SIZE, &ctx.domain));
+    /* A task of lower priority on this core runs the U-mode code while this task waits. When this task wakes up, it
+     * preempts that task in U-mode, so the frame that the task saved is from U-mode. */
+    TaskHandle_t spin_task_hdl = NULL;
+    TEST_ASSERT_EQUAL(pdPASS, xTaskCreatePinnedToCore(spin_for_task, "umode_spin", 4096, &ctx, uxTaskPriorityGet(NULL) - 1,
+                                                      &spin_task_hdl, xPortGetCoreID()));
+    vTaskDelay(2);
+    TEST_ASSERT_FALSE_MESSAGE(ctx.returned, "The U-mode code returned before the backtrace");
+    printf("Backtrace of all tasks\n");
+    TEST_ESP_OK(esp_backtrace_print_all_tasks(10));
+    printf("Backtrace of all tasks done\n");
+    TEST_ASSERT_FALSE_MESSAGE(ctx.returned, "The U-mode code returned during the backtrace");
+    TEST_ASSERT_EQUAL(pdTRUE, xSemaphoreTake(ctx.done, portMAX_DELAY));
+    TEST_ASSERT_EQUAL(ESP_PRIVILEGE_UMODE_DOMAIN_EXIT_RETURN, ctx.result.reason);
+    TEST_ASSERT_EQUAL(0, ctx.result.value);
+    vTaskDelete(spin_task_hdl);
+    vSemaphoreDelete(ctx.done);
+    TEST_ESP_OK(test_domain_destroy(ctx.domain));
+}
+
+TEST_CASE("the backtrace of a task that ran U-mode code is that of the caller", "[privilege_backtrace][ignore]")
+{
+    esp_privilege_umode_domain_handle_t domain = NULL;
+    TEST_ESP_OK(test_domain_load_app(app_basic_elf_start, APP_BASIC_SIZE, &domain));
+    /* Spin in U-mode for some ticks, so that the last frame that an interrupt saved for this task is from U-mode */
+    const TickType_t start = xTaskGetTickCount();
+    esp_privilege_umode_domain_result_t result;
+    TEST_ESP_OK(esp_privilege_umode_domain_run(domain, APP_BASIC_SPIN_FOR, 10 * 1000 * 1000, &result));
+    TEST_ASSERT_EQUAL(0, result.value);
+    TEST_ASSERT_GREATER_THAN(1, xTaskGetTickCount() - start);
+    printf("Backtrace of the caller\n");
+    TEST_ESP_OK(esp_backtrace_print(10));
+    printf("Backtrace of the caller done\n");
+    TEST_ESP_OK(test_domain_destroy(domain));
+}
+
+#if !CONFIG_FREERTOS_UNICORE
+/* Runs the program, loaded into the domain that arg points to, in a loop that never ends */
+static void spin_task(void *arg)
+{
+    esp_privilege_umode_domain_result_t result;
+    esp_privilege_umode_domain_run((esp_privilege_umode_domain_handle_t)arg, APP_BASIC_SPIN, 0, &result);
+    abort();
+}
+
+/* On most panics, the panic handler stalls the other core and prints only the core that panicked. On an interrupt
+ * watchdog timeout, both cores enter the panic handler, so it prints the frame of the other core too. */
+TEST_CASE("an interrupt watchdog timeout prints the M-mode backtrace of the other core in U-mode code", "[privilege_backtrace][ignore]")
+{
+    esp_privilege_umode_domain_handle_t domain = NULL;
+    TEST_ESP_OK(test_domain_load_app(app_basic_elf_start, APP_BASIC_SIZE, &domain));
+    TEST_ASSERT_EQUAL(pdPASS, xTaskCreatePinnedToCore(spin_task, "umode_spin", 4096, domain, uxTaskPriorityGet(NULL),
+                                                      NULL, !xPortGetCoreID()));
+    vTaskDelay(pdMS_TO_TICKS(100));
+    /* Starve the tick interrupt of this core */
+    portDISABLE_INTERRUPTS();
+    while (true) {
+    }
+}
+#endif /* !CONFIG_FREERTOS_UNICORE */
 
 /* Runs the program once and returns the value that it ended the run with */
 static int32_t run_app(esp_privilege_umode_domain_handle_t domain, uint32_t selector, uint32_t arg)

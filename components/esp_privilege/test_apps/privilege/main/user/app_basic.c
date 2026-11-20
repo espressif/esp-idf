@@ -7,6 +7,7 @@
 /* U-mode program that the tests load into domains. umode_elf_add_program() in main/CMakeLists.txt builds it,
  * and umode_elf_load() loads it. The first argument selects what it does, see app_basic.h. */
 
+#include <stdbool.h>
 #include <stdint.h>
 #include "umode_app.h"
 #include "app_basic.h"
@@ -71,6 +72,22 @@ static int call_table(uint32_t index)
     return (int)(s_operations[index](6, 7) * 100 + length(s_names[index]));
 }
 
+/* Loops forever, until a watchdog fires */
+__attribute__((noinline, noreturn)) static void spin(void)
+{
+    while (true) {
+        __asm__ volatile("");
+    }
+}
+
+/* Loops count times */
+__attribute__((noinline)) static void spin_for(uint32_t count)
+{
+    for (uint32_t i = 0; i < count; i++) {
+        __asm__ volatile("");
+    }
+}
+
 int user_main(uint32_t selector, uint32_t arg)
 {
     switch (selector) {
@@ -89,6 +106,11 @@ int user_main(uint32_t selector, uint32_t arg)
         return (int)++s_counter;
     case APP_BASIC_LOAD:
         return (int) * (volatile const uint32_t *)arg;
+    case APP_BASIC_SPIN:
+        spin();
+    case APP_BASIC_SPIN_FOR:
+        spin_for(arg);
+        return 0;
     default:
         return APP_BASIC_ERROR_SELECTOR;
     }

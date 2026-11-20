@@ -25,6 +25,10 @@
 #define APP_BASIC_COUNT       5
 /* Returns the word at the virtual address arg */
 #define APP_BASIC_LOAD        6
+/* Loops forever */
+#define APP_BASIC_SPIN        7
+/* Loops arg times, then returns 0 */
+#define APP_BASIC_SPIN_FOR    8
 
 /* Initial .data value */
 #define APP_BASIC_DATA_INITIAL 0x12345678u
