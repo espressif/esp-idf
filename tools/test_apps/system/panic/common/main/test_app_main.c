@@ -117,6 +117,7 @@ void app_main(void)
     HANDLE_TEST(test_name, test_cache_error);
     HANDLE_TEST(test_name, test_int_wdt_cache_disabled);
     HANDLE_TEST(test_name, test_stack_overflow);
+    HANDLE_TEST(test_name, test_stack_overflow_recursion);
     HANDLE_TEST(test_name, test_illegal_instruction);
     HANDLE_TEST(test_name, test_instr_fetch_prohibited);
     HANDLE_TEST(test_name, test_ub);

@@ -18,6 +18,11 @@
 #include "esp_riscv_trace_priv.h"
 #include "esp_log.h"
 
+#define ESP_RISCV_TRACE_BUFFER_CACHEABLE (SOC_CACHE_INTERNAL_MEM_VIA_L1CACHE || SOC_RISCV_TRACE_MEM_SUPPORT_PSRAM)
+#if ESP_RISCV_TRACE_BUFFER_CACHEABLE && !SOC_CACHE_WRITEBACK_INVALIDATE_SUPPORTED
+#error "The trace buffer can be cached, so the core dump needs a one-pass writeback and invalidate"
+#endif
+
 static const char *TAG = "esp_riscv_trace_coredump";
 
 #define ESP_RISCV_TRACE_NOTE_NAME        "ESP_RISCV_TRACE"
@@ -174,10 +179,13 @@ static void esp_riscv_trace_coredump_write(core_dump_sink_t *sink)
         }
         seg_index[count] = ESP_RISCV_TRACE_NOTE_NO_SEGMENT;
         if (core_buffer_stable(cd)) {
+#if ESP_RISCV_TRACE_BUFFER_CACHEABLE
             if (esp_core_dump_sink_is_data_stage(sink)) {
                 /* Only the data stage reads the buffer. */
-                cache_hal_invalidate_addr(cd->buffer_addr, cd->capacity);
+                /* The panic stack can be inside the buffer. Write back its dirty lines before invalidating. */
+                cache_hal_writeback_invalidate_addr(cd->buffer_addr, cd->capacity);
             }
+#endif
             if (esp_core_dump_sink_add_segment(sink, cd->buffer_addr, (const void *)(uintptr_t)cd->buffer_addr,
                                                cd->capacity, &seg_index[count]) != ESP_OK) {
                 return;

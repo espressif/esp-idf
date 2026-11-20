@@ -462,3 +462,19 @@ def test_riscv_trace_coredump(dut: PanicTestDut, config: str) -> None:
     expect_coredump_flash_write_logs(dut, config)
     core_path = dut.process_coredump_flash([coredump_pattern])
     _check_riscv_trace_coredump(core_path, 2 if dut.is_multi_core else 1)
+
+
+@pytest.mark.generic
+@pytest.mark.parametrize('app_path, config', CONFIG_RISCV_TRACE, indirect=True)
+@idf_parametrize('target', soc_filtered_targets('SOC_RISCV_TRACE_SUPPORTED == 1'), indirect=['target'])
+def test_riscv_trace_coredump_stack_overflow_recursion(dut: PanicTestDut, config: str) -> None:
+    dut.run_test_func('test_stack_overflow_recursion')
+    # Either the end-of-stack watchpoint or the hardware stack guard can catch the overflow first
+    dut.expect(r"Guru Meditation Error: Core  0 panic'ed \((Breakpoint|Stack protection fault)\)")
+    dut.expect_stack_dump()
+    dut.expect_elf_sha256()
+    dut.expect_none(['Guru Meditation', 'Re-entered core dump'])
+
+    expect_coredump_flash_write_logs(dut, config)
+    core_path = dut.process_coredump_flash()
+    _check_riscv_trace_coredump(core_path, 2 if dut.is_multi_core else 1)

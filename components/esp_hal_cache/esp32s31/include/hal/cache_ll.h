@@ -519,6 +519,25 @@ static inline void cache_ll_writeback_addr(uint32_t cache_level, cache_type_t ty
 }
 
 /**
+ * @brief Writeback and invalidate cache supported addr in one pass
+ *
+ * @param cache_level  level of the cache
+ * @param cache_id     id of the cache in this type and level
+ * @param vaddr        start address of the region
+ * @param size         size of the region
+ */
+__attribute__((always_inline))
+static inline void cache_ll_writeback_invalidate_addr(uint32_t cache_level, uint32_t cache_id, uint32_t vaddr, uint32_t size)
+{
+    if (cache_id != 0 && cache_id != CACHE_LL_ID_ALL) {
+        return;
+    }
+    if (cache_level == 1 || cache_level == CACHE_LL_LEVEL_ALL) {
+        Cache_WriteBack_Invalidate_Addr(CACHE_MAP_L1_DCACHE, vaddr, size);
+    }
+}
+
+/**
  * @brief Writeback L1 DCache all
  *
  * @param cache_id     id of the cache in this type and level
