@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -67,6 +67,13 @@ TEST_GROUP(xts_aes);
 
 TEST_SETUP(xts_aes)
 {
+    /* The first esp_partition_find_first() call loads the partition table and keeps it
+       cached for the lifetime of the application, together with the flash memory map
+       blocks and the locks that both drivers create on first use. Look the partition up
+       here, before the free memory is recorded, so that the first test case does not
+       report that one-time memory as a leak. */
+    get_test_data_partition();
+
     test_utils_record_free_mem();
     TEST_ESP_OK(test_utils_set_leak_level(0, ESP_LEAK_TYPE_CRITICAL, ESP_COMP_LEAK_GENERAL));
 }
