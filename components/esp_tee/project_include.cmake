@@ -85,6 +85,8 @@ endif()
 __esp_tee_sdkconfig_set(content "CONFIG_APP_REPRODUCIBLE_BUILD" y)
 # NOTE: The REE app must not be able to rename the TEE image
 __esp_tee_sdkconfig_set(content "CONFIG_APP_PROJECT_VER_FROM_CONFIG" n)
+# NOTE: cm.push may re-enable interrupts in M-mode (mstatus.mie = 0), so only the REE uses Zcmp
+__esp_tee_sdkconfig_set(content "CONFIG_COMPILER_ENABLE_RISCV_ZCMP" n)
 
 file(WRITE "${esp_tee_sdkconfig}" "${content}")
 
