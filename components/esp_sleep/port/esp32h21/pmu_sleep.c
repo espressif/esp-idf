@@ -176,7 +176,9 @@ const pmu_sleep_config_t* pmu_sleep_config_default(pmu_sleep_config_t *config, p
             analog_default.lp_sys[LP(SLEEP)].analog.dcm_vset = 20;
         } else if (!(sleep_flags & PMU_SLEEP_PD_RC_FAST)) {
             analog_default.hp_sys.analog.drv_b = get_act_hp_drvb();
+            analog_default.hp_sys.analog.dbias = get_act_hp_dbias();
             analog_default.lp_sys[LP(SLEEP)].analog.dbias = get_act_lp_dbias();
+            analog_default.lp_sys[LP(SLEEP)].analog.dcm_vset = DCDC_DREG_DEFAULT;
         }
         config->analog = analog_default;
     }
@@ -222,6 +224,7 @@ static void pmu_sleep_analog_init(pmu_context_t *ctx, const pmu_sleep_analog_con
     // Core power supply (include DCDC, HP LDO, LP LDO) configuration
     pmu_ll_hp_set_pd_cur_bias_sleep(ctx->hal->dev, HP(SLEEP), analog->hp_sys.analog.pd_cur, analog->hp_sys.analog.bias_sleep);
     pmu_ll_hp_set_regulator_xpd             (ctx->hal->dev, HP(SLEEP), analog->hp_sys.analog.xpd);
+    pmu_ll_hp_set_regulator_dbias           (ctx->hal->dev, HP(SLEEP), analog->hp_sys.analog.dbias);
     pmu_ll_hp_set_regulator_driver_bar      (ctx->hal->dev, HP(SLEEP), analog->hp_sys.analog.drv_b);
     pmu_ll_hp_set_trx_xpd                   (ctx->hal->dev, HP(SLEEP), analog->hp_sys.analog.xpd_trx);
 

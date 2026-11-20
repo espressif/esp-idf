@@ -19,6 +19,7 @@ extern "C" {
 #endif
 
 #define HP_CALI_DRVB_DEFAULT    8
+#define HP_CALI_DBIAS_DEFAULT   0
 #define LP_CALI_DBIAS_DEFAULT   0
 #define DCDC_DREG_DEFAULT       18
 
@@ -54,6 +55,7 @@ extern "C" {
 #define PMU_LP_XPD_DEEPSLEEP    0
 
 uint32_t get_act_hp_drvb(void);
+uint32_t get_act_hp_dbias(void);
 uint32_t get_act_lp_dbias(void);
 
 
