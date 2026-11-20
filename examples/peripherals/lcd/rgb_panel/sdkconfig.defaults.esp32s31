@@ -3,7 +3,7 @@ CONFIG_SPIRAM_SPEED_250M=y
 
 # LCD_CAM support 24 data lines at most
 CONFIG_EXAMPLE_LCD_DATA_LINES_24=y
-CONFIG_LV_COLOR_DEPTH_24=y
+CONFIG_LV_COLOR_FORMAT_RGB888=y
 
 # Enabling the following configurations can help increase the PCLK frequency in the case when
 # the Frame Buffer is allocated from the PSRAM and fetched by EDMA
