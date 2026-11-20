@@ -5,4 +5,5 @@ components/esp_driver_touch_sens/test_apps/touch_sens:
     - esp_driver_touch_sens
     - esp_hal_touch_sens
     - esp_hw_support
+    - ulp
     - soc
