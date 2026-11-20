@@ -55,6 +55,10 @@ ADC 校准驱动程序会提供 ADC 校准方案。对于驱动程序来说，�
 
         仅支持 :c:macro:`ADC_ATTEN_DB_0`。请使用 :cpp:func:`adc_cali_chan_raw_to_voltage` 将原始结果转换为电压。每个通道固定对应差分对的一侧：偶数通道为 N 端（单端使用时极性反相），奇数通道为 P 端。若未烧录校准 eFuse，创建方案仍会成功，并使用恒等变换（``k = 1``，``b = 0``）。
 
+    .. only:: esp32s2
+
+        ESP32-S2 的 oneshot 转换产生 13 位原始结果，而连续转换产生 12 位原始结果。请将 :cpp:member:`adc_cali_line_fitting_config_t::bitwidth` 设置为与原始结果来源匹配的位宽。驱动会在应用校准系数前，内部归一化 12 位连续转换结果。
+
     .. only:: esp32
 
         :cpp:member:`adc_cali_line_fitting_config_t::default_vref` 通常默认设置为 0，此值不影响线性拟合方案的校准过程。然而，如果线性拟合方案所需使用的 eFuse 位没有烧录到板上，则驱动程序将根据 :cpp:member:`adc_cali_line_fitting_config_t::default_vref` 进行校准。
