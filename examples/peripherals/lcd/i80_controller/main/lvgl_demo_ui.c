@@ -94,7 +94,7 @@ static void stop_and_remove_arcs(void)
 {
     for (int i = 0; i < ARC_COUNT; i++) {
         if (arc[i]) {
-            lv_anim_del(arc[i], NULL);
+            lv_anim_delete(arc[i], NULL);
             lv_obj_delete(arc[i]);
             arc[i] = NULL;
         }

@@ -7,7 +7,7 @@ CONFIG_LV_USE_CLIB_STRING=y
 CONFIG_LV_USE_CLIB_SPRINTF=y
 
 # Match the 16-bit RGB565 panel and the flush callback in lvgl_port.c.
-CONFIG_LV_COLOR_DEPTH_16=y
+CONFIG_LV_COLOR_FORMAT_RGB565=y
 
 # Style property cache: 8 bytes per widget, fewer style lookups per refresh.
 CONFIG_LV_OBJ_STYLE_CACHE=y

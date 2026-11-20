@@ -13,8 +13,8 @@
 #endif
 
 // LVGL image declare
-LV_IMG_DECLARE(esp_logo)
-LV_IMG_DECLARE(esp_text)
+LV_IMAGE_DECLARE(esp_logo);
+LV_IMAGE_DECLARE(esp_text);
 
 typedef struct {
     lv_obj_t *scr;
@@ -39,8 +39,8 @@ static void anim_timer_cb(lv_timer_t *timer)
 
     // Play arc animation
     if (count < 90) {
-        lv_coord_t arc_start = count > 0 ? (1 - cosf(count / 180.0f * PI)) * 270 : 0;
-        lv_coord_t arc_len = (sinf(count / 180.0f * PI) + 1) * 135;
+        int32_t arc_start = count > 0 ? (1 - cosf(count / 180.0f * PI)) * 270 : 0;
+        int32_t arc_len = (sinf(count / 180.0f * PI) + 1) * 135;
 
         for (size_t i = 0; i < sizeof(arc) / sizeof(arc[0]); i++) {
             lv_arc_set_bg_angles(arc[i], arc_start, arc_len);
@@ -62,7 +62,7 @@ static void anim_timer_cb(lv_timer_t *timer)
 
     // Move images when arc animation finished
     if ((count >= 100) && (count <= 180)) {
-        lv_coord_t offset = (sinf((count - 140) * 2.25f / 90.0f) + 1) * 20.0f;
+        int32_t offset = (sinf((count - 140) * 2.25f / 90.0f) + 1) * 20.0f;
         lv_obj_align(img_logo, LV_ALIGN_CENTER, 0, -offset);
         lv_obj_align(img_text, LV_ALIGN_CENTER, 0, 2 * offset);
         lv_obj_set_style_image_opa(img_text, offset / 40.0f * 255, 0);

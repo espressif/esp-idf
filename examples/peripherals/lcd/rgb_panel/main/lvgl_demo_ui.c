@@ -119,7 +119,7 @@ void example_lvgl_demo_ui(lv_display_t *disp)
     lv_anim_set_exec_cb(&a, scale1_indic1_anim_cb);
     lv_anim_set_var(&a, arc);
     lv_anim_set_duration(&a, 4100);
-    lv_anim_set_playback_duration(&a, 2700);
+    lv_anim_set_reverse_duration(&a, 2700);
     lv_anim_start(&a);
 
     arc = lv_arc_create(scale1);
@@ -135,7 +135,7 @@ void example_lvgl_demo_ui(lv_display_t *disp)
     lv_anim_set_exec_cb(&a, scale1_indic2_anim_cb);
     lv_anim_set_var(&a, arc);
     lv_anim_set_duration(&a, 2600);
-    lv_anim_set_playback_duration(&a, 3200);
+    lv_anim_set_reverse_duration(&a, 3200);
     lv_anim_start(&a);
 
     arc = lv_arc_create(scale1);
@@ -151,6 +151,6 @@ void example_lvgl_demo_ui(lv_display_t *disp)
     lv_anim_set_exec_cb(&a, scale1_indic3_anim_cb);
     lv_anim_set_var(&a, arc);
     lv_anim_set_duration(&a, 2800);
-    lv_anim_set_playback_duration(&a, 1800);
+    lv_anim_set_reverse_duration(&a, 1800);
     lv_anim_start(&a);
 }
