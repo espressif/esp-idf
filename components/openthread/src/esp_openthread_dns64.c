@@ -18,16 +18,21 @@
 #include "lwip/def.h"
 #include "lwip/dns.h"
 #include "lwip/opt.h"
+#include "lwip/tcpip.h"
+#include "openthread/dns_client.h"
 #include "openthread/instance.h"
 #include "openthread/nat64.h"
 #include "openthread/netdata.h"
 
 #define TAG "OT_DNS64"
+#define OT_DNS_RESPONSE_TIMEOUT_MS 2000
+#define OT_DNS_MAX_TX_ATTEMPTS 2
 
 typedef struct dns_resolve_entry {
     char name[DNS_MAX_NAME_LENGTH];
     dns_found_callback found;
     void *callback_arg;
+    ip_addr_t ot_addr;
     bool is_using;
 } dns_resolve_entry_t;
 
@@ -102,10 +107,10 @@ esp_err_t esp_openthread_get_nat64_prefix(ip6_addr_t *nat64_prefix)
     }
 }
 
-static void synthesize_ip6_address(ip_addr_t *addr)
+static bool synthesize_ip6_address(ip_addr_t *addr)
 {
     if (addr->type != IPADDR_TYPE_V4) {
-        return;
+        return true;
     }
 
     otIp4Address ip4_addr;
@@ -120,21 +125,76 @@ static void synthesize_ip6_address(ip_addr_t *addr)
         memcpy(addr->u_addr.ip6.addr, ip6_addr.mFields.m8, sizeof(addr->u_addr.ip6.addr));
         addr->u_addr.ip6.zone = IP6_NO_ZONE;
     }
+    return error == OT_ERROR_NONE;
 }
 
 static void dns_found_handler(const char *name, const ip_addr_t *ipaddr, void *callback_arg)
 {
     dns_resolve_entry_t *resolve_entry = (dns_resolve_entry_t *)callback_arg;
-    if (resolve_entry && resolve_entry->found) {
-        if (!ipaddr) {
-            resolve_entry->found(name, NULL, resolve_entry->callback_arg);
-            resolve_entry->is_using = false;
-        } else if (lwip_strnicmp(name, resolve_entry->name, sizeof(resolve_entry->name)) == 0) {
-            ip_addr_t ipaddr_copy = *ipaddr;
-            synthesize_ip6_address(&ipaddr_copy);
-            resolve_entry->found(name, &ipaddr_copy, resolve_entry->callback_arg);
-            resolve_entry->is_using = false;
+    if (resolve_entry) {
+        dns_found_callback found = resolve_entry->found;
+        void *found_arg = resolve_entry->callback_arg;
+        if (found) {
+            if (!ipaddr) {
+                found(name, NULL, found_arg);
+            } else {
+                ip_addr_t ipaddr_copy = *ipaddr;
+                if (!synthesize_ip6_address(&ipaddr_copy)) {
+                    found(name, NULL, found_arg);
+                } else {
+                    found(name, &ipaddr_copy, found_arg);
+                }
+            }
         }
+        resolve_entry->is_using = false;
+    }
+}
+
+/* Runs on the lwIP thread after a successful OpenThread query. */
+static void dns_ot_success_handler(void *callback_arg)
+{
+    dns_resolve_entry_t *entry = (dns_resolve_entry_t *)callback_arg;
+    dns_found_callback found = entry->found;
+    void *found_arg = entry->callback_arg;
+    if (found) {
+        found(entry->name, &entry->ot_addr, found_arg);
+    }
+    entry->is_using = false;
+}
+
+/* Runs on the lwIP thread after an OpenThread query fails or times out. */
+static void dns_start_lwip_fallback(void *callback_arg)
+{
+    dns_resolve_entry_t *entry = (dns_resolve_entry_t *)callback_arg;
+    ip_addr_t addr;
+    err_t err = dns_gethostbyname_addrtype(entry->name, &addr, dns_found_handler, entry, LWIP_DNS_ADDRTYPE_IPV4);
+    if (err == ERR_OK) {
+        dns_found_handler(entry->name, &addr, entry);
+    } else if (err != ERR_INPROGRESS) {
+        dns_found_handler(entry->name, NULL, entry);
+    }
+}
+
+static void dns_ot_found_handler(otError error, const otDnsAddressResponse *response, void *callback_arg)
+{
+    dns_resolve_entry_t *entry = (dns_resolve_entry_t *)callback_arg;
+    otIp6Address address;
+    tcpip_callback_fn handler = dns_start_lwip_fallback;
+
+    if (error == OT_ERROR_NONE && otDnsAddressResponseGetAddress(response, 0, &address, NULL) == OT_ERROR_NONE) {
+        IP_SET_TYPE(&entry->ot_addr, IPADDR_TYPE_V6);
+        memcpy(entry->ot_addr.u_addr.ip6.addr, address.mFields.m8, sizeof(address.mFields.m8));
+        entry->ot_addr.u_addr.ip6.zone = IP6_NO_ZONE;
+        handler = dns_ot_success_handler;
+    }
+
+    /* Posting can block while the lwIP mailbox is full. */
+    esp_openthread_task_switching_lock_release();
+    err_t err = tcpip_callback(handler, entry);
+    esp_openthread_task_switching_lock_acquire(portMAX_DELAY);
+    if (err != ERR_OK) {
+        ESP_LOGE(TAG, "Failed to post OpenThread DNS result for %s: %d", entry->name, err);
+        entry->is_using = false;
     }
 }
 
@@ -173,13 +233,30 @@ int lwip_hook_dns_external_resolve(const char *name, ip_addr_t *addr, dns_found_
     entry->callback_arg = callback_arg;
     entry->is_using = true;
 
+    otError ot_err = OT_ERROR_INVALID_STATE;
+    if (esp_openthread_task_switching_lock_acquire(portMAX_DELAY)) {
+        otDnsQueryConfig query_config = {
+            .mResponseTimeout = OT_DNS_RESPONSE_TIMEOUT_MS,
+            .mMaxTxAttempts = OT_DNS_MAX_TX_ATTEMPTS,
+        };
+        ot_err = otDnsClientResolveIp4Address(esp_openthread_get_instance(), name, dns_ot_found_handler, entry,
+                                               &query_config);
+        esp_openthread_task_switching_lock_release();
+    }
+    if (ot_err == OT_ERROR_NONE) {
+        *err = ERR_INPROGRESS;
+        return 1;
+    }
+
+    /* The OT query could not start. The IPv4 request bypasses this hook and
+     * uses lwIP's configured DNS server. */
     *err = dns_gethostbyname_addrtype(name, addr, dns_found_handler, entry, LWIP_DNS_ADDRTYPE_IPV4);
     if (*err != ERR_INPROGRESS) {
         // If dns query is not enqueued, mark the entry not being used.
         entry->is_using = false;
     }
-    if (*err == ERR_OK) {
-        synthesize_ip6_address(addr);
+    if (*err == ERR_OK && !synthesize_ip6_address(addr)) {
+        *err = ERR_VAL;
     }
     return 1;
 }

@@ -56,33 +56,47 @@ static void handle_ot_netif_state_change(otInstance* instance)
 #endif
 }
 
+#if CONFIG_OPENTHREAD_DNS64_CLIENT
+static bool update_dns64_server(const char *server, esp_netif_dns_type_t dns_type)
+{
+    otIp4Address ip4_addr;
+    otIp6Address ip6_addr;
+    ip6_addr_t dns_server_addr = *IP6_ADDR_ANY6;
+    ip6_addr_t current_dns_server_addr = *IP6_ADDR_ANY6;
+
+    // The state change callback already holds the OpenThread task switching lock.
+    ESP_RETURN_ON_FALSE(otIp4AddressFromString(server, &ip4_addr) == OT_ERROR_NONE, false, TAG,
+                        "Invalid DNS server IPv4 address: %s", server);
+    if (otNat64SynthesizeIp6Address(esp_openthread_get_instance(), &ip4_addr, &ip6_addr) != OT_ERROR_NONE) {
+        return false;
+    }
+    memcpy(dns_server_addr.addr, ip6_addr.mFields.m8, sizeof(dns_server_addr.addr));
+
+    // esp_netif DNS APIs run on the lwIP thread, so release the task switching lock while waiting for them.
+    esp_openthread_task_switching_lock_release();
+    esp_err_t err = esp_openthread_get_dnsserver_addr_with_type(&current_dns_server_addr, dns_type);
+    bool changed = err == ESP_OK && memcmp(&current_dns_server_addr, &dns_server_addr, sizeof(ip6_addr_t)) != 0;
+    if (changed) {
+        err = esp_openthread_set_dnsserver_addr_with_type(dns_server_addr, dns_type);
+    }
+    esp_openthread_task_switching_lock_acquire(portMAX_DELAY);
+
+    ESP_RETURN_ON_FALSE(err == ESP_OK, false, TAG, "Failed to update DNS server type %d: %s", dns_type, esp_err_to_name(err));
+    if (changed) {
+        ESP_LOGI(TAG, "Set DNS server type %d: %s", dns_type, ip6addr_ntoa(&dns_server_addr));
+    }
+    return changed;
+}
+#endif
+
 static void handle_ot_netdata_change(void)
 {
 #if CONFIG_OPENTHREAD_DNS64_CLIENT
-    ip6_addr_t dns_server_addr = *IP6_ADDR_ANY6;
-    otIp4Address ip4_addr;
-    otIp6Address ip6_addr;
-    // The state change callback already holds the OpenThread task switching lock.
-    if (otIp4AddressFromString(CONFIG_OPENTHREAD_DNS_SERVER_ADDR, &ip4_addr) == OT_ERROR_NONE &&
-        otNat64SynthesizeIp6Address(esp_openthread_get_instance(), &ip4_addr, &ip6_addr) == OT_ERROR_NONE) {
-        memcpy(dns_server_addr.addr, ip6_addr.mFields.m8, sizeof(dns_server_addr.addr));
-        ip6_addr_t current_dns_server_addr = *IP6_ADDR_ANY6;
-        esp_openthread_task_switching_lock_release();
-        esp_openthread_get_dnsserver_addr(&current_dns_server_addr);
-        esp_openthread_task_switching_lock_acquire(portMAX_DELAY);
-        if (memcmp(&current_dns_server_addr, &dns_server_addr, sizeof(ip6_addr_t)) != 0) {
-            ESP_LOGI(TAG, "Set dns server address: %s", ip6addr_ntoa(&dns_server_addr));
-            esp_openthread_task_switching_lock_release();
-            if (esp_openthread_set_dnsserver_addr(dns_server_addr) != ESP_OK) {
-                ESP_LOGE(TAG, "Failed to set dns info for openthread netif");
-                esp_openthread_task_switching_lock_acquire(portMAX_DELAY);
-                return;
-            }
-            esp_openthread_task_switching_lock_acquire(portMAX_DELAY);
-            if (esp_event_post(OPENTHREAD_EVENT, OPENTHREAD_EVENT_SET_DNS_SERVER, NULL, 0, 0) != ESP_OK) {
-                ESP_LOGE(TAG, "Failed to post OpenThread set DNS server event");
-            }
-        }
+    bool main_changed = update_dns64_server(CONFIG_OPENTHREAD_DNS_SERVER_ADDR, ESP_NETIF_DNS_MAIN);
+    bool backup_changed = update_dns64_server(CONFIG_OPENTHREAD_DNS_SECONDARY_SERVER_ADDR, ESP_NETIF_DNS_BACKUP);
+    if ((main_changed || backup_changed) &&
+        esp_event_post(OPENTHREAD_EVENT, OPENTHREAD_EVENT_SET_DNS_SERVER, NULL, 0, 0) != ESP_OK) {
+        ESP_LOGE(TAG, "Failed to post OpenThread set DNS server event");
     }
 #endif
 }
