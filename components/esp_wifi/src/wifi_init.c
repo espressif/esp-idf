@@ -760,7 +760,7 @@ void *nan_dp_search_node(const uint8_t *p)
     return NULL;
 }
 
-void nan_ndp_resp_timeout_process(void *p)
+void nan_ndp_setup_timeout_process(void *p)
 {
     /* Do not remove, stub to overwrite weak link in Wi-Fi Lib */
 }
