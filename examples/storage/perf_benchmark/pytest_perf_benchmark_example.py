@@ -5,7 +5,6 @@ from pytest_embedded import Dut
 from pytest_embedded_idf.utils import idf_parametrize
 
 
-@pytest.mark.temp_skip_ci(targets=['esp32c5'], reason='not support yet')  # TODO: [ESP32C5] IDF-10314
 @pytest.mark.generic
 @pytest.mark.flaky(reruns=2, reruns_delay=5)
 @pytest.mark.parametrize('config', ['spiflash'], indirect=True)
