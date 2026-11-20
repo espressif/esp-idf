@@ -1544,7 +1544,7 @@ TEST_CASE("Test ring buffer reset refuses unreturned items", "[esp_ringbuf][linu
 
     // Full no-split buffer with all of its items retrieved
     void *items[4];
-    rb = xRingbufferCreate(4 * (ITEM_HDR_SIZE + MEDIUM_ITEM_SIZE), RINGBUF_TYPE_NOSPLIT);
+    rb = xRingbufferCreate(4 * (ITEM_HDR_SIZE + ITEM_SPACE(MEDIUM_ITEM_SIZE)), RINGBUF_TYPE_NOSPLIT);
     TEST_ASSERT_MESSAGE(rb != NULL, "Failed to create ring buffer");
     for (int i = 0; i < 4; i++) {
         TEST_ASSERT_EQUAL(pdTRUE, xRingbufferSend(rb, large_item, MEDIUM_ITEM_SIZE, 0));
@@ -1564,7 +1564,7 @@ TEST_CASE("Test ring buffer reset refuses unreturned items", "[esp_ringbuf][linu
     // Full allow-split buffer with all of its items retrieved
     void *tails[4];
     size_t tail_size;
-    rb = xRingbufferCreate(4 * (ITEM_HDR_SIZE + MEDIUM_ITEM_SIZE), RINGBUF_TYPE_ALLOWSPLIT);
+    rb = xRingbufferCreate(4 * (ITEM_HDR_SIZE + ITEM_SPACE(MEDIUM_ITEM_SIZE)), RINGBUF_TYPE_ALLOWSPLIT);
     TEST_ASSERT_MESSAGE(rb != NULL, "Failed to create ring buffer");
     for (int i = 0; i < 4; i++) {
         TEST_ASSERT_EQUAL(pdTRUE, xRingbufferSend(rb, large_item, MEDIUM_ITEM_SIZE, 0));
@@ -1587,7 +1587,7 @@ TEST_CASE("Test ring buffer reset refuses unreturned items", "[esp_ringbuf][linu
 TEST_CASE("Test ring buffer reset refuses uncompleted acquisitions", "[esp_ringbuf][linux]")
 {
     void *slots[4];
-    RingbufHandle_t rb = xRingbufferCreate(4 * (ITEM_HDR_SIZE + MEDIUM_ITEM_SIZE), RINGBUF_TYPE_NOSPLIT);
+    RingbufHandle_t rb = xRingbufferCreate(4 * (ITEM_HDR_SIZE + ITEM_SPACE(MEDIUM_ITEM_SIZE)), RINGBUF_TYPE_NOSPLIT);
     TEST_ASSERT_MESSAGE(rb != NULL, "Failed to create ring buffer");
 
     // Part of the buffer acquired
