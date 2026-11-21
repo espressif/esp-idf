@@ -52,8 +52,6 @@ static DRAM_ATTR __attribute__((unused)) sleep_cpu_retention_t s_cpu_retention;
 #define CUSTOM_CSR_MTVT               (0x307)
 #define CUSTOM_CSR_MNXTI              (0x345)
 #define CUSTOM_CSR_MINTTHRESH         (0x347)
-#define CUSTOM_CSR_MSCRATCHCSW        (0x348)
-#define CUSTOM_CSR_MSCRATCHCSW1       (0x349)
 #define CUSTOM_CSR_UINTTHRESH         (0x047)
 #define CUSTOM_CSR_UINTSTATUS         (0xCB1)
 #define CUSTOM_CSR_MXSTATUS           (0x7c0)
@@ -95,8 +93,6 @@ static IRAM_ATTR RvCoreNonCriticalSleepFrame * rv_core_noncritical_regs_save(voi
     frame->tdata2    = RV_READ_CSR(tdata2);
     frame->tdata3    = RV_READ_CSR(tdata3);
     frame->tcontrol  = RV_READ_CSR(tcontrol);
-    frame->mscratchcsw  = RV_READ_CSR(CUSTOM_CSR_MSCRATCHCSW);
-    frame->mscratchcsw1  = RV_READ_CSR(CUSTOM_CSR_MSCRATCHCSW1);
     frame->mcycleh  = RV_READ_CSR(mcycleh);
     frame->minstret  = RV_READ_CSR(minstret);
     frame->minstreth  = RV_READ_CSR(minstreth);
@@ -143,8 +139,6 @@ static IRAM_ATTR void rv_core_noncritical_regs_restore(void)
     RV_WRITE_CSR(tdata2,   frame->tdata2);
     RV_WRITE_CSR(tdata3,   frame->tdata3);
     RV_WRITE_CSR(tcontrol, frame->tcontrol);
-    RV_WRITE_CSR(CUSTOM_CSR_MSCRATCHCSW, frame->mscratchcsw);
-    RV_WRITE_CSR(CUSTOM_CSR_MSCRATCHCSW1, frame->mscratchcsw1);
     RV_WRITE_CSR(mcycleh, frame->mcycleh);
     RV_WRITE_CSR(minstret, frame->minstret);
     RV_WRITE_CSR(minstreth, frame->minstreth);
