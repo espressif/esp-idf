@@ -297,6 +297,32 @@ npl_eventq_lost_event_clear(struct ble_npl_event *ev)
     lost->queued = false;
 }
 
+/*
+ * ESP-timer builds keep ble_npl_time_t in milliseconds. FreeRTOS waits count
+ * ticks. Zero and portMAX_DELAY stay sentinels. A finite value rounds up so a
+ * short timeout cannot collapse to a poll.
+ */
+static TickType_t IRAM_ATTR
+npl_freertos_timeout_ticks(ble_npl_time_t timeout)
+{
+#if BLE_NPL_USE_ESP_TIMER
+    uint64_t ticks;
+
+    if (timeout == 0 || timeout == portMAX_DELAY) {
+        return (TickType_t)timeout;
+    }
+
+    ticks = ((uint64_t)timeout * configTICK_RATE_HZ + 999) / 1000;
+    if (ticks >= portMAX_DELAY) {
+        return (TickType_t)(portMAX_DELAY - 1);
+    }
+
+    return (TickType_t)ticks;
+#else
+    return (TickType_t)timeout;
+#endif
+}
+
 struct ble_npl_event *
 IRAM_ATTR npl_freertos_eventq_get(struct ble_npl_eventq *evq, ble_npl_time_t tmo)
 {
@@ -340,6 +366,7 @@ IRAM_ATTR npl_freertos_eventq_get(struct ble_npl_eventq *evq, ble_npl_time_t tmo
         TickType_t deadline = 0;
         TickType_t remaining;
 
+        tmo = npl_freertos_timeout_ticks(tmo);
         if (tmo != portMAX_DELAY) {
             deadline = xTaskGetTickCount() + tmo;
         }
@@ -677,7 +704,8 @@ IRAM_ATTR npl_freertos_mutex_pend(struct ble_npl_mutex *mu, ble_npl_time_t timeo
         ret = pdFAIL;
         BLE_LL_ASSERT(0);
     } else {
-        ret = xSemaphoreTakeRecursive(mutex->handle, timeout);
+        ret = xSemaphoreTakeRecursive(mutex->handle,
+                                      npl_freertos_timeout_ticks(timeout));
     }
 
     return ret == pdPASS ? BLE_NPL_OK : BLE_NPL_TIMEOUT;
@@ -782,7 +810,8 @@ IRAM_ATTR npl_freertos_sem_pend(struct ble_npl_sem *sem, ble_npl_time_t timeout)
             portYIELD_FROM_ISR();
         }
     } else {
-        ret = xSemaphoreTake(semaphore->handle, timeout);
+        ret = xSemaphoreTake(semaphore->handle,
+                             npl_freertos_timeout_ticks(timeout));
     }
 
     return ret == pdPASS ? BLE_NPL_OK : BLE_NPL_TIMEOUT;
@@ -1246,7 +1275,7 @@ void
 IRAM_ATTR npl_freertos_time_delay(ble_npl_time_t ticks)
 {
 #if BLE_NPL_USE_ESP_TIMER
-    vTaskDelay(ticks / portTICK_PERIOD_MS);
+    vTaskDelay(npl_freertos_timeout_ticks(ticks));
 #else
     vTaskDelay(ticks);
 #endif
