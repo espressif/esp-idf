@@ -159,6 +159,7 @@ struct sd_host_sdmmc_ctlr_t {
     sd_host_evt_cbs_t              cbs;                              //user callbacks
     void                           *cbs_user_data;                   //callback userdata
     esp_pm_lock_handle_t           pm_lock;                          //power management lock
+    bool                           clk_src_acquired;                 //SDMMC_CLK_SRC_DEFAULT is acquired
 };
 
 /*---------------------------------------------------------------

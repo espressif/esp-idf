@@ -94,7 +94,7 @@ esp_err_t sd_host_create_sdmmc_controller(const sd_host_sdmmc_cfg_t *config, sd_
     ctlr->dma_desc_num = config->dma_desc_num ? config->dma_desc_num : SD_HOST_SDMMC_DMA_DESC_CNT;
     ctlr->dma_desc = heap_caps_calloc(1, sizeof(sdmmc_desc_t) * ctlr->dma_desc_num, SD_HOST_SDMMC_DMA_ALLOC_CAPS);
     ESP_LOGD(TAG, "ctlr->dma_desc addr: %p", ctlr->dma_desc);
-    ESP_RETURN_ON_FALSE(ctlr->dma_desc, ESP_ERR_NO_MEM, TAG, "no mem for dma descriptors");
+    ESP_GOTO_ON_FALSE(ctlr->dma_desc, ESP_ERR_NO_MEM, err, TAG, "no mem for dma descriptors");
 
     ctlr->io_intr_sem = xSemaphoreCreateBinaryWithCaps(SD_HOST_SDMMC_MEM_ALLOC_CAPS);
     ESP_GOTO_ON_FALSE(ctlr->io_intr_sem, ESP_ERR_NO_MEM, err, TAG, "no mem for io interrupt semaphore");
@@ -114,17 +114,14 @@ esp_err_t sd_host_create_sdmmc_controller(const sd_host_sdmmc_cfg_t *config, sd_
 
     sdmmc_hal_init(&ctlr->hal);
     ESP_GOTO_ON_ERROR(esp_clk_tree_acquire_src(SDMMC_CLK_SRC_DEFAULT, NULL), err, TAG, "failed to acquire clk");
+    ctlr->clk_src_acquired = true;
     uint32_t src_freq_hz = 0;
     esp_clk_tree_src_get_freq_hz(SDMMC_CLK_SRC_DEFAULT, ESP_CLK_TREE_SRC_FREQ_PRECISION_CACHED, &src_freq_hz);
     ESP_EARLY_LOGI(TAG, "src_freq_hz: %d", src_freq_hz);
     sd_host_set_clk_div(ctlr, SDMMC_CLK_SRC_DEFAULT, SDMMC_LL_DEFAULT_DIV);
 
     // Reset
-    esp_err_t err = sd_host_reset(ctlr);
-    if (err != ESP_OK) {
-        ESP_LOGE(TAG, "%s: sd_host_reset returned 0x%x", __func__, err);
-        return err;
-    }
+    ESP_GOTO_ON_ERROR(sd_host_reset(ctlr), err, TAG, "failed to reset sd host controller");
 
     ESP_LOGD(TAG, "peripheral version %"PRIx32", hardware config %08"PRIx32, sdmmc_ll_get_version_id(ctlr->hal.dev), sdmmc_ll_get_hw_config_info(ctlr->hal.dev));
 
@@ -424,9 +421,15 @@ static esp_err_t sd_host_del_sdmmc_controller(sd_host_ctlr_handle_t ctlr)
 
     ESP_GOTO_ON_FALSE(ctlr_ctx->registered_slot_nums == 0, ESP_ERR_INVALID_STATE, err, TAG, "host controller with slot registered");
     ESP_GOTO_ON_ERROR(sd_host_declaim_controller(ctlr_ctx), err, TAG, "controller isn't in use");
-    ESP_GOTO_ON_ERROR(esp_intr_free(ctlr_ctx->intr_handle), err, TAG, "failed to delete interrupt service");
+    // A failed sd_host_create_sdmmc_controller() also comes here, before the interrupt or the HAL
+    // is set up. Release only what exists.
+    if (ctlr_ctx->intr_handle) {
+        ESP_GOTO_ON_ERROR(esp_intr_free(ctlr_ctx->intr_handle), err, TAG, "failed to delete interrupt service");
+    }
 
-    sdmmc_hal_deinit(&ctlr_ctx->hal);
+    if (ctlr_ctx->hal.dev) {
+        sdmmc_hal_deinit(&ctlr_ctx->hal);
+    }
 
     if (ctlr_ctx->event_queue) {
         vQueueDeleteWithCaps(ctlr_ctx->event_queue);
@@ -441,7 +444,9 @@ static esp_err_t sd_host_del_sdmmc_controller(sd_host_ctlr_handle_t ctlr)
 #endif
 
 #if SDMMC_LL_MPLL_SUPPORTED
-    esp_clk_tree_release_src(SOC_MOD_CLK_MPLL);
+    if (ctlr_ctx->clk_src_acquired) {
+        esp_clk_tree_release_src(SOC_MOD_CLK_MPLL);
+    }
 #endif
 
     if (ctlr_ctx->mutex) {
