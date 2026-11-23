@@ -73,7 +73,7 @@
  ************************************************************************
  */
 #define NIMBLE_PORT_LOG_TAG          "BLE_INIT"
-#define OSI_COEX_VERSION              0x00010006
+#define OSI_COEX_VERSION              0x00010007
 #define OSI_COEX_MAGIC_VALUE          0xFADEBEAD
 
 #define EXT_FUNC_VERSION             0x20250825
@@ -91,6 +91,8 @@ struct osi_coex_funcs_t {
     int (* _coex_core_ble_conn_dyn_prio_get)(bool *low, bool *high);
     void (* _coex_schm_status_bit_set)(uint32_t type, uint32_t status);
     void (* _coex_schm_status_bit_clear)(uint32_t type, uint32_t status);
+    int (* _coex_wifi_channel_get)(uint8_t *primary, uint8_t *secondary);
+    int (* _coex_register_wifi_channel_change_callback)(void *cb);
 };
 
 struct ext_funcs_t {
@@ -204,6 +206,8 @@ extern uint32_t _bt_controller_data_end;
  */
 static void coex_schm_status_bit_set_wrapper(uint32_t type, uint32_t status);
 static void coex_schm_status_bit_clear_wrapper(uint32_t type, uint32_t status);
+static int coex_wifi_channel_get_wrapper(uint8_t *primary, uint8_t *secondary);
+static int coex_register_wifi_channel_change_callback_wrapper(void *cb);
 static int task_create_wrapper(void *task_func, const char *name, uint32_t stack_depth,
                                void *param, uint32_t prio, void *task_handle, uint32_t core_id);
 static void task_delete_wrapper(void *task_handle);
@@ -527,6 +531,8 @@ static const struct osi_coex_funcs_t s_osi_coex_funcs_ro = {
     ._coex_core_ble_conn_dyn_prio_get = NULL,
     ._coex_schm_status_bit_set = coex_schm_status_bit_set_wrapper,
     ._coex_schm_status_bit_clear = coex_schm_status_bit_clear_wrapper,
+    ._coex_wifi_channel_get = coex_wifi_channel_get_wrapper,
+    ._coex_register_wifi_channel_change_callback = coex_register_wifi_channel_change_callback_wrapper,
 };
 
 struct ext_funcs_t ext_funcs_ro = {
@@ -596,6 +602,24 @@ static void coex_schm_status_bit_clear_wrapper(uint32_t type, uint32_t status)
 #if CONFIG_SW_COEXIST_ENABLE
     coex_schm_status_bit_clear(type, status);
 #endif // CONFIG_SW_COEXIST_ENABLE
+}
+
+static int coex_wifi_channel_get_wrapper(uint8_t *primary, uint8_t *secondary)
+{
+#if CONFIG_SW_COEXIST_ENABLE
+    return coex_wifi_channel_get(primary, secondary);
+#else
+    return -1;
+#endif
+}
+
+static int coex_register_wifi_channel_change_callback_wrapper(void *cb)
+{
+#if CONFIG_SW_COEXIST_ENABLE
+    return coex_register_wifi_channel_change_callback(cb);
+#else
+    return -1;
+#endif
 }
 
 static int task_create_wrapper(void *task_func, const char *name, uint32_t stack_depth,
