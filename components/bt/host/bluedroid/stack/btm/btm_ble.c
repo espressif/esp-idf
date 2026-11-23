@@ -2817,6 +2817,9 @@ BOOLEAN btm_ble_pseudo_apply_identity(UINT16 handle, const BD_ADDR identity,
         BTM_TRACE_ERROR("%s: handle=0x%x side-table update failed, skip re-key", __func__, handle);
         return FALSE;
     }
+    /* Keys already delivered to the host used ent.pseudo. Keep that address so
+     * BTC can retarget the pending set instead of dropping it. */
+    btm_ble_pseudo_remember_previous(handle, ent.pseudo);
     btm_ble_pseudo_rekey_link(handle, btm_handle_to_acl(handle), new_pseudo);
     return TRUE;
 }
@@ -3120,6 +3123,11 @@ UINT8 btm_proc_smp_cback(tSMP_EVT event, BD_ADDR bd_addr, tSMP_EVT_DATA *p_data)
             }
 
             if (event == SMP_COMPLT_EVT) {
+                /* Sample before the success path below clears sec_state.
+                   ENCRYPTING means BTM_SetEncryption armed p_callback for this
+                   LE encryption; btm_ble_link_encrypted() still delivers it. */
+                BOOLEAN le_enc_armed = (p_dev_rec->sec_state == BTM_SEC_STATE_ENCRYPTING);
+
                 BTM_TRACE_DEBUG ("evt=SMP_COMPLT_EVT before update sec_level=0x%x sec_flags=0x%x", p_data->cmplt.sec_level , p_dev_rec->sec_flags );
 
                 res = (p_data->cmplt.reason == SMP_SUCCESS) ? BTM_SUCCESS : BTM_ERR_PROCESSING;
@@ -3170,7 +3178,18 @@ UINT8 btm_proc_smp_cback(tSMP_EVT event, BD_ADDR bd_addr, tSMP_EVT_DATA *p_data)
 #endif
                 }
 
-                btm_sec_dev_rec_cback_event(p_dev_rec, res, TRUE);
+                if (p_data->cmplt.stored_ltk_cmpl) {
+                    /* Not the procedure that armed p_callback. When this LE
+                       encryption armed it, btm_ble_link_encrypted() delivers
+                       the callback and resubmits from there. That path runs
+                       only if p_callback is set. Peer-started encryption, and
+                       a NULL callback, still have to resubmit here. */
+                    if (!le_enc_armed || p_dev_rec->p_callback == NULL) {
+                        btm_sec_check_pending_reqs();
+                    }
+                } else {
+                    btm_sec_dev_rec_cback_event(p_dev_rec, res, TRUE);
+                }
             }
             break;
 

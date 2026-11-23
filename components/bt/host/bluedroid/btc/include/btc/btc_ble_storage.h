@@ -61,7 +61,7 @@ typedef struct
 
 void btc_storage_save(void);
 
-bt_status_t btc_storage_add_ble_bonding_key( bt_bdaddr_t *remote_bd_addr, char *key, uint8_t key_type, uint8_t key_length);
+bt_status_t btc_storage_add_ble_bonding_key( bt_bdaddr_t *remote_bd_addr, char *key, uint8_t key_type, uint8_t key_length, bool is_pseudo_bond);
 
 bt_status_t btc_storage_get_ble_bonding_key(bt_bdaddr_t *remote_bd_addr, uint8_t key_type, char *key_value, int key_length);
 
@@ -99,7 +99,7 @@ int btc_storage_get_num_ble_bond_devices(void);
 
 void btc_storage_delete_duplicate_ble_devices(void);
 
-void btc_storage_remove_unused_sections(uint8_t *cur_addr, tBTM_LE_PID_KEYS *del_pid_key);
+void btc_storage_remove_unused_sections(uint8_t *cur_addr, tBTM_LE_PID_KEYS *del_pid_key, bool is_pseudo_bond);
 
 /* Caller must hold btc_config_lock(). Evict bonds until bdaddr section count
  * is <= max_keep. Excepted bonds are never evicted. Disconnected bonds are

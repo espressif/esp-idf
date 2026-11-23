@@ -266,6 +266,28 @@ void btm_ble_conn_identity_unregister(UINT16 handle)
 }
 
 /*******************************************************************************
+** Function         btm_ble_pseudo_remember_previous
+*******************************************************************************/
+void btm_ble_pseudo_remember_previous(UINT16 handle, const BD_ADDR previous)
+{
+    if (previous == NULL) {
+        return;
+    }
+
+    osi_mutex_lock(&btm_ble_pseudo_mutex, OSI_MUTEX_MAX_TIMEOUT);
+    tBTM_BLE_CONN_IDENTITY *p_ent = conn_identity_by_handle_locked(handle);
+    if (p_ent != NULL && memcmp(p_ent->pseudo, previous, BD_ADDR_LEN) != 0) {
+        memcpy(p_ent->prev_pseudo, previous, BD_ADDR_LEN);
+        p_ent->prev_valid = TRUE;
+        BLE_PSEUDO_DBG("remember: handle=0x%x prev=" BLE_PSEUDO_BDA_FMT
+                       " now=" BLE_PSEUDO_BDA_FMT,
+                       handle, BLE_PSEUDO_BDA(p_ent->prev_pseudo),
+                       BLE_PSEUDO_BDA(p_ent->pseudo));
+    }
+    osi_mutex_unlock(&btm_ble_pseudo_mutex);
+}
+
+/*******************************************************************************
 ** Function         btm_ble_pseudo_to_real_peer
 *******************************************************************************/
 BOOLEAN btm_ble_pseudo_to_real_peer(const BD_ADDR pseudo, BD_ADDR real_peer)

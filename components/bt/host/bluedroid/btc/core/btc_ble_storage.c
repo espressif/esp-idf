@@ -267,7 +267,8 @@ static bool btc_storage_is_all_zeros(const void *buf, size_t len)
 static bt_status_t _btc_storage_add_ble_bonding_key(bt_bdaddr_t *remote_bd_addr,
                                             char *key,
                                             uint8_t key_type,
-                                            uint8_t key_length)
+                                            uint8_t key_length,
+                                            bool is_pseudo_bond)
 {
     bdstr_t bdstr;
     bdaddr_to_string(remote_bd_addr, bdstr, sizeof(bdstr));
@@ -300,16 +301,18 @@ static bt_status_t _btc_storage_add_ble_bonding_key(bt_bdaddr_t *remote_bd_addr,
 
 #if (BLE_INCLUDED == TRUE && SMP_INCLUDED == TRUE && BLE_PERIPH_PSEUDO_ADDR_BOND == TRUE)
     /* If this bond's section is keyed by a Host pseudo address (dual local
-     * identity link, still connected at save time), flag the section so the
-     * identity-based NVS de-dup never deletes it as a "duplicate" of the other
-     * local identity's bond (which shares the same peer Identity). Normal /
-     * RPA-keyed bonds are NOT flagged and keep the native cleanup behavior. */
+     * identity link), flag the section so the identity-based NVS de-dup never
+     * deletes it as a "duplicate" of the other local identity's bond (which
+     * shares the same peer Identity). Prefer the BTU-captured snapshot so a
+     * link disconnect before BTC runs still marks the bond. */
     {
         BD_ADDR real_peer;
-        if (BTM_BleGetRealPeerByPseudo(remote_bd_addr->address, real_peer)) {
+        if (is_pseudo_bond || BTM_BleGetRealPeerByPseudo(remote_bd_addr->address, real_peer)) {
             btc_config_set_int(bdstr, BTC_BLE_STORAGE_PSEUDO_BOND_STR, 1);
         }
     }
+#else
+    (void)is_pseudo_bond;
 #endif
 
     _btc_storage_save();
@@ -319,12 +322,13 @@ static bt_status_t _btc_storage_add_ble_bonding_key(bt_bdaddr_t *remote_bd_addr,
 bt_status_t btc_storage_add_ble_bonding_key(bt_bdaddr_t *remote_bd_addr,
                                             char *key,
                                             uint8_t key_type,
-                                            uint8_t key_length)
+                                            uint8_t key_length,
+                                            bool is_pseudo_bond)
 {
     bt_status_t ret;
 
     btc_config_lock();
-    ret = _btc_storage_add_ble_bonding_key(remote_bd_addr, key, key_type, key_length);
+    ret = _btc_storage_add_ble_bonding_key(remote_bd_addr, key, key_type, key_length, is_pseudo_bond);
     btc_config_unlock();
 
     return ret;
@@ -449,7 +453,7 @@ static bt_status_t _btc_storage_remove_all_ble_keys(const char *name)
     return ret;
 }
 
-void btc_storage_remove_unused_sections(uint8_t *cur_addr, tBTM_LE_PID_KEYS *del_pid_key)
+void btc_storage_remove_unused_sections(uint8_t *cur_addr, tBTM_LE_PID_KEYS *del_pid_key, bool is_pseudo_bond)
 {
     bt_bdaddr_t bd_addr;
 
@@ -466,16 +470,17 @@ void btc_storage_remove_unused_sections(uint8_t *cur_addr, tBTM_LE_PID_KEYS *del
     /* Never use a pseudo-keyed bond as the de-dup baseline: it legitimately
      * shares the peer Identity with a normal bond on another local identity.
      * Symmetric with btc_storage_delete_duplicate_ble_devices() skipping pseudo
-     * baselines. The flag is only set when keys are saved, so use the live
-     * pseudo mapping rather than BTC_BLE_STORAGE_PSEUDO_BOND_STR on cur_addr.
-     * Orphan cleanup below still runs; only identity de-dup is skipped. */
-    BOOLEAN skip_identity_dedup = FALSE;
-    {
+     * baselines. Prefer the BTU-captured snapshot so a link disconnect before
+     * BTC runs still skips identity de-dup. Orphan cleanup below still runs. */
+    BOOLEAN skip_identity_dedup = is_pseudo_bond ? TRUE : FALSE;
+    if (!skip_identity_dedup) {
         BD_ADDR dummy;
         if (BTM_BleGetRealPeerByPseudo(cur_addr, dummy)) {
             skip_identity_dedup = TRUE;
         }
     }
+#else
+    (void)is_pseudo_bond;
 #endif
 
     btc_config_lock();

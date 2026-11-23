@@ -1830,6 +1830,8 @@ typedef struct {
     /* Mirrors tSMP_CMPL.keep_bond; layouts must stay identical because
        btm_proc_smp_cback casts tSMP_EVT_DATA to tBTM_LE_EVT_DATA. */
     BOOLEAN keep_bond;
+    /* Mirrors tSMP_CMPL.stored_ltk_cmpl. */
+    BOOLEAN stored_ltk_cmpl;
 } tBTM_LE_COMPLT;
 #endif
 

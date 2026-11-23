@@ -71,8 +71,10 @@ typedef struct {
 typedef struct {
     UINT16              handle;
     BD_ADDR             pseudo;
+    BD_ADDR             prev_pseudo;    /* pseudo this link used before identity re-key */
     tBLE_CONN_IDENTITY  id;
     BOOLEAN             local_ready;    /* TRUE once local identity finalized */
+    BOOLEAN             prev_valid;     /* prev_pseudo belongs to this same link */
     BOOLEAN             in_use;
 } tBTM_BLE_CONN_IDENTITY;
 
@@ -152,6 +154,15 @@ void btm_ble_pseudo_finalize_local(UINT16 handle);
 *******************************************************************************/
 BOOLEAN btm_ble_pseudo_apply_identity(UINT16 handle, const BD_ADDR identity,
                                       UINT8 id_type, BD_ADDR new_pseudo);
+
+/*******************************************************************************
+** Function         btm_ble_pseudo_remember_previous
+**
+** Description      Record the pseudo this link was indexed by before an
+**                  in-pairing identity re-key. Pending host keys arrived under
+**                  that address and still belong to this link.
+*******************************************************************************/
+void btm_ble_pseudo_remember_previous(UINT16 handle, const BD_ADDR previous);
 
 #ifdef __cplusplus
 }

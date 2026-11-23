@@ -90,7 +90,6 @@ static void     btm_sec_change_pairing_state (tBTM_PAIRING_STATE new_state);
 static char     *btm_pair_state_descr (tBTM_PAIRING_STATE state);
 #endif
 #if (SMP_INCLUDED == TRUE)
-static void     btm_sec_check_pending_reqs(void);
 static BOOLEAN  btm_sec_queue_mx_request (BD_ADDR bd_addr,  UINT16 psm,  BOOLEAN is_orig,
         UINT32 mx_proto_id, UINT32 mx_chan_id,
         tBTM_SEC_CALLBACK *p_callback, void *p_ref_data);

@@ -220,6 +220,21 @@ static void smp_data_received(UINT16 channel, BD_ADDR bd_addr, BT_HDR *p_buf)
         p_cb->rcvd_cmd_code = cmd;
         p_cb->rcvd_cmd_len = (UINT8) p_buf->len;
         smp_sm_event(p_cb, cmd, p);
+        /* An ignored Pairing Request or Security Request writes pairing_bda,
+           role, and the response timer before the state machine drops the
+           command. Drop that residue here, while no procedure is in flight.
+           wait_for_authorization_complete means Pairing Failed is still queued:
+           smp_tx_complete_callback() reports SMP_COMPLT_EVT with pairing_bda.
+           Clearing the address here delivers that event as 00:00:00:00:00:00
+           and btm_proc_smp_cback() drops it. */
+        if (p_cb->state == SMP_STATE_IDLE &&
+                p_cb->br_state == SMP_BR_STATE_IDLE &&
+                p_cb->flags == 0 &&
+                !p_cb->wait_for_authorization_complete) {
+            btu_stop_timer(&p_cb->rsp_timer_ent);
+            memset(p_cb->pairing_bda, 0, BD_ADDR_LEN);
+            p_cb->role = HCI_ROLE_MASTER;
+        }
     }
 
     osi_free (p_buf);
