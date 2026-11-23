@@ -1799,7 +1799,9 @@ esp_err_t uart_flush_input(uart_port_t uart_num)
             }
         }
     }
+    UART_ENTER_CRITICAL(&(uart_context[uart_num].spinlock));
     uart_hal_rxfifo_rst(&(uart_context[uart_num].hal));
+    UART_EXIT_CRITICAL(&(uart_context[uart_num].spinlock));
     /* Only re-enable UART_INTR_RXFIFO_TOUT or UART_INTR_RXFIFO_FULL if they
      * were explicitly enabled by the user. */
     uart_reenable_intr_mask(uart_num, UART_INTR_RXFIFO_TOUT | UART_INTR_RXFIFO_FULL);
@@ -2153,7 +2155,9 @@ esp_err_t uart_wait_tx_idle_polling(uart_port_t uart_num)
 esp_err_t uart_set_loop_back(uart_port_t uart_num, bool loop_back_en)
 {
     ESP_RETURN_ON_FALSE((uart_num < UART_NUM_MAX), ESP_ERR_INVALID_ARG, UART_TAG, "uart_num error");
+    UART_ENTER_CRITICAL(&(uart_context[uart_num].spinlock));
     uart_hal_set_loop_back(&(uart_context[uart_num].hal), loop_back_en);
+    UART_EXIT_CRITICAL(&(uart_context[uart_num].spinlock));
     return ESP_OK;
 }
 
