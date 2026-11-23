@@ -74,10 +74,10 @@ TEST_CASE("DMA2D_M2M_1D_basic", "[DMA2D]")
     memset(m2m_trans_config, 0, M2M_TRANS_TIMES * sizeof(dma2d_m2m_trans_config_t));
     TEST_ESP_OK(dma2d_m2m_init());
 
-    uint32_t desc_malloc_cap = MALLOC_CAP_DEFAULT; // can be in internal RAM or external RAM
+    uint32_t desc_malloc_cap = MALLOC_CAP_DEFAULT | MALLOC_CAP_DMA; // can be in internal RAM or external RAM
     if (esp_efuse_is_flash_encryption_enabled()) {
         // descriptor size is not 16-byte aligned, so can not be in external RAM
-        desc_malloc_cap = MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT;
+        desc_malloc_cap = MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT | MALLOC_CAP_DMA;
     }
     dma2d_descriptor_t *tx_link_buffer = (dma2d_descriptor_t *)heap_caps_aligned_calloc(64, M2M_TRANS_TIMES, 64, desc_malloc_cap);
     dma2d_descriptor_t *rx_link_buffer = (dma2d_descriptor_t *)heap_caps_aligned_calloc(64, M2M_TRANS_TIMES, 64, desc_malloc_cap);
@@ -219,10 +219,10 @@ TEST_CASE("DMA2D_M2M_1D_RGB565_to_RGB888", "[DMA2D]")
     memset(m2m_trans_config, 0, M2M_TRANS_TIMES * sizeof(dma2d_m2m_trans_config_t));
     TEST_ESP_OK(dma2d_m2m_init());
 
-    uint32_t desc_malloc_cap = MALLOC_CAP_DEFAULT; // can be in internal RAM or external RAM
+    uint32_t desc_malloc_cap = MALLOC_CAP_DEFAULT | MALLOC_CAP_DMA; // can be in internal RAM or external RAM
     if (esp_efuse_is_flash_encryption_enabled()) {
         // descriptor size is not 16-byte aligned, so can not be in external RAM
-        desc_malloc_cap = MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT;
+        desc_malloc_cap = MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT | MALLOC_CAP_DMA;
     }
     dma2d_descriptor_t *tx_link_buffer = (dma2d_descriptor_t *)heap_caps_aligned_calloc(64, M2M_TRANS_TIMES, 64, desc_malloc_cap);
     dma2d_descriptor_t *rx_link_buffer = (dma2d_descriptor_t *)heap_caps_aligned_calloc(64, M2M_TRANS_TIMES, 64, desc_malloc_cap);
@@ -338,10 +338,10 @@ TEST_CASE("DMA2D_M2M_2D_basic", "[DMA2D]")
     memset(m2m_trans_config, 0, M2M_TRANS_TIMES * sizeof(dma2d_m2m_trans_config_t));
     TEST_ESP_OK(dma2d_m2m_init());
 
-    uint32_t desc_malloc_cap = MALLOC_CAP_DEFAULT; // can be in internal RAM or external RAM
+    uint32_t desc_malloc_cap = MALLOC_CAP_DEFAULT | MALLOC_CAP_DMA; // can be in internal RAM or external RAM
     if (esp_efuse_is_flash_encryption_enabled()) {
         // descriptor size is not 16-byte aligned, so can not be in external RAM
-        desc_malloc_cap = MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT;
+        desc_malloc_cap = MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT | MALLOC_CAP_DMA;
     }
     dma2d_descriptor_t *tx_link_buffer = (dma2d_descriptor_t *)heap_caps_aligned_calloc(64, M2M_TRANS_TIMES, 64, desc_malloc_cap);
     dma2d_descriptor_t *rx_link_buffer = (dma2d_descriptor_t *)heap_caps_aligned_calloc(64, M2M_TRANS_TIMES, 64, desc_malloc_cap);
@@ -477,10 +477,10 @@ TEST_CASE("DMA2D_M2M_2D_RGB888_to_RGB565", "[DMA2D]")
     memset(m2m_trans_config, 0, M2M_TRANS_TIMES * sizeof(dma2d_m2m_trans_config_t));
     TEST_ESP_OK(dma2d_m2m_init());
 
-    uint32_t desc_malloc_cap = MALLOC_CAP_DEFAULT; // can be in internal RAM or external RAM
+    uint32_t desc_malloc_cap = MALLOC_CAP_DEFAULT | MALLOC_CAP_DMA; // can be in internal RAM or external RAM
     if (esp_efuse_is_flash_encryption_enabled()) {
         // descriptor size is not 16-byte aligned, so can not be in external RAM
-        desc_malloc_cap = MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT;
+        desc_malloc_cap = MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT | MALLOC_CAP_DMA;
     }
     dma2d_descriptor_t *tx_link_buffer = (dma2d_descriptor_t *)heap_caps_aligned_calloc(64, M2M_TRANS_TIMES, 64, desc_malloc_cap);
     dma2d_descriptor_t *rx_link_buffer = (dma2d_descriptor_t *)heap_caps_aligned_calloc(64, M2M_TRANS_TIMES, 64, desc_malloc_cap);
@@ -604,11 +604,11 @@ TEST_CASE("DMA2D_M2M_2D_window", "[DMA2D]")
     memset(m2m_trans_config, 0, M2M_TRANS_TIMES * sizeof(dma2d_m2m_trans_config_t));
     TEST_ESP_OK(dma2d_m2m_init());
 
-    uint32_t desc_malloc_cap = MALLOC_CAP_DEFAULT; // can be in internal RAM or external RAM
-    uint32_t buf_malloc_cap = MALLOC_CAP_INTERNAL;
+    uint32_t desc_malloc_cap = MALLOC_CAP_DEFAULT | MALLOC_CAP_DMA; // can be in internal RAM or external RAM
+    uint32_t buf_malloc_cap = MALLOC_CAP_INTERNAL | MALLOC_CAP_DMA;
     if (esp_efuse_is_flash_encryption_enabled()) {
         // descriptor size is not 16-byte aligned, so can not be in external RAM
-        desc_malloc_cap = MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT;
+        desc_malloc_cap = MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT | MALLOC_CAP_DMA;
         buf_malloc_cap = MALLOC_CAP_SPIRAM; // to test its strict alignment requirement
     }
     dma2d_descriptor_t *tx_link_buffer = (dma2d_descriptor_t *)heap_caps_aligned_calloc(64, M2M_TRANS_TIMES, 64, desc_malloc_cap);

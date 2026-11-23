@@ -5,7 +5,9 @@
  */
 #pragma once
 
+#include <stddef.h>
 #include "sdkconfig.h"
+#include "esp_heap_caps.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -19,6 +21,14 @@ extern "C" {
 #define TEST_PARLIO_MEM_ALLOC_CAPS  MALLOC_CAP_DEFAULT
 #endif
 #define TEST_PARLIO_DMA_MEM_ALLOC_CAPS (MALLOC_CAP_INTERNAL | MALLOC_CAP_DMA)
+
+/**
+ * Allocate a zeroed, DMA capable buffer (the heap aligns it to the cache line where needed).
+ */
+static inline void *test_parlio_alloc_dma_buffer(size_t size)
+{
+    return heap_caps_calloc(1, size, TEST_PARLIO_DMA_MEM_ALLOC_CAPS);
+}
 
 #if CONFIG_IDF_TARGET_ESP32C6
 #define TEST_CLK_GPIO       10
