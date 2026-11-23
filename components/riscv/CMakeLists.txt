@@ -49,7 +49,7 @@ else()
     endif()
 
     if(CONFIG_RISCV_USER_MODE_TRAPS)
-        list(APPEND srcs "privilege_trap.c")
+        list(APPEND srcs "privilege_trap.c" "privilege_trap_resume.S")
     endif()
 endif()
 

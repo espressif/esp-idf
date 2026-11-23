@@ -9,6 +9,7 @@
 #include "unity.h"
 #include "unity_test_runner.h"
 #include "unity_test_utils_memory.h"
+#include "privilege_test_fixture.h"
 
 #define TEST_MEMORY_LEAK_THRESHOLD (-300)
 
@@ -27,5 +28,6 @@ void tearDown(void)
 
 void app_main(void)
 {
+    vTaskPrioritySet(NULL, TEST_MAIN_TASK_PRIO);
     unity_run_menu();
 }

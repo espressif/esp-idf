@@ -48,12 +48,16 @@ esp_privilege_call_user_code:
     sw      s11, RV_UCTX_S11(sp)
     sw      a4, RV_UCTX_SATP(sp)
     sw      zero, RV_UCTX_FAULT(sp)
+    /* Start the run with a zero jvt */
+    sw      zero, RV_UCTX_USER_JVT(sp)
 
-    /* Nothing must trap until mret. From now on, sp is the top of the M-mode stack */
+    /* Disable interrupts until mret, because the switch to U-mode takes several steps. sp is the top of the M-mode
+     * stack of the task. */
     csrci   mstatus, MSTATUS_MIE
-    /* The caller flushed translations and instruction fetch on every core after the page tables and
-     * the code last changed */
-    rv_user_activate_satp a4, t0
+    /* Switch the CPU state to the U-mode code */
+    csrw    mscratch, a3
+    mv      t0, sp
+    jal     rv_user_trap_resume
     csrw    mepc, a0
     li      t0, MSTATUS_MPP
     csrc    mstatus, t0
@@ -65,18 +69,13 @@ esp_privilege_call_user_code:
     lw      gp, RV_URUN_GP(a5)
     lw      tp, RV_URUN_TP(a5)
     lw      ra, RV_URUN_RETURN(a5)
-#if CONFIG_ESP_SYSTEM_HW_STACK_GUARD
-    /* U-mode code runs on its own stack, outside the task's stack bounds */
-    ESP_HW_STACK_GUARD_MONITOR_STOP_CUR_CORE t0 t1
-#endif /* CONFIG_ESP_SYSTEM_HW_STACK_GUARD */
-    /* Do not leak M-mode register values to U-mode. */
+    /* Clear the registers that hold M-mode values, so that the M-mode values stay hidden from U-mode code. */
     li      t0, 0
     li      t1, 0
     li      t2, 0
     li      s0, 0
     li      s1, 0
     li      a2, 0
-    csrw    mscratch, a3
     li      a3, 0
     li      a4, 0
     li      a5, 0
