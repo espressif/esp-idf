@@ -33,7 +33,7 @@ elseif(esp_tee_build)
              "src/nvs_platform.cpp")
 
     set(requires esp_partition esp_blockdev mbedtls)
-    set(priv_requires spi_flash esp_libc cxx)
+    set(priv_requires esp_mspi esp_libc cxx)
 
     idf_component_register(SRCS "${srcs}"
                     REQUIRES "${requires}"
@@ -61,7 +61,8 @@ else()
             "src/nvs_bootloader.c")
 
     set(requires esp_partition esp_blockdev)
-    set(priv_requires spi_flash)
+    # ESP_ERR_FLASH_OP_FAIL lives in esp_mspi (spi_flash_err.h).
+    set(priv_requires esp_mspi)
     if(NOT ${target} STREQUAL "linux")
         # mbedtls is needed for NVS encryption (nvs_encrypted_partition.cpp).
         # It used to be pulled in transitively via bootloader_support, but
