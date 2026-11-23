@@ -593,17 +593,23 @@ static esp_err_t ota_verify_data_partition_signature(const esp_partition_t *part
         return err;
     }
 
-    const ets_secure_boot_signature_t sig_block = {0};
-    err = esp_partition_read(partition, data_length, (void*)&sig_block, sizeof(ets_secure_boot_signature_t));
-    if (err != ESP_OK) {
-        ESP_LOGE(TAG, "Reading signature block failed for partition: %s", partition->label);
-        return err;
+    /* The signature block is a full flash sector (4 KB): keep it off the caller's stack */
+    ets_secure_boot_signature_t *sig_block = calloc(1, sizeof(ets_secure_boot_signature_t));
+    if (sig_block == NULL) {
+        ESP_LOGE(TAG, "Failed to allocate memory for the signature block");
+        return ESP_ERR_NO_MEM;
     }
 
-    err = esp_secure_boot_verify_sbv2_signature_block(&sig_block, digest, NULL);
+    err = esp_partition_read(partition, data_length, sig_block, sizeof(ets_secure_boot_signature_t));
     if (err != ESP_OK) {
-        ESP_LOGE(TAG, "Secure Boot V2 verification failed.");
+        ESP_LOGE(TAG, "Reading signature block failed for partition: %s", partition->label);
+    } else {
+        err = esp_secure_boot_verify_sbv2_signature_block(sig_block, digest, NULL);
+        if (err != ESP_OK) {
+            ESP_LOGE(TAG, "Secure Boot V2 verification failed.");
+        }
     }
+    free(sig_block);
     return err;
 }
 #endif // CONFIG_APP_UPDATE_SECURE_SIGNED_DATA_PARTITION
