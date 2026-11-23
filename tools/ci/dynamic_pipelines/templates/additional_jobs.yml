@@ -1,5 +1,34 @@
+# Included only by the standard GCC build child pipeline.
 include:
   - project: "ci/actions/common"
     file:
       - "templates/idf/app-size-metrics-report.yml"
       - "templates/idf/app-size-metrics-full-report.yml"
+
+all_build_finished:
+  stage: assign_test
+  image: $ESP_ENV_IMAGE
+  tags: [build, shiny]
+  when: always
+  before_script: []
+  dependencies: []
+  script:
+    - echo "all build jobs finished"
+
+generate_presigned_json:
+  stage: assign_test
+  image: $ESP_ENV_IMAGE
+  tags: [build, shiny]
+  when: always
+  needs:
+    - job: all_build_finished
+      artifacts: false
+    - pipeline: $PARENT_PIPELINE_ID
+      job: pipeline_variables
+  artifacts:
+    paths:
+      - presigned.json
+    expire_in: 1 week
+    when: always
+  script:
+    - idf-ci gitlab generate-presigned-json --output presigned.json
