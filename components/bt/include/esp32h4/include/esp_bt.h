@@ -113,7 +113,7 @@
  #include "../../common/btdm_le.h"
  #endif /* SOC_BLE_SUPPORTED */
 
- #define BTDM_CONFIG_VERSION     0x20260916
+ #define BTDM_CONFIG_VERSION     0x20261116
  #define BTDM_CONFIG_MAGIC_VALUE 0x5a5aa5a5
 
  /* Types definition
@@ -134,6 +134,8 @@
     uint8_t version_num;                    /*!< Hardware version number of this chip */
     uint8_t bluetooth_mode;                 /*!< Controller mode: BR/EDR, BLE or Dual Mode */
     uint8_t etm_triggered_rf;               /*!< Enable enabling RF using ETM */
+    uint8_t hci_leading_len;                /*!< HCI transport leading length */
+    uint8_t hci_require_align_4bytes;       /*!< HCI transport require aligned to 4 bytes */
     uint32_t magic;                         /*!< Magic number for configuration validation */
  } esp_bt_ctrl_btdm_config_t;
 
@@ -182,6 +184,8 @@
                 .version_num = 0,                                                                  \
                 .bluetooth_mode = BTDM_CONTROLLER_MODE_EFF,                                        \
                 .etm_triggered_rf = UC_BT_CTRL_SLEEP_ETM_TRIGGERED_RF,                             \
+                .hci_leading_len = 0,                                                              \
+                .hci_require_align_4bytes = 0,                                                     \
                 .magic = BTDM_CONFIG_MAGIC_VALUE,                                                  \
              },                                                                                    \
      }
@@ -201,6 +205,8 @@
                 .version_num = 0,                                                                   \
                 .bluetooth_mode = BTDM_CONTROLLER_MODE_EFF,                                         \
                 .etm_triggered_rf = UC_BT_CTRL_SLEEP_ETM_TRIGGERED_RF,                              \
+                .hci_leading_len = 0,                                                               \
+                .hci_require_align_4bytes = 0,                                                      \
                 .magic = BTDM_CONFIG_MAGIC_VALUE,                                                   \
              },                                                                                     \
      }
