@@ -35,6 +35,7 @@ menu "ESP-STDIO"
     choice ESP_CONSOLE_SECONDARY
         depends on SOC_USB_SERIAL_JTAG_SUPPORTED
         prompt "Channel for console secondary output"
+        default ESP_CONSOLE_SECONDARY_NONE if BLE_LOG_PRPH_USB_SERIAL_JTAG
         default ESP_CONSOLE_SECONDARY_USB_SERIAL_JTAG
         help
             This secondary option supports output through other specific port like USB_SERIAL_JTAG

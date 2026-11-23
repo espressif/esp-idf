@@ -19,10 +19,10 @@
 #include "tusb.h"
 
 /* MACRO */
-_Static_assert(CONFIG_BLE_LOG_POOL_TRANS_SIZE <= CONFIG_BLE_LOG_USB_CDC_TX_BUFSIZE,
-               "CDC TX FIFO must hold one BLE Log transport");
-_Static_assert(CONFIG_BLE_LOG_USB_CDC_EP_BUFSIZE >= 64,
-               "Bulk MPS is 64 (Full-Speed) or 512 (High-Speed)");
+_Static_assert(CONFIG_BLE_LOG_POOL_TRANS_SIZE <= CONFIG_TINYUSB_CDC_TX_BUFSIZE,
+               "CONFIG_TINYUSB_CDC_TX_BUFSIZE must be at least CONFIG_BLE_LOG_POOL_TRANS_SIZE");
+_Static_assert(CONFIG_TINYUSB_CDC_EP_BUFSIZE >= 64,
+               "CONFIG_TINYUSB_CDC_EP_BUFSIZE must be at least 64");
 
 /* Product (and interface) string: the identity plus the target this image is
  * built for, so a host can name the board at enumeration time, before it
