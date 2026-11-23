@@ -28,6 +28,12 @@
 #include "esp_heap_caps.h"
 #include "crypto/sha384.h"
 #include "esp_timer.h"
+#if CONFIG_ESP_WIFI_ENABLE_WPA3_OWE_STA
+#include "common/ieee802_11_defs.h"
+#include "esp_owe_i.h"
+#include "rsn_supp/wpa.h"
+#include "rsn_supp/pmksa_cache.h"
+#endif
 
 typedef struct crypto_bignum crypto_bignum;
 
@@ -1809,6 +1815,69 @@ TEST_CASE("Test crypto_ecdh_set_peerkey with X-only coordinate (OWE case)", "[wp
         crypto_ecdh_deinit(peer_ecdh);
     }
 }
+
+#if CONFIG_ESP_WIFI_ENABLE_WPA3_OWE_STA
+TEST_CASE("owe_process_assoc_resp rejects wrong DH public key length", "[wpa_crypto]")
+{
+    struct wpa_sm *sm = get_wpa_sm();
+    struct wpa_sm saved;
+    struct crypto_ecdh *peer;
+    struct wpabuf *pub;
+    u8 ie[5 + OWE_PRIME_LEN + 1];
+    size_t dh_len;
+
+    set_leak_threshold(300);
+
+    /* Preserve global wpa_sm across this unit test */
+    os_memcpy(&saved, sm, sizeof(*sm));
+    os_memset(sm, 0, sizeof(*sm));
+
+    sm->owe_group = OWE_DH_GRP19;
+    sm->owe_ecdh = crypto_ecdh_init(OWE_DH_GRP19);
+    TEST_ASSERT_NOT_NULL(sm->owe_ecdh);
+
+    /* Needed so the conforming 32-byte path can finish via pmksa_cache_add() */
+    sm->pmksa = pmksa_cache_init(NULL, NULL, sm);
+    TEST_ASSERT_NOT_NULL(sm->pmksa);
+
+    peer = crypto_ecdh_init(OWE_DH_GRP19);
+    TEST_ASSERT_NOT_NULL(peer);
+
+    pub = crypto_ecdh_get_pubkey(peer, 0);
+    TEST_ASSERT_NOT_NULL(pub);
+    TEST_ASSERT_EQUAL(OWE_PRIME_LEN, wpabuf_len(pub));
+
+    /* Synthetic DH IE: EID | Length | Ext ID | Group | Pubkey */
+    ie[0] = WLAN_EID_EXTENSION;
+    ie[2] = WLAN_EID_EXT_OWE_DH_PARAM;
+    WPA_PUT_LE16(&ie[3], OWE_DH_GRP19);
+
+    /* 31-byte key — reject */
+    ie[1] = 1 + 2 + (OWE_PRIME_LEN - 1);
+    os_memcpy(&ie[5], wpabuf_head(pub), OWE_PRIME_LEN - 1);
+    dh_len = ie[1];
+    TEST_ASSERT_EQUAL(-1, owe_process_assoc_resp(NULL, 0, ie, dh_len));
+
+    /* 33-byte key — reject */
+    ie[1] = 1 + 2 + (OWE_PRIME_LEN + 1);
+    os_memcpy(&ie[5], wpabuf_head(pub), OWE_PRIME_LEN);
+    ie[5 + OWE_PRIME_LEN] = 0;
+    dh_len = ie[1];
+    TEST_ASSERT_EQUAL(-1, owe_process_assoc_resp(NULL, 0, ie, dh_len));
+
+    /* 32-byte key — accept */
+    ie[1] = 1 + 2 + OWE_PRIME_LEN;
+    os_memcpy(&ie[5], wpabuf_head(pub), OWE_PRIME_LEN);
+    dh_len = ie[1];
+    TEST_ASSERT_EQUAL(0, owe_process_assoc_resp(NULL, 0, ie, dh_len));
+
+    wpabuf_free(pub);
+    crypto_ecdh_deinit(peer);
+    crypto_ecdh_deinit(sm->owe_ecdh);
+    pmksa_cache_deinit(sm->pmksa);
+    os_memcpy(sm, &saved, sizeof(*sm));
+}
+#endif /* CONFIG_ESP_WIFI_ENABLE_WPA3_OWE_STA */
 
 TEST_CASE("crypto_ec_point_mul Performance", "[wpa_crypto][performance]")
 {
