@@ -198,7 +198,7 @@ const pmu_hp_system_digital_param_t * pmu_hp_system_digital_param_default(pmu_hp
         .xpd                = 1,    \
         .slp_mem_dbias      = 0,    \
         .slp_logic_dbias    = 0,    \
-        .dbias              = 0     \
+        .dbias              = HP_CALI_DBIAS_DEFAULT \
     }, \
     .regulator1 = {                 \
         .drv_b              = HP_CALI_DRVB_DEFAULT  \
@@ -398,6 +398,11 @@ const pmu_lp_system_analog_param_t * pmu_lp_system_analog_param_default(pmu_lp_m
 uint32_t get_act_hp_drvb(void)
 {
     return HP_CALI_DRVB_DEFAULT;
+}
+
+uint32_t get_act_hp_dbias(void)
+{
+    return HP_CALI_DBIAS_DEFAULT;
 }
 
 uint32_t get_act_lp_dbias(void)
