@@ -5,6 +5,7 @@
  */
 #include "esp_err.h"
 #include "esp_log.h"
+#include "esp_system.h"
 #include "sdkconfig.h"
 
 /* From ESP Bluetooth */
@@ -86,6 +87,10 @@ bt_shutdown(void)
         return;
     }
 
+#if CONFIG_BT_LE_CONTROLLER_LOG_ENABLED && CONFIG_BT_LE_CONTROLLER_LOG_MODE_BLE_LOG_V2
+    /* Either shutdown handler may run first; keep log admission closed until reset. */
+    btdm_log_pause();
+#endif
     s_btdm_controller_status = ESP_BT_CONTROLLER_STATUS_INITED;
     r_btdm_task_shutdown();
     btdm_lp_shutdown();
@@ -125,9 +130,13 @@ bt_controller_deinit(void)
     return ESP_OK;
 }
 
-static esp_err_t
+static void
 bt_controller_disable(void)
 {
+#if CONFIG_BT_LE_CONTROLLER_LOG_ENABLED && CONFIG_BT_LE_CONTROLLER_LOG_MODE_BLE_LOG_V2
+    /* Keep log admission closed until log deinit. */
+    btdm_log_pause();
+#endif
     s_btdm_controller_status = ESP_BT_CONTROLLER_STATUS_INITED;
 
     esp_unregister_shutdown_handler(bt_shutdown);
@@ -148,8 +157,6 @@ bt_controller_disable(void)
 
     btdm_coex_disable();
     btdm_lp_reset(false);
-
-    return ESP_OK;
 }
 
 /*
@@ -372,7 +379,6 @@ esp_bt_controller_disable(void)
     }
 
     bt_controller_disable();
-
     return ESP_OK;
 }
 

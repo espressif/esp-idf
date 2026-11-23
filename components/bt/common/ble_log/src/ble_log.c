@@ -25,6 +25,8 @@ BLE_LOG_STATIC bool shutdown_handler_registered = false;
 
 BLE_LOG_STATIC void ble_log_shutdown_handler(void)
 {
+    /* Do not reopen admission before the other shutdown handlers run. */
+    (void)ble_log_enable(false);
     ble_log_flush();
 }
 
