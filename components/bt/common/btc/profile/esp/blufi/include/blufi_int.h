@@ -51,6 +51,7 @@ typedef struct {
     uint8_t                 *aggr_buf;
     uint16_t                 total_len;
     uint16_t                offset;
+    uint32_t                session_id;
 } tBLUFI_ENV;
 
 /* BLUFI protocol */
@@ -194,6 +195,11 @@ extern tBLUFI_ENV *blufi_env_ptr;
 void btc_blufi_protocol_handler(uint8_t type, uint8_t *data, int len);
 
 void btc_blufi_send_encap(uint8_t type, uint8_t *data, int data_len);
+
+void btc_blufi_env_lock(void);
+void btc_blufi_env_unlock(void);
+bool btc_blufi_on_btu_task(void);
+uint32_t btc_blufi_reset_session(void);
 
 void btc_blufi_set_callbacks(esp_blufi_callbacks_t *callbacks);
 
