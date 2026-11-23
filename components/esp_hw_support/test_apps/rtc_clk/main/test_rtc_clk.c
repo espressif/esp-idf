@@ -141,6 +141,31 @@ TEST_CASE("Calculate RC_FAST clock frequency", "[rtc_clk]")
 }
 #endif
 
+TEST_CASE("Calculate RC_SLOW clock frequency", "[rtc_clk]")
+{
+    soc_rtc_slow_clk_src_t prev_src = rtc_clk_slow_src_get();
+    if (prev_src != SOC_RTC_SLOW_CLK_SRC_DEFAULT) {
+        rtc_clk_slow_src_set(SOC_RTC_SLOW_CLK_SRC_DEFAULT);
+    }
+
+    uint32_t rc_slow_approx_hz = 0;
+    uint32_t rc_slow_freq_hz = 0;
+    TEST_ESP_OK(esp_clk_tree_src_get_freq_hz(SOC_MOD_CLK_RTC_SLOW, ESP_CLK_TREE_SRC_FREQ_PRECISION_APPROX, &rc_slow_approx_hz));
+    TEST_ESP_OK(esp_clk_tree_src_get_freq_hz(SOC_MOD_CLK_RTC_SLOW, ESP_CLK_TREE_SRC_FREQ_PRECISION_EXACT, &rc_slow_freq_hz));
+    printf("RC_SLOW_CLK = %"PRIu32" Hz (approx %"PRIu32" Hz)\n", rc_slow_freq_hz, rc_slow_approx_hz);
+
+    if (prev_src != SOC_RTC_SLOW_CLK_SRC_DEFAULT) {
+        rtc_clk_slow_src_set(prev_src);
+        uint32_t restored_freq_hz = 0;
+        TEST_ESP_OK(esp_clk_tree_src_get_freq_hz(SOC_MOD_CLK_RTC_SLOW, ESP_CLK_TREE_SRC_FREQ_PRECISION_EXACT, &restored_freq_hz));
+    }
+
+    /* Internal RC_SLOW oscillator frequency varies across process, voltage, and
+     * temperature (datasheets only specify an approximate nominal value; RWDT
+     * tests allow +-30% margin). Verify calibrated frequency stays within +-30%. */
+    TEST_ASSERT_INT32_WITHIN((uint32_t)(rc_slow_approx_hz * 0.30), rc_slow_approx_hz, rc_slow_freq_hz);
+}
+
 static void test_clock_switching(void (*switch_func)(const rtc_cpu_freq_config_t* config))
 {
     const int test_duration_sec = 10;

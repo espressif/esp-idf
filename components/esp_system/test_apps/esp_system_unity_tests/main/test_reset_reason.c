@@ -328,10 +328,24 @@ TEST_CASE_MULTIPLE_STAGES("reset reason ESP_RST_WDT after hung shutdown handler"
 static RTC_NOINIT_ATTR uint32_t s_shutdown_handlers_done;
 #endif
 
-/* Each handler waits for 40% of the total timeout. */
+/* arm_shutdown_handler_wdt() computes ticks from nominal rtc_clk_slow_freq_get_hz(),
+ * while the default internal RC_SLOW oscillator can deviate by up to +-30% across
+ * chips and temperature (putting the actual WDT timeout in ~0.77x..1.43x of
+ * CONFIG_ESP_SYSTEM_SHUTDOWN_HANDLER_TIMEOUT_MS).
+ *
+ * Use 6 handlers of 30% timeout each:
+ * - Each handler (30%) is well below the shortest possible WDT timeout (~77%),
+ *   so no single handler can trigger the WDT on its own.
+ * - The first two handlers (60%) always finish before the shortest possible WDT
+ *   timeout (~77%), proving multiple handlers run before the reset.
+ * - All 6 handlers together (180%) always exceed the longest possible WDT
+ *   timeout (~143%), guaranteeing an ESP_RST_WDT before the last handler finishes.
+ */
+#define SHUTDOWN_CUMULATIVE_HANDLER_COUNT 6
+
 static void shutdown_handler_slice(unsigned index)
 {
-    esp_rom_delay_us((CONFIG_ESP_SYSTEM_SHUTDOWN_HANDLER_TIMEOUT_MS * 4 / 10) * 1000);
+    esp_rom_delay_us((CONFIG_ESP_SYSTEM_SHUTDOWN_HANDLER_TIMEOUT_MS * 3 / 10) * 1000);
 #if CHECK_RTC_MEM
     s_shutdown_handlers_done |= 1u << index;
 #else
@@ -354,33 +368,52 @@ static void shutdown_handler_2(void)
     shutdown_handler_slice(2);
 }
 
+static void shutdown_handler_3(void)
+{
+    shutdown_handler_slice(3);
+}
+
+static void shutdown_handler_4(void)
+{
+    shutdown_handler_slice(4);
+}
+
+static void shutdown_handler_5(void)
+{
+    shutdown_handler_slice(5);
+}
+
 static void do_shutdown_handlers_cumulative(void)
 {
 #if CHECK_RTC_MEM
     s_shutdown_handlers_done = 0;
 #endif
     setup_values();
-    /* Collectively, the shutdown handlers take 120% of the timeout, so the RTC
-     * watchdog resets the chip before the third handler finishes. */
+    /* Collectively, the shutdown handlers take 180% of the nominal timeout, so
+     * the RTC watchdog resets the chip after the first two handlers complete and
+     * before the final handler finishes. */
     TEST_ASSERT_EQUAL(ESP_OK, esp_register_shutdown_handler(shutdown_handler_0));
     TEST_ASSERT_EQUAL(ESP_OK, esp_register_shutdown_handler(shutdown_handler_1));
     TEST_ASSERT_EQUAL(ESP_OK, esp_register_shutdown_handler(shutdown_handler_2));
-    /* Does not return. The RTC watchdog resets the chip during the third handler. */
+    TEST_ASSERT_EQUAL(ESP_OK, esp_register_shutdown_handler(shutdown_handler_3));
+    TEST_ASSERT_EQUAL(ESP_OK, esp_register_shutdown_handler(shutdown_handler_4));
+    TEST_ASSERT_EQUAL(ESP_OK, esp_register_shutdown_handler(shutdown_handler_5));
+    /* Does not return. The RTC watchdog resets the chip before the last handler finishes. */
     esp_restart();
 }
 
 static void check_shutdown_handlers_cumulative(void)
 {
     TEST_ASSERT_EQUAL_MESSAGE(ESP_RST_WDT, esp_reset_reason(),
-                              "RTC watchdog did not reset the chip during the third handler");
+                              "RTC watchdog did not reset the chip before all shutdown handlers finished");
 #if CHECK_RTC_MEM
     TEST_ASSERT_EQUAL_HEX32(CHECK_VALUE, s_rtc_noinit_val);
-    /* The first two handlers must finish. The reset is during the third handler. */
+    /* The first two handlers (60% of nominal timeout) must finish before the WDT fires. */
     TEST_ASSERT_BITS_MESSAGE(0x3, 0x3, s_shutdown_handlers_done,
-                             "RTC watchdog reset the chip during the third handler, but an earlier handler did not finish");
-    /* The third handler must not finish. */
-    TEST_ASSERT_BITS_MESSAGE(0x4, 0, s_shutdown_handlers_done,
-                             "third handler finished; RTC watchdog missed the timeout");
+                             "RTC watchdog reset the chip too early; the first two handlers did not finish");
+    /* The last handler (180% cumulative) must not finish. */
+    TEST_ASSERT_BITS_MESSAGE(1u << (SHUTDOWN_CUMULATIVE_HANDLER_COUNT - 1), 0, s_shutdown_handlers_done,
+                             "last handler finished; RTC watchdog missed the timeout");
 #endif
 }
 
