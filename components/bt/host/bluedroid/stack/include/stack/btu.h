@@ -182,10 +182,6 @@ typedef enum {
     SIG_BTU_START_UP = 0,
     SIG_BTU_HCI_MSG,
     SIG_BTU_BTA_MSG,
-    SIG_BTU_BTA_ALARM,
-    SIG_BTU_GENERAL_ALARM,
-    SIG_BTU_ONESHOT_ALARM,
-    SIG_BTU_L2CAP_ALARM,
     SIG_BTU_HCI_ADV_RPT_MSG,
     SIG_BTU_NUM,
 } SIG_BTU_t;
@@ -330,6 +326,9 @@ void btu_c2h_credit_pause_if_congested(void);
 int get_btu_work_queue_size(void);
 
 osi_thread_t *btu_get_current_thread(void);
+#if (defined(BTA_INCLUDED) && BTA_INCLUDED == TRUE)
+void btu_bta_alarm_process(void *param);
+#endif
 /*
 #ifdef __cplusplus
 }

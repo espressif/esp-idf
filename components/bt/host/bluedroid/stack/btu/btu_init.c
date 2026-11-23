@@ -174,7 +174,7 @@ bool BTU_StartUp(void)
     btu_cb.trace_level = HCI_INITIAL_TRACE_LEVEL;
 
     btu_general_alarm_hash_map = hash_map_new(BTU_GENERAL_ALARM_HASH_MAP_SIZE,
-                                 hash_function_pointer, NULL, (data_free_fn)osi_alarm_free, NULL);
+                                 hash_function_pointer, NULL, osi_alarm_free_cb, NULL);
     if (btu_general_alarm_hash_map == NULL) {
         goto error_exit;
     }
@@ -182,7 +182,7 @@ bool BTU_StartUp(void)
     osi_mutex_new(&btu_general_alarm_lock);
 
     btu_oneshot_alarm_hash_map = hash_map_new(BTU_ONESHOT_ALARM_HASH_MAP_SIZE,
-                                 hash_function_pointer, NULL, (data_free_fn)osi_alarm_free, NULL);
+                                 hash_function_pointer, NULL, osi_alarm_free_cb, NULL);
     if (btu_oneshot_alarm_hash_map == NULL) {
         goto error_exit;
     }
@@ -190,7 +190,7 @@ bool BTU_StartUp(void)
     osi_mutex_new(&btu_oneshot_alarm_lock);
 
     btu_l2cap_alarm_hash_map = hash_map_new(BTU_L2CAP_ALARM_HASH_MAP_SIZE,
-                                            hash_function_pointer, NULL, (data_free_fn)osi_alarm_free, NULL);
+                                            hash_function_pointer, NULL, osi_alarm_free_cb, NULL);
     if (btu_l2cap_alarm_hash_map == NULL) {
         goto error_exit;
     }

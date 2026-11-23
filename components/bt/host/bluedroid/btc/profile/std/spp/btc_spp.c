@@ -1284,7 +1284,7 @@ void btc_spp_cb_handler(btc_msg_t *msg)
                     memcpy(p_arg, p_data, sizeof(tBTA_JV));
                     slot->alarm_arg = (void *)p_arg;
                     if ((slot->close_alarm =
-                             osi_alarm_new("slot", close_timeout_handler, (void *)slot, VFS_CLOSE_TIMEOUT)) == NULL) {
+                             osi_alarm_new("slot", close_timeout_handler, (void *)slot, NULL)) == NULL) {
                         osi_free(p_arg);
                         slot->alarm_arg = NULL;
                         param.close.status = ESP_SPP_NO_RESOURCE;
@@ -1296,6 +1296,7 @@ void btc_spp_cb_handler(btc_msg_t *msg)
                         osi_free(p_arg);
                         slot->alarm_arg = NULL;
                         osi_alarm_free(slot->close_alarm);
+                        slot->close_alarm = NULL;
                         param.close.status = ESP_SPP_BUSY;
                         osi_mutex_unlock(&spp_local_param.spp_slot_mutex);
                         BTC_TRACE_ERROR("%s set slot close_alarm failed!", __func__);

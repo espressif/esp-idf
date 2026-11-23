@@ -155,10 +155,6 @@ static void btu_acl_pkt_linked_free(pkt_linked_item_t *linked_pkt)
     } while (0);
 }
 
-#if (defined(BTA_INCLUDED) && BTA_INCLUDED == TRUE)
-static void btu_bta_alarm_process(void *param);
-#endif
-
 static void btu_hci_msg_process(void *param)
 {
     /* Determine the input message type. */
@@ -336,7 +332,7 @@ static void btu_hci_acl_data_handler(void *param)
 }
 
 #if (defined(BTA_INCLUDED) && BTA_INCLUDED == TRUE)
-static void btu_bta_alarm_process(void *param)
+void btu_bta_alarm_process(void *param)
 {
     TIMER_LIST_ENT *p_tle = (TIMER_LIST_ENT *)param;
     // call timer callback
@@ -358,12 +354,20 @@ bool btu_task_post(uint32_t sig, void *param, uint32_t timeout)
 {
     bool status = false;
 
+    /* Worker gone: fail instead of asserting so callers release their
+     * param (e.g. bta_sys_sendmsg). */
+    if (btu_thread == NULL) {
+        return false;
+    }
+
     switch (sig) {
         case SIG_BTU_START_UP:
-            status = osi_thread_post(btu_thread, btu_task_start_up, param, 0, timeout);
+            status = osi_thread_post(btu_thread, btu_task_start_up, param, NULL, 0, timeout);
             break;
         case SIG_BTU_HCI_MSG:
-            status = osi_thread_post(btu_thread, btu_hci_msg_process, param, 0, timeout);
+            /* param is a heap BT_HDR; reclaim it if teardown drains the work. */
+            status = osi_thread_post(btu_thread, btu_hci_msg_process, param,
+                                     (osi_thread_free_cb_t)osi_free_func, 0, timeout);
             break;
         case SIG_BTU_HCI_ADV_RPT_MSG:
 #if BLE_INCLUDED == TRUE
@@ -381,19 +385,11 @@ bool btu_task_post(uint32_t sig, void *param, uint32_t timeout)
             break;
 #if (defined(BTA_INCLUDED) && BTA_INCLUDED == TRUE)
         case SIG_BTU_BTA_MSG:
-            status = osi_thread_post(btu_thread, bta_sys_event, param, 0, timeout);
-            break;
-        case SIG_BTU_BTA_ALARM:
-            status = osi_thread_post(btu_thread, btu_bta_alarm_process, param, 0, timeout);
+            /* param is a heap BT_HDR; same owner hand-off as SIG_BTU_HCI_MSG. */
+            status = osi_thread_post(btu_thread, bta_sys_event, param,
+                                     (osi_thread_free_cb_t)osi_free_func, 0, timeout);
             break;
 #endif
-        case SIG_BTU_GENERAL_ALARM:
-        case SIG_BTU_ONESHOT_ALARM:
-            status = osi_thread_post(btu_thread, btu_general_alarm_process, param, 0, timeout);
-            break;
-        case SIG_BTU_L2CAP_ALARM:
-            status = osi_thread_post(btu_thread, btu_l2cap_alarm_process, param, 0, timeout);
-            break;
         default:
             break;
     }
@@ -596,13 +592,17 @@ static void btu_general_alarm_process(void *param)
 
     /* Skip stale alarms: btu_free_timer removes the entry before the owning
      * structure may be freed, and btu_stop_timer clears in_use, but neither can
-     * retract a SIG_BTU_GENERAL_ALARM that was already queued to the BTU task. */
+     * retract a callback already queued on the BTU task. */
     osi_mutex_lock(&btu_general_alarm_lock, OSI_MUTEX_MAX_TIMEOUT);
     bool active = hash_map_has_key(btu_general_alarm_hash_map, p_tle);
     osi_mutex_unlock(&btu_general_alarm_lock);
     if (!active) {
         osi_mutex_lock(&btu_oneshot_alarm_lock, OSI_MUTEX_MAX_TIMEOUT);
-        active = hash_map_has_key(btu_oneshot_alarm_hash_map, p_tle);
+        osi_alarm_t *alarm = hash_map_get(btu_oneshot_alarm_hash_map, p_tle);
+        /* This expiry is stale once a later start has armed the alarm again. */
+        if (alarm != NULL && p_tle->in_use != FALSE && !osi_alarm_is_active(alarm)) {
+            active = true;
+        }
         osi_mutex_unlock(&btu_oneshot_alarm_lock);
     }
     if (!active || p_tle->in_use == FALSE) {
@@ -737,9 +737,8 @@ static void btu_general_alarm_process(void *param)
 void btu_general_alarm_cb(void *data)
 {
     assert(data != NULL);
-    TIMER_LIST_ENT *p_tle = (TIMER_LIST_ENT *)data;
 
-    btu_task_post(SIG_BTU_GENERAL_ALARM, p_tle, OSI_THREAD_MAX_TIMEOUT);
+    btu_general_alarm_process(data);
 }
 
 void btu_start_timer(TIMER_LIST_ENT *p_tle, UINT16 type, UINT32 timeout_sec)
@@ -751,7 +750,7 @@ void btu_start_timer(TIMER_LIST_ENT *p_tle, UINT16 type, UINT32 timeout_sec)
     // Get the alarm for the timer list entry.
     osi_mutex_lock(&btu_general_alarm_lock, OSI_MUTEX_MAX_TIMEOUT);
     if (!hash_map_has_key(btu_general_alarm_hash_map, p_tle)) {
-        alarm = osi_alarm_new("btu_gen", btu_general_alarm_cb, (void *)p_tle, 0);
+        alarm = osi_alarm_new("btu_gen", btu_general_alarm_cb, (void *)p_tle, btu_get_current_thread());
         if (alarm == NULL) {
             HCI_TRACE_ERROR("%s Unable to create new alarm", __func__);
             osi_mutex_unlock(&btu_general_alarm_lock);
@@ -776,7 +775,9 @@ void btu_start_timer(TIMER_LIST_ENT *p_tle, UINT16 type, UINT32 timeout_sec)
     // NOTE: This value is in seconds but stored in a ticks field.
     p_tle->ticks = timeout_sec;
     p_tle->in_use = TRUE;
-    osi_alarm_set(alarm, (period_ms_t)((period_ms_t)timeout_sec * 1000));
+    if (osi_alarm_set(alarm, (period_ms_t)((period_ms_t)timeout_sec * 1000)) != OSI_ALARM_ERR_PASS) {
+        HCI_TRACE_ERROR("%s Unable to arm alarm", __func__);
+    }
     osi_mutex_unlock(&btu_general_alarm_lock);
 }
 
@@ -874,9 +875,8 @@ static void btu_l2cap_alarm_process(void *param)
 static void btu_l2cap_alarm_cb(void *data)
 {
     assert(data != NULL);
-    TIMER_LIST_ENT *p_tle = (TIMER_LIST_ENT *)data;
 
-    btu_task_post(SIG_BTU_L2CAP_ALARM, p_tle, OSI_THREAD_MAX_TIMEOUT);
+    btu_l2cap_alarm_process(data);
 }
 
 void btu_start_quick_timer(TIMER_LIST_ENT *p_tle, UINT16 type, UINT32 timeout_ticks)
@@ -888,7 +888,7 @@ void btu_start_quick_timer(TIMER_LIST_ENT *p_tle, UINT16 type, UINT32 timeout_ti
     // Get the alarm for the timer list entry.
     osi_mutex_lock(&btu_l2cap_alarm_lock, OSI_MUTEX_MAX_TIMEOUT);
     if (!hash_map_has_key(btu_l2cap_alarm_hash_map, p_tle)) {
-        alarm = osi_alarm_new("btu_l2cap", btu_l2cap_alarm_cb, (void *)p_tle, 0);
+        alarm = osi_alarm_new("btu_l2cap", btu_l2cap_alarm_cb, (void *)p_tle, btu_get_current_thread());
         if (alarm == NULL) {
             HCI_TRACE_ERROR("%s Unable to create alarm", __func__);
             osi_mutex_unlock(&btu_l2cap_alarm_lock);
@@ -972,9 +972,16 @@ void btu_oneshot_alarm_cb(void *data)
     assert(data != NULL);
     TIMER_LIST_ENT *p_tle = (TIMER_LIST_ENT *)data;
 
-    btu_stop_timer_oneshot(p_tle);
+    /* in_use must stay set across the dispatch. Clearing it here makes
+     * btu_general_alarm_process drop every one-shot timeout. */
+    btu_general_alarm_process(p_tle);
 
-    btu_task_post(SIG_BTU_ONESHOT_ALARM, p_tle, OSI_THREAD_MAX_TIMEOUT);
+    osi_mutex_lock(&btu_oneshot_alarm_lock, OSI_MUTEX_MAX_TIMEOUT);
+    osi_alarm_t *alarm = hash_map_get(btu_oneshot_alarm_hash_map, p_tle);
+    if (alarm != NULL && p_tle->in_use != FALSE && !osi_alarm_is_active(alarm)) {
+        p_tle->in_use = FALSE;
+    }
+    osi_mutex_unlock(&btu_oneshot_alarm_lock);
 }
 
 /*
@@ -989,7 +996,7 @@ void btu_start_timer_oneshot(TIMER_LIST_ENT *p_tle, UINT16 type, UINT32 timeout_
     // Get the alarm for the timer list entry.
     osi_mutex_lock(&btu_oneshot_alarm_lock, OSI_MUTEX_MAX_TIMEOUT);
     if (!hash_map_has_key(btu_oneshot_alarm_hash_map, p_tle)) {
-        alarm = osi_alarm_new("btu_oneshot", btu_oneshot_alarm_cb, (void *)p_tle, 0);
+        alarm = osi_alarm_new("btu_oneshot", btu_oneshot_alarm_cb, (void *)p_tle, btu_get_current_thread());
         if (alarm == NULL) {
             HCI_TRACE_ERROR("%s Unable to create new alarm", __func__);
             osi_mutex_unlock(&btu_oneshot_alarm_lock);

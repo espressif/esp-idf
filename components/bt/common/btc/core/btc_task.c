@@ -103,6 +103,11 @@
 
 osi_thread_t *btc_thread;
 
+struct btc_msg_ctx {
+    btc_arg_deep_free_t free_func;
+    btc_msg_t msg;
+};
+
 static const btc_func_t profile_tab[BTC_PID_NUM] = {
 #ifdef CONFIG_BT_BLUEDROID_ENABLED
     [BTC_PID_MAIN_INIT]   = {btc_main_call_handler,       NULL                    },
@@ -289,7 +294,8 @@ static const btc_func_t profile_tab[BTC_PID_NUM] = {
 ******************************************************************************/
 static void btc_thread_handler(void *arg)
 {
-    btc_msg_t *msg = (btc_msg_t *)arg;
+    struct btc_msg_ctx *ctx = (struct btc_msg_ctx *)arg;
+    btc_msg_t *msg = &ctx->msg;
 
     BTC_TRACE_DEBUG("%s msg %u %u %u %p\n", __func__, msg->sig, msg->pid, msg->act, msg->arg);
     /* msg->pid is validated at btc_transfer_context() entry; any message that
@@ -305,43 +311,37 @@ static void btc_thread_handler(void *arg)
         break;
     }
 
-    osi_free(msg);
+    /* Profile handler releases any deep copy. Drop the block only. */
+    osi_free(ctx);
 }
 
-static bt_status_t btc_task_post(btc_msg_t *msg, uint32_t timeout)
+static void btc_msg_ctx_free_func(void *context)
 {
+    struct btc_msg_ctx *ctx = (struct btc_msg_ctx *)context;
+
+    if (ctx->free_func) {
+        ctx->free_func(&ctx->msg);
+    }
+
+    osi_free(ctx);
+}
+
+static bt_status_t btc_transfer_context_internal(btc_msg_t *msg, void *arg, int arg_len,
+                                                 btc_arg_deep_copy_t copy_func, btc_arg_deep_free_t free_func,
+                                                 uint32_t timeout)
+{
+    struct btc_msg_ctx* ctx;
+
     if (btc_thread == NULL) {
         BTC_TRACE_WARNING("%s btc_thread is NULL\n", __func__);
         return BT_STATUS_NOT_READY;
     }
 
-    if (osi_thread_post(btc_thread, btc_thread_handler, msg, 0, timeout) == false) {
-        return BT_STATUS_BUSY;
-    }
-
-    return BT_STATUS_SUCCESS;
-}
-
-/**
- * transfer an message to another module in the different task.
- * @param  msg       message
- * @param  arg       parameter
- * @param  arg_len   length of parameter
- * @param  copy_func deep copy function
- * @param  free_func deep free function
- * @return           BT_STATUS_SUCCESS: success
- *                   others: fail
- */
-bt_status_t btc_transfer_context(btc_msg_t *msg, void *arg, int arg_len, btc_arg_deep_copy_t copy_func,
-                                    btc_arg_deep_free_t free_func)
-{
-    btc_msg_t* lmsg;
-    bt_status_t ret;
     //                              arg XOR arg_len
     if ((msg == NULL) || ((arg == NULL) == !(arg_len == 0)) ||
         (msg->pid >= BTC_PID_NUM)) {
         /* Reject invalid pid here, before any deep_copy runs, so the caller's
-         * arg is not yet duplicated into lmsg and there is nothing to free.
+         * arg is not yet duplicated into ctx and there is nothing to free.
          * This keeps the trust boundary at the single public entry point and
          * makes the downstream handler unable to encounter an invalid pid. */
         BTC_TRACE_WARNING("%s Invalid parameters\n", __func__);
@@ -350,33 +350,43 @@ bt_status_t btc_transfer_context(btc_msg_t *msg, void *arg, int arg_len, btc_arg
 
     BTC_TRACE_DEBUG("%s msg %u %u %u %p\n", __func__, msg->sig, msg->pid, msg->act, arg);
 
-    lmsg = (btc_msg_t *)osi_malloc(sizeof(btc_msg_t) + arg_len);
-    if (lmsg == NULL) {
+    ctx = (struct btc_msg_ctx *)osi_malloc(sizeof(struct btc_msg_ctx) + arg_len);
+    if (ctx == NULL) {
         BTC_TRACE_WARNING("%s No memory\n", __func__);
         return BT_STATUS_NOMEM;
     }
 
-    memcpy(lmsg, msg, sizeof(btc_msg_t));
+    memcpy(&ctx->msg, msg, sizeof(btc_msg_t));
+    /* Deep free only applies when this post owns a deep copy. */
+    ctx->free_func = (copy_func != NULL) ? free_func : NULL;
     if (arg) {
-        /* memcpy below covers exactly arg_len bytes, which is the full size of
-         * the destination buffer (it was sized as sizeof(btc_msg_t) + arg_len),
-         * so a prior memset would be redundant. Deep-copy callbacks must only
-         * read fields that were written by the caller-supplied arg. */
-        memcpy(lmsg->arg, arg, arg_len);
+        /* memcpy covers arg_len bytes into the tail of ctx. Deep-copy
+         * callbacks must only read fields written by the caller-supplied arg. */
+        memcpy(ctx->msg.arg, arg, arg_len);
         if (copy_func) {
-            copy_func(lmsg, lmsg->arg, arg);
+            copy_func(&ctx->msg, ctx->msg.arg, arg);
         }
     }
 
-    ret = btc_task_post(lmsg, OSI_THREAD_MAX_TIMEOUT);
-    if (ret != BT_STATUS_SUCCESS) {
-        if (copy_func && free_func) {
-            free_func(lmsg);
-        }
-        osi_free(lmsg);
+    if (osi_thread_post(btc_thread, btc_thread_handler, ctx, (osi_thread_free_cb_t)btc_msg_ctx_free_func, 0,
+                        timeout) == false) {
+        btc_msg_ctx_free_func(ctx);
+        return BT_STATUS_BUSY;
     }
 
-    return ret;
+    return BT_STATUS_SUCCESS;
+}
+
+bt_status_t btc_transfer_context(btc_msg_t *msg, void *arg, int arg_len, btc_arg_deep_copy_t copy_func,
+                                    btc_arg_deep_free_t free_func)
+{
+    return btc_transfer_context_internal(msg, arg, arg_len, copy_func, free_func, OSI_THREAD_MAX_TIMEOUT);
+}
+
+bt_status_t btc_transfer_context_nb(btc_msg_t *msg, void *arg, int arg_len, btc_arg_deep_copy_t copy_func,
+                                    btc_arg_deep_free_t free_func)
+{
+    return btc_transfer_context_internal(msg, arg, arg_len, copy_func, free_func, 0);
 }
 
 /**

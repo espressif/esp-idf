@@ -7,9 +7,10 @@
 #ifndef _PKT_LIST_H_
 #define _PKT_LIST_H_
 
-#include "sys/queue.h"
 #include <stdint.h>
 #include <stdbool.h>
+
+#include "osi/slist.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -18,7 +19,7 @@ extern "C" {
 struct pkt_queue;
 
 typedef struct pkt_linked_item {
-    STAILQ_ENTRY(pkt_linked_item) next;
+    slist_node_t node;
     uint8_t data[];
 } pkt_linked_item_t;
 
