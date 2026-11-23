@@ -162,6 +162,7 @@ bool adc_oneshot_hal_convert(adc_oneshot_hal_ctx_t *hal, int *out_raw)
 #endif
 
     adc_oneshot_ll_disable_all_unit();
+    adc_oneshot_ll_disable_channel(hal->unit);
     return valid;
 }
 
