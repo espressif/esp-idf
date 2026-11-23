@@ -5,7 +5,14 @@ Bluetooth\ :sup:`®` API
 
 This section provides the API reference for Bluetooth components supported in ESP-IDF. ESP-IDF supports two host stacks: **Bluedroid** and **NimBLE**.
 
-- **Bluedroid** (the default stack): Supports both Bluetooth Classic and Bluetooth LE. Recommended for applications that require both technologies.
+.. only:: SOC_BT_CLASSIC_SUPPORTED
+
+    - **Bluedroid** (the default stack): Supports both Bluetooth Classic and Bluetooth LE. Recommended for applications that require both technologies.
+
+.. only:: not SOC_BT_CLASSIC_SUPPORTED
+
+    - **Bluedroid** (the default stack): On {IDF_TARGET_NAME}, supports Bluetooth LE only.
+
 - **NimBLE**: A lightweight stack for Bluetooth LE only. Ideal for resource-constrained applications due to smaller code size and memory usage.
 
 Use the navigation links below to explore API documentation and application examples.
@@ -24,7 +31,7 @@ The low-level interface between the Bluetooth host stack and the controller.
 
 **Bluedroid Stack API**
 
-The default host stack in ESP-IDF, supporting both Bluetooth Classic and Bluetooth LE.
+The default host stack in ESP-IDF.
 
 .. toctree::
     :maxdepth: 1

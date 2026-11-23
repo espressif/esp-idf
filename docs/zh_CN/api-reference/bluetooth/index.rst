@@ -5,7 +5,14 @@
 
 本章节提供 ESP-IDF 中蓝牙的 API 参考。ESP-IDF 支持两种主机协议栈：**Bluedroid** 和 **NimBLE**。
 
-- **Bluedroid** （默认协议栈）：支持经典蓝牙和低功耗蓝牙，适用于同时使用这两种技术的应用场景。
+.. only:: SOC_BT_CLASSIC_SUPPORTED
+
+    - **Bluedroid** （默认协议栈）：支持经典蓝牙和低功耗蓝牙，适用于同时使用这两种技术的应用场景。
+
+.. only:: not SOC_BT_CLASSIC_SUPPORTED
+
+    - **Bluedroid** （默认协议栈）：在 {IDF_TARGET_NAME} 上仅支持低功耗蓝牙。
+
 - **NimBLE**：仅支持低功耗蓝牙，因代码体积小、内存占用低，适合资源受限的应用。
 
 可通过下方链接查看相应的 API 文档和示例应用。
@@ -24,7 +31,7 @@
 
 **Bluedroid 协议栈 API**
 
-ESP-IDF 默认的主机协议栈，支持经典蓝牙和低功耗蓝牙。
+ESP-IDF 默认的主机协议栈。
 
 .. toctree::
     :maxdepth: 1

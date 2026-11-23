@@ -136,12 +136,20 @@ The ESP-IDF Bluetooth implementation operates within a FreeRTOS environment, whe
 Bluedroid
 ---------
 
-ESP-Bluedroid is a modified version of Android’s Bluedroid stack, supporting both Bluetooth Classic and Bluetooth LE. It consists of two layers:
+.. only:: SOC_BT_CLASSIC_SUPPORTED
+
+   ESP-Bluedroid is a modified version of Android’s Bluedroid stack, supporting both Bluetooth Classic and Bluetooth LE. It consists of two layers:
+
+.. only:: not SOC_BT_CLASSIC_SUPPORTED
+
+   ESP-Bluedroid is a modified version of Android’s Bluedroid stack. On {IDF_TARGET_NAME}, it supports Bluetooth LE only. It consists of two layers:
 
 - **Bluetooth Upper Layer (BTU):** Implements core protocols (L2CAP, GATT, SMP, etc.).
 - **Bluetooth Transport Controller Layer (BTC):** Provides application-level APIs and manages profiles.
 
-**Use Case:** Recommended for applications requiring both Bluetooth Classic and Bluetooth LE.
+.. only:: SOC_BT_CLASSIC_SUPPORTED
+
+   **Use Case:** Recommended for applications requiring both Bluetooth Classic and Bluetooth LE.
 
 
 OS Adaptation
