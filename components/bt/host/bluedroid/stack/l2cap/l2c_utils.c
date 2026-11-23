@@ -43,9 +43,6 @@
 #include "stack/c2h_credit.h"
 #endif
 
-#if BT_SDP_BQB_INCLUDED
-extern BOOLEAN l2cap_bqb_ertm_mode_included_flag;
-#endif /* BT_SDP_BQB_INCLUDED */
 
 /*******************************************************************************
 **
@@ -803,6 +800,8 @@ void l2cu_send_peer_config_req (tL2C_CCB *p_ccb, tL2CAP_CFG_INFO *p_cfg)
         L2CAP_PKT_OVERHEAD + L2CAP_CMD_OVERHEAD;
 
     UINT16_TO_STREAM (p, p_ccb->remote_cid);
+    /* Extended Flow Spec is not in L2CAP_EXTFEA_SUPPORTED_MASK, so the
+     * Continuation flag is sent as requested. */
     UINT16_TO_STREAM (p, p_cfg->flags);                    /* Flags (continuation) */
 
     /* Now, put the options */
@@ -900,7 +899,8 @@ void l2cu_send_peer_config_rsp (tL2C_CCB *p_ccb, tL2CAP_CFG_INFO *p_cfg)
     p = (UINT8 *)(p_buf + 1) + L2CAP_SEND_CMD_OFFSET + HCI_DATA_PREAMBLE_SIZE + L2CAP_PKT_OVERHEAD + L2CAP_CMD_OVERHEAD;
 
     UINT16_TO_STREAM (p, p_ccb->remote_cid);
-    UINT16_TO_STREAM (p, p_cfg->flags);           /* Flags (continuation) Must match request */
+    /* Extended Flow Spec is not supported. Flags (continuation) match the request. */
+    UINT16_TO_STREAM (p, p_cfg->flags);
     UINT16_TO_STREAM (p, p_cfg->result);
 
     /* Now, put the options */
@@ -960,7 +960,7 @@ void l2cu_send_peer_config_rsp (tL2C_CCB *p_ccb, tL2CAP_CFG_INFO *p_cfg)
 ** Returns          void
 **
 *******************************************************************************/
-void l2cu_send_peer_config_rej (tL2C_CCB *p_ccb, UINT8 *p_data, UINT16 data_len, UINT16 rej_len)
+void l2cu_send_peer_config_rej (tL2C_CCB *p_ccb, UINT8 *p_data, UINT16 data_len, UINT16 rej_len, UINT16 flags)
 {
     BT_HDR  *p_buf;
     UINT16  len, cfg_len, buf_space, len1, opt_len;
@@ -1012,7 +1012,10 @@ void l2cu_send_peer_config_rej (tL2C_CCB *p_ccb, UINT8 *p_data, UINT16 data_len,
     UINT16_TO_STREAM (p, L2CAP_CONFIG_RSP_LEN + rej_len);
 
     UINT16_TO_STREAM (p, p_ccb->remote_cid);
-    UINT16_TO_STREAM (p, 0);                    /* Flags = 0 (no continuation) */
+    /* Extended Flow Spec is not supported. Echo the request Continuation flag.
+     * Core Spec Vol 3 Part A 4.5. */
+    flags &= L2CAP_CFG_FLAGS_MASK_CONT;
+    UINT16_TO_STREAM (p, flags);
     UINT16_TO_STREAM (p, L2CAP_CFG_UNKNOWN_OPTIONS);
 
     buf_space = rej_len;
@@ -1042,9 +1045,13 @@ void l2cu_send_peer_config_rej (tL2C_CCB *p_ccb, UINT8 *p_data, UINT16 data_len,
             p_data += opt_len;
             break;
 
-        /* unknown options; copy into rsp if not hints */
+        /* unknown options; hints stay out of Result 0x0003 unless the BQB flag is on */
         default:
-            if ((cfg_code & 0x80) == 0) {
+            if ((cfg_code & 0x80) == 0
+#if BT_CLASSIC_BQB_INCLUDED
+                    || l2cap_bqb_cfg_hint_rej_get()
+#endif
+               ) {
                 if (buf_space >= opt_len) {
                     memcpy(p, p_data, opt_len);
                     p += opt_len;
@@ -1345,11 +1352,20 @@ void l2cu_send_peer_info_rsp (tL2C_LCB *p_lcb, UINT8 remote_id, UINT16 info_type
 #if L2CAP_CONFORMANCE_TESTING == TRUE
             UINT32_TO_STREAM (p, l2cb.test_info_resp);
 #else
+            {
+                UINT32 ext_fea = L2CAP_EXTFEA_SUPPORTED_MASK;
 #if (L2CAP_NUM_FIXED_CHNLS > 0)
-            UINT32_TO_STREAM (p, L2CAP_EXTFEA_SUPPORTED_MASK | L2CAP_EXTFEA_FIXED_CHNLS);
-#else
-            UINT32_TO_STREAM (p, L2CAP_EXTFEA_SUPPORTED_MASK);
+                ext_fea |= L2CAP_EXTFEA_FIXED_CHNLS;
 #endif
+#if BT_CLASSIC_BQB_INCLUDED
+                /* EXF/BV-08-C expects the mask PTS derives from the ICS,
+                 * which is Enhanced Retransmission Mode only. */
+                if (l2cap_bqb_hide_fixed_chnl_get()) {
+                    ext_fea = L2CAP_EXTFEA_ENH_RETRANS;
+                }
+#endif
+                UINT32_TO_STREAM (p, ext_fea);
+            }
 #endif
         }
     } else if (info_type == L2CAP_FIXED_CHANNELS_INFO_TYPE) {
@@ -1361,8 +1377,11 @@ void l2cu_send_peer_info_rsp (tL2C_LCB *p_lcb, UINT8 remote_id, UINT16 info_type
         if ( L2CAP_EXTFEA_SUPPORTED_MASK & L2CAP_EXTFEA_UCD_RECEPTION ) {
             p[0] |= L2CAP_FIXED_CHNL_CNCTLESS_BIT;
         }
-
 #if (L2CAP_NUM_FIXED_CHNLS > 0)
+#if BT_CLASSIC_BQB_INCLUDED
+        /* FIX/BV-03-C omits optional fixed channels, including BR/EDR SMP CID 0x0007. */
+        if (!l2cap_bqb_hide_fixed_chnl_get())
+#endif
         {
             int xx;
 
@@ -1688,7 +1707,10 @@ tL2C_CCB *l2cu_allocate_ccb (tL2C_LCB *p_lcb, UINT16 cid)
 #endif  ///CLASSIC_BT_INCLUDED == TRUE
 
 #if BT_SDP_BQB_INCLUDED
-    if (l2cap_bqb_ertm_mode_included_flag) {
+    /* The BQB precondition covers BR/EDR dynamic channels only. LE CCBs (COC,
+     * ECFC) and fixed channels, which are allocated with a NULL LCB, cannot
+     * negotiate ERTM and must keep the basic-mode defaults. */
+    if (l2cap_bqb_ertm_mode_included_get() && p_lcb && p_lcb->transport != BT_TRANSPORT_LE) {
         p_ccb->ertm_info.preferred_mode = L2CAP_FCR_ERTM_MODE;
         p_ccb->ertm_info.allowed_modes = L2CAP_FCR_CHAN_OPT_ERTM;
     } else

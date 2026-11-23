@@ -265,6 +265,17 @@ static void smp_tx_complete_callback (UINT16 cid, UINT16 num_pkt)
 **
 *******************************************************************************/
 #if (SMP_CTKD_INCLUDED == TRUE)
+static void smp_br_connect_init(tSMP_CB *p_cb)
+{
+    p_cb->connect_initialized = TRUE;
+    /* initialize local i/r key to be default keys */
+    p_cb->local_r_key = p_cb->local_i_key =  SMP_BR_SEC_DEFAULT_KEY;
+    /* Only CT2 is meaningful in AuthReq over BR/EDR. The peer bit is
+       kept at 0 until its Pairing Request/Response is parsed. */
+    p_cb->loc_auth_req = SMP_CT2_SUPPORT_BIT;
+    p_cb->peer_auth_req = 0;
+}
+
 static void smp_br_connect_callback(UINT16 channel, BD_ADDR bd_addr, BOOLEAN connected,
                                     UINT16 reason, tBT_TRANSPORT transport)
 {
@@ -291,10 +302,7 @@ static void smp_br_connect_callback(UINT16 channel, BD_ADDR bd_addr, BOOLEAN con
 
     if (connected) {
         if (!p_cb->connect_initialized) {
-            p_cb->connect_initialized = TRUE;
-            /* initialize local i/r key to be default keys */
-            p_cb->local_r_key = p_cb->local_i_key =  SMP_BR_SEC_DEFAULT_KEY;
-            p_cb->loc_auth_req = p_cb->peer_auth_req = 0;
+            smp_br_connect_init(p_cb);
             p_cb->cb_evt = SMP_BR_KEYS_REQ_EVT;
             smp_br_state_machine_event(p_cb, SMP_BR_L2CAP_CONN_EVT, NULL);
         }
@@ -350,6 +358,13 @@ static void smp_br_data_received(UINT16 channel, BD_ADDR bd_addr, BT_HDR *p_buf)
             p_cb->role = HCI_ROLE_SLAVE;
             p_cb->smp_over_br = TRUE;
             memcpy(&p_cb->pairing_bda[0], bd_addr, BD_ADDR_LEN);
+            /* The peer opened the channel before this device knew whom it was
+               pairing with, so smp_br_connect_callback() left on the address
+               check and never applied the defaults. Without them the Pairing
+               Response drops CT2 and the peer falls back from h7 to h6. */
+            if (!p_cb->connect_initialized) {
+                smp_br_connect_init(p_cb);
+            }
         } else if (memcmp(&bd_addr[0], p_cb->pairing_bda, BD_ADDR_LEN)) {
             osi_free (p_buf);
             smp_reject_unexpected_pairing_command(bd_addr);

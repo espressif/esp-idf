@@ -41,6 +41,7 @@
 #define SDP_DEBUG_RAW       FALSE
 #endif
 
+
 /********************************************************************************/
 /*              L O C A L    F U N C T I O N     P R O T O T Y P E S            */
 /********************************************************************************/
@@ -66,6 +67,8 @@ static UINT8         *add_attr (UINT8 *p, UINT8 *p_end, tSDP_DISCOVERY_DB *p_db,
  * sequence, so it is covered as well. */
 #define SDP_MAX_REQ_LEN     (5 + (2 + SDP_MAX_UUID_FILTERS * (1 + LEN_UUID_128)) + 2 \
                              + (3 + SDP_MAX_ATTR_FILTERS * 3) + (1 + SDP_MAX_CONTINUATION_LEN))
+/* prepare_I_frame writes L2CAP_FCS_LEN after an SDU that already fills this buffer. */
+#define SDP_REQ_BUF_SIZE    (sizeof(BT_HDR) + L2CAP_MIN_OFFSET + SDP_MAX_REQ_LEN + L2CAP_FCS_LEN)
 
 
 /*******************************************************************************
@@ -128,7 +131,7 @@ static void sdp_snd_service_search_req(tCONN_CB *p_ccb, UINT8 cont_len, UINT8 *p
     UINT16          param_len;
 
     /* Get a buffer to send the packet to L2CAP */
-    if ((p_cmd = (BT_HDR *) osi_malloc(sizeof(BT_HDR) + L2CAP_MIN_OFFSET + SDP_MAX_REQ_LEN)) == NULL) {
+    if ((p_cmd = (BT_HDR *) osi_malloc(SDP_REQ_BUF_SIZE)) == NULL) {
         sdp_disconnect (p_ccb, SDP_NO_RESOURCES);
         return;
     }
@@ -201,6 +204,12 @@ void sdp_disc_connected (tCONN_CB *p_ccb)
         p_ccb->disc_state = SDP_DISC_WAIT_SEARCH_ATTR;
 
         process_service_search_attr_rsp (p_ccb, NULL, NULL);
+#if BT_SDP_BQB_INCLUDED
+    } else if (p_ccb->is_attr_only) {
+        /* BQB SA-only: skip SS and send Service Attribute Request. */
+        p_ccb->disc_state = SDP_DISC_WAIT_ATTR;
+        process_service_attr_rsp (p_ccb, NULL, NULL);
+#endif
     } else {
         /* First step is to get a list of the handles from the server. */
         /* We are not searching for a specific attribute, so we will   */
@@ -342,6 +351,14 @@ static void process_service_search_rsp (tCONN_CB *p_ccb, UINT8 *p_reply, UINT8 *
         /* stay in the same state */
         sdp_snd_service_search_req(p_ccb, cont_len, p_reply);
     } else {
+#if BT_SDP_BQB_INCLUDED
+        if (p_ccb->is_search_only) {
+            /* BQB SS-only: report handles and close, do not auto-send SA. */
+            sdp_bqb_save_search_handles(p_ccb->handles, p_ccb->num_handles);
+            sdp_disconnect (p_ccb, SDP_SUCCESS);
+            return;
+        }
+#endif
         /* change state */
         p_ccb->disc_state = SDP_DISC_WAIT_ATTR;
 
@@ -518,7 +535,7 @@ static void process_service_attr_rsp (tCONN_CB *p_ccb, UINT8 *p_reply, UINT8 *p_
 
     /* Now, ask for the next handle. Reuse the buffer we just got. */
     if (p_ccb->cur_handle < p_ccb->num_handles) {
-        BT_HDR  *p_msg = (BT_HDR *) osi_malloc(sizeof(BT_HDR) + L2CAP_MIN_OFFSET + SDP_MAX_REQ_LEN);
+        BT_HDR  *p_msg = (BT_HDR *) osi_malloc(SDP_REQ_BUF_SIZE);
         UINT8   *p;
 
         if (!p_msg) {
@@ -667,7 +684,7 @@ static void process_service_search_attr_rsp (tCONN_CB *p_ccb, UINT8 *p_reply, UI
 #endif
     /* If continuation request (or first time request) */
     if ((cont_request_needed) || (!p_reply)) {
-        BT_HDR  *p_msg = (BT_HDR *) osi_malloc(sizeof(BT_HDR) + L2CAP_MIN_OFFSET + SDP_MAX_REQ_LEN);
+        BT_HDR  *p_msg = (BT_HDR *) osi_malloc(SDP_REQ_BUF_SIZE);
         UINT8   *p;
 
         if (!p_msg) {
@@ -719,8 +736,22 @@ static void process_service_search_attr_rsp (tCONN_CB *p_ccb, UINT8 *p_reply, UI
         UINT16_TO_BE_STREAM (p_param_len, param_len);
 
         /* Set the length of the SDP data in the buffer */
-        p_msg->len = p - p_start;
-
+#if BT_SDP_BQB_INCLUDED
+        /* L2CAP/COS/CFD/BV-09-C: send at least 48 bytes. Pad a short
+         * Service Search Attribute Request; do not truncate a longer one. */
+        if (sdp_bqb_take_data_len_min_48()) {
+            UINT16 pdu_len = (UINT16)(p - p_start);
+            if (pdu_len <= 48) {
+                memset(p, 0, (size_t)(48 - pdu_len));
+                p_msg->len = 48;
+            } else {
+                p_msg->len = pdu_len;
+            }
+        } else
+#endif /* BT_SDP_BQB_INCLUDED */
+        {
+            p_msg->len = (UINT16)(p - p_start);
+        }
 
         L2CA_DataWrite (p_ccb->connection_id, p_msg);
 

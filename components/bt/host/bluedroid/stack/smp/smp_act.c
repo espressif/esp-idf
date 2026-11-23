@@ -209,6 +209,16 @@ void smp_send_app_cback(tSMP_CB *p_cb, tSMP_INT_DATA *p_data)
                     p_cb->local_r_key &= ~SMP_SEC_KEY_TYPE_LK;
                 }
 
+                /* CT2 advertises h7 support for cross transport key derivation
+                ** and is dropped by BTM_LE_AUTH_REQ_MASK, so restore it here
+                ** once the LinkKey bit survived the checks above. h7 still only
+                ** applies when the peer sets CT2 as well, see smp_use_h7().
+                */
+                if ((p_cb->local_i_key & SMP_SEC_KEY_TYPE_LK) &&
+                        (p_cb->local_r_key & SMP_SEC_KEY_TYPE_LK)) {
+                    p_cb->loc_auth_req |= SMP_CT2_SUPPORT_BIT;
+                }
+
                 SMP_TRACE_DEBUG("set auth_req: 0x%02x, local_i_key: 0x%02x, local_r_key: 0x%02x\n",
                                   p_cb->loc_auth_req, p_cb->local_i_key, p_cb->local_r_key);
 
