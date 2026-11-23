@@ -460,6 +460,8 @@ IDF FreeRTOS 中，特定核进入和退出临界区的过程如下：
 
             由于存在这种迁移机制，任务 **不得** 在临界区或 ISR 例程中使用 PIE 协处理器，否则将导致运行时中止。
 
+    使用 PIE 协处理器的任务，其栈必须位于支持 SIMD 的内存 (:c:macro:`MALLOC_CAP_SIMD`) 中。PIE 上下文保存在任务栈上，且 ESP-DSP 和 ESP-DL 等库也会将 PIE 数据存放在栈上。RTC RAM 和 SPM 等内存不支持 PIE 数据访问，此类访问会触发异常或静默地访问错误的数据。因此，若任务栈不在支持 SIMD 的内存中，该任务会在执行第一条 PIE 指令时中止。当其他内部内存耗尽时，:cpp:func:`xTaskCreate` 可能将任务栈分配到此类内存中。若要确保使用 PIE 协处理器的任务拥有支持 SIMD 的栈，请使用 :c:macro:`MALLOC_CAP_SIMD` 分配任务栈，并通过 :cpp:func:`xTaskCreateStatic` 或 :cpp:func:`xTaskCreateWithCaps` 创建任务。
+
     意外使用 PIE（例如深层调用栈间接调用了 PIE 辅助函数）可能会把本不该运行在 PIE 核心上的任务固定到该核心。可启用 :menuitem:`CONFIG_FREERTOS_DEBUG_TASK_PIE_BLACKLIST`，并对不得执行 PIE 的任务调用 :cpp:func:`vTaskSetPieBlacklisted`。该标志仅在协处理器陷入时被检查。PIE 所有者持续运行期间，PIE 保持使能，因此任务被切换出去之前执行的指令不会陷入。任务被切换出去后，PIE 会被关闭，下一次 PIE 指令会陷入。即使该任务仍是协处理器所有者，被加入黑名单的任务也会在这次陷入时中止，而不是被静默固定到 PIE 核心。
 
     .. code-block:: c

@@ -152,6 +152,8 @@ entries:
         #   may be too far when placed in Flash. Hence, it is always placed in internal RAM
         # - pxPortGetCoprocArea is called by rtos_int_enter to save the HWLP context of the interrupted task, so it
         #   must be in IRAM for interrupts that run while the cache is disabled.
+        # - vPortAbortIfPieStackNotSimdCapable is called from the PIE illegal-instruction path, which may run
+        #   while the cache is disabled.
         # - The following functions are called from an ISR context, thus are placed in IRAM unless ISR functions are
         #   placed into flash.
         #   - xPortInIsrContext
@@ -170,6 +172,8 @@ entries:
             port:vPortCoprocUsedInISR (noflash_text)
             if SOC_CPU_COPROC_NUM > 0:
                 port:pxPortGetCoprocArea (noflash_text)
+            if SOC_CPU_HAS_PIE:
+                port:vPortAbortIfPieStackNotSimdCapable (noflash_text)
             if FREERTOS_UNICORE = n:
                 port:xPortEnterCriticalTimeout (noflash_text)
                 port:vPortExitCriticalMultiCore (noflash_text)
