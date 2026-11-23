@@ -136,12 +136,20 @@ ESP-IDF 蓝牙协议栈运行在 FreeRTOS 环境中，蓝牙任务根据功能�
 Bluedroid
 ----------
 
-ESP-Bluedroid 是基于 Android 蓝牙协议栈 Bluedroid 的修改版， 支持经典蓝牙和低功耗蓝牙。由两层组成：
+.. only:: SOC_BT_CLASSIC_SUPPORTED
+
+   ESP-Bluedroid 是基于 Android 蓝牙协议栈 Bluedroid 的修改版， 支持经典蓝牙和低功耗蓝牙。由两层组成：
+
+.. only:: not SOC_BT_CLASSIC_SUPPORTED
+
+   ESP-Bluedroid 是基于 Android 蓝牙协议栈 Bluedroid 的修改版，在 {IDF_TARGET_NAME} 上仅支持低功耗蓝牙。由两层组成：
 
 - **蓝牙上层 (BTU):** 实现核心协议（L2CAP、GATT、SMP 等）。
 - **蓝牙传输控制器层 (BTC):** 提供应用层 API， 并管理配置文件。
 
-**使用场景:** 推荐用于同时需要经典蓝牙和蓝牙低能耗的应用。
+.. only:: SOC_BT_CLASSIC_SUPPORTED
+
+   **使用场景:** 推荐用于同时需要经典蓝牙和蓝牙低能耗的应用。
 
 
 操作系统适配
