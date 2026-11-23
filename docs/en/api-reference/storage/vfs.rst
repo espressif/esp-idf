@@ -223,6 +223,8 @@ Standard I/O streams (``stdin``, ``stdout``, ``stderr``) are mapped to file desc
 - Options ``EFD_CLOEXEC``, ``EFD_NONBLOCK`` and ``EFD_SEMAPHORE`` are not supported in flags.
 - Option ``EFD_SUPPORT_ISR`` has been added in flags. This flag is required to read and write the eventfd in an interrupt handler.
 
+As on Linux, ``eventfd()``, ``eventfd_t``, ``eventfd_read()`` and ``eventfd_write()`` are also declared in ``sys/eventfd.h``.
+
 Note that creating an eventfd with ``EFD_SUPPORT_ISR`` will cause interrupts to be temporarily disabled when reading, writing the file and during the beginning and the ending of the ``select()`` when this file is set.
 
 
