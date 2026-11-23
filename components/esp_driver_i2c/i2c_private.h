@@ -150,7 +150,6 @@ struct i2c_master_bus_t {
     i2c_operation_t (*i2c_async_ops)[I2C_STATIC_OPERATION_ARRAY_MAX]; // pointer to asynchronous operation(s).
     uint32_t ops_prepare_idx;                                        // Index for the operations can be written into `i2c_async_ops` array.
     uint32_t ops_cur_size;                                           // Indicates how many operations have already put in `i2c_async_ops`.
-    i2c_transaction_t i2c_trans_pool[];                              // I2C transaction pool.
 };
 
 struct i2c_master_dev_t {
