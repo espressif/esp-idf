@@ -309,6 +309,7 @@ BOOLEAN                 enable_test_mac_val;
 BT_OCTET8               test_mac;
 BOOLEAN                 enable_test_local_sign_cntr;
 UINT32                  test_local_sign_cntr;
+BOOLEAN                 keep_rfu_in_auth_req;
 #endif
 
 #endif  /* BLE_INCLUDED */
@@ -368,12 +369,14 @@ INQ_GENERAL
 typedef UINT8 tBTM_INQ_TYPE;
 
 typedef struct {
+#if (CLASSIC_BT_INCLUDED == TRUE)
     tBTM_CMPL_CB *p_remname_cmpl_cb;
 
 #define BTM_EXT_RMT_NAME_TIMEOUT    40
 
 
     TIMER_LIST_ENT  rmt_name_timer_ent;
+#endif
 
     UINT16           discoverable_mode;
     UINT16           connectable_mode;
@@ -386,12 +389,14 @@ typedef struct {
     tBTM_INQ_TYPE    scan_type;
     UINT16           page_timeout;
 
+#if (CLASSIC_BT_INCLUDED == TRUE)
     BD_ADDR          remname_bda;           /* Name of bd addr for active remote name request */
 #define BTM_RMT_NAME_INACTIVE       0
 #define BTM_RMT_NAME_EXT            0x1     /* Initiated through API */
 #define BTM_RMT_NAME_SEC            0x2     /* Initiated internally by security manager */
 #define BTM_RMT_NAME_INQ            0x4     /* Remote name initiated internally by inquiry */
     BOOLEAN          remname_active;        /* State of a remote name request by external API */
+#endif
 
     tBTM_CMPL_CB    *p_inq_cmpl_cb;
     tBTM_INQ_RESULTS_CB *p_inq_results_cb;
@@ -751,6 +756,7 @@ struct tBTM_SEC_DEV_REC{
 #if (BLE_50_FEATURE_SUPPORT == TRUE)
     tBTM_EXT_CONN_PARAMS ext_conn_params;
 #endif // #if (BLE_50_FEATURE_SUPPORT == TRUE)
+    BOOLEAN is_aux_conn;
     BOOLEAN is_pawr_synced;
     UINT8   adv_handle;
     UINT8   subevent;
@@ -1092,6 +1098,7 @@ void         btm_free (void);
 /* Internal functions provided by btm_inq.c
 *******************************************
 */
+#if (CLASSIC_BT_INCLUDED == TRUE)
 tBTM_STATUS  btm_initiate_rem_name (BD_ADDR remote_bda,
                                     tBTM_INQ_INFO *p_cur,
                                     UINT8 origin, UINT32 timeout,
@@ -1100,6 +1107,7 @@ tBTM_STATUS  btm_initiate_rem_name (BD_ADDR remote_bda,
 void         btm_process_remote_name (BD_ADDR bda, BD_NAME name, UINT16 evt_len,
                                       UINT8 hci_status);
 void         btm_inq_rmt_name_failed(void);
+#endif
 
 /* Inquiry related functions */
 void         btm_clr_inq_db (BD_ADDR p_bda);
@@ -1200,7 +1208,7 @@ void btm_ble_periodic_adv_sync_trans_complete(UINT16 op_code, UINT8 hci_status, 
 void btm_ble_big_sync_terminate_complete(UINT8 hci_status, UINT8 big_handle);
 
 #if (BLE_FEAT_POWER_CONTROL_EN == TRUE)
-void btm_enh_read_trans_pwr_level_cmpl_evt(uint8_t *p);
+void btm_enh_read_trans_pwr_level_cmpl_evt(uint8_t *p, UINT16 evt_len);
 void btm_read_remote_trans_pwr_level_cmpl(UINT8 status);
 #endif // #if (BLE_FEAT_POWER_CONTROL_EN == TRUE)
 
@@ -1222,7 +1230,7 @@ void btm_ble_read_min_supp_conn_interval_cmd_status(UINT8 status);
 #endif // #if (BLE_FEAT_SHORTER_CONN_INTERVALS == TRUE)
 
 #if (BT_BLE_FEAT_CHANNEL_SOUNDING == TRUE)
-void btm_ble_cs_read_local_supp_caps_cmpl_evt(UINT8 *p);
+void btm_ble_cs_read_local_supp_caps_cmpl_evt(UINT8 *p, UINT16 evt_len);
 void btm_ble_cs_read_remote_supp_caps_cmd_status(UINT8 status);
 void btm_ble_cs_security_enable_cmd_status(UINT8 status);
 void btm_ble_cs_read_remote_fae_table_cmd_status(UINT8 status);
@@ -1319,7 +1327,9 @@ void  btm_sec_encrypt_change (UINT16 handle, UINT8 status, UINT8 encr_enable);
 void  btm_sec_connected (UINT8 *bda, UINT16 handle, UINT8 status, UINT8 enc_mode);
 tBTM_STATUS btm_sec_disconnect (UINT16 handle, UINT8 reason);
 BOOLEAN  btm_sec_disconnected (UINT16 handle, UINT8 reason);
+#if (CLASSIC_BT_INCLUDED == TRUE)
 void  btm_sec_rmt_name_request_complete (UINT8 *bd_addr, UINT8 *bd_name, UINT8 status);
+#endif
 void  btm_sec_rmt_host_support_feat_evt (UINT8 *p);
 void  btm_io_capabilities_req (UINT8 *p);
 void  btm_io_capabilities_rsp (UINT8 *p);
@@ -1340,7 +1350,8 @@ void  btm_sec_clear_ble_keys (tBTM_SEC_DEV_REC  *p_dev_rec);
 BOOLEAN btm_sec_is_a_bonded_dev (BD_ADDR bda);
 void btm_consolidate_dev(tBTM_SEC_DEV_REC *p_target_rec);
 BOOLEAN btm_sec_is_le_capable_dev (BD_ADDR bda);
-BOOLEAN btm_ble_init_pseudo_addr (tBTM_SEC_DEV_REC *p_dev_rec, BD_ADDR new_pseudo_addr);
+BOOLEAN btm_ble_init_pseudo_addr (tBTM_SEC_DEV_REC *p_dev_rec, BD_ADDR new_pseudo_addr,
+                                  tBLE_ADDR_TYPE addr_type);
 extern BOOLEAN btm_ble_start_sec_check(BD_ADDR bd_addr, UINT16 psm, BOOLEAN is_originator,
                             tBTM_SEC_CALLBACK *p_callback, void *p_ref_data);
 #endif /* BLE_INCLUDED */

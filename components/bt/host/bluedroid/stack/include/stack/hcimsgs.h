@@ -77,6 +77,11 @@ static inline void hci_free_cmd_buf(BT_HDR *buf)
     osi_free(linked_pkt);
 }
 
+/* Bluedroid host design: the stack assumes sufficient host memory to operate.
+ * HCI_GET_CMD_BUF / hci_get_cmd_buf exhaustion (returning NULL) is not handled
+ * with per-call rollback at every btsnd_hcic_* site — OOM is unrecoverable.
+ * Code-review / AI-review findings that only apply under host OOM should be
+ * ignored; see btm_ble_int.h for the full memory policy. */
 #define HCI_GET_CMD_BUF(param_len)       hci_get_cmd_buf(param_len)
 #define HCI_FREE_CMD_BUF(buf)            hci_free_cmd_buf(buf)
 
@@ -244,6 +249,7 @@ BOOLEAN btsnd_hcic_set_conn_encrypt (UINT16 handle, BOOLEAN enable);
 #define HCI_SET_ENCRYPT_ENABLE_OFF      2
 /* Set Connection Encryption */
 
+#if (CLASSIC_BT_INCLUDED == TRUE)
 /* Remote Name Request */
 BOOLEAN btsnd_hcic_rmt_name_req (BD_ADDR bd_addr,
                                  UINT8 page_scan_rep_mode,
@@ -260,6 +266,7 @@ BOOLEAN btsnd_hcic_rmt_name_req (BD_ADDR bd_addr,
 
 /* Remote Name Request Cancel */
 BOOLEAN btsnd_hcic_rmt_name_req_cancel(BD_ADDR bd_addr);
+#endif /* CLASSIC_BT_INCLUDED == TRUE */
 
 #define HCIC_PARAM_SIZE_RMT_NAME_REQ_CANCEL   6
 
@@ -789,7 +796,7 @@ void btsnd_hcic_vendor_spec_cmd (BT_HDR *buffer, UINT16 opcode,
 #define HCIC_PARAM_SIZE_SET_EXT_SCAN_PARAMS            3
 #define HCIC_PARAM_SIZE_EXT_SCAN_ENABLE                6
 #define HCIC_PARAM_SIZE_EXT_CONN_CREATE_BASE           10
-#define HCIC_PARAM_SIZE_PERIODIC_ADV_CREATE_SYNC       12
+#define HCIC_PARAM_SIZE_PERIODIC_ADV_CREATE_SYNC       14
 #define HCIC_PARAM_SIZE_PERIODIC_ADV_CREATE_SYNC_CANCEL 0
 #define HCIC_PARAM_SIZE_PERIODIC_ADV_TERM_SYNC         2
 #define HCIC_PARAM_SIZE_ADD_DEV_TO_PERIODIC_ADV_LIST   8
@@ -1141,7 +1148,7 @@ UINT8 btsnd_hcic_ble_read_periodic_adv_list_size(void);
 
 UINT8 btsnd_hcic_ble_read_trans_power(void);
 
-UINT8 btsnd_hcic_ble_read_rf_path_compensation(void);
+UINT8 btsnd_hcic_ble_read_rf_path_compensation(INT16 *p_tx, INT16 *p_rx);
 
 UINT8 btsnd_hcic_ble_write_rf_path_compensation(UINT16 rf_tx_path, UINT16 rf_rx_path);
 

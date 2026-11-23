@@ -124,6 +124,27 @@ static bool background_connections_pending(void)
 
 /*******************************************************************************
 **
+** Function         btm_ble_scan_own_addr_type
+**
+** Description      Own_Address_Type for a reissued LE Set Scan Parameters.
+**                  When scan own type is kept separate, use the type recorded
+**                  with the scan parameters. Before any scan parameter is set,
+**                  that field is not meaningful and the global identity is kept.
+*******************************************************************************/
+static tBLE_ADDR_TYPE btm_ble_scan_own_addr_type(const tBTM_BLE_INQ_CB *p_inq)
+{
+#if (BLE_SCAN_OWN_ADDR_SEPARATE == TRUE)
+    if (p_inq->scan_params_set) {
+        return p_inq->scan_addr_type;
+    }
+#else
+    UNUSED(p_inq);
+#endif
+    return btm_cb.ble_ctr_cb.addr_mgnt_cb.own_addr_type;
+}
+
+/*******************************************************************************
+**
 ** Function         btm_update_scanner_filter_policy
 **
 ** Description      This function updates the filter policy of scanner
@@ -143,7 +164,7 @@ void btm_update_scanner_filter_policy(tBTM_BLE_SFP scan_policy)
 
     btsnd_hcic_ble_set_scan_params(p_inq->scan_type, (UINT16)scan_interval,
                                     (UINT16)scan_window,
-                                    btm_cb.ble_ctr_cb.addr_mgnt_cb.own_addr_type,
+                                    btm_ble_scan_own_addr_type(p_inq),
                                     scan_policy);
 }
 /*******************************************************************************
@@ -618,7 +639,7 @@ BOOLEAN btm_ble_start_select_conn(BOOLEAN start, tBTM_BLE_SEL_CBACK *p_select_cb
             if (btsnd_hcic_ble_set_scan_params(BTM_BLE_SCAN_MODE_PASS,
                                                scan_int,
                                                scan_win,
-                                               p_cb->addr_mgnt_cb.own_addr_type,
+                                               btm_ble_scan_own_addr_type(&p_cb->inq_var),
                                                SP_ADV_WL) != HCI_SUCCESS) {
                 return FALSE;
             }

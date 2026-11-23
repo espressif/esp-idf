@@ -36,12 +36,9 @@
 
 #define HCI_VENDOR_BLE_RPA_VSC          (0x0155 | HCI_GRP_VENDOR_SPECIFIC)
 
-/* RPA offload VSC specifics */
-#define BTM_BLE_META_IRK_ENABLE         0x01
-#define BTM_BLE_META_ADD_IRK_ENTRY      0x02
-#define BTM_BLE_META_REMOVE_IRK_ENTRY   0x03
-#define BTM_BLE_META_CLEAR_IRK_LIST     0x04
-#define BTM_BLE_META_READ_IRK_ENTRY     0x05
+/* RPA offload VSC specifics
+ * (BTM_BLE_META_*_IRK_ENTRY / _IRK_ENABLE / _IRK_LIST op-codes now live in
+ * btm_ble_int.h so btm_ble_gap.c can share them.) */
 #define BTM_BLE_META_CS_RESOLVE_ADDR    0x00000001
 #define BTM_BLE_IRK_ENABLE_LEN          2
 
@@ -51,6 +48,18 @@
 #define BTM_BLE_META_READ_IRK_LEN       2
 #define BTM_BLE_META_ADD_WL_ATTR_LEN    9
 #define BTM_BLE_IRK_LIST_INVALID_INDEX  0xFF
+/* Min storable pending HCI ops (ring buffer uses one sentinel slot). */
+#define BTM_BLE_RESOLVE_PEND_Q_MIN      4
+
+static UINT16 btm_ble_resolving_pend_q_cap(UINT8 rl_max)
+{
+    UINT16 q_cap = (UINT16)rl_max + 1;
+
+    if (q_cap < (BTM_BLE_RESOLVE_PEND_Q_MIN + 1)) {
+        q_cap = BTM_BLE_RESOLVE_PEND_Q_MIN + 1;
+    }
+    return q_cap;
+}
 
 #if CONTROLLER_RPA_LIST_ENABLE && BLE_SMP_ID_RESET_ENABLE
 static bool is_deleting_zero_addr;
@@ -67,24 +76,31 @@ static bool is_deleting_zero_addr;
 ** Parameters       target_bda: target device address
 **                  add_entry: TRUE for add entry, FALSE for remove entry
 **
-** Returns          void
+** Returns          TRUE if enqueued, FALSE if queue full or unavailable
 **
 *******************************************************************************/
-void btm_ble_enq_resolving_list_pending(BD_ADDR pseudo_bda, UINT8 op_code)
+BOOLEAN btm_ble_enq_resolving_list_pending(BD_ADDR pseudo_bda, UINT8 op_code)
 {
     tBTM_BLE_RESOLVE_Q *p_q = &btm_cb.ble_ctr_cb.resolving_list_pend_q;
-    UINT8 max_size = controller_get_interface()->get_ble_resolving_list_max_size();
-    if (max_size <= 1) {
-        return;
+    UINT16 q_cap = p_q->q_cap;
+
+    if (q_cap < 2) {
+        BTM_TRACE_ERROR("resolving pending queue not init");
+        return FALSE;
     }
-    if (((p_q->q_next + 1) % max_size) == p_q->q_pending) {
-        BTM_TRACE_ERROR("%s, resolving pending queue full\n", __func__);
-        return;
+
+    btm_ble_gap_mutex_lock();
+    if (((p_q->q_next + 1) % q_cap) == p_q->q_pending) {
+        BTM_TRACE_ERROR("resolving pending queue full");
+        btm_ble_gap_mutex_unlock();
+        return FALSE;
     }
     memcpy(p_q->resolve_q_random_pseudo[p_q->q_next], pseudo_bda, BD_ADDR_LEN);
     p_q->resolve_q_action[p_q->q_next] = op_code;
-    p_q->q_next ++;
-    p_q->q_next %= controller_get_interface()->get_ble_resolving_list_max_size();
+    p_q->q_next++;
+    p_q->q_next %= q_cap;
+    btm_ble_gap_mutex_unlock();
+    return TRUE;
 }
 
 /*******************************************************************************
@@ -102,17 +118,26 @@ void btm_ble_enq_resolving_list_pending(BD_ADDR pseudo_bda, UINT8 op_code)
 BOOLEAN btm_ble_brcm_find_resolving_pending_entry(BD_ADDR pseudo_addr, UINT8 action)
 {
     tBTM_BLE_RESOLVE_Q *p_q = &btm_cb.ble_ctr_cb.resolving_list_pend_q;
+    UINT16 q_cap = p_q->q_cap;
+    BOOLEAN found = FALSE;
 
+    if (q_cap < 2) {
+        return FALSE;
+    }
+
+    btm_ble_gap_mutex_lock();
     for (UINT8 i = p_q->q_pending; i != p_q->q_next;) {
         if (memcmp(p_q->resolve_q_random_pseudo[i], pseudo_addr, BD_ADDR_LEN) == 0 &&
                 action == p_q->resolve_q_action[i]) {
-            return TRUE;
+            found = TRUE;
+            break;
         }
 
-        i ++;
-        i %= controller_get_interface()->get_ble_resolving_list_max_size();
+        i++;
+        i %= q_cap;
     }
-    return FALSE;
+    btm_ble_gap_mutex_unlock();
+    return found;
 }
 
 /*******************************************************************************
@@ -129,16 +154,56 @@ BOOLEAN btm_ble_brcm_find_resolving_pending_entry(BD_ADDR pseudo_addr, UINT8 act
 BOOLEAN btm_ble_deq_resolving_pending(BD_ADDR pseudo_addr)
 {
     tBTM_BLE_RESOLVE_Q *p_q = &btm_cb.ble_ctr_cb.resolving_list_pend_q;
+    UINT16 q_cap = p_q->q_cap;
+    BOOLEAN dequeued = FALSE;
 
+    if (q_cap < 2) {
+        return FALSE;
+    }
+
+    btm_ble_gap_mutex_lock();
     if (p_q->q_next != p_q->q_pending) {
         memcpy(pseudo_addr, p_q->resolve_q_random_pseudo[p_q->q_pending], BD_ADDR_LEN);
         memset(p_q->resolve_q_random_pseudo[p_q->q_pending], 0, BD_ADDR_LEN);
-        p_q->q_pending ++;
-        p_q->q_pending %= controller_get_interface()->get_ble_resolving_list_max_size();
-        return TRUE;
+        p_q->q_pending++;
+        p_q->q_pending %= q_cap;
+        dequeued = TRUE;
+    }
+    btm_ble_gap_mutex_unlock();
+    return dequeued;
+}
+
+/*******************************************************************************
+**
+** Function         btm_ble_undo_resolving_list_pending
+**
+** Description      Drop the most recently enqueued resolving-list pending
+**                  entry (tail). Used to roll back enqueue-before-send when
+**                  HCI transmit fails. Do not use deq here: that pops the head
+**                  and can belong to another in-flight command.
+**
+** Returns          TRUE if an entry was removed
+**
+*******************************************************************************/
+BOOLEAN btm_ble_undo_resolving_list_pending(void)
+{
+    tBTM_BLE_RESOLVE_Q *p_q = &btm_cb.ble_ctr_cb.resolving_list_pend_q;
+    UINT16 q_cap = p_q->q_cap;
+    BOOLEAN undone = FALSE;
+
+    if (q_cap < 2) {
+        return FALSE;
     }
 
-    return FALSE;
+    btm_ble_gap_mutex_lock();
+    if (p_q->q_next != p_q->q_pending) {
+        p_q->q_next = (UINT16)((p_q->q_next + q_cap - 1) % q_cap);
+        memset(p_q->resolve_q_random_pseudo[p_q->q_next], 0, BD_ADDR_LEN);
+        p_q->resolve_q_action[p_q->q_next] = 0;
+        undone = TRUE;
+    }
+    btm_ble_gap_mutex_unlock();
+    return undone;
 }
 
 /*******************************************************************************
@@ -260,8 +325,9 @@ void btm_ble_clear_resolving_list_complete(UINT8 *p, UINT16 evt_len)
                 btm_ble_resolving_list_init(irk_list_sz_max);
             }
             if (btm_cb.ble_ctr_cb.irk_list_mask != NULL) {
-                uint8_t irk_mask_size = (irk_list_sz_max % 8) ?
-                                    (irk_list_sz_max / 8 + 1) : (irk_list_sz_max / 8);
+                uint8_t max_irk_list_sz = controller_get_interface()->get_ble_resolving_list_max_size();
+                uint8_t irk_mask_size = (max_irk_list_sz % 8) ?
+                                    (max_irk_list_sz / 8 + 1) : (max_irk_list_sz / 8);
                 memset(btm_cb.ble_ctr_cb.irk_list_mask, 0, irk_mask_size);
             }
         }
@@ -294,17 +360,29 @@ void btm_ble_clear_resolving_list_complete(UINT8 *p, UINT16 evt_len)
 void btm_ble_add_resolving_list_entry_complete(UINT8 *p, UINT16 evt_len)
 {
     UINT8 status;
+
+    if (!btm_ble_hci_evt_has_len("add_rpa_list_cmpl", evt_len, 1)) {
+        BD_ADDR pseudo_bda;
+        tBTM_BLE_LEGACY_GAP_CB_PARAMS cb_params = {0};
+        if (btm_ble_deq_resolving_pending(pseudo_bda)) {
+            btm_ble_update_resolving_list(pseudo_bda, FALSE);
+        }
+        cb_params.status = BTM_ILLEGAL_VALUE;
+        BTM_BleLegacyGapOneshotFireIfArmed(BTM_BLE_LEGACY_GAP_ADD_DEV_TO_RPA_LIST_EVT, &cb_params);
+        return;
+    }
+
     STREAM_TO_UINT8(status, p);
 
     tBTM_BLE_LEGACY_GAP_CB_PARAMS cb_params = {0};
-    cb_params.status = status;
+    cb_params.status = btm_ble_status_from_hci(status);
     BTM_BleLegacyGapOneshotFireIfArmed(BTM_BLE_LEGACY_GAP_ADD_DEV_TO_RPA_LIST_EVT, &cb_params);
 
     BTM_TRACE_DEBUG("%s status = %d", __func__, status);
 
     BD_ADDR pseudo_bda;
     if (!btm_ble_deq_resolving_pending(pseudo_bda)) {
-        BTM_TRACE_DEBUG("no pending resolving list operation");
+        BTM_TRACE_DEBUG("add_rpa_list_cmpl: no pending op");
         return;
     }
 
@@ -315,13 +393,21 @@ void btm_ble_add_resolving_list_entry_complete(UINT8 *p, UINT16 evt_len)
             p ++;
             STREAM_TO_UINT8(btm_cb.ble_ctr_cb.resolving_list_avail_size, p);
         } else {
-            btm_cb.ble_ctr_cb.resolving_list_avail_size --;
+            if (btm_cb.ble_ctr_cb.resolving_list_avail_size > 0) {
+                btm_cb.ble_ctr_cb.resolving_list_avail_size --;
+            }
         }
     } else if (status == HCI_ERR_MEMORY_FULL) { /* BT_ERROR_CODE_MEMORY_CAPACITY_EXCEEDED  */
         btm_cb.ble_ctr_cb.resolving_list_avail_size = 0;
         BTM_TRACE_ERROR("%s Resolving list Full ", __func__);
+        btm_ble_update_resolving_list(pseudo_bda, FALSE);
+    } else if (status == HCI_ERR_ILLEGAL_PARAMETER_FMT) {
+        /* 0x12 is also returned when the identity is already on the list.
+         * Leave the optimistic bit set so a later remove still sends HCI. */
+        BTM_TRACE_ERROR("%s Add resolving list error %d ", __func__, status);
     } else {
         BTM_TRACE_ERROR("%s Add resolving list error %d ", __func__, status);
+        btm_ble_update_resolving_list(pseudo_bda, FALSE);
     }
 
 }
@@ -341,12 +427,23 @@ void btm_ble_remove_resolving_list_entry_complete(UINT8 *p, UINT16 evt_len)
     BD_ADDR pseudo_bda;
     UINT8 status;
 
+    if (!btm_ble_hci_evt_has_len("rm_rpa_list_cmpl", evt_len, 1)) {
+        BD_ADDR pseudo_bda;
+        if (btm_ble_deq_resolving_pending(pseudo_bda)) {
+            btm_ble_update_resolving_list(pseudo_bda, TRUE);
+        }
+#if CONTROLLER_RPA_LIST_ENABLE && BLE_SMP_ID_RESET_ENABLE
+        is_deleting_zero_addr = false;
+#endif
+        return;
+    }
+
     STREAM_TO_UINT8(status, p);
 
     BTM_TRACE_DEBUG("%s status = %d", __func__, status);
 
     if (!btm_ble_deq_resolving_pending(pseudo_bda)) {
-        BTM_TRACE_DEBUG("%s no pending resolving list operation", __func__);
+        BTM_TRACE_DEBUG("rm_rpa_list_cmpl: no pending op");
         return;
     }
 
@@ -366,6 +463,7 @@ void btm_ble_remove_resolving_list_entry_complete(UINT8 *p, UINT16 evt_len)
             /* It's expected for some controllers to return error when deleting {0,0,0,0,0,0}, ignore that case */
             BTM_TRACE_ERROR("%s remove resolving list error, status = 0x%02x", __func__, status);
         }
+        btm_ble_update_resolving_list(pseudo_bda, TRUE);
     }
 
 #if CONTROLLER_RPA_LIST_ENABLE && BLE_SMP_ID_RESET_ENABLE
@@ -391,7 +489,15 @@ void btm_ble_read_resolving_list_entry_complete(UINT8 *p, UINT16 evt_len)
     UINT8           status, rra_type = BTM_BLE_ADDR_PSEUDO;
     BD_ADDR         rra, pseudo_bda;
 
+    if (!btm_ble_hci_evt_has_len("read_rpa_list_cmpl", evt_len, 1)) {
+        if (btm_ble_deq_resolving_pending(pseudo_bda)) {
+            BTM_TRACE_DEBUG("read_rpa_list_cmpl: no pending op on short evt");
+        }
+        return;
+    }
+
     STREAM_TO_UINT8  (status, p);
+    evt_len--;
 
     BTM_TRACE_DEBUG("%s status = %d", __func__, status);
 
@@ -403,21 +509,51 @@ void btm_ble_read_resolving_list_entry_complete(UINT8 *p, UINT16 evt_len)
     if (status == HCI_SUCCESS) {
         /* proprietary spec has extra bytes */
         if (evt_len > 8) {
+            BTM_BLE_HCI_EVT_CHECK_LEN("read_rpa_list_cmpl", evt_len, (2 + 16 + 1 + 6 + 6));
             p += (2 + 16 + 1 + 6); /* skip subcode, index, IRK value, address type, identity addr type */
             STREAM_TO_BDADDR(rra, p);
 
             BTM_TRACE_ERROR("%s peer_addr: %02x:%02x:%02x:%02x:%02x:%02x",
                             __func__, rra[0], rra[1], rra[2], rra[3], rra[4], rra[5]);
-        } else {
+        } else if (evt_len >= 6) {
             STREAM_TO_BDADDR(rra, p);
+        } else {
+            BTM_BLE_HCI_EVT_CHECK_LEN("read_rpa_list_cmpl", evt_len, 6);
+            return;
         }
         btm_ble_refresh_peer_resolvable_private_addr(pseudo_bda, rra, rra_type);
     }
 }
 
+void btm_ble_privacy_config_begin(UINT8 pending_mask)
+{
+    btm_cb.ble_ctr_cb.privacy_cfg_pending = pending_mask;
+    BTM_BleLegacyGapOneshotArm(BTM_BLE_LEGACY_GAP_SET_PRIVACY_EVT);
+}
+
+void btm_ble_privacy_config_step_done(UINT8 step, tBTM_STATUS status)
+{
+    if ((btm_cb.ble_ctr_cb.privacy_cfg_pending & step) == 0) {
+        return;
+    }
+
+    if (status != BTM_SUCCESS) {
+        btm_cb.ble_ctr_cb.privacy_cfg_pending = 0;
+        tBTM_BLE_LEGACY_GAP_CB_PARAMS cb_params = {0};
+        cb_params.status = status;
+        BTM_BleLegacyGapOneshotFireIfArmed(BTM_BLE_LEGACY_GAP_SET_PRIVACY_EVT, &cb_params);
+        return;
+    }
+
+    btm_cb.ble_ctr_cb.privacy_cfg_pending &= ~step;
+    if (btm_cb.ble_ctr_cb.privacy_cfg_pending == 0) {
+        tBTM_BLE_LEGACY_GAP_CB_PARAMS cb_params = {0};
+        cb_params.status = BTM_SUCCESS;
+        BTM_BleLegacyGapOneshotFireIfArmed(BTM_BLE_LEGACY_GAP_SET_PRIVACY_EVT, &cb_params);
+    }
+}
+
 /*******************************************************************************
-**
-** Function         btm_ble_set_addr_resolution_enable_complete
 **
 ** Description      This function is called when the command to set address
 **                  resolution enable completes.
@@ -432,6 +568,11 @@ void btm_ble_set_addr_resolution_enable_complete(UINT8 *p, UINT16 evt_len)
 {
     UINT8 status;
 
+    if (!btm_ble_hci_evt_has_len("set_addr_resolution_cmpl", evt_len, 1)) {
+        btm_ble_privacy_config_step_done(BTM_PRIVACY_CFG_PENDING_AR, BTM_ILLEGAL_VALUE);
+        return;
+    }
+
     STREAM_TO_UINT8(status, p);
 
     BTM_TRACE_DEBUG("%s status = %d", __func__, status);
@@ -439,9 +580,8 @@ void btm_ble_set_addr_resolution_enable_complete(UINT8 *p, UINT16 evt_len)
     if (status != HCI_SUCCESS) {
         BTM_TRACE_ERROR("set local privacy failed with status: 0x%x", status);
     }
-    tBTM_BLE_LEGACY_GAP_CB_PARAMS cb_params = {0};
-    cb_params.status = (status == HCI_SUCCESS)? BTM_SUCCESS : BTM_ILLEGAL_VALUE;
-    BTM_BleLegacyGapOneshotFireIfArmed(BTM_BLE_LEGACY_GAP_SET_PRIVACY_EVT, &cb_params);
+    tBTM_STATUS cfg_status = (status == HCI_SUCCESS) ? BTM_SUCCESS : BTM_ILLEGAL_VALUE;
+    btm_ble_privacy_config_step_done(BTM_PRIVACY_CFG_PENDING_AR, cfg_status);
 }
 
 /*******************************************************************************
@@ -461,13 +601,20 @@ void btm_ble_set_rpa_timeout_complete(UINT8 *p, UINT16 evt_len)
 {
     UINT8 status;
 
+    if (!btm_ble_hci_evt_has_len("set_rpa_timeout_cmpl", evt_len, 1)) {
+        tBTM_BLE_LEGACY_GAP_CB_PARAMS cb_params = {0};
+        cb_params.status = BTM_ILLEGAL_VALUE;
+        BTM_LegacyBleCallbackTrigger(BTM_BLE_LEGACY_GAP_RPA_TIMEOUT_EVT, &cb_params);
+        return;
+    }
+
     // Extract the status of the command completion from the event data
     STREAM_TO_UINT8(status, p);
 
     BTM_TRACE_DEBUG("%s status = %d", __func__, status);
 
     tBTM_BLE_LEGACY_GAP_CB_PARAMS cb_params = {0};
-    cb_params.status = status;
+    cb_params.status = btm_ble_status_from_hci(status);
     BTM_LegacyBleCallbackTrigger(BTM_BLE_LEGACY_GAP_RPA_TIMEOUT_EVT, &cb_params);
 
 }
@@ -488,13 +635,20 @@ void btm_ble_set_privacy_mode_complete(UINT8 *p, UINT16 evt_len)
 {
     UINT8 status;
 
+    if (!btm_ble_hci_evt_has_len("set_privacy_mode_cmpl", evt_len, 1)) {
+        tBTM_BLE_LEGACY_GAP_CB_PARAMS cb_params = {0};
+        cb_params.status = BTM_ILLEGAL_VALUE;
+        BTM_LegacyBleCallbackTrigger(BTM_BLE_LEGACY_GAP_SET_PRIVACY_MODE_COMPLETE_EVT, &cb_params);
+        return;
+    }
+
     // Extract the status of the command completion from the event data
     STREAM_TO_UINT8(status, p);
 
     BTM_TRACE_DEBUG("%s status = 0x%x", __func__, status);
 
     tBTM_BLE_LEGACY_GAP_CB_PARAMS cb_params = {0};
-    cb_params.status = status;
+    cb_params.status = btm_ble_status_from_hci(status);
     BTM_LegacyBleCallbackTrigger(BTM_BLE_LEGACY_GAP_SET_PRIVACY_MODE_COMPLETE_EVT, &cb_params);
 }
 
@@ -557,9 +711,14 @@ tBTM_STATUS btm_ble_remove_resolving_list_entry(tBTM_SEC_DEV_REC *p_dev_rec)
     tBTM_STATUS st = BTM_NO_RESOURCES;
     if (controller_get_interface()->supports_ble_privacy()) {
         #if CONTROLLER_RPA_LIST_ENABLE
+        if (!btm_ble_enq_resolving_list_pending(p_dev_rec->bd_addr, BTM_BLE_META_REMOVE_IRK_ENTRY)) {
+            return BTM_NO_RESOURCES;
+        }
         if (btsnd_hcic_ble_rm_device_resolving_list(p_dev_rec->ble.static_addr_type,
                 p_dev_rec->ble.static_addr)) {
             st =  BTM_CMD_STARTED;
+        } else {
+            btm_ble_undo_resolving_list_pending();
         }
         #else
             // do nothing
@@ -582,10 +741,6 @@ tBTM_STATUS btm_ble_remove_resolving_list_entry(tBTM_SEC_DEV_REC *p_dev_rec)
                                        param,
                                        btm_ble_resolving_list_vsc_op_cmpl);
 #endif
-    }
-
-    if (st == BTM_CMD_STARTED) {
-        btm_ble_enq_resolving_list_pending( p_dev_rec->bd_addr, BTM_BLE_META_REMOVE_IRK_ENTRY);
     }
 
     return st;
@@ -645,10 +800,20 @@ tBTM_STATUS btm_ble_read_resolving_list_entry(tBTM_SEC_DEV_REC *p_dev_rec)
         return BTM_WRONG_MODE;
     }
 
+    if (controller_get_interface()->get_ble_resolving_list_max_size() == 0) {
+        return BTM_WRONG_MODE;
+    }
+
     if (controller_get_interface()->supports_ble_privacy()) {
+        if (!btm_ble_enq_resolving_list_pending(p_dev_rec->bd_addr,
+                                                BTM_BLE_META_READ_IRK_ENTRY)) {
+            return BTM_NO_RESOURCES;
+        }
         if (btsnd_hcic_ble_read_resolvable_addr_peer(p_dev_rec->ble.static_addr_type,
                 p_dev_rec->ble.static_addr)) {
             st =  BTM_CMD_STARTED;
+        } else {
+            btm_ble_undo_resolving_list_pending();
         }
     } else {
 #if (0)
@@ -663,11 +828,6 @@ tBTM_STATUS btm_ble_read_resolving_list_entry(tBTM_SEC_DEV_REC *p_dev_rec)
                                         param,
                                         btm_ble_resolving_list_vsc_op_cmpl);
 #endif
-    }
-
-    if (st == BTM_CMD_STARTED) {
-        btm_ble_enq_resolving_list_pending(p_dev_rec->bd_addr,
-                                           BTM_BLE_META_READ_IRK_ENTRY);
     }
 
     return st;
@@ -708,9 +868,10 @@ BOOLEAN btm_ble_suspend_resolving_list_activity(void)
 
 #if (BLE_42_ADV_EN == TRUE)
     if (p_ble_cb->inq_var.adv_mode == BTM_BLE_ADV_ENABLE) {
-        if (btm_ble_stop_adv() == BTM_SUCCESS) {
-            p_ble_cb->suspended_rl_state |= BTM_BLE_RL_ADV;
+        if (btm_ble_stop_adv() != BTM_SUCCESS) {
+            return FALSE;
         }
+        p_ble_cb->suspended_rl_state |= BTM_BLE_RL_ADV;
     }
 #endif // #if (BLE_42_ADV_EN == TRUE)
 
@@ -849,30 +1010,37 @@ void btm_ble_exe_enable_resolving_list(void)
 ** Returns          none
 **
 *******************************************************************************/
-BOOLEAN btm_ble_disable_resolving_list(UINT8 rl_mask, BOOLEAN to_resume )
+BOOLEAN btm_ble_disable_resolving_list_locked(UINT8 rl_mask, BOOLEAN to_resume )
 {
     UINT8 rl_state = btm_cb.ble_ctr_cb.rl_state;
+    UINT8 new_rl_state = rl_state & ~rl_mask;
 
     /* if controller does not support RPA offloading or privacy 1.2, skip */
     if (controller_get_interface()->get_ble_resolving_list_max_size() == 0) {
         return FALSE;
     }
 
-    btm_cb.ble_ctr_cb.rl_state &= ~rl_mask;
-
-    if (rl_state != BTM_BLE_RL_IDLE && btm_cb.ble_ctr_cb.rl_state == BTM_BLE_RL_IDLE) {
+    if (rl_state != BTM_BLE_RL_IDLE && new_rl_state == BTM_BLE_RL_IDLE) {
         if (btm_ble_exe_disable_resolving_list()) {
+            btm_cb.ble_ctr_cb.rl_state = new_rl_state;
             if (to_resume) {
                 btm_ble_resume_resolving_list_activity();
             }
-
             return TRUE;
-        } else {
-            return FALSE;
         }
+        return FALSE;
     }
 
+    btm_cb.ble_ctr_cb.rl_state = new_rl_state;
     return TRUE;
+}
+
+BOOLEAN btm_ble_disable_resolving_list(UINT8 rl_mask, BOOLEAN to_resume)
+{
+    btm_ble_gap_mutex_lock();
+    BOOLEAN rt = btm_ble_disable_resolving_list_locked(rl_mask, to_resume);
+    btm_ble_gap_mutex_unlock();
+    return rt;
 }
 
 /*******************************************************************************
@@ -918,7 +1086,6 @@ BOOLEAN btm_ble_resolving_list_load_dev(tBTM_SEC_DEV_REC *p_dev_rec)
                     }
                 }
 
-                btm_ble_update_resolving_list(p_dev_rec->bd_addr, TRUE);
                 if (controller_get_interface()->supports_ble_privacy()) {
                     BD_ADDR dummy_bda = {0};
                     if (memcmp(p_dev_rec->ble.static_addr, dummy_bda, BD_ADDR_LEN) == 0) {
@@ -930,15 +1097,26 @@ BOOLEAN btm_ble_resolving_list_load_dev(tBTM_SEC_DEV_REC *p_dev_rec)
                     BTM_TRACE_DEBUG("%s:adding device to controller resolving list\n", __func__);
                     UINT8 *peer_irk = p_dev_rec->ble.keys.irk;
                     UINT8 *local_irk = btm_cb.devcb.id_keys.irk;
-                    //use identical IRK for now
+                    if (!btm_ble_enq_resolving_list_pending(p_dev_rec->bd_addr,
+                                                            BTM_BLE_META_ADD_IRK_ENTRY)) {
+                        BTM_TRACE_ERROR("resolving pending queue full");
+                        return FALSE;
+                    }
                     rt = btsnd_hcic_ble_add_device_resolving_list(p_dev_rec->ble.static_addr_type,
                            p_dev_rec->ble.static_addr, peer_irk, local_irk);
+                    if (rt) {
+                        btm_ble_update_resolving_list(p_dev_rec->bd_addr, TRUE);
+                    } else {
+                        btm_ble_undo_resolving_list_pending();
+                    }
 #else
                     // do nothing
                     /* It will cause that scanner doesn't send scan request to advertiser
                      * which has sent IRK to us and we have stored the IRK in controller.
                      * It is a hardware limitation. The preliminary solution is not to
                      * send key to the controller, but to resolve the random address in host. */
+                    btm_ble_update_resolving_list(p_dev_rec->bd_addr, TRUE);
+                    rt = TRUE;
 
 #endif
 
@@ -960,11 +1138,6 @@ BOOLEAN btm_ble_resolving_list_load_dev(tBTM_SEC_DEV_REC *p_dev_rec)
                         rt = TRUE;
                     }
 #endif
-                }
-
-                if (rt) {
-                    btm_ble_enq_resolving_list_pending(p_dev_rec->bd_addr,
-                                                       BTM_BLE_META_ADD_IRK_ENTRY);
                 }
 
                 /* if resolving list has been turned on, re-enable it */
@@ -1099,8 +1272,7 @@ void btm_ble_enable_resolving_list_for_platform (UINT8 rl_mask)
     list_node_t *p_node = NULL;
     for (p_node = list_begin(btm_cb.p_sec_dev_rec_list); p_node; p_node = list_next(p_node)) {
         p_dev = list_node(p_node);
-	if ((p_dev->ble.in_controller_list & BTM_RESOLVING_LIST_BIT) &&
-                (p_dev->ble.in_controller_list & BTM_WHITE_LIST_BIT)) {
+        if (p_dev->ble.in_controller_list & BTM_RESOLVING_LIST_BIT) {
             btm_ble_enable_resolving_list(rl_mask);
             return;
         }
@@ -1121,6 +1293,8 @@ void btm_ble_enable_resolving_list_for_platform (UINT8 rl_mask)
 *******************************************************************************/
 void btm_ble_resolving_list_init(UINT8 max_irk_list_sz)
 {
+    /* Host OOM during resolving-list buffer setup is unrecoverable; _mem_error only
+     * best-effort cleans partial allocations — see btm_ble_int.h memory policy. */
     tBTM_BLE_RESOLVE_Q *p_q = &btm_cb.ble_ctr_cb.resolving_list_pend_q;
     UINT8 irk_mask_size =  (max_irk_list_sz % 8) ?
                            (max_irk_list_sz / 8 + 1) : (max_irk_list_sz / 8);
@@ -1129,14 +1303,16 @@ void btm_ble_resolving_list_init(UINT8 max_irk_list_sz)
 
     p_q->q_next = 0;
     p_q->q_pending = 0;
+    p_q->q_cap = 0;
 
     if (max_irk_list_sz > 0) {
-        p_q->resolve_q_random_pseudo = (BD_ADDR *)osi_malloc(sizeof(BD_ADDR) * max_irk_list_sz);
+        p_q->q_cap = btm_ble_resolving_pend_q_cap(max_irk_list_sz);
+        p_q->resolve_q_random_pseudo = (BD_ADDR *)osi_malloc(sizeof(BD_ADDR) * p_q->q_cap);
         if (p_q->resolve_q_random_pseudo == NULL) {
             BTM_TRACE_ERROR("%s - Out of memory for random pseudo address", __FUNCTION__);
             goto _mem_error;
         }
-        p_q->resolve_q_action = (UINT8 *)osi_malloc(max_irk_list_sz);
+        p_q->resolve_q_action = (UINT8 *)osi_malloc(p_q->q_cap);
         if (p_q->resolve_q_action == NULL) {
             BTM_TRACE_ERROR("%s - Out of memory for resolve action", __FUNCTION__);
             goto _mem_error;
@@ -1182,6 +1358,7 @@ void btm_ble_resolving_list_cleanup(void)
 
     p_q->q_next = 0;
     p_q->q_pending = 0;
+    p_q->q_cap = 0;
 
     if (p_q->resolve_q_random_pseudo) {
         osi_free(p_q->resolve_q_random_pseudo);
@@ -1220,15 +1397,25 @@ void btm_ble_add_default_entry_to_resolving_list(void)
 
 #if (BLE_SMP_ID_RESET_ENABLE == TRUE)
     // Remove the existing entry in resolving list When resetting the device identity
-    btsnd_hcic_ble_rm_device_resolving_list(BLE_ADDR_PUBLIC, peer_addr);
-
-    is_deleting_zero_addr = true;
-
-    btm_ble_enq_resolving_list_pending(peer_addr, BTM_BLE_META_REMOVE_IRK_ENTRY);
+    if (!btm_ble_enq_resolving_list_pending(peer_addr, BTM_BLE_META_REMOVE_IRK_ENTRY)) {
+        BTM_TRACE_ERROR("resolving pending queue full");
+        return;
+    }
+    if (!btsnd_hcic_ble_rm_device_resolving_list(BLE_ADDR_PUBLIC, peer_addr)) {
+        btm_ble_undo_resolving_list_pending();
+    } else {
+        is_deleting_zero_addr = true;
+    }
 #endif // (BLE_SMP_ID_RESET_ENABLE == TRUE)
-    btsnd_hcic_ble_add_device_resolving_list (BLE_ADDR_PUBLIC, peer_addr, peer_irk, btm_cb.devcb.id_keys.irk);
-
-    btm_ble_enq_resolving_list_pending(peer_addr, BTM_BLE_META_ADD_IRK_ENTRY);
+    if (!btm_ble_enq_resolving_list_pending(peer_addr, BTM_BLE_META_ADD_IRK_ENTRY)) {
+        BTM_TRACE_ERROR("resolving pending queue full");
+        /* REMOVE, if sent, stays queued for its Command Complete. */
+        return;
+    }
+    if (!btsnd_hcic_ble_add_device_resolving_list(BLE_ADDR_PUBLIC, peer_addr,
+                                                  peer_irk, btm_cb.devcb.id_keys.irk)) {
+        btm_ble_undo_resolving_list_pending();
+    }
 }
 #endif // (CONTROLLER_RPA_LIST_ENABLE == TRUE)
 #endif

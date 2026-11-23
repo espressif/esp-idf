@@ -14,6 +14,11 @@
 #include "device/controller.h"
 #include <string.h>
 #include "l2c_int.h"
+
+/* HCI command buffer OOM (HCI_ERR_MEMORY_FULL from HCIC_BLE_CMD_CREATED_U8) is an
+ * unrecoverable host condition; != HCI_SUCCESS checks below are not required to
+ * special-case memory exhaustion — see btm_ble_int.h memory policy. */
+
 #if (BLE_50_FEATURE_SUPPORT == TRUE)
 #define SET_BIT(t, n)  (t |= 1UL << (n))
 tBTM_BLE_EXTENDED_CB extend_adv_cb;
@@ -36,10 +41,15 @@ static tBTM_BLE_MIN_CONN_INTERVAL_GROUP btm_ble_min_conn_interval_groups[BTM_BLE
 extern BOOLEAN BTM_GetLocalResolvablePrivateAddr(BD_ADDR bda);
 extern void BTM_UpdateAddrInfor(uint8_t addr_type, BD_ADDR bda);
 extern void BTM_BleSetStaticAddr(BD_ADDR rand_addr);
+#if (BLE_SCAN_OWN_ADDR_SEPARATE == TRUE)
+extern uint32_t BTM_BleUpdateOwnTypeForScan(uint8_t *own_bda_type);
+#else
 extern uint32_t BTM_BleUpdateOwnType(uint8_t *own_bda_type);
+#endif
 #if (BLE_50_EXTEND_ADV_EN == TRUE)
 static tBTM_STATUS btm_ble_ext_adv_params_validate(tBTM_BLE_GAP_EXT_ADV_PARAMS *params);
-static tBTM_STATUS btm_ble_ext_adv_set_data_validate(UINT8 instance, UINT16 len, UINT8 *data);
+static tBTM_STATUS btm_ble_ext_adv_set_data_validate(UINT8 instance, UINT16 len, UINT8 *data,
+                                                       BOOLEAN is_scan_rsp, BOOLEAN is_periodic);
 
 typedef struct {
     uint16_t ter_con_handle;
@@ -48,7 +58,6 @@ typedef struct {
     UINT8 instance;
     int duration;
     int max_events;
-    uint8_t retry_count;
 } tBTM_EXT_ADV_RECORD;
 
 tBTM_EXT_ADV_RECORD adv_record[MAX_BLE_ADV_INSTANCE] = {0};
@@ -64,6 +73,14 @@ typedef struct {
 } tBTM_BLE_SYNC_RETRY_CB;
 
 static tBTM_BLE_SYNC_RETRY_CB sync_retry_cb = {0};
+
+static bool btm_ble_sync_retry_params_match(const tBTM_BLE_PERIOD_ADV_SYNC_ESTAB *estab)
+{
+    /* A failed LE Periodic Advertising Sync Established event does not have
+     * valid SID or address fields (Core Vol 4 Part E 4.5.1). Only one
+     * create-sync command is pending, so host state is enough. */
+    return (estab != NULL && sync_retry_cb.in_use);
+}
 #endif // #if (BLE_FEAT_CREATE_SYNC_RETRY_MAX > 0)
 #endif // #if (BLE_50_EXTEND_SYNC_EN == TRUE)
 
@@ -72,6 +89,23 @@ extern void btm_ble_inter_set(bool extble_inter);
 void btm_ble_extendadvcb_init(void)
 {
     memset(&extend_adv_cb, 0, sizeof(tBTM_BLE_EXTENDED_CB));
+    /* Do not clear ble_5_hci_cb here: BTM_BleGapRegisterCallback() is called
+     * from btc_init() before btu_init_core()/btm_init(). Clearing it would
+     * drop the already-registered BTC/ISO/Mesh GAP callback. BSS starts as
+     * NULL; btm_ble_extendadvcb_deinit() clears it on stack teardown. */
+#if (BLE_50_EXTEND_SYNC_EN == TRUE) && (BLE_FEAT_CREATE_SYNC_RETRY_MAX > 0)
+    memset(&sync_retry_cb, 0, sizeof(sync_retry_cb));
+#endif
+}
+
+void btm_ble_extendadvcb_deinit(void)
+{
+    ble_5_hci_cb = NULL;
+#if (BLE_50_EXTEND_SYNC_EN == TRUE) && (BLE_FEAT_CREATE_SYNC_RETRY_MAX > 0)
+    sync_retry_cb.in_use = false;
+    sync_retry_cb.retry_count = 0;
+    memset(&sync_retry_cb.params, 0, sizeof(sync_retry_cb.params));
+#endif
 }
 #if (BLE_50_EXTEND_ADV_EN == TRUE)
 void btm_ble_advrecod_init(void)
@@ -83,7 +117,6 @@ void btm_ble_advrecod_init(void)
         adv_record[i].instance = INVALID_VALUE_8BIT;
         adv_record[i].duration = INVALID_VALUE_32BIT;
         adv_record[i].max_events = INVALID_VALUE_32BIT;
-        adv_record[i].retry_count = 0;
     }
 }
 #endif // #if (BLE_50_EXTEND_ADV_EN == TRUE)
@@ -93,26 +126,86 @@ void BTM_BleGapRegisterCallback(tBTM_BLE_5_HCI_CBACK cb)
     if (cb) {
         ble_5_hci_cb = cb;
     } else {
-        BTM_TRACE_ERROR("%s, register fail, the cb function is NULL.", __func__);
+        BTM_TRACE_ERROR("register fail, cb is NULL");
+    }
+}
+
+static BOOLEAN btm_ble_5_gap_is_cmd_complete_evt(tBTM_BLE_5_GAP_EVENT event)
+{
+    switch (event) {
+#if (BLE_50_EXTEND_SCAN_EN == TRUE)
+    case BTM_BLE_5_GAP_EXT_ADV_REPORT_EVT:
+    case BTM_BLE_5_GAP_SCAN_TIMEOUT_EVT:
+#endif
+#if (BLE_50_EXTEND_ADV_EN == TRUE)
+    case BTM_BLE_5_GAP_SCAN_REQ_RECEIVED_EVT:
+    case BTM_BLE_5_GAP_ADV_TERMINATED_EVT:
+#endif
+    case BTM_BLE_5_GAP_CHANNEL_SELETE_ALGORITHM_EVT:
+#if (BLE_50_EXTEND_SYNC_EN == TRUE)
+    case BTM_BLE_5_GAP_PERIODIC_ADV_REPORT_EVT:
+    case BTM_BLE_5_GAP_PERIODIC_ADV_SYNC_LOST_EVT:
+    case BTM_BLE_5_GAP_PERIODIC_ADV_SYNC_ESTAB_EVT:
+#endif
+#if (BLE_FEAT_PERIODIC_ADV_SYNC_TRANSFER == TRUE)
+    case BTM_BLE_GAP_PERIODIC_ADV_SYNC_TRANS_RECV_EVT:
+#endif
+#if (BLE_FEAT_POWER_CONTROL_EN == TRUE)
+    case BTM_BLE_GAP_PATH_LOSS_THRESHOLD_EVT:
+    case BTM_BLE_GAP_TRANMIT_POWER_REPORTING_EVT:
+#endif
+#if (BLE_FEAT_CONN_SUBRATING == TRUE)
+    case BTM_BLE_GAP_SUBRATE_CHANGE_EVT:
+#endif
+#if (BT_BLE_FEAT_PAWR_EN == TRUE)
+    case BTM_BLE_GAP_PERIODIC_ADV_SUBEVT_DATA_REQUEST_EVT:
+    case BTM_BLE_GAP_PERIODIC_ADV_RESPONSE_REPORT_EVT:
+#endif
+#if (BT_BLE_FEAT_CHANNEL_SOUNDING == TRUE)
+    case BTM_BLE_GAP_CS_SUBEVENT_RESULT_EVT:
+    case BTM_BLE_GAP_CS_SUBEVENT_RESULT_CONTINUE_EVT:
+#endif
+#if (BLE_FEAT_ADV_MONITOR == TRUE)
+    case BTM_BLE_5_GAP_MONITOR_ADV_REPORT_EVT:
+#endif
+#if (BLE_FEAT_SHORTER_CONN_INTERVALS == TRUE)
+    case BTM_BLE_5_GAP_CONN_RATE_CHANGE_EVT:
+#endif
+#if (BLE_FEAT_LE_UTP == TRUE)
+    case BTM_BLE_5_GAP_UTP_RECEIVE_EVT:
+#endif
+        return FALSE;
+    default:
+        return TRUE;
     }
 }
 
 void BTM_ExtBleCallbackTrigger(tBTM_BLE_5_GAP_EVENT event, tBTM_BLE_5_GAP_CB_PARAMS *params)
 {
-    if(params && params->status == BTM_SUCCESS) {
+    if (params && btm_ble_5_gap_is_cmd_complete_evt(event) && params->status == BTM_SUCCESS) {
         btm_ble_inter_set(true);
     }
     if (ble_5_hci_cb) {
         ble_5_hci_cb(event, params);
+    } else {
+        BTM_TRACE_ERROR("ble_5_hci_cb is NULL");
     }
 }
+
+/* BLE 5.0 GAP APIs below are only invoked from BTA (bta_dm_act.c), which passes
+ * BD_ADDR and payload buffers as embedded struct members or stack locals — never
+ * NULL. Pointer NULL checks are done in BTC/BTA where needed; BTM only validates
+ * semantic preconditions that affect host state (e.g. p_lcb exists, adv instance
+ * configured). HCI parameter range/format checks (addr_type, sid, scan_duplicate,
+ * phy_mask, interval, etc.) are left to the controller — invalid values are
+ * rejected via Command Status/Complete and do not corrupt host state. */
 
 tBTM_STATUS BTM_BleReadPhy(BD_ADDR bd_addr, UINT8 *tx_phy, UINT8 *rx_phy)
 {
     tL2C_LCB *p_lcb = l2cu_find_lcb_by_bd_addr(bd_addr, BT_TRANSPORT_LE);
     tBTM_BLE_5_GAP_CB_PARAMS cb_params = {0};
 
-    if (!tx_phy || !rx_phy || !p_lcb) {
+    if (!p_lcb) {
         cb_params.read_phy.status = BTM_ILLEGAL_VALUE;
         memcpy(cb_params.read_phy.addr, bd_addr, BD_ADDR_LEN);
 
@@ -129,6 +222,12 @@ tBTM_STATUS BTM_BleReadPhy(BD_ADDR bd_addr, UINT8 *tx_phy, UINT8 *rx_phy)
 tBTM_STATUS BTM_BleSetPreferDefaultPhy(UINT8 tx_phy_mask, UINT8 rx_phy_mask)
 {
     UINT8 all_phys = 0;
+    if (tx_phy_mask == 0) {
+        all_phys |= BTM_BLE_GAP_PHY_NO_TX_PREF_MASK;
+    }
+    if (rx_phy_mask == 0) {
+        all_phys |= BTM_BLE_GAP_PHY_NO_RX_PREF_MASK;
+    }
     tBTM_STATUS status = BTM_SUCCESS;
     tHCI_STATUS err = HCI_SUCCESS;
     tBTM_BLE_5_GAP_CB_PARAMS cb_params = {0};
@@ -165,6 +264,7 @@ tBTM_STATUS BTM_BleSetPreferPhy(BD_ADDR bd_addr, UINT8 all_phys, UINT8 tx_phy_ma
     if (!btsnd_hcic_ble_set_phy(p_lcb->handle, all_phys, tx_phy_mask, rx_phy_mask, phy_options)) {
         cb_params.status = BTM_ILLEGAL_VALUE;
         BTM_ExtBleCallbackTrigger(BTM_BLE_5_GAP_SET_PREFERED_PHY_COMPLETE_EVT, &cb_params);
+        return BTM_ILLEGAL_VALUE;
     }
 
 
@@ -178,7 +278,8 @@ tBTM_STATUS BTM_BleSetExtendedAdvRandaddr(UINT8 instance, BD_ADDR rand_addr)
     tHCI_STATUS err = HCI_SUCCESS;
     tBTM_BLE_5_GAP_CB_PARAMS cb_params = {0};
 
-    if (instance >= MAX_BLE_ADV_INSTANCE || rand_addr == NULL) {
+    /* rand_addr: BTA ble_set_ext_adv_rand_addr.rand_addr (embedded), never NULL */
+    if (instance >= MAX_BLE_ADV_INSTANCE) {
         status = BTM_ILLEGAL_VALUE;
         goto end;
     }
@@ -220,8 +321,19 @@ tBTM_STATUS BTM_BleSetExtendedAdvRandaddr(UINT8 instance, BD_ADDR rand_addr)
     } else {
         memcpy(extend_adv_cb.inst[instance].rand_addr, rand_addr, BD_ADDR_LEN);
         extend_adv_cb.inst[instance].rand_addr_set = TRUE;
-        // set random address success, update address info
-        if(extend_adv_cb.inst[instance].configured && extend_adv_cb.inst[instance].connetable) {
+        /* esp_ble_gap_get_local_used_addr() reads only the global addr_mgnt_cb,
+         * so a connectable set has to publish its address there even though
+         * per-set state is what multi-ADV relies on. This does not bring back
+         * the multi-ADV pairing failure: btm_ble_adjust_conn_addr_for_ext_adv()
+         * and smp_build_id_addr_cmd() consult extend_adv_cb.inst[] first, so
+         * the global slot no longer feeds SMP c1/f5/f6.
+         * Only Own_Address_Type 0x01 / 0x03 put this address on air, and only
+         * a static random address can live in static_rand_addr; skip NRPA so
+         * private_addr/own_addr_type cannot diverge from exist_addr_bit. */
+        if (extend_adv_cb.inst[instance].configured && extend_adv_cb.inst[instance].connectable &&
+                (extend_adv_cb.inst[instance].own_addr_type == BLE_ADDR_RANDOM ||
+                 extend_adv_cb.inst[instance].own_addr_type == BLE_ADDR_RANDOM_ID) &&
+                BTM_BLE_IS_STATIC_RAND_BDA(rand_addr)) {
             BTM_BleSetStaticAddr(rand_addr);
             BTM_UpdateAddrInfor(BLE_ADDR_RANDOM, rand_addr);
         }
@@ -240,8 +352,10 @@ tBTM_STATUS BTM_BleSetExtendedAdvParams(UINT8 instance, tBTM_BLE_GAP_EXT_ADV_PAR
     tBTM_STATUS status = BTM_SUCCESS;
     tHCI_STATUS err = HCI_SUCCESS;
     tBTM_BLE_5_GAP_CB_PARAMS cb_params = {0};
-    bool use_rpa_addr = false;
+    tBLE_ADDR_TYPE identity_addr_type;
+#if (CONTROLLER_RPA_LIST_ENABLE == FALSE)
     BD_ADDR rand_addr;
+#endif
 
     if (instance >= MAX_BLE_ADV_INSTANCE) {
         status = BTM_ILLEGAL_VALUE;
@@ -254,19 +368,27 @@ tBTM_STATUS BTM_BleSetExtendedAdvParams(UINT8 instance, tBTM_BLE_GAP_EXT_ADV_PAR
         goto end;
     }
 
+    /* Capture identity type before host-RPA rewrite of params->own_addr_type. */
+    identity_addr_type = params->own_addr_type;
+
 #if (CONTROLLER_RPA_LIST_ENABLE == FALSE)
+    BOOLEAN set_rpa_rand_addr = FALSE;
     // if own_addr_type == BLE_ADDR_PUBLIC_ID or BLE_ADDR_RANDOM_ID,
     if((params->own_addr_type == BLE_ADDR_PUBLIC_ID || params->own_addr_type == BLE_ADDR_RANDOM_ID) && BTM_GetLocalResolvablePrivateAddr(rand_addr)) {
         params->own_addr_type = BLE_ADDR_RANDOM;
-        use_rpa_addr = true;
+        set_rpa_rand_addr = TRUE;
     } else if(params->own_addr_type == BLE_ADDR_PUBLIC_ID){
         params->own_addr_type = BLE_ADDR_PUBLIC;
     } else if (params->own_addr_type == BLE_ADDR_RANDOM_ID) {
         params->own_addr_type = BLE_ADDR_RANDOM;
     }
 #else
+    /* Controller owns the RPA list, so the host knows the type but not the
+     * on-air address. Kept for esp_ble_gap_get_local_used_addr(), which has no
+     * other source; the address itself still comes from the global slot set by
+     * esp_ble_gap_set_rand_addr(). */
     btm_cb.ble_ctr_cb.addr_mgnt_cb.own_addr_type = params->own_addr_type;
-#endif
+#endif /* (CONTROLLER_RPA_LIST_ENABLE == FALSE) */
 #if (BT_BLE_FEAT_ADV_CODING_SELECTION == TRUE)
     if ((err = btsnd_hcic_ble_set_ext_adv_params_v2(instance, params->type, params->interval_min, params->interval_max,
                                       params->channel_map, params->own_addr_type, params->peer_addr_type,
@@ -291,9 +413,9 @@ tBTM_STATUS BTM_BleSetExtendedAdvParams(UINT8 instance, tBTM_BLE_GAP_EXT_ADV_PAR
 #endif // (BT_BLE_FEAT_ADV_CODING_SELECTION == TRUE)
 
     if (params->type & BTM_BLE_GAP_SET_EXT_ADV_PROP_CONNECTABLE) {
-        extend_adv_cb.inst[instance].connetable = true;
+        extend_adv_cb.inst[instance].connectable = true;
     } else {
-        extend_adv_cb.inst[instance].connetable = false;
+        extend_adv_cb.inst[instance].connectable = false;
     }
 
     if (params->type & BTM_BLE_GAP_SET_EXT_ADV_PROP_SCANNABLE) {
@@ -318,19 +440,26 @@ tBTM_STATUS BTM_BleSetExtendedAdvParams(UINT8 instance, tBTM_BLE_GAP_EXT_ADV_PAR
     extend_adv_cb.inst[instance].configured = true;
     /* Record the post-fallback on-air address type for per-set conn_addr fixup. */
     extend_adv_cb.inst[instance].own_addr_type = params->own_addr_type;
+    extend_adv_cb.inst[instance].id_addr_type = identity_addr_type;
+
+#if (CONTROLLER_RPA_LIST_ENABLE == FALSE)
+    if (set_rpa_rand_addr) {
+        if((err = btsnd_hcic_ble_set_extend_rand_address(instance, rand_addr)) != HCI_SUCCESS) {
+            BTM_TRACE_ERROR("LE EA SetParams: set rand addr cmd err=0x%x", err);
+            status = BTM_HCI_ERROR | err;
+            goto end;
+        }
+        memcpy(extend_adv_cb.inst[instance].rand_addr, rand_addr, BD_ADDR_LEN);
+        extend_adv_cb.inst[instance].rand_addr_set = TRUE;
+        /* Host-generated RPA is the on-air address for this set; publish it so
+         * esp_ble_gap_get_local_used_addr() does not report the stale identity.
+         * Not fed to SMP: smp_build_id_addr_cmd() rejects a non-static-random
+         * per-set address and falls back to static_rand_addr. */
+        BTM_UpdateAddrInfor(BLE_ADDR_RANDOM, rand_addr);
+    }
+#endif /* (CONTROLLER_RPA_LIST_ENABLE == FALSE) */
 
 end:
-    if(use_rpa_addr) {
-        // update RPA address
-        if((err = btsnd_hcic_ble_set_extend_rand_address(instance, rand_addr)) != HCI_SUCCESS) {
-            BTM_TRACE_ERROR("LE EA SetParams: cmd err=0x%x", err);
-            status = BTM_HCI_ERROR | err;
-        } else {
-            // set addr success, update address info
-            BTM_UpdateAddrInfor(BLE_ADDR_RANDOM, rand_addr);
-            extend_adv_cb.inst[instance].rand_addr_set = FALSE;
-        }
-    }
     cb_params.set_params.status = status;
     cb_params.set_params.instance = instance;
     BTM_ExtBleCallbackTrigger(BTM_BLE_5_GAP_EXT_ADV_SET_PARAMS_COMPLETE_EVT, &cb_params);
@@ -348,7 +477,7 @@ tBTM_STATUS BTM_BleConfigExtendedAdvDataRaw(BOOLEAN is_scan_rsp, UINT8 instance,
     UINT16 data_offset = 0;
 
 
-    if ((status = btm_ble_ext_adv_set_data_validate(instance, len, data)) != BTM_SUCCESS) {
+    if ((status = btm_ble_ext_adv_set_data_validate(instance, len, data, is_scan_rsp, FALSE)) != BTM_SUCCESS) {
         BTM_TRACE_ERROR("%s, invalid extend adv data.", __func__);
         goto end;
     }
@@ -480,7 +609,6 @@ end:
                 adv_record[i].instance = INVALID_VALUE_8BIT;
                 adv_record[i].duration = INVALID_VALUE_32BIT;
                 adv_record[i].max_events = INVALID_VALUE_32BIT;
-                adv_record[i].retry_count = 0;
             }
         } else {
             for (uint8_t i = 0; i < num; i++)
@@ -495,7 +623,6 @@ end:
                 adv_record[index].instance = INVALID_VALUE_8BIT;
                 adv_record[index].duration = INVALID_VALUE_32BIT;
                 adv_record[index].max_events = INVALID_VALUE_32BIT;
-                adv_record[index].retry_count = 0;
             }
         }
     }
@@ -513,7 +640,6 @@ end:
             adv_record[index].instance = ext_adv[i].instance;
             adv_record[index].duration = ext_adv[i].duration;
             adv_record[index].max_events = ext_adv[i].max_events;
-            adv_record[index].retry_count = 0;
         }
     }
 
@@ -548,7 +674,9 @@ tBTM_STATUS BTM_BleStartExtAdvRestart(uint16_t con_handle)
         return BTM_WRONG_MODE;
     }
 
-    adv_record[index].retry_count ++;
+    /* By design the extended advertising is restarted after every failed
+     * connection establishment with no upper bound, so no max-retry check
+     * is performed here. */
     BTM_TRACE_DEBUG("remote device did not receive aux connect response, retatrt the extend adv to reconnect, adv handle %d con_handle %d\n", index, con_handle);
     ext_adv.instance = adv_record[index].instance;
     ext_adv.duration = adv_record[index].duration;
@@ -572,11 +700,11 @@ UINT8 BTM_BleGetExtAdvInstByConHandle(UINT16 con_handle)
         return 0xFF;
     }
     for (UINT8 i = 0; i < MAX_BLE_ADV_INSTANCE; i++) {
-        /* configured + connetable guard prevents an all-zero slot from
+        /* configured + connectable guard prevents an all-zero slot from
          * spuriously matching a real conn_handle == 0. */
         if (adv_record[i].ter_con_handle == con_handle &&
             extend_adv_cb.inst[i].configured &&
-            extend_adv_cb.inst[i].connetable) {
+            extend_adv_cb.inst[i].connectable) {
             return i;
         }
     }
@@ -624,8 +752,9 @@ tBTM_STATUS BTM_BleExtAdvSetRemove(UINT8 instance)
         extend_adv_cb.inst[instance].legacy_pdu = false;
         extend_adv_cb.inst[instance].directed = false;
         extend_adv_cb.inst[instance].scannable = false;
-        extend_adv_cb.inst[instance].connetable = false;
+        extend_adv_cb.inst[instance].connectable = false;
         extend_adv_cb.inst[instance].own_addr_type = BLE_ADDR_PUBLIC;
+        extend_adv_cb.inst[instance].id_addr_type = BLE_ADDR_PUBLIC;
         extend_adv_cb.inst[instance].rand_addr_set = FALSE;
         memset(extend_adv_cb.inst[instance].rand_addr, 0, BD_ADDR_LEN);
         /* Fully reset the per-set record, consistent with BTM_BleExtAdvSetClear(). */
@@ -635,7 +764,6 @@ tBTM_STATUS BTM_BleExtAdvSetRemove(UINT8 instance)
         adv_record[instance].instance = INVALID_VALUE_8BIT;
         adv_record[instance].duration = INVALID_VALUE_32BIT;
         adv_record[instance].max_events = INVALID_VALUE_32BIT;
-        adv_record[instance].retry_count = 0;
     }
 
 end:
@@ -664,8 +792,9 @@ tBTM_STATUS BTM_BleExtAdvSetClear(void)
             extend_adv_cb.inst[i].legacy_pdu = false;
             extend_adv_cb.inst[i].directed = false;
             extend_adv_cb.inst[i].scannable = false;
-            extend_adv_cb.inst[i].connetable = false;
+            extend_adv_cb.inst[i].connectable = false;
             extend_adv_cb.inst[i].own_addr_type = BLE_ADDR_PUBLIC;
+            extend_adv_cb.inst[i].id_addr_type = BLE_ADDR_PUBLIC;
             extend_adv_cb.inst[i].rand_addr_set = FALSE;
             memset(extend_adv_cb.inst[i].rand_addr, 0, BD_ADDR_LEN);
             /* Fully reset the per-set record, consistent with
@@ -679,7 +808,6 @@ tBTM_STATUS BTM_BleExtAdvSetClear(void)
             adv_record[i].instance = INVALID_VALUE_8BIT;
             adv_record[i].duration = INVALID_VALUE_32BIT;
             adv_record[i].max_events = INVALID_VALUE_32BIT;
-            adv_record[i].retry_count = 0;
         }
     }
 
@@ -706,7 +834,7 @@ tBTM_STATUS BTM_BlePeriodicAdvSetParams(UINT8 instance, tBTM_BLE_Periodic_Adv_Pa
 
     if (!extend_adv_cb.inst[instance].configured ||
         extend_adv_cb.inst[instance].scannable ||
-        extend_adv_cb.inst[instance].connetable ||
+        extend_adv_cb.inst[instance].connectable ||
         extend_adv_cb.inst[instance].legacy_pdu) {
         BTM_TRACE_ERROR("%s, instance = %d, Before set the periodic adv parameters, please configure the the \
                 extend adv to nonscannable and nonconnectable first, and it shouldn't include the legacy bit.", __func__, instance);
@@ -755,7 +883,7 @@ tBTM_STATUS BTM_BlePeriodicAdvCfgDataRaw(UINT8 instance, UINT16 len, UINT8 *data
         operation = BTM_BLE_ADV_DATA_OP_UNCHANGED_DATA;
     }
 
-    if ((status = btm_ble_ext_adv_set_data_validate(instance, len, data)) != BTM_SUCCESS) {
+    if ((status = btm_ble_ext_adv_set_data_validate(instance, len, data, FALSE, TRUE)) != BTM_SUCCESS) {
        BTM_TRACE_ERROR("%s, invalid extend adv data.", __func__);
        goto end;
     }
@@ -859,6 +987,13 @@ tBTM_STATUS BTM_BlePeriodicAdvCreateSync(tBTM_BLE_Periodic_Sync_Params *params)
             BTM_TRACE_ERROR("%s, The sync parameters is invalid.", __func__);
             goto end;
     }
+#if (BLE_FEAT_CREATE_SYNC_RETRY_MAX > 0)
+    if (sync_retry_cb.in_use) {
+        status = BTM_BUSY;
+        BTM_TRACE_ERROR("periodic sync creation in progress");
+        goto end;
+    }
+#endif // #if (BLE_FEAT_CREATE_SYNC_RETRY_MAX > 0)
     uint8_t option = 0x00;
     if (params->filter_policy) {
         SET_BIT(option, 0);
@@ -910,6 +1045,29 @@ void btm_set_phy_callback(UINT8 status)
 void btm_create_sync_callback(UINT8 status)
 {
     tBTM_BLE_5_GAP_CB_PARAMS cb_params = {0};
+
+#if (BLE_FEAT_CREATE_SYNC_RETRY_MAX > 0)
+    if (status != HCI_SUCCESS) {
+        if (sync_retry_cb.retry_count > 0) {
+            /* Retry HCI was rejected: app already got CREATE_SYNC_COMPLETE
+             * success and is waiting for SYNC_ESTAB. Controller will not send it. */
+            cb_params.sync_estab.status = HCI_ERR_CONN_FAILED_ESTABLISHMENT;
+            cb_params.sync_estab.sid = sync_retry_cb.params.sid;
+            cb_params.sync_estab.adv_addr_type = sync_retry_cb.params.addr_type;
+            memcpy(cb_params.sync_estab.adv_addr, sync_retry_cb.params.addr, BD_ADDR_LEN);
+            sync_retry_cb.in_use = false;
+            sync_retry_cb.retry_count = 0;
+            BTM_ExtBleCallbackTrigger(BTM_BLE_5_GAP_PERIODIC_ADV_SYNC_ESTAB_EVT, &cb_params);
+            return;
+        }
+        sync_retry_cb.in_use = false;
+        sync_retry_cb.retry_count = 0;
+    } else if (sync_retry_cb.retry_count > 0) {
+        /* Internal 0x3E retry: wait for establish event, not CREATE_SYNC_COMPLETE */
+        return;
+    }
+#endif // #if (BLE_FEAT_CREATE_SYNC_RETRY_MAX > 0)
+
     cb_params.status = status;
 
     BTM_ExtBleCallbackTrigger(BTM_BLE_5_GAP_PERIODIC_ADV_CREATE_SYNC_COMPLETE_EVT, &cb_params);
@@ -923,6 +1081,9 @@ void btm_read_phy_callback(uint8_t hci_status, uint16_t conn_handle, uint8_t tx_
     if(hci_status != HCI_SUCCESS) {
         status = BTM_ILLEGAL_VALUE;
         BTM_TRACE_ERROR("%s error status %d", __func__, hci_status);
+    } else if (p_lcb == NULL) {
+        status = BTM_ILLEGAL_VALUE;
+        BTM_TRACE_ERROR("no LCB handle %d", conn_handle);
     }
     tBTM_BLE_5_GAP_CB_PARAMS cb_params = {0};
     if(p_lcb) {
@@ -983,18 +1144,13 @@ tBTM_STATUS BTM_BlePeriodicAdvAddDevToList(tBLE_ADDR_TYPE addr_type, BD_ADDR add
     tBTM_STATUS status = BTM_SUCCESS;
     tBTM_BLE_5_GAP_CB_PARAMS cb_params = {0};
 
-    if (addr_type > BLE_ADDR_TYPE_MAX) {
-        status = BTM_ILLEGAL_VALUE;
-        BTM_TRACE_ERROR("%s invalid addr_type %d", __func__, addr_type);
-        goto end;
-    }
+    /* addr_type/sid range: validated by controller on HCI LE Add Device To PA List */
 
     if ((err = btsnd_hcic_ble_add_dev_to_periodic_adv_list(addr_type, addr, sid)) != HCI_SUCCESS) {
         BTM_TRACE_ERROR("LE PA AddDevToList: cmd err=0x%x", err);
         status = BTM_HCI_ERROR | err;
     }
 
-end:
     cb_params.status = status;
     BTM_ExtBleCallbackTrigger(BTM_BLE_5_GAP_PERIODIC_ADV_ADD_DEV_COMPLETE_EVT, &cb_params);
 
@@ -1007,18 +1163,12 @@ tBTM_STATUS BTM_BlePeriodicAdvRemoveDevFromList(tBLE_ADDR_TYPE addr_type, BD_ADD
     tBTM_STATUS status = BTM_SUCCESS;
     tBTM_BLE_5_GAP_CB_PARAMS cb_params = {0};
 
-    if (addr_type > BLE_ADDR_TYPE_MAX) {
-        status = BTM_ILLEGAL_VALUE;
-        BTM_TRACE_ERROR("%s invalid addr_type %d", __func__, addr_type);
-        goto end;
-    }
+    /* addr_type/sid range: validated by controller on HCI LE Remove Device From PA List */
 
     if ((err = btsnd_hcic_ble_rm_dev_from_periodic_adv_list(addr_type, addr, sid)) != HCI_SUCCESS) {
         BTM_TRACE_ERROR("LE PA RmDevFromList: cmd err=0x%x", err);
         status = BTM_HCI_ERROR | err;
     }
-
-end:
 
     cb_params.status = status;
     BTM_ExtBleCallbackTrigger(BTM_BLE_5_GAP_PERIODIC_ADV_REMOVE_DEV_COMPLETE_EVT, &cb_params);
@@ -1064,6 +1214,8 @@ tBTM_STATUS BTM_BleSetExtendedScanParams(tBTM_BLE_EXT_SCAN_PARAMS *params)
         goto end;
     }
 
+    /* scan_duplicate/cfg_mask/phy: validated by controller on HCI LE Set Extended Scan Parameters */
+
     if (params->cfg_mask & BTM_BLE_GAP_EXT_SCAN_UNCODE_MASK) {
         phy_mask |= 0x01;
         memcpy(&hci_params[phy_count], &params->uncoded_cfg, sizeof(tHCI_EXT_SCAN_PARAMS));
@@ -1076,18 +1228,22 @@ tBTM_STATUS BTM_BleSetExtendedScanParams(tBTM_BLE_EXT_SCAN_PARAMS *params)
         phy_count++;
     }
 
+#if (BLE_SCAN_OWN_ADDR_SEPARATE == TRUE)
+    if (BTM_BleUpdateOwnTypeForScan(&params->own_addr_type) != 0 ) {
+#else
     if (BTM_BleUpdateOwnType(&params->own_addr_type) != 0 ) {
+#endif
         status = BTM_ILLEGAL_VALUE;
         BTM_TRACE_ERROR("LE UpdateOwnType err");
         goto end;
     }
 
-    extend_adv_cb.scan_duplicate = params->scan_duplicate;
-
     if ((err = btsnd_hcic_ble_set_ext_scan_params(params->own_addr_type, params->filter_policy, phy_mask, phy_count,
                                       hci_params)) != HCI_SUCCESS) {
         BTM_TRACE_ERROR("LE ES SetParams: cmd err=0x%x", err);
         status = BTM_HCI_ERROR | err;
+    } else {
+        extend_adv_cb.scan_duplicate = params->scan_duplicate;
     }
 
 end:
@@ -1176,8 +1332,9 @@ static tBTM_STATUS btm_ble_ext_adv_params_validate(tBTM_BLE_GAP_EXT_ADV_PARAMS *
         return BTM_ILLEGAL_VALUE;
     }
 
+    /* interval/primary_phy range: validated by controller on HCI LE Set Extended Advertising Parameters */
+
     if (params->type & BTM_BLE_GAP_SET_EXT_ADV_PROP_LEGACY) {
-        /* Not allowed for legacy PDUs. */
         if (params->type & BTM_BLE_GAP_SET_EXT_ADV_PROP_INCLUDE_TX_PWR) {
 	    BTM_TRACE_ERROR("%s, The Legacy adv can't include tx power bit, line %d", __func__, __LINE__);
             return BTM_ILLEGAL_VALUE;
@@ -1197,12 +1354,14 @@ static tBTM_STATUS btm_ble_ext_adv_params_validate(tBTM_BLE_GAP_EXT_ADV_PARAMS *
             BTM_TRACE_ERROR("%s, HD directed advertising allowed only for legacy PDUs. line %d", __func__, __LINE__);
             return BTM_ILLEGAL_VALUE;
         }
+
     }
 
     return BTM_SUCCESS;
 }
 
-static tBTM_STATUS btm_ble_ext_adv_set_data_validate(UINT8 instance, UINT16 len, UINT8 *data)
+static tBTM_STATUS btm_ble_ext_adv_set_data_validate(UINT8 instance, UINT16 len, UINT8 *data,
+                                                     BOOLEAN is_scan_rsp, BOOLEAN is_periodic)
 {
     if (data == NULL && len > 0) {
         BTM_TRACE_ERROR("%s, the extend adv data is NULL. line %d", __func__, __LINE__);
@@ -1219,9 +1378,15 @@ static tBTM_STATUS btm_ble_ext_adv_set_data_validate(UINT8 instance, UINT16 len,
         return BTM_ILLEGAL_VALUE;
     }
 
+    if (!is_periodic && !is_scan_rsp && extend_adv_cb.inst[instance].scannable &&
+            !extend_adv_cb.inst[instance].legacy_pdu && len > 0) {
+        BTM_TRACE_ERROR("scannable ext adv: no primary PDU data");
+        return BTM_ILLEGAL_VALUE;
+    }
+
     /* Not allowed with the direted advertising for legacy */
     if (extend_adv_cb.inst[instance].legacy_pdu && extend_adv_cb.inst[instance].directed) {
-	BTM_TRACE_ERROR("%s, Not allowed with the direted advertising for legacy. line %d", __func__, __LINE__);
+        BTM_TRACE_ERROR("legacy directed adv not allowed line %d", __LINE__);
         return BTM_ILLEGAL_VALUE;
     }
 
@@ -1272,6 +1437,8 @@ void btm_ble_update_phy_evt(tBTM_BLE_UPDATE_PHY *params)
 #if (BLE_50_EXTEND_SCAN_EN == TRUE)
 void btm_ble_scan_timeout_evt(void)
 {
+    /* Extended scan only tracks BTM_BLE_SCANNING in inq_var.state; do not touch
+     * legacy scan_activity / scan_type here. */
     btm_cb.ble_ctr_cb.inq_var.state &= ~BTM_BLE_SCANNING;
     BTM_ExtBleCallbackTrigger(BTM_BLE_5_GAP_SCAN_TIMEOUT_EVT, NULL);
 }
@@ -1298,7 +1465,7 @@ void btm_ble_adv_set_terminated_evt(tBTM_BLE_ADV_TERMINAT *params)
         adv_record[params->adv_handle].ter_con_handle = HCID_GET_HANDLE(params->conn_handle);
         /* Re-run the per-set conn_addr fixup in case this event arrives
          * after LE (Enhanced) Connection Complete. */
-#if (CONTROLLER_RPA_LIST_ENABLE == TRUE)
+#if (BLE_50_FEATURE_SUPPORT == TRUE) && (BLE_50_EXTEND_ADV_EN == TRUE) && (CONTROLLER_RPA_LIST_ENABLE == TRUE)
         btm_ble_adjust_conn_addr_for_ext_adv(adv_record[params->adv_handle].ter_con_handle);
 #endif
 #if (BLE_INCLUDED == TRUE && SMP_INCLUDED == TRUE && BLE_PERIPH_PSEUDO_ADDR_BOND == TRUE)
@@ -1357,20 +1524,22 @@ void btm_ble_monitor_adv_report_evt(tBTM_BLE_MONITOR_ADV_REPORT *params)
     BTM_ExtBleCallbackTrigger(BTM_BLE_5_GAP_MONITOR_ADV_REPORT_EVT, &cb_params);
 }
 
-void btm_ble_read_monitor_adv_list_size_complete(UINT8 *p)
+void btm_ble_read_monitor_adv_list_size_complete(UINT8 *p, UINT16 evt_len)
 {
     tBTM_BLE_5_GAP_CB_PARAMS cb_params = {0};
     UINT8 status;
 
-    if (!p) {
-        BTM_TRACE_ERROR("%s, Invalid params.", __func__);
-        return;
-    }
+    BTM_BLE_HCI_EVT_CHECK_PTR_STATUS("read_mon_adv_list_size", p, evt_len);
 
     STREAM_TO_UINT8(status, p);
+    evt_len--;
     cb_params.monitor_adv_list_size.status = (status == HCI_SUCCESS) ? BTM_SUCCESS : (BTM_HCI_ERROR | status);
     if (status == HCI_SUCCESS) {
-        STREAM_TO_UINT8(cb_params.monitor_adv_list_size.list_size, p);
+        if (!btm_ble_hci_evt_has_len("read_mon_adv_list_size", evt_len, 1)) {
+            cb_params.monitor_adv_list_size.status = BTM_HCI_ERROR | HCI_ERR_UNSPECIFIED;
+        } else {
+            STREAM_TO_UINT8(cb_params.monitor_adv_list_size.list_size, p);
+        }
     }
 
     BTM_ExtBleCallbackTrigger(BTM_BLE_5_GAP_READ_MONITOR_ADV_LIST_SIZE_COMPLETE_EVT, &cb_params);
@@ -1387,6 +1556,8 @@ tBTM_STATUS BTM_BleAddMonitorAdvList(UINT8 addr_type, BD_ADDR addr, INT8 rssi_lo
         BTM_TRACE_ERROR("%s invalid addr_type %d", __func__, addr_type);
         goto end;
     }
+
+    /* rssi_low/rssi_high/timeout: validated by controller on vendor HCI command */
 
     if ((err = btsnd_hcic_ble_add_monitor_adv_list(addr_type, addr, rssi_low, rssi_high, timeout)) != HCI_SUCCESS) {
         BTM_TRACE_ERROR("LE AddMonitorAdvList: cmd err=0x%x", err);
@@ -1562,17 +1733,27 @@ tBTM_STATUS BTM_BleReadAllLocalSuppFeatures(void)
     return BTM_CMD_STARTED;
 }
 
-void btm_ble_read_all_local_supp_features_complete(UINT8 *p)
+void btm_ble_read_all_local_supp_features_complete(UINT8 *p, UINT16 evt_len)
 {
     tBTM_BLE_5_GAP_CB_PARAMS cb_params = {0};
 
-    STREAM_TO_UINT8(cb_params.read_all_local_supp_feat.status, p);
-    if (cb_params.read_all_local_supp_feat.status == HCI_SUCCESS) {
-        STREAM_TO_UINT8(cb_params.read_all_local_supp_feat.max_page, p);
-        cb_params.read_all_local_supp_feat.le_features = btm_ble_local_supp_le_features;
-        STREAM_TO_ARRAY(btm_ble_local_supp_le_features, p, BLE_LL_EXT_FEAT_DATA_LEN);
+    if (!btm_ble_hci_evt_has_len("read_all_local_feat", evt_len, 1)) {
+        cb_params.read_all_local_supp_feat.status = BTM_HCI_ERROR | HCI_ERR_UNSPECIFIED;
     } else {
-        cb_params.read_all_local_supp_feat.status |= BTM_HCI_ERROR;
+        STREAM_TO_UINT8(cb_params.read_all_local_supp_feat.status, p);
+        evt_len--;
+
+        if (cb_params.read_all_local_supp_feat.status == HCI_SUCCESS) {
+            BTM_BLE_HCI_EVT_MARK_BAD_PAYLOAD("read_all_local_feat", evt_len, (1 + BLE_LL_EXT_FEAT_DATA_LEN),
+                                              cb_params.read_all_local_supp_feat.status);
+            if (cb_params.read_all_local_supp_feat.status == HCI_SUCCESS) {
+                STREAM_TO_UINT8(cb_params.read_all_local_supp_feat.max_page, p);
+                cb_params.read_all_local_supp_feat.le_features = btm_ble_local_supp_le_features;
+                STREAM_TO_ARRAY(btm_ble_local_supp_le_features, p, BLE_LL_EXT_FEAT_DATA_LEN);
+            }
+        } else {
+            cb_params.read_all_local_supp_feat.status |= BTM_HCI_ERROR;
+        }
     }
 
     BTM_ExtBleCallbackTrigger(BTM_BLE_5_GAP_READ_ALL_LOCAL_SUPP_FEAT_COMPLETE_EVT, &cb_params);
@@ -1692,7 +1873,7 @@ void BTM_BleSetDefaultRateParameters(UINT16 conn_interval_min, UINT16 conn_inter
                                                           subrate_min, subrate_max, max_latency,
                                                           continuation_number, supervision_timeout,
                                                           min_ce_len, max_ce_len)) != HCI_SUCCESS) {
-        BTM_TRACE_ERROR("%s cmd err=0x%x", __func__, err);
+        BTM_TRACE_ERROR("cmd err 0x%x", err);
         status = BTM_HCI_ERROR | err;
     }
 
@@ -1723,30 +1904,40 @@ void btm_ble_read_min_supp_conn_interval_cmd_status(UINT8 status)
     BTM_ExtBleCallbackTrigger(BTM_BLE_5_GAP_READ_MIN_SUPP_CONN_INTERVAL_COMPLETE_EVT, &cb_params);
 }
 
-void btm_ble_read_min_supp_conn_interval_complete(UINT8 *p)
+void btm_ble_read_min_supp_conn_interval_complete(UINT8 *p, UINT16 evt_len)
 {
     tBTM_BLE_5_GAP_CB_PARAMS cb_params = {0};
     UINT8 num_groups;
 
-    if (!p) {
-        return;
-    }
+    BTM_BLE_HCI_EVT_CHECK_PTR_STATUS("read_min_conn_int", p, evt_len);
 
     STREAM_TO_UINT8(cb_params.read_min_supp_conn_interval.status, p);
+    evt_len--;
+
     if (cb_params.read_min_supp_conn_interval.status == HCI_SUCCESS) {
-        STREAM_TO_UINT8(cb_params.read_min_supp_conn_interval.min_supported_conn_interval, p);
-        STREAM_TO_UINT8(num_groups, p);
-        if (num_groups > BTM_BLE_MAX_CONN_INTERVAL_GROUPS) {
-            BTM_TRACE_WARNING("%s num_groups %u exceeds max %u", __func__, num_groups,
-                              BTM_BLE_MAX_CONN_INTERVAL_GROUPS);
-            num_groups = BTM_BLE_MAX_CONN_INTERVAL_GROUPS;
-        }
-        cb_params.read_min_supp_conn_interval.num_groups = num_groups;
-        cb_params.read_min_supp_conn_interval.groups = btm_ble_min_conn_interval_groups;
-        for (UINT8 i = 0; i < num_groups; i++) {
-            STREAM_TO_UINT16(btm_ble_min_conn_interval_groups[i].min_125us, p);
-            STREAM_TO_UINT16(btm_ble_min_conn_interval_groups[i].max_125us, p);
-            STREAM_TO_UINT16(btm_ble_min_conn_interval_groups[i].stride_125us, p);
+        if (!btm_ble_hci_evt_has_len("read_min_conn_int", evt_len, 2)) {
+            cb_params.read_min_supp_conn_interval.status = BTM_HCI_ERROR | HCI_ERR_UNSPECIFIED;
+        } else {
+            STREAM_TO_UINT8(cb_params.read_min_supp_conn_interval.min_supported_conn_interval, p);
+            STREAM_TO_UINT8(num_groups, p);
+            evt_len -= 2;
+            if (num_groups > BTM_BLE_MAX_CONN_INTERVAL_GROUPS) {
+                BTM_TRACE_WARNING("num_groups %u exceeds max %u", num_groups,
+                                  BTM_BLE_MAX_CONN_INTERVAL_GROUPS);
+                num_groups = BTM_BLE_MAX_CONN_INTERVAL_GROUPS;
+            }
+            if (evt_len < (UINT16)(num_groups * 6)) {
+                BTM_TRACE_ERROR("read_min_conn_int: truncated groups len %d", evt_len);
+                cb_params.read_min_supp_conn_interval.status = BTM_HCI_ERROR | HCI_ERR_UNSPECIFIED;
+                num_groups = 0;
+            }
+            cb_params.read_min_supp_conn_interval.num_groups = num_groups;
+            cb_params.read_min_supp_conn_interval.groups = btm_ble_min_conn_interval_groups;
+            for (UINT8 i = 0; i < num_groups; i++) {
+                STREAM_TO_UINT16(btm_ble_min_conn_interval_groups[i].min_125us, p);
+                STREAM_TO_UINT16(btm_ble_min_conn_interval_groups[i].max_125us, p);
+                STREAM_TO_UINT16(btm_ble_min_conn_interval_groups[i].stride_125us, p);
+            }
         }
     } else {
         cb_params.read_min_supp_conn_interval.status |= BTM_HCI_ERROR;
@@ -1891,9 +2082,13 @@ void btm_ble_periodic_adv_sync_establish_evt(tBTM_BLE_PERIOD_ADV_SYNC_ESTAB *par
     }
 
 #if (BLE_FEAT_CREATE_SYNC_RETRY_MAX > 0)
-    /* Check if retry is needed for error 0x3E (Connection Failed to be Established) */
     if (params->status == HCI_ERR_CONN_FAILED_ESTABLISHMENT &&
         sync_retry_cb.in_use &&
+        !btm_ble_sync_retry_params_match(params)) {
+        sync_retry_cb.in_use = false;
+        sync_retry_cb.retry_count = 0;
+    } else if (params->status == HCI_ERR_CONN_FAILED_ESTABLISHMENT &&
+        btm_ble_sync_retry_params_match(params) &&
         sync_retry_cb.retry_count < BLE_FEAT_CREATE_SYNC_RETRY_MAX) {
 
         sync_retry_cb.retry_count++;
@@ -1944,6 +2139,8 @@ void btm_ble_periodic_adv_sync_establish_evt(tBTM_BLE_PERIOD_ADV_SYNC_ESTAB *par
 #endif // #if (BLE_50_EXTEND_SYNC_EN == TRUE)
 
 #if (BLE_50_EXTEND_ADV_EN == TRUE)
+/* Internal helper for btc_get_ble_status (diagnostics only): best-effort count
+ * of active extended-adv instances; adv_record is not synchronized with BTU. */
 uint8_t btm_ble_ext_adv_active_count(void)
 {
     uint8_t count = 0;
@@ -2007,7 +2204,7 @@ void BTM_BlePeriodicAdvRecvEnable(UINT16 sync_handle, UINT8 enable)
     tBTM_BLE_5_GAP_CB_PARAMS cb_params = {0};
 
     if ((err = btsnd_hcic_ble_set_periodic_adv_recv_enable(sync_handle, enable)) != HCI_SUCCESS) {
-        BTM_TRACE_ERROR("%s cmd err=0x%x", __func__, err);
+        BTM_TRACE_ERROR("cmd err 0x%x", err);
         status = BTM_HCI_ERROR | err;
     }
 
@@ -2066,7 +2263,7 @@ void BTM_BleSetPeriodicAdvSyncTransParams(BD_ADDR bd_addr, UINT8 mode, UINT16 sk
     if (bdaddr_is_empty((bt_bdaddr_t *)bd_addr)) {
         tHCI_STATUS err = HCI_SUCCESS;
         if ((err = btsnd_hcic_ble_set_default_periodic_adv_sync_trans_params(mode, skip, sync_timeout, cte_type)) != HCI_SUCCESS) {
-            BTM_TRACE_ERROR("%s cmd err=0x%x", __func__, err);
+            BTM_TRACE_ERROR("cmd err 0x%x", err);
             status = BTM_HCI_ERROR | err;
         }
 
@@ -2110,11 +2307,17 @@ void btm_ble_periodic_adv_sync_trans_recv_evt(tBTM_BLE_PERIOD_ADV_SYNC_TRANS_REC
 #if (BLE_FEAT_POWER_CONTROL_EN == TRUE)
 void BTM_BleEnhReadTransPowerLevel(uint16_t conn_handle, uint8_t phy)
 {
+    /* Result is reported only via HCI Command Complete (btm_enh_read_trans_pwr_level_cmpl_evt).
+     * Do not fire BTM_BLE_GAP_ENH_READ_TRANS_POWER_LEVEL_EVT here on btsnd_hcic return
+     * value: send_cmd_sync already waited for that complete event, so an immediate callback
+     * would duplicate the one dispatched from btu_hcif_hdl_command_complete. */
     btsnd_hcic_ble_enh_read_trans_power_level(conn_handle, phy);
 }
 
 void BTM_BleReadRemoteTransPwrLevel(uint16_t conn_handle, uint8_t phy)
 {
+    /* Async: result via Transmit Power Reporting event. Return is BOOLEAN,
+     * not tHCI_STATUS — do not compare with HCI_SUCCESS. */
     btsnd_hcic_ble_read_remote_trans_power_level(conn_handle, phy);
 }
 
@@ -2126,7 +2329,7 @@ void BTM_BleSetPathLossRptParams(uint16_t conn_handle, uint8_t high_threshold, u
     tBTM_BLE_5_GAP_CB_PARAMS cb_params = {0};
 
     if ((err = btsnd_hcic_ble_set_path_loss_rpt_params(conn_handle, high_threshold, high_hysteresis, low_threshold, low_hysteresis, min_time_spent)) != HCI_SUCCESS) {
-        BTM_TRACE_ERROR("%s cmd err=0x%x", __func__, err);
+        BTM_TRACE_ERROR("cmd err 0x%x", err);
         status = BTM_HCI_ERROR | err;
     }
 
@@ -2143,7 +2346,7 @@ void BTM_BleSetPathLossRptEnable(uint16_t conn_handle, uint8_t enable)
     tBTM_BLE_5_GAP_CB_PARAMS cb_params = {0};
 
     if ((err = btsnd_hcic_ble_set_path_loss_rpt_enable(conn_handle, enable)) != HCI_SUCCESS) {
-        BTM_TRACE_ERROR("%s cmd err=0x%x", __func__, err);
+        BTM_TRACE_ERROR("cmd err 0x%x", err);
         status = BTM_HCI_ERROR | err;
     }
 
@@ -2160,7 +2363,7 @@ void BTM_BleSetTransPwrRptEnable(uint16_t conn_handle, uint8_t local_enable, uin
     tBTM_BLE_5_GAP_CB_PARAMS cb_params = {0};
 
     if ((err = btsnd_hcic_ble_set_trans_pwr_rpt_enable(conn_handle, local_enable, remote_enable)) != HCI_SUCCESS) {
-        BTM_TRACE_ERROR("%s cmd err=0x%x", __func__, err);
+        BTM_TRACE_ERROR("cmd err 0x%x", err);
         status = BTM_HCI_ERROR | err;
     }
 
@@ -2170,16 +2373,34 @@ void BTM_BleSetTransPwrRptEnable(uint16_t conn_handle, uint8_t local_enable, uin
     BTM_ExtBleCallbackTrigger(BTM_BLE_GAP_SET_TRANS_POWER_REPORTING_ENABLE_EVT, &cb_params);
 }
 
-void btm_enh_read_trans_pwr_level_cmpl_evt(uint8_t *p)
+void btm_enh_read_trans_pwr_level_cmpl_evt(uint8_t *p, UINT16 evt_len)
 {
     uint8_t hci_status;
     tBTM_BLE_5_GAP_CB_PARAMS cb_params = {0};
 
+    BTM_BLE_HCI_EVT_CHECK_STATUS("enh_read_tx_pwr_cmpl", evt_len);
+
     STREAM_TO_UINT8(hci_status, p);
-    STREAM_TO_UINT16(cb_params.enh_trans_pwr_level_cmpl.conn_handle, p);
-    STREAM_TO_UINT8(cb_params.enh_trans_pwr_level_cmpl.phy, p);
-    STREAM_TO_UINT8(cb_params.enh_trans_pwr_level_cmpl.cur_tx_pwr_level, p);
-    STREAM_TO_UINT8(cb_params.enh_trans_pwr_level_cmpl.max_tx_pwr_level, p);
+    evt_len--;
+
+    /* Connection_Handle follows Status even when the command fails. */
+    if (evt_len >= 2) {
+        STREAM_TO_UINT16(cb_params.enh_trans_pwr_level_cmpl.conn_handle, p);
+        evt_len -= 2;
+    } else if (hci_status == HCI_SUCCESS) {
+        BTM_TRACE_ERROR("enh_read_tx_pwr_cmpl: bad len %d", evt_len);
+        hci_status = HCI_ERR_UNSPECIFIED;
+    }
+
+    if (hci_status == HCI_SUCCESS) {
+        if (!btm_ble_hci_evt_has_len("enh_read_tx_pwr_cmpl", evt_len, 3)) {
+            hci_status = HCI_ERR_UNSPECIFIED;
+        } else {
+            STREAM_TO_UINT8(cb_params.enh_trans_pwr_level_cmpl.phy, p);
+            STREAM_TO_UINT8(cb_params.enh_trans_pwr_level_cmpl.cur_tx_pwr_level, p);
+            STREAM_TO_UINT8(cb_params.enh_trans_pwr_level_cmpl.max_tx_pwr_level, p);
+        }
+    }
 
     if(hci_status != HCI_SUCCESS) {
         hci_status = BTM_HCI_ERROR | hci_status;
@@ -2197,9 +2418,7 @@ void btm_read_remote_trans_pwr_level_cmpl(UINT8 status)
     if (status != HCI_SUCCESS) {
         status = (status | BTM_HCI_ERROR);
     }
-
     cb_params.remote_pwr_level_cmpl.status = status;
-
     BTM_ExtBleCallbackTrigger(BTM_BLE_GAP_READ_REMOTE_TRANS_POWER_LEVEL_EVT, &cb_params);
 }
 
@@ -2239,7 +2458,7 @@ void BTM_BleSetDefaultSubrate(UINT16 subrate_min, UINT16 subrate_max, UINT16 max
     tBTM_BLE_5_GAP_CB_PARAMS cb_params = {0};
 
     if ((err = btsnd_hcic_ble_set_default_subrate(subrate_min, subrate_max, max_latency, continuation_number, supervision_timeout)) != HCI_SUCCESS) {
-        BTM_TRACE_ERROR("%s cmd err=0x%x", __func__, err);
+        BTM_TRACE_ERROR("cmd err 0x%x", err);
         status = BTM_HCI_ERROR | err;
     }
 
@@ -2250,6 +2469,8 @@ void BTM_BleSetDefaultSubrate(UINT16 subrate_min, UINT16 subrate_max, UINT16 max
 
 void BTM_BleSubrateRequest(UINT16 conn_handle, UINT16 subrate_min, UINT16 subrate_max, UINT16 max_latency, UINT16 continuation_number, UINT16 supervision_timeout)
 {
+    /* Async: result via btm_subrate_req_cmd_status. Return is BOOLEAN,
+     * not tHCI_STATUS — do not compare with HCI_SUCCESS. */
     btsnd_hcic_ble_subrate_request(conn_handle, subrate_min, subrate_max, max_latency, continuation_number, supervision_timeout);
 }
 
@@ -2366,14 +2587,23 @@ void BTM_BleCSReadLocalSuppCaps(void)
     btsnd_hcic_ble_cs_read_local_supported_caps();
 }
 
-void btm_ble_cs_read_local_supp_caps_cmpl_evt(uint8_t *p)
+void btm_ble_cs_read_local_supp_caps_cmpl_evt(uint8_t *p, UINT16 evt_len)
 {
     tBTM_BLE_5_GAP_CB_PARAMS cb_params = {0};
 
+    BTM_BLE_HCI_EVT_CHECK_STATUS("cs_read_local_caps_cmpl", evt_len);
+
     STREAM_TO_UINT8(cb_params.cs_read_local_supp_caps.status, p);
+    evt_len--;
+
     if (cb_params.cs_read_local_supp_caps.status != HCI_SUCCESS) {
         BTM_TRACE_ERROR("%s cmd err = 0x%x", __func__, cb_params.cs_read_local_supp_caps.status);
         cb_params.cs_read_local_supp_caps.status |= BTM_HCI_ERROR;
+        goto _error;
+    }
+
+    if (!btm_ble_hci_evt_has_len("cs_read_local_caps_cmpl", evt_len, 28)) {
+        cb_params.cs_read_local_supp_caps.status = BTM_HCI_ERROR | HCI_ERR_UNSPECIFIED;
         goto _error;
     }
 
@@ -2525,6 +2755,8 @@ void BTM_BleGapCsCreateConfig(UINT16 conn_handle, UINT8 config_id, UINT8 create_
 
 void BTM_BleGapCsRemoveConfig(UINT16 conn_handle, UINT8 config_id)
 {
+    /* Async: result via btm_ble_cs_update_config_cmd_status. Return is BOOLEAN,
+     * not tHCI_STATUS — do not compare with HCI_SUCCESS. */
     btsnd_hcic_ble_cs_remove_config(conn_handle, config_id);
 }
 
@@ -2553,7 +2785,7 @@ void BTM_BleGapCsSetChannelClass(UINT8 *channel_class)
     BTM_ExtBleCallbackTrigger(BTM_BLE_GAP_CS_SET_CHANNEL_CLASS_CMPL_EVT, &cb_params);
 }
 
-void BTM_BleGapCsSetProcPatams(UINT16 conn_handle, UINT8 config_id, UINT16 max_procedure_len,
+void BTM_BleGapCsSetProcParams(UINT16 conn_handle, UINT8 config_id, UINT16 max_procedure_len,
                                 UINT16 min_procedure_interval, UINT16 max_procedure_interval,
                                 UINT16 max_procedure_count, UINT32 min_subevent_len,
                                 UINT32 max_subevent_len, UINT8 tone_ant_config_selection,
@@ -2581,6 +2813,8 @@ void BTM_BleGapCsSetProcPatams(UINT16 conn_handle, UINT8 config_id, UINT16 max_p
 
 void BTM_BleGapCsProcEnable(UINT16 conn_handle, UINT8 config_id, UINT8 enable)
 {
+    /* Async: result via CS procedure enable complete event. Return is BOOLEAN,
+     * not tHCI_STATUS — do not compare with HCI_SUCCESS. */
     btsnd_hcic_ble_cs_procedure_enable(conn_handle, config_id, enable);
 }
 

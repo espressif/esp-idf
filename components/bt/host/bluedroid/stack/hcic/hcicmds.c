@@ -472,6 +472,7 @@ BOOLEAN btsnd_hcic_set_conn_encrypt (UINT16 handle, BOOLEAN enable)
     return (TRUE);
 }
 
+#if (CLASSIC_BT_INCLUDED == TRUE)
 BOOLEAN btsnd_hcic_rmt_name_req (BD_ADDR bd_addr, UINT8 page_scan_rep_mode,
                                  UINT8 page_scan_mode, UINT16 clock_offset)
 {
@@ -525,6 +526,7 @@ BOOLEAN btsnd_hcic_rmt_name_req_cancel (BD_ADDR bd_addr)
     btu_hcif_send_cmd (LOCAL_BR_EDR_CONTROLLER_ID, p);
     return (TRUE);
 }
+#endif /* CLASSIC_BT_INCLUDED == TRUE */
 
 BOOLEAN btsnd_hcic_rmt_features_req (UINT16 handle)
 {

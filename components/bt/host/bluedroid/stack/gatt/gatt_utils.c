@@ -2304,11 +2304,15 @@ BOOLEAN gatt_find_specific_app_in_hold_link(tGATT_TCB *p_tcb, tGATT_IF p_gatt_if
 **
 ** Description      Enqueue this command.
 **
-** Returns          None.
+** Returns          TRUE if enqueued, FALSE if the client command queue is full.
 **
 *******************************************************************************/
 BOOLEAN gatt_cmd_enq(tGATT_TCB *p_tcb, UINT16 clcb_idx, BOOLEAN to_send, UINT8 op_code, BT_HDR *p_buf)
 {
+    if (((p_tcb->next_slot_inq + 1) % GATT_CL_MAX_LCB) == p_tcb->pending_cl_req) {
+        return FALSE;
+    }
+
     tGATT_CMD_Q  *p_cmd = &p_tcb->cl_cmd_q[p_tcb->next_slot_inq];
 
     p_cmd->to_send = to_send; /* waiting to be sent */

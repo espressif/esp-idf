@@ -622,23 +622,30 @@ static BT_HDR *smp_build_id_addr_cmd(UINT8 cmd_code, tSMP_CB *p_cb)
         const UINT8   *policy_rand = NULL;
         BOOLEAN        policy_resolved = FALSE;
         const BD_ADDR zero = {0};
-#if (BLE_50_FEATURE_SUPPORT == TRUE) && (BLE_50_EXTEND_ADV_EN == TRUE) && (CONTROLLER_RPA_LIST_ENABLE == TRUE)
+#if (BLE_50_FEATURE_SUPPORT == TRUE) && (BLE_50_EXTEND_ADV_EN == TRUE)
         {
             tACL_CONN *p_acl = btm_bda_to_acl(p_cb->pairing_bda, BT_TRANSPORT_LE);
             if (p_acl != NULL) {
                 UINT8 inst = BTM_BleGetExtAdvInstByConHandle(p_acl->hci_handle);
                 if (inst < MAX_BLE_ADV_INSTANCE) {
-                    policy_type = extend_adv_cb.inst[inst].own_addr_type;
+                    /* Identity type, not the post-fallback on-air own_addr_type. */
+                    policy_type = extend_adv_cb.inst[inst].id_addr_type;
                     /* Only a host-set Static Random may be sent as identity;
                      * a stack-generated RPA stored in rand_addr must not. */
-                    if (extend_adv_cb.inst[inst].rand_addr_set) {
+                    if (extend_adv_cb.inst[inst].rand_addr_set &&
+                            (extend_adv_cb.inst[inst].rand_addr[0] & BT_STATIC_RAND_ADDR_MASK) == BT_STATIC_RAND_ADDR_MASK) {
                         policy_rand = extend_adv_cb.inst[inst].rand_addr;
+                        policy_resolved = TRUE;
+                    } else if ((policy_type & 0x01) == 0) {
+                        /* Public / Public ID: identity is the public address. */
+                        policy_resolved = TRUE;
                     }
-                    policy_resolved = TRUE;
+                    /* Random / Random ID with only an RPA (or no per-set addr):
+                     * leave unresolved so global static_rand_addr is used. */
                 }
             }
         }
-#endif /* (BLE_50_FEATURE_SUPPORT == TRUE) && (BLE_50_EXTEND_ADV_EN == TRUE) && (CONTROLLER_RPA_LIST_ENABLE == TRUE) */
+#endif /* (BLE_50_FEATURE_SUPPORT == TRUE) && (BLE_50_EXTEND_ADV_EN == TRUE) */
 
         if (!policy_resolved) {
             if (memcmp(btm_cb.ble_ctr_cb.addr_mgnt_cb.static_rand_addr,

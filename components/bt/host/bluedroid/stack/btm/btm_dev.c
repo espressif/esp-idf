@@ -634,6 +634,11 @@ void btm_consolidate_dev(tBTM_SEC_DEV_REC *p_target_rec)
         p_dev_rec = list_node(p_node);
         if (p_target_rec != p_dev_rec && p_dev_rec->sec_flags & BTM_SEC_IN_USE) {
             if (!memcmp (p_dev_rec->bd_addr, p_target_rec->bd_addr, BD_ADDR_LEN)) {
+                tBTM_SEC_CALLBACK *saved_callback = temp_rec.p_callback;
+                void *saved_ref_data = temp_rec.p_ref_data;
+                UINT8 saved_sec_state = temp_rec.sec_state;
+                tBTM_SEC_SERV_REC *saved_cur_service = temp_rec.p_cur_service;
+
                 memcpy(p_target_rec, p_dev_rec, sizeof(tBTM_SEC_DEV_REC));
                 p_target_rec->ble = temp_rec.ble;
                 p_target_rec->ble_hci_handle = temp_rec.ble_hci_handle;
@@ -645,6 +650,10 @@ void btm_consolidate_dev(tBTM_SEC_DEV_REC *p_target_rec)
                 p_target_rec->new_encryption_key_is_p256 = temp_rec.new_encryption_key_is_p256;
                 p_target_rec->no_smp_on_br = temp_rec.no_smp_on_br;
                 p_target_rec->bond_type = temp_rec.bond_type;
+                p_target_rec->sec_state = saved_sec_state;
+                p_target_rec->p_callback = saved_callback;
+                p_target_rec->p_ref_data = saved_ref_data;
+                p_target_rec->p_cur_service = saved_cur_service;
                 /* Remove the unused device from the list */
                 list_remove(btm_cb.p_sec_dev_rec_list, p_dev_rec);
                 break;

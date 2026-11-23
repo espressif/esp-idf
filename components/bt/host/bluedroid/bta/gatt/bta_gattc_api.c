@@ -1119,7 +1119,7 @@ void BTA_GATTC_Clean(BD_ADDR remote_bda)
     return;
 }
 
-/* Add For BLE PTS */
+/* BLE PTS / internal test only; not exposed to application developers. */
 uint8_t BTA_GATTC_AutoDiscoverEnable(uint8_t enable)
 {
     APPL_TRACE_DEBUG("%s enable %d", __func__, enable);

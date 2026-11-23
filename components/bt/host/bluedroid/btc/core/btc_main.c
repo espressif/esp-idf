@@ -170,6 +170,10 @@ void btc_main_call_handler(btc_msg_t *msg)
     }
 }
 
+/* Bluedroid internal diagnostics only (not in any public ESP-IDF API header).
+ * Best-effort BLE stack activity snapshot for Espressif internal testing/debug;
+ * must not be used by application code. Reads btm_cb/l2cb/GATT state without
+ * BTU-task marshaling; see btm_ble.c helper comments. */
 uint32_t btc_get_ble_status(void)
 {
     uint32_t status = BTC_BLE_STATUS_IDLE;
@@ -180,6 +184,9 @@ uint32_t btc_get_ble_status(void)
     }
 
 #if (BLE_INCLUDED == TRUE)
+    /* Bluedroid design: best-effort BLE activity snapshot from the BTC task.
+     * btm_ble_*_active_count / gatt_tcb_active_count / btm_ble_ext_adv_active_count
+     * read stack state directly (see helper comments); do not use during deinit. */
     // Number of active advertising
     extern uint8_t btm_ble_adv_active_count(void);
     uint8_t adv_cnt = btm_ble_adv_active_count();

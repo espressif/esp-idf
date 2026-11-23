@@ -624,13 +624,15 @@ typedef struct {
 
     BOOLEAN                     directed;
     BOOLEAN                     scannable;
-    BOOLEAN                     connetable;
+    BOOLEAN                     connectable;
     /* Per-set on-air address policy, captured at BTM_BleSetExtendedAdvParams()
-     * time. For now we only consider CONTROLLER_RPA_LIST_ENABLE == TRUE;
-     * CONTROLLER_RPA_LIST_ENABLE == FALSE is out of scope temporarily. The global
-     * addr_mgnt_cb is a single slot shared across all sets, so in multi-ADV
-     * it does not necessarily reflect the policy used for a given connection. */
+     * time. Authoritative for multi-ADV; global addr_mgnt_cb is for legacy
+     * 4.2 adv/scan/initiator only (review 0019). */
     tBLE_ADDR_TYPE              own_addr_type;
+    /* App identity type (PUBLIC / RANDOM / PUBLIC_ID / RANDOM_ID), captured
+     * before host-RPA rewrite of own_addr_type. SMP Identity Address
+     * Information must use this, not the on-air type. */
+    tBLE_ADDR_TYPE              id_addr_type;
     BOOLEAN                     rand_addr_set;
     BD_ADDR                     rand_addr;
 } tBTM_BLE_EXTENDED_INST;
@@ -1031,7 +1033,8 @@ typedef UINT8 tBTM_BLE_5_GAP_EVENT;
 #define    BTM_BLE_ISO_BIG_SYNC_TERMINATE_COMPLETE_EVT             5
 #define    BTM_BLE_ISO_BIGINFO_ADV_REPORT_EVT                      6
 #endif // #if (BLE_FEAT_ISO_BIG_SYNCER_EN == TRUE)
-#define    BTM_BLE_ISO_DATA_PATH_UPFATE_EVT                        7
+#define    BTM_BLE_ISO_DATA_PATH_UPDATE_EVT                        7
+#define    BTM_BLE_ISO_DATA_PATH_UPFATE_EVT                        BTM_BLE_ISO_DATA_PATH_UPDATE_EVT
 #define    BTM_BLE_ISO_READ_TX_SYNC_EVT                            9
 #define    BTM_BLE_ISO_READ_LINK_QUALITY_EVT                       10
 #if (BLE_FEAT_ISO_CIG_CENTRAL_EN == TRUE)
@@ -1877,6 +1880,7 @@ typedef struct {
 
 typedef struct {
     UINT8 status;
+    UINT8 adv_handle;
 } tBTM_BLE_CTE_SET_TRANS_EN_CMPL;
 typedef struct {
     UINT8 status;
@@ -3130,8 +3134,6 @@ BOOLEAN BTM_Ble_Authorization(BD_ADDR bd_addr, BOOLEAN authorize);
 **
 ** Description      This function is called to clear legacy advertising
 **
-** Parameter        p_clear_adv_cback - Command complete callback
-**
 *******************************************************************************/
 BOOLEAN BTM_BleClearAdv(void);
 
@@ -3456,12 +3458,13 @@ void BTM_BleGapCsCreateConfig(UINT16 conn_handle, UINT8 config_id, UINT8 create_
                                 UINT8 ch3c_jump,UINT8 reserved);
 void BTM_BleGapCsRemoveConfig(UINT16 conn_handle, UINT8 config_id);
 void BTM_BleGapCsSetChannelClass(UINT8 *channel_class);
-void BTM_BleGapCsSetProcPatams(UINT16 conn_handle, UINT8 config_id, UINT16 max_procedure_len,
+void BTM_BleGapCsSetProcParams(UINT16 conn_handle, UINT8 config_id, UINT16 max_procedure_len,
                                 UINT16 min_procedure_interval, UINT16 max_procedure_interval,
                                 UINT16 max_procedure_count, UINT32 min_subevent_len,
                                 UINT32 max_subevent_len, UINT8 tone_ant_config_selection,
                                 UINT8 phy, UINT8 tx_power_delta, UINT8 preferred_peer_antenna,
                                 UINT8 SNR_control_initiator, UINT8 SNR_control_reflector);
+#define BTM_BleGapCsSetProcPatams BTM_BleGapCsSetProcParams
 void BTM_BleGapCsProcEnable(UINT16 conn_handle, UINT8 config_id, UINT8 enable);
 #endif // (BT_BLE_FEAT_CHANNEL_SOUNDING == TRUE)
 #if (BT_BLE_FEAT_CS_SECURITY_REQUIREMENTS == TRUE)

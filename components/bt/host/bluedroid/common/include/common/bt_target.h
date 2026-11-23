@@ -356,6 +356,14 @@
 #define BLE_42_SCAN_EN       FALSE
 #endif
 
+/* Scan own address type isolated from global addr_mgnt_cb. Default FALSE
+ * keeps the legacy behavior: set_scan_params overwrites own_addr_type. */
+#if (UC_BT_BLE_SCAN_OWN_ADDR_SEPARATE == TRUE)
+#define BLE_SCAN_OWN_ADDR_SEPARATE   TRUE
+#else
+#define BLE_SCAN_OWN_ADDR_SEPARATE   FALSE
+#endif
+
 #if (UC_BT_BLE_50_EXTEND_ADV_EN == TRUE)
 #define BLE_50_EXTEND_ADV_EN       TRUE
 #else

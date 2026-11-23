@@ -34,6 +34,9 @@
 #include "stack/btu.h"
 #include "stack/btm_api.h"
 #include "btm_int.h"
+#if (BLE_INCLUDED == TRUE)
+#include "btm_ble_int.h"
+#endif
 #include "stack/hcidefs.h"
 #include "bt_common.h"
 #include "osi/allocator.h"
@@ -258,6 +261,7 @@ void l2cu_release_lcb (tL2C_LCB *p_lcb)
     p_lcb->in_use     = FALSE;
     p_lcb->is_bonding = FALSE;
 #if (BLE_INCLUDED == TRUE)
+    btm_ble_remove_direct_conn_req(p_lcb);
     p_lcb->retry_create_con = 0;
     p_lcb->start_time_s = 0;
 #endif // #if (BLE_INCLUDED == TRUE)

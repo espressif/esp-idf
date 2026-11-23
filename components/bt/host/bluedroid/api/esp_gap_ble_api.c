@@ -1076,6 +1076,11 @@ esp_err_t esp_ble_gap_disconnect(esp_bd_addr_t remote_device)
     return (btc_transfer_context(&msg, &arg, sizeof(btc_ble_gap_args_t), NULL, NULL) == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
 }
 
+/* Bluedroid design: synchronous read-only snapshot of BLE connection parameters.
+ * Runs in the application task and calls BTM_GetCurrentConnParams directly
+ * (which reads the L2CAP LCB pool) instead of btc_transfer_context. A BTC/BTU
+ * round-trip would change this into an async API; the current path is kept for
+ * low-latency parameter queries. Do not call during connection teardown. */
 esp_err_t esp_ble_get_current_conn_params(esp_bd_addr_t bd_addr, esp_gap_conn_params_t *conn_params)
 {
     if (!bd_addr || !conn_params) {
@@ -1132,6 +1137,9 @@ esp_err_t esp_ble_gap_read_channel_map(esp_bd_addr_t bd_addr)
             == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
 }
 
+/* Bluedroid design: synchronous authorization update from the application task.
+ * Calls BTM_Ble_Authorization directly instead of btc_transfer_context to keep
+ * a simple request/response API. Do not call during stack teardown. */
 esp_err_t esp_gap_ble_set_authorization(esp_bd_addr_t bd_addr, bool authorize)
 {
     if (!bd_addr) {

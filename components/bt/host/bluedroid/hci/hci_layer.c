@@ -445,6 +445,7 @@ static void event_command_ready(fixed_pkt_queue_t *queue)
     hci_host_env.command_credits--;
     // Move it to the list of commands awaiting response
     osi_mutex_lock(&cmd_wait_q->commands_pending_response_lock, OSI_MUTEX_MAX_TIMEOUT);
+    /* list_append OOM: host cannot operate without memory; see list.h design note */
     list_append(cmd_wait_q->commands_pending_response, wait_entry);
     osi_mutex_unlock(&cmd_wait_q->commands_pending_response_lock);
 
@@ -599,12 +600,10 @@ static bool filter_incoming_event(BT_HDR *packet)
             BlE_SYNC *sync_info =  btsnd_hcic_ble_get_sync_info();
             if(!sync_info) {
                 HCI_TRACE_WARNING("%s sync_info is NULL. opcode = 0x%x", __func__, opcode);
-            } else {
-                if (sync_info->sync_sem && sync_info->opcode == opcode) {
-                    osi_sem_give(&sync_info->sync_sem);
+            } else if (sync_info->sync_active && sync_info->sync_sem && sync_info->opcode == opcode) {
                     sync_info->opcode = 0;
+                    osi_sem_give(&sync_info->sync_sem);
                 }
-            }
 #endif // #if ((BLE_50_FEATURE_SUPPORT == TRUE) || (BLE_42_FEATURE_SUPPORT == TRUE))
         } else if (metadata->flags_vnd & HCI_CMD_MSG_F_VND_FUTURE) {
             future_ready((future_t *)(metadata->complete_future), packet);
@@ -638,9 +637,9 @@ static bool filter_incoming_event(BT_HDR *packet)
                 BlE_SYNC *sync_info = btsnd_hcic_ble_get_sync_info();
                 if (!sync_info) {
                     HCI_TRACE_WARNING("%s sync_info is NULL. opcode = 0x%x", __func__, opcode);
-                } else if (sync_info->sync_sem && sync_info->opcode == opcode) {
-                    osi_sem_give(&sync_info->sync_sem);
+                } else if (sync_info->sync_active && sync_info->sync_sem && sync_info->opcode == opcode) {
                     sync_info->opcode = 0;
+                    osi_sem_give(&sync_info->sync_sem);
                 }
             }
 #endif // #if ((BLE_50_FEATURE_SUPPORT == TRUE) || (BLE_42_FEATURE_SUPPORT == TRUE))

@@ -1696,6 +1696,30 @@ config BT_BLE_ACT_SCAN_REP_ADV_SCAN
 
         # Memory reserved at start of DRAM for Bluetooth stack
 
+config BT_BLE_SCAN_OWN_ADDR_SEPARATE
+    bool "Keep scan own address type separate from global identity"
+    depends on BT_BLE_42_SCAN_EN || BT_BLE_50_EXTEND_SCAN_EN
+    default n
+    help
+        When disabled (default), set_scan_params / set_ext_scan_params write
+        addr_mgnt_cb.own_addr_type, same as legacy Bluedroid. Initiator,
+        esp_ble_gap_get_local_used_addr and subsequent advertising then
+        follow the last scan own_addr_type.
+
+        When enabled, scan own address type is stored only in scan_addr_type
+        and does not overwrite the global identity used by advertising,
+        initiator and get_local_used_addr.
+
+        Controllers with a resolving list can use a different Own_Address_Type
+        for scan and advertising at the same time. Controllers without one
+        (ESP32 with BT_BLE_RPA_SUPPORTED left disabled) share a single LE
+        random address. On those chips, a RANDOM scan address is accepted
+        only when that address is already loaded. While privacy is enabled,
+        asking for the static random address is rejected, because honoring
+        it would turn privacy off and replace the resolvable address. Scan
+        may still use the public address, or the resolvable address already
+        in use. Enable controller RPA support where the chip has it.
+
 config BT_MAX_DEVICE_NAME_LEN
     int "length of bluetooth device name"
     depends on BT_BLUEDROID_ENABLED

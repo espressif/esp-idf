@@ -1183,7 +1183,8 @@ void smp_proc_enc_info(tSMP_CB *p_cb, tSMP_INT_DATA *p_data)
         return;
     }
 
-    STREAM_TO_ARRAY(p_cb->ltk, p, BT_OCTET16_LEN);
+    STREAM_TO_ARRAY(p_cb->peer_ltk, p, BT_OCTET16_LEN);
+    p_cb->peer_enc_info_rcvd = TRUE;
 
     smp_key_distribution(p_cb, NULL);
 }
@@ -1197,21 +1198,44 @@ void smp_proc_master_id(tSMP_CB *p_cb, tSMP_INT_DATA *p_data)
 {
     UINT8   *p = (UINT8 *)p_data;
     tBTM_LE_PENC_KEYS   le_key;
+    tSMP_INT_DATA smp_int_data = {0};
+    BOOLEAN expecting_enc;
 
     SMP_TRACE_DEBUG("%s\np_cb->peer_auth_req = %d,p_cb->loc_auth_req= %d\n", __func__,
                     p_cb->peer_auth_req, p_cb->loc_auth_req);
 
-    if (p_cb->rcvd_cmd_len < 11) {  // 1(Code) + 2(EDIV) + 8(Rand)
-        SMP_TRACE_ERROR("Invalid command length: %d, should be at least 11", p_cb->rcvd_cmd_len);
+    if (smp_command_has_invalid_parameters(p_cb)) {
+        smp_int_data.reason = SMP_INVALID_PARAMETERS;
+        smp_sm_event(p_cb, SMP_AUTH_CMPL_EVT, &smp_int_data);
         return;
     }
+
+    /* MASTER_ID must be received only when ENC distribution is expected. */
+    expecting_enc = (p_cb->role == HCI_ROLE_SLAVE) ?
+                    ((p_cb->local_i_key & SMP_SEC_KEY_TYPE_ENC) != 0) :
+                    ((p_cb->local_r_key & SMP_SEC_KEY_TYPE_ENC) != 0);
+    if (!expecting_enc) {
+        SMP_TRACE_ERROR("%s unexpected MASTER_ID (ENC not negotiated/expected)", __func__);
+        smp_int_data.reason = SMP_INVALID_PARAMETERS;
+        smp_sm_event(p_cb, SMP_AUTH_CMPL_EVT, &smp_int_data);
+        return;
+    }
+
+    /* MASTER_ID depends on ENCRYPT_INFO carrying the peer LTK first. */
+    if (!p_cb->peer_enc_info_rcvd) {
+        SMP_TRACE_ERROR("%s missing ENCRYPT_INFO before MASTER_ID", __func__);
+        smp_int_data.reason = SMP_INVALID_PARAMETERS;
+        smp_sm_event(p_cb, SMP_AUTH_CMPL_EVT, &smp_int_data);
+        return;
+    }
+
     smp_update_key_mask (p_cb, SMP_SEC_KEY_TYPE_ENC, TRUE);
 
     STREAM_TO_UINT16(le_key.ediv, p);
     STREAM_TO_ARRAY(le_key.rand, p, BT_OCTET8_LEN );
 
     /* store the encryption keys from peer device */
-    memcpy(le_key.ltk, p_cb->ltk, BT_OCTET16_LEN);
+    memcpy(le_key.ltk, p_cb->peer_ltk, BT_OCTET16_LEN);
     le_key.sec_level = p_cb->sec_level;
     le_key.key_size  = p_cb->loc_enc_size;
 

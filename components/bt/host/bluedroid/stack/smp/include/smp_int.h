@@ -320,7 +320,9 @@ typedef struct {
     UINT8           local_r_key;
 
     BT_OCTET16      tk;
-    BT_OCTET16      ltk;
+    BT_OCTET16      ltk;              /* local/generated LTK */
+    BT_OCTET16      peer_ltk;         /* peer-provided LTK from ENCRYPT_INFO */
+    BOOLEAN         peer_enc_info_rcvd;
     UINT16          div;
     BT_OCTET16      csrk;  /* storage for local CSRK */
     UINT16          ediv;

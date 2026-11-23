@@ -91,6 +91,28 @@ static BOOLEAN btm_ble_conn_comp_evt_len_valid(UINT16 evt_len, BOOLEAN enhanced,
     return TRUE;
 }
 
+BOOLEAN btm_ble_hci_evt_has_len(const char *tag, UINT16 evt_len, UINT16 min_len)
+{
+    if (evt_len >= min_len) {
+        return TRUE;
+    }
+    if (min_len <= 1) {
+        BTM_TRACE_ERROR("%s: invalid evt_len=%d", tag, evt_len);
+    } else {
+        BTM_TRACE_ERROR("%s: bad len %d", tag, evt_len);
+    }
+    return FALSE;
+}
+
+BOOLEAN btm_ble_hci_evt_has_ptr_status(const char *tag, const UINT8 *p, UINT16 evt_len)
+{
+    if (p != NULL && evt_len >= 1) {
+        return TRUE;
+    }
+    BTM_TRACE_ERROR("%s: invalid params evt_len=%d", tag, evt_len);
+    return FALSE;
+}
+
 #if SMP_INCLUDED == TRUE
 #include "smp_int.h"
 /* Parsed before async RPA resolve; used by btm_ble_resolve_random_addr_on_conn_cmpl(). */
@@ -746,7 +768,24 @@ void BTM_BleSetPrefConnParams (BD_ADDR bd_addr,
     if (BTM_BLE_ISVALID_PARAM(min_conn_int, BLE_CONN_INT_MIN_HOST_CHECK, BTM_BLE_CONN_INT_MAX) &&
             BTM_BLE_ISVALID_PARAM(max_conn_int, BLE_CONN_INT_MIN_HOST_CHECK, BTM_BLE_CONN_INT_MAX) &&
             BTM_BLE_ISVALID_PARAM(supervision_tout, BTM_BLE_CONN_SUP_TOUT_MIN, BTM_BLE_CONN_SUP_TOUT_MAX) &&
-            (slave_latency <= BTM_BLE_CONN_LATENCY_MAX || slave_latency == BTM_BLE_CONN_PARAM_UNDEF)) {
+            (slave_latency <= BTM_BLE_CONN_LATENCY_MAX || slave_latency == BTM_BLE_CONN_PARAM_UNDEF) &&
+            (min_conn_int == BTM_BLE_CONN_PARAM_UNDEF || max_conn_int == BTM_BLE_CONN_PARAM_UNDEF ||
+             min_conn_int <= max_conn_int)) {
+        if (min_conn_int != BTM_BLE_CONN_PARAM_UNDEF || max_conn_int != BTM_BLE_CONN_PARAM_UNDEF) {
+            UINT16 eff_min = (min_conn_int != BTM_BLE_CONN_PARAM_UNDEF) ? min_conn_int : max_conn_int;
+            UINT16 eff_max = (max_conn_int != BTM_BLE_CONN_PARAM_UNDEF) ? max_conn_int : min_conn_int;
+            /* UNDEF falls back to the same defaults the store path writes below. */
+            UINT16 eff_lat = (slave_latency != BTM_BLE_CONN_PARAM_UNDEF) ?
+                             slave_latency : BTM_BLE_CONN_SLAVE_LATENCY_DEF;
+            UINT16 eff_tout = (supervision_tout != BTM_BLE_CONN_PARAM_UNDEF) ?
+                              supervision_tout : BTM_BLE_CONN_TIMEOUT_DEF;
+
+            if (eff_min > eff_max ||
+                    (UINT32)eff_tout * 4 <= (UINT32)(1 + eff_lat) * eff_max) {
+                BTM_TRACE_ERROR("BTM_BleSetPrefConnParams: invalid parameter relationship");
+                return;
+            }
+        }
         if (p_dev_rec) {
             /* expect conn int and stout and slave latency to be updated all together */
             if (min_conn_int != BTM_BLE_CONN_PARAM_UNDEF || max_conn_int != BTM_BLE_CONN_PARAM_UNDEF) {
@@ -1269,35 +1308,47 @@ BOOLEAN btm_ble_start_sec_check(BD_ADDR bd_addr, UINT16 psm, BOOLEAN is_originat
 ** Returns          void
 **
 *******************************************************************************/
-void btm_ble_rand_enc_complete (UINT8 *p, UINT16 op_code, tBTM_RAND_ENC_CB *p_enc_cplt_cback)
+void btm_ble_rand_enc_complete (UINT8 *p, UINT16 evt_len, UINT16 op_code, tBTM_RAND_ENC_CB *p_enc_cplt_cback)
 {
     tBTM_RAND_ENC   params;
     UINT8           *p_dest = params.param_buf;
+    UINT16          min_len = 1;
 
     BTM_TRACE_DEBUG ("btm_ble_rand_enc_complete");
 
     memset(&params, 0, sizeof(tBTM_RAND_ENC));
 
-    /* If there was a callback address for vcs complete, call it */
-    if (p_enc_cplt_cback && p) {
-        /* Pass parameters to the callback function */
-        STREAM_TO_UINT8(params.status, p); /* command status */
-
-        if (params.status == HCI_SUCCESS) {
-            params.opcode = op_code;
-
-            if (op_code == HCI_BLE_RAND) {
-                params.param_len = BT_OCTET8_LEN;
-            } else {
-                params.param_len = BT_OCTET16_LEN;
-            }
-
-            memcpy(p_dest, p, params.param_len);  /* Fetch return info from HCI event message */
-        }
-        if (p_enc_cplt_cback) {
-            (*p_enc_cplt_cback)(&params);    /* Call the Encryption complete callback function */
-        }
+    if (!p_enc_cplt_cback || !p) {
+        return;
     }
+
+    if (op_code == HCI_BLE_RAND) {
+        min_len = 1 + BT_OCTET8_LEN;
+    } else if (op_code == HCI_BLE_ENCRYPT) {
+        min_len = 1 + BT_OCTET16_LEN;
+    }
+
+    if (!btm_ble_hci_evt_has_len("rand_enc_cmpl", evt_len, min_len)) {
+        params.status = HCI_ERR_UNSPECIFIED;
+        (*p_enc_cplt_cback)(&params);
+        return;
+    }
+
+    /* Pass parameters to the callback function */
+    STREAM_TO_UINT8(params.status, p); /* command status */
+
+    if (params.status == HCI_SUCCESS) {
+        params.opcode = op_code;
+
+        if (op_code == HCI_BLE_RAND) {
+            params.param_len = BT_OCTET8_LEN;
+        } else {
+            params.param_len = BT_OCTET16_LEN;
+        }
+
+        memcpy(p_dest, p, params.param_len);  /* Fetch return info from HCI event message */
+    }
+    (*p_enc_cplt_cback)(&params);
 }
 #endif  ///SMP_INCLUDED == TRUE
 
@@ -1417,7 +1468,7 @@ void btm_sec_save_le_key(BD_ADDR bd_addr, tBTM_LE_KEY_TYPE key_type, tBTM_LE_KEY
                     bd_addr[4], bd_addr[5]);
 
     if ((p_rec = btm_find_dev (bd_addr)) != NULL && (p_keys || key_type == BTM_LE_KEY_LID)) {
-        btm_ble_init_pseudo_addr (p_rec, bd_addr);
+        btm_ble_init_pseudo_addr (p_rec, bd_addr, p_rec->ble.ble_addr_type);
 
         switch (key_type) {
         case BTM_LE_KEY_PENC:
@@ -1431,7 +1482,7 @@ void btm_sec_save_le_key(BD_ADDR bd_addr, tBTM_LE_KEY_TYPE key_type, tBTM_LE_KEY
             if (p_keys->penc_key.sec_level == SMP_SEC_AUTHENTICATED) {
                 p_rec->sec_flags |= BTM_SEC_LE_LINK_KEY_AUTHED;
             } else {
-                p_rec->sec_flags &= ~BTM_SEC_LE_LINK_KEY_AUTHED;
+                p_rec->sec_flags &= ~(BTM_SEC_LE_LINK_KEY_AUTHED | BTM_SEC_LE_AUTHENTICATED);
             }
             BTM_TRACE_DEBUG("BTM_LE_KEY_PENC key_type=0x%x sec_flags=0x%x sec_leve=0x%x",
                             p_rec->ble.key_type,
@@ -1490,7 +1541,7 @@ void btm_sec_save_le_key(BD_ADDR bd_addr, tBTM_LE_KEY_TYPE key_type, tBTM_LE_KEY
             if ( p_keys->pcsrk_key.sec_level == SMP_SEC_AUTHENTICATED) {
                 p_rec->sec_flags |= BTM_SEC_LE_LINK_KEY_AUTHED;
             } else {
-                p_rec->sec_flags &= ~BTM_SEC_LE_LINK_KEY_AUTHED;
+                p_rec->sec_flags &= ~(BTM_SEC_LE_LINK_KEY_AUTHED | BTM_SEC_LE_AUTHENTICATED);
             }
 
             BTM_TRACE_DEBUG("BTM_LE_KEY_PCSRK key_type=0x%x sec_flags=0x%x sec_level=0x%x peer_counter=%d",
@@ -1512,7 +1563,7 @@ void btm_sec_save_le_key(BD_ADDR bd_addr, tBTM_LE_KEY_TYPE key_type, tBTM_LE_KEY
             if ( p_keys->lenc_key.sec_level == SMP_SEC_AUTHENTICATED) {
                 p_rec->sec_flags |= BTM_SEC_LE_LINK_KEY_AUTHED;
             } else {
-                p_rec->sec_flags &= ~BTM_SEC_LE_LINK_KEY_AUTHED;
+                p_rec->sec_flags &= ~(BTM_SEC_LE_LINK_KEY_AUTHED | BTM_SEC_LE_AUTHENTICATED);
             }
 
             BTM_TRACE_DEBUG("BTM_LE_KEY_LENC key_type=0x%x DIV=0x%x key_size=0x%x sec_level=0x%x",
@@ -2248,7 +2299,7 @@ static void btm_ble_resolve_random_addr_on_conn_cmpl(void *p_rec, void *p_data)
         match = TRUE;
         match_rec->ble.active_addr_type = BTM_BLE_ADDR_RRA;
         memcpy(match_rec->ble.cur_rand_addr, bda, BD_ADDR_LEN);
-        if (!btm_ble_init_pseudo_addr (match_rec, bda)) {
+        if (!btm_ble_init_pseudo_addr (match_rec, bda, BLE_ADDR_RANDOM)) {
             /* assign the original address to be the current report address */
             memcpy(bda, match_rec->ble.pseudo_addr, BD_ADDR_LEN);
         } else {
@@ -2425,13 +2476,24 @@ static BOOLEAN btm_ble_resolve_conn_local(UINT16 handle, tBLE_CONN_IDENTITY *id)
     UINT8 inst = BTM_BleGetExtAdvInstByConHandle(handle);
     if (inst < MAX_BLE_ADV_INSTANCE) {
         tBLE_ADDR_TYPE own = extend_adv_cb.inst[inst].own_addr_type;
-        if (own == BLE_ADDR_PUBLIC || own == BLE_ADDR_PUBLIC_ID) {
+        tBLE_ADDR_TYPE idt = extend_adv_cb.inst[inst].id_addr_type;
+        /* Host-RPA rewrite stores the on-air RPA in rand_addr. Only a static
+         * random address is an identity; an RPA must not be used as one. */
+        BOOLEAN static_set = extend_adv_cb.inst[inst].rand_addr_set &&
+                BTM_BLE_IS_STATIC_RAND_BDA(extend_adv_cb.inst[inst].rand_addr);
+
+        if (own == BLE_ADDR_PUBLIC || own == BLE_ADDR_PUBLIC_ID ||
+                (!static_set && (idt == BLE_ADDR_PUBLIC || idt == BLE_ADDR_PUBLIC_ID))) {
             memcpy(id->local, controller_get_interface()->get_address()->address, BD_ADDR_LEN);
             id->local_type = BLE_ADDR_PUBLIC;
             return TRUE;
-        } else if ((own == BLE_ADDR_RANDOM || own == BLE_ADDR_RANDOM_ID) &&
-                   extend_adv_cb.inst[inst].rand_addr_set) {
+        } else if ((own == BLE_ADDR_RANDOM || own == BLE_ADDR_RANDOM_ID) && static_set) {
             memcpy(id->local, extend_adv_cb.inst[inst].rand_addr, BD_ADDR_LEN);
+            id->local_type = BLE_ADDR_RANDOM;
+            return TRUE;
+        } else if (!static_set && idt == BLE_ADDR_RANDOM_ID &&
+                   BTM_BLE_IS_STATIC_RAND_BDA(btm_cb.ble_ctr_cb.addr_mgnt_cb.static_rand_addr)) {
+            memcpy(id->local, btm_cb.ble_ctr_cb.addr_mgnt_cb.static_rand_addr, BD_ADDR_LEN);
             id->local_type = BLE_ADDR_RANDOM;
             return TRUE;
         }

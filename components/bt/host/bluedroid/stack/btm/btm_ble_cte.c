@@ -11,9 +11,28 @@
 #include <string.h>
 #include "l2c_int.h"
 
+/* HCI command buffer OOM (HCI_ERR_MEMORY_FULL from HCIC_BLE_CMD_CREATED_U8) is an
+ * unrecoverable host condition; != HCI_SUCCESS checks below are not required to
+ * special-case memory exhaustion — see btm_ble_int.h memory policy. */
+
 tBTM_BLE_CTE_CBACK ble_cte_cb;
 
 extern void btm_ble_inter_set(bool extble_inter);
+
+#define BTM_BLE_CTE_MIN_SWITCHING_PATTERN_LEN  0x02
+#define BTM_BLE_CTE_MAX_SWITCHING_PATTERN_LEN  0x4B
+#define BTM_BLE_CTE_TYPE_AOA                   0x00
+#define BTM_BLE_CTE_TYPES_AOD_MASK             0x06
+
+static BOOLEAN btm_ble_cte_validate_switching_pattern(uint8_t switching_pattern_len, const uint8_t *antenna_ids)
+{
+    if (switching_pattern_len < BTM_BLE_CTE_MIN_SWITCHING_PATTERN_LEN ||
+            switching_pattern_len > BTM_BLE_CTE_MAX_SWITCHING_PATTERN_LEN) {
+        return FALSE;
+    }
+
+    return (antenna_ids != NULL);
+}
 
 void BTM_BleCteRegisterCallback(tBTM_BLE_CTE_CBACK cb)
 {
@@ -28,7 +47,9 @@ void BTM_CteBleCallbackTrigger(tBTM_BLE_5_GAP_EVENT event, tBTM_BLE_CTE_CB_PARAM
 {
     BTM_TRACE_DEBUG("%s event %x", __func__, event);
 
-    if(params && params->status == BTM_SUCCESS) {
+    if (params && event != BTM_BLE_CTE_CONNLESS_IQ_REPORT_EVT &&
+            event != BTM_BLE_CTE_CONN_IQ_REPORT_EVT &&
+            params->status == BTM_SUCCESS) {
         btm_ble_inter_set(true);
     }
     if (ble_cte_cb) {
@@ -42,7 +63,11 @@ tBTM_STATUS BTM_BleSetCteTransParams(uint8_t adv_handle, uint8_t cte_len, uint8_
     tBTM_STATUS status = BTM_SUCCESS;
     tBTM_BLE_CTE_CB_PARAMS cb_params = {0};
 
-    if ((err = btsnd_hcic_ble_set_connless_cte_trans_params(adv_handle, cte_len, cte_type, cte_count, switching_pattern_len, antenna_ids)) != HCI_SUCCESS) {
+    /* Switching pattern is ignored for AoA transmit (Core Vol 4 E 7.8.80). */
+    if (cte_type != BTM_BLE_CTE_TYPE_AOA &&
+            !btm_ble_cte_validate_switching_pattern(switching_pattern_len, antenna_ids)) {
+        status = BTM_ILLEGAL_VALUE;
+    } else if ((err = btsnd_hcic_ble_set_connless_cte_trans_params(adv_handle, cte_len, cte_type, cte_count, switching_pattern_len, antenna_ids)) != HCI_SUCCESS) {
         BTM_TRACE_ERROR("cte set trans params, cmd err=0x%x", err);
         status = BTM_HCI_ERROR | err;
     }
@@ -65,6 +90,7 @@ tBTM_STATUS BTM_BleCteSetConnectionlessTransEnable(uint8_t adv_handle, uint8_t c
     }
 
     cb_params.cte_trans_en_cmpl.status = status;
+    cb_params.cte_trans_en_cmpl.adv_handle = adv_handle;
     BTM_CteBleCallbackTrigger(BTM_BLE_CTE_SET_TRANS_ENABLE_EVT, &cb_params);
 
     return status;
@@ -77,8 +103,10 @@ tBTM_STATUS BTM_BleCteSetConnectionlessIqSamplingEnable(uint16_t sync_handle, ui
     tBTM_STATUS status = BTM_SUCCESS;
     tBTM_BLE_CTE_CB_PARAMS cb_params = {0};
 
-    if ((err = btsnd_hcic_ble_set_connless_iq_sampling_enable(sync_handle, sampling_en, slot_dur, max_sampled_ctes, switching_pattern_len, ant_ids)) != HCI_SUCCESS) {
-        BTM_TRACE_ERROR("cte set trans enable, cmd err=0x%x", err);
+    if (sampling_en && !btm_ble_cte_validate_switching_pattern(switching_pattern_len, ant_ids)) {
+        status = BTM_ILLEGAL_VALUE;
+    } else if ((err = btsnd_hcic_ble_set_connless_iq_sampling_enable(sync_handle, sampling_en, slot_dur, max_sampled_ctes, switching_pattern_len, ant_ids)) != HCI_SUCCESS) {
+        BTM_TRACE_ERROR("cte set iq sampling enable, cmd err=0x%x", err);
         status = BTM_HCI_ERROR | err;
     }
 
@@ -98,7 +126,9 @@ tBTM_STATUS BTM_BleCteSetConnectionReceiveParams(uint16_t conn_handle, uint8_t s
     tBTM_STATUS status = BTM_SUCCESS;
     tBTM_BLE_CTE_CB_PARAMS cb_params = {0};
 
-    if ((err = btsnd_hcic_ble_set_conn_cte_receive_params(conn_handle, sampling_en, slot_dur, switching_pattern_len, ant_ids)) != HCI_SUCCESS) {
+    if (sampling_en && !btm_ble_cte_validate_switching_pattern(switching_pattern_len, ant_ids)) {
+        status = BTM_ILLEGAL_VALUE;
+    } else if ((err = btsnd_hcic_ble_set_conn_cte_receive_params(conn_handle, sampling_en, slot_dur, switching_pattern_len, ant_ids)) != HCI_SUCCESS) {
         BTM_TRACE_ERROR("cte set conn recv params, cmd err=0x%x", err);
         status = BTM_HCI_ERROR | err;
     }
@@ -116,7 +146,11 @@ tBTM_STATUS BTM_BleCteSetConnectionTransParams(uint16_t conn_handle, uint8_t cte
     tBTM_STATUS status = BTM_SUCCESS;
     tBTM_BLE_CTE_CB_PARAMS cb_params = {0};
 
-    if ((err = btsnd_hcic_ble_set_conn_cte_trans_params(conn_handle, cte_types, switching_pattern_len, ant_ids)) != HCI_SUCCESS) {
+    /* Switching pattern is ignored unless an AoD CTE type is requested (Core Vol 4 E 7.8.84). */
+    if ((cte_types & BTM_BLE_CTE_TYPES_AOD_MASK) &&
+            !btm_ble_cte_validate_switching_pattern(switching_pattern_len, ant_ids)) {
+        status = BTM_ILLEGAL_VALUE;
+    } else if ((err = btsnd_hcic_ble_set_conn_cte_trans_params(conn_handle, cte_types, switching_pattern_len, ant_ids)) != HCI_SUCCESS) {
         BTM_TRACE_ERROR("cte set conn trans params, cmd err=0x%x", err);
         status = BTM_HCI_ERROR | err;
     }
@@ -168,31 +202,45 @@ tBTM_STATUS BTM_BleCteSetConnectionRspEnable(uint16_t conn_handle, uint8_t enabl
 
 tBTM_STATUS BTM_BleCteReadAntInfor(void)
 {
-    tHCI_STATUS err = HCI_SUCCESS;
-    tBTM_STATUS status = BTM_SUCCESS;
+    tHCI_STATUS err;
 
-    if ((err = btsnd_hcic_ble_read_antenna_info()) != HCI_SUCCESS) {
+    /* Result is reported only via HCI Command Complete (btm_ble_cte_read_ant_infor_complete).
+     * Do not fire BTM_BLE_CTE_READ_ANT_INFOR_EVT on btsnd_hcic return value. */
+    err = btsnd_hcic_ble_read_antenna_info();
+    if (err != HCI_SUCCESS) {
         BTM_TRACE_ERROR("cte read ant information, cmd err=0x%x", err);
-        status = BTM_HCI_ERROR | err;
+        return BTM_HCI_ERROR | err;
     }
-
-    return status;
+    return BTM_SUCCESS;
 }
 
-void btm_ble_cte_read_ant_infor_complete(UINT8 *p)
+void btm_ble_cte_read_ant_infor_complete(UINT8 *p, UINT16 evt_len)
 {
     tBTM_BLE_CTE_CB_PARAMS cb_params = {0};
 
+    if (!btm_ble_hci_evt_has_len("cte_read_ant_info", evt_len, 1)) {
+        cb_params.cte_read_ant_infor_cmpl.status = BTM_HCI_ERROR | HCI_ERR_UNSPECIFIED;
+        goto _error;
+    }
+
     STREAM_TO_UINT8(cb_params.cte_read_ant_infor_cmpl.status, p);
-    STREAM_TO_UINT8(cb_params.cte_read_ant_infor_cmpl.supported_switching_sampling_rates, p);
-    STREAM_TO_UINT8(cb_params.cte_read_ant_infor_cmpl.num_ant, p);
-    STREAM_TO_UINT8(cb_params.cte_read_ant_infor_cmpl.max_switching_pattern_len, p);
-    STREAM_TO_UINT8(cb_params.cte_read_ant_infor_cmpl.max_cte_len, p);
+    evt_len--;
+
+    if (cb_params.cte_read_ant_infor_cmpl.status == HCI_SUCCESS) {
+        BTM_BLE_HCI_EVT_MARK_BAD_PAYLOAD("cte_read_ant_info", evt_len, 4, cb_params.cte_read_ant_infor_cmpl.status);
+        if (cb_params.cte_read_ant_infor_cmpl.status == HCI_SUCCESS) {
+            STREAM_TO_UINT8(cb_params.cte_read_ant_infor_cmpl.supported_switching_sampling_rates, p);
+            STREAM_TO_UINT8(cb_params.cte_read_ant_infor_cmpl.num_ant, p);
+            STREAM_TO_UINT8(cb_params.cte_read_ant_infor_cmpl.max_switching_pattern_len, p);
+            STREAM_TO_UINT8(cb_params.cte_read_ant_infor_cmpl.max_cte_len, p);
+        }
+    }
 
     if (cb_params.cte_read_ant_infor_cmpl.status != HCI_SUCCESS) {
         cb_params.cte_read_ant_infor_cmpl.status = (BTM_HCI_ERROR | cb_params.cte_read_ant_infor_cmpl.status);
     }
 
+_error:
     BTM_CteBleCallbackTrigger(BTM_BLE_CTE_READ_ANT_INFOR_EVT, &cb_params);
 }
 
