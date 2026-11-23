@@ -172,7 +172,7 @@ esp_err_t gdma_new_lp_ahb_channel(const gdma_channel_alloc_config_t *config, gdm
  * @brief Connect GDMA channel to trigger peripheral
  *
  * @note Suggest to use helper macro `GDMA_MAKE_TRIGGER` to construct parameter `trig_periph`. e.g. GDMA_MAKE_TRIGGER(GDMA_TRIG_PERIPH_SHA,0)
- * @note Connecting to a peripheral will also reset the DMA FIFO and FSM automatically
+ * @note The FIFO and FSM are reset before the peripheral is selected.
  *
  * @param[in] dma_chan GDMA channel handle, allocated by `gdma_new_ahb_channel/gdma_new_axi_channel`
  * @param[in] trig_periph GDMA trigger peripheral
@@ -186,6 +186,8 @@ esp_err_t gdma_connect(gdma_channel_handle_t dma_chan, gdma_trigger_t trig_perip
 
 /**
  * @brief Disconnect GMA channel from peripheral
+ *
+ * @note The FIFO and FSM are reset after the peripheral is detached.
  *
  * @param[in] dma_chan GDMA channel handle, allocated by `gdma_new_ahb_channel/gdma_new_axi_channel`
  * @return

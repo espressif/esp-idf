@@ -357,6 +357,8 @@ esp_err_t gdma_connect(gdma_channel_handle_t dma_chan, gdma_trigger_t trig_perip
     }
 
     ESP_RETURN_ON_FALSE(!periph_conflict, ESP_ERR_INVALID_STATE, TAG, "peripheral %d is already used by another channel", trig_periph.instance_id);
+    /* Clear leftover FIFO data and FSM state before this peripheral can observe them. */
+    gdma_hal_reset(hal, pair->pair_id, dma_chan->direction);
     if (trig_periph.bus_id == SOC_GDMA_TRIG_PERIPH_M2M0_BUS) {
         // M2M transfer
         gdma_hal_connect_mem(hal, pair->pair_id, dma_chan->direction, trig_periph.instance_id);
@@ -391,7 +393,9 @@ esp_err_t gdma_disconnect(gdma_channel_handle_t dma_chan)
         }
     }
 
+    /* Detach the peripheral first, then reset the FIFO and FSM so no trailing transfer can refill the FIFO. */
     gdma_hal_disconnect_all(hal, pair->pair_id, dma_chan->direction);
+    gdma_hal_reset(hal, pair->pair_id, dma_chan->direction);
 
     dma_chan->periph_id = GDMA_INVALID_PERIPH_TRIG;
     return ESP_OK;
