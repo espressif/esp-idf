@@ -61,12 +61,15 @@ TEST_CASE("IDF additions: Task creation with memory caps and deletion from anoth
     TEST_ASSERT_NOT_EQUAL(NULL, task_handle);
     // Get the task's memory
     TEST_ASSERT_EQUAL(pdTRUE, xTaskGetStaticBuffers(task_handle, &puxStackBuffer, &pxTaskBuffer));
-    TEST_ASSERT(esp_ptr_in_dram(puxStackBuffer));
-    TEST_ASSERT(esp_ptr_in_dram(pxTaskBuffer));
+    const bool stack_internal = esp_ptr_internal(puxStackBuffer);
+    const bool tcb_internal = esp_ptr_internal(pxTaskBuffer);
     // Wait for the created task to block
     ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
     // Delete the task
     vTaskDeleteWithCaps(task_handle);
+    // Check the placement only after the task is deleted, so that a failure does not leak it into later tests
+    TEST_ASSERT(stack_internal);
+    TEST_ASSERT(tcb_internal);
 }
 
 TEST_CASE("IDF additions: Task creation with memory caps and self deletion", "[freertos][idf_additions]")
@@ -80,10 +83,13 @@ TEST_CASE("IDF additions: Task creation with memory caps and self deletion", "[f
     TEST_ASSERT_NOT_EQUAL(NULL, task_handle);
     // Get the task's memory
     TEST_ASSERT_EQUAL(pdTRUE, xTaskGetStaticBuffers(task_handle, &puxStackBuffer, &pxTaskBuffer));
-    TEST_ASSERT(esp_ptr_in_dram(puxStackBuffer));
-    TEST_ASSERT(esp_ptr_in_dram(pxTaskBuffer));
+    const bool stack_internal = esp_ptr_internal(puxStackBuffer);
+    const bool tcb_internal = esp_ptr_internal(pxTaskBuffer);
     // Notify the task to delete itself
     xTaskNotifyGive(task_handle);
+    // Check the placement only after the task is told to delete itself, so that a failure does not leak it
+    TEST_ASSERT(stack_internal);
+    TEST_ASSERT(tcb_internal);
 }
 
 #if CONFIG_FREERTOS_TASK_CREATE_ALLOW_EXT_MEM
@@ -103,7 +109,7 @@ TEST_CASE("IDF additions: Task creation with SPIRAM memory caps and self deletio
             // Get the task's memory
             TEST_ASSERT_EQUAL(pdTRUE, xTaskGetStaticBuffers(task_handle[i], &puxStackBuffer, &pxTaskBuffer));
             TEST_ASSERT(esp_ptr_external_ram(puxStackBuffer));
-            TEST_ASSERT(esp_ptr_in_dram(pxTaskBuffer));
+            TEST_ASSERT(esp_ptr_internal(pxTaskBuffer));
         }
 
         for (int i = 0; i < TEST_NUM_TASKS; i++) {
@@ -143,12 +149,15 @@ TEST_CASE("IDF additions: Task creation with memory caps and deletion from anoth
     TEST_ASSERT_NOT_EQUAL(NULL, task_handle);
     // Get the task's memory
     TEST_ASSERT_EQUAL(pdTRUE, xTaskGetStaticBuffers(task_handle, &puxStackBuffer, &pxTaskBuffer));
-    TEST_ASSERT(esp_ptr_in_dram(puxStackBuffer));
-    TEST_ASSERT(esp_ptr_in_dram(pxTaskBuffer));
+    const bool stack_internal = esp_ptr_internal(puxStackBuffer);
+    const bool tcb_internal = esp_ptr_internal(pxTaskBuffer);
     // Wait for the created task to start running
     ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
     // Delete the task from another core
     vTaskDeleteWithCaps(task_handle);
+    // Check the placement only after the task is deleted, so that a failure does not leak it into later tests
+    TEST_ASSERT(stack_internal);
+    TEST_ASSERT(tcb_internal);
 }
 
 #endif // CONFIG_FREERTOS_NUMBER_OF_CORES > 1
@@ -164,8 +173,8 @@ TEST_CASE("IDF additions: Queue creation with memory caps", "[freertos][idf_addi
     TEST_ASSERT_NOT_EQUAL(NULL, queue_handle);
     // Get the queue's memory
     TEST_ASSERT_EQUAL(pdTRUE, xQueueGetStaticBuffers(queue_handle, &queue_storage, &queue_obj));
-    TEST_ASSERT(esp_ptr_in_dram(queue_storage));
-    TEST_ASSERT(esp_ptr_in_dram(queue_obj));
+    TEST_ASSERT(esp_ptr_internal(queue_storage));
+    TEST_ASSERT(esp_ptr_internal(queue_obj));
     // Free the queue
     vQueueDeleteWithCaps(queue_handle);
 }
@@ -180,7 +189,7 @@ TEST_CASE("IDF additions: Semaphore creation with memory caps", "[freertos][idf_
     TEST_ASSERT_NOT_EQUAL(NULL, sem_handle);
     // Get the binary semaphore's memory
     TEST_ASSERT_EQUAL(pdTRUE, xSemaphoreGetStaticBuffer(sem_handle, &sem_obj));
-    TEST_ASSERT(esp_ptr_in_dram(sem_obj));
+    TEST_ASSERT(esp_ptr_internal(sem_obj));
     // Free the binary semaphore
     vSemaphoreDeleteWithCaps(sem_handle);
 
@@ -189,7 +198,7 @@ TEST_CASE("IDF additions: Semaphore creation with memory caps", "[freertos][idf_
     TEST_ASSERT_NOT_EQUAL(NULL, sem_handle);
     // Get the counting semaphore's memory
     TEST_ASSERT_EQUAL(pdTRUE, xSemaphoreGetStaticBuffer(sem_handle, &sem_obj));
-    TEST_ASSERT(esp_ptr_in_dram(sem_obj));
+    TEST_ASSERT(esp_ptr_internal(sem_obj));
     // Free the counting semaphore
     vSemaphoreDeleteWithCaps(sem_handle);
 
@@ -198,7 +207,7 @@ TEST_CASE("IDF additions: Semaphore creation with memory caps", "[freertos][idf_
     TEST_ASSERT_NOT_EQUAL(NULL, sem_handle);
     // Get the mutex semaphore's memory
     TEST_ASSERT_EQUAL(pdTRUE, xSemaphoreGetStaticBuffer(sem_handle, &sem_obj));
-    TEST_ASSERT(esp_ptr_in_dram(sem_obj));
+    TEST_ASSERT(esp_ptr_internal(sem_obj));
     // Free the mutex semaphore
     vSemaphoreDeleteWithCaps(sem_handle);
 
@@ -207,7 +216,7 @@ TEST_CASE("IDF additions: Semaphore creation with memory caps", "[freertos][idf_
     TEST_ASSERT_NOT_EQUAL(NULL, sem_handle);
     // Get the recursive mutex's memory
     TEST_ASSERT_EQUAL(pdTRUE, xSemaphoreGetStaticBuffer(sem_handle, &sem_obj));
-    TEST_ASSERT(esp_ptr_in_dram(sem_obj));
+    TEST_ASSERT(esp_ptr_internal(sem_obj));
     // Free the recursive mutex
     vSemaphoreDeleteWithCaps(sem_handle);
 }
@@ -223,8 +232,8 @@ TEST_CASE("IDF additions: Stream & message buffer creation with memory caps", "[
     TEST_ASSERT_NOT_EQUAL(NULL, stream_buffer_handle);
     // Get the stream buffer's memory
     TEST_ASSERT_EQUAL(pdTRUE, xStreamBufferGetStaticBuffers(stream_buffer_handle, &stream_buffer_storage, &stream_buffer_obj));
-    TEST_ASSERT(esp_ptr_in_dram(stream_buffer_storage));
-    TEST_ASSERT(esp_ptr_in_dram(stream_buffer_obj));
+    TEST_ASSERT(esp_ptr_internal(stream_buffer_storage));
+    TEST_ASSERT(esp_ptr_internal(stream_buffer_obj));
     // Free the stream buffer
     vStreamBufferDeleteWithCaps(stream_buffer_handle);
 
@@ -237,8 +246,8 @@ TEST_CASE("IDF additions: Stream & message buffer creation with memory caps", "[
     TEST_ASSERT_NOT_EQUAL(NULL, msg_buffer_handle);
     // Get the message buffer's memory
     TEST_ASSERT_EQUAL(pdTRUE, xMessageBufferGetStaticBuffers(msg_buffer_handle, &msg_buffer_storage, &msg_buffer_obj));
-    TEST_ASSERT(esp_ptr_in_dram(msg_buffer_storage));
-    TEST_ASSERT(esp_ptr_in_dram(msg_buffer_obj));
+    TEST_ASSERT(esp_ptr_internal(msg_buffer_storage));
+    TEST_ASSERT(esp_ptr_internal(msg_buffer_obj));
     // Free the message buffer
     vMessageBufferDeleteWithCaps(msg_buffer_handle);
 }
@@ -253,7 +262,7 @@ TEST_CASE("IDF additions: Event group creation with memory caps", "[freertos][id
     TEST_ASSERT_NOT_EQUAL(NULL, evt_group_handle);
     // Get the event group's memory
     TEST_ASSERT_EQUAL(pdTRUE, xEventGroupGetStaticBuffer(evt_group_handle, &evt_group_obj));
-    TEST_ASSERT(esp_ptr_in_dram(evt_group_obj));
+    TEST_ASSERT(esp_ptr_internal(evt_group_obj));
     // Free the event group
     vEventGroupDeleteWithCaps(evt_group_handle);
 }
