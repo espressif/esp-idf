@@ -19,11 +19,10 @@
 
 #include "services/gap/ble_svc_gap.h"
 #include "services/gatt/ble_svc_gatt.h"
-#include "services/ans/ble_svc_ans.h"
 #include "services/ras/ble_svc_ras.h"
 
 int
-custom_gatt_svr_init(void)
+gatt_svr_init(void)
 {
 #if CONFIG_BT_NIMBLE_GAP_SERVICE
     ble_svc_gap_init();
@@ -34,5 +33,7 @@ custom_gatt_svr_init(void)
 #if MYNEWT_VAL(BLE_GATTS) && CONFIG_BT_NIMBLE_RAS_SERVICE
     ble_svc_ras_init();
 #endif
+
+
     return 0;
 }

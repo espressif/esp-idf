@@ -8,7 +8,33 @@ menu "Example Configuration"
         select BT_NIMBLE_EXT_ADV
         prompt "Enable Extended Adv"
         help
-            Use this option to enable extended advertising in the example.
-            If this option is disabled, ensure config BT_NIMBLE_EXT_ADV is
-            also disabled from Nimble stack menuconfig
+            Use the extended advertising API in the example. The example
+            still transmits legacy ADV_IND PDUs so the connection is created
+            on the 1M PHY. If this option is disabled, ensure config
+            BT_NIMBLE_EXT_ADV is also disabled from Nimble stack menuconfig
+
+    config EXAMPLE_BONDING
+        bool "Enable Bonding"
+        default y
+        help
+            Store pairing keys so a previously bonded initiator can reconnect
+            and re-encrypt without pairing again. Channel Sounding itself only
+            requires an encrypted LE Secure Connections link, not bonding.
+
+    config EXAMPLE_MITM
+        bool "Enable MITM Protection"
+        default n
+        help
+            Request Man-In-The-Middle protection during pairing. The example
+            uses BLE_SM_IO_CAP_NO_IO, which cannot produce an authenticated
+            link, so change the I/O capability in the source before enabling
+            this.
+
+    config EXAMPLE_RESOLVE_PEER_ADDR
+        bool "Enable Peer Address Resolution"
+        default y
+        depends on EXAMPLE_BONDING
+        help
+            Distribute IRK keys so that resolvable private addresses from
+            the peer can be resolved after bonding.
 endmenu

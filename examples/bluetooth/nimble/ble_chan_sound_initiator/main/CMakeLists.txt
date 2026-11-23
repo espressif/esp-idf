@@ -1,4 +1,2 @@
-set(srcs "main.c")
-
-idf_component_register(SRCS "gatt_svr.c" "${srcs}"
+idf_component_register(SRCS "main.c"
                        INCLUDE_DIRS ".")
