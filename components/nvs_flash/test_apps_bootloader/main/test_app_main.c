@@ -8,6 +8,7 @@
 #include "unity_test_runner.h"
 #include "esp_heap_caps.h"
 #include "esp_crypto_lock.h"
+#include "esp_partition.h"
 
 // There should be no memory allocated during the test.
 #define TEST_MEMORY_INITIAL_LEAK_THRESHOLD (-700)
@@ -34,6 +35,21 @@ void setUp(void)
     esp_crypto_hmac_lock_acquire();
     esp_crypto_hmac_lock_release();
 #endif
+
+    /* Partition-list and MMU mutexes are created on first _lock_acquire().
+     * Startup loads the partition table before the scheduler starts, when
+     * that call does not allocate, so the first test otherwise keeps the
+     * partition lock (~124 bytes) and the first encrypted read keeps the
+     * MMU lock (another ~124 bytes). Fail if this warmup cannot run, so a
+     * missing partition does not hide the leak again.
+     */
+    const esp_partition_t *part = esp_partition_find_first(ESP_PARTITION_TYPE_DATA,
+                                                           ESP_PARTITION_SUBTYPE_DATA_NVS, NULL);
+    TEST_ASSERT_NOT_NULL(part);
+    const void *mapped;
+    esp_partition_mmap_handle_t handle;
+    TEST_ESP_OK(esp_partition_mmap(part, 0, 1, ESP_PARTITION_MMAP_DATA, &mapped, &handle));
+    esp_partition_munmap(handle);
 
     before_free_8bit = heap_caps_get_free_size(MALLOC_CAP_8BIT);
     before_free_32bit = heap_caps_get_free_size(MALLOC_CAP_32BIT);
