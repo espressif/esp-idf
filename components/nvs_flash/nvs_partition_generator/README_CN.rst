@@ -43,7 +43,7 @@ CSV 文件每行需包含四个参数，以逗号隔开。具体参数描述见�
       -
     * - 3
       - Encoding
-      - 支持 ``u8``、``i8``、``u16``、``i16``、``u32``、``i32``、``u64``、``i64``、``string``、``hex2bin``、``base64`` 和 ``binary``。决定二进制 ``bin`` 文件中 value 被编码成的类型。``string`` 和 ``binary`` 编码的区别在于，``string`` 数据以 NULL 字符结尾，``binary`` 数据则不是。
+      - 支持 ``u8``、``i8``、``u16``、``i16``、``u32``、``i32``、``u64``、``i64``、``float``、``double``、``string``、``hex2bin``、``base64`` 和 ``binary``。决定二进制 ``bin`` 文件中 value 被编码成的类型。``string`` 和 ``binary`` 编码的区别在于，``string`` 数据以 NULL 字符结尾，``binary`` 数据则不是。``float`` 和 ``double`` 按 IEEE 754 存储，并且拒绝 NaN。
       - ``file`` 类型当前仅支持 ``hex2bin``、``base64``、 ``string`` 和 ``binary`` 编码。
     * - 4
       - Value
