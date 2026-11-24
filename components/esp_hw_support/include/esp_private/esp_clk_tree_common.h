@@ -124,6 +124,15 @@ uint32_t esp_clk_tree_osc_slow_get_freq_hz(esp_clk_tree_src_freq_precision_t pre
 uint32_t esp_clk_tree_rc_fast_get_freq_hz(esp_clk_tree_src_freq_precision_t precision);
 
 /**
+ * @brief Get frequency of RC_SLOW_CLK
+ *
+ * @param precision Degree of precision of the returned frequency value, one of esp_clk_tree_src_freq_precision_t values
+ *
+ * @return RC_SLOW clock frequency, in Hz. Returns 0 if degree of precision is invalid or calibration failed.
+ */
+uint32_t esp_clk_tree_rc_slow_get_freq_hz(esp_clk_tree_src_freq_precision_t precision);
+
+/**
  * @brief Get frequency of LP_SLOW_CLK (i.e. RTC_SLOW_CLK)
  *
  * @param precision Degree of precision of the returned frequency value, one of esp_clk_tree_src_freq_precision_t values

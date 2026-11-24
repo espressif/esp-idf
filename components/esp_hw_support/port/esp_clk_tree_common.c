@@ -42,6 +42,9 @@ struct esp_clk_tree_calibrated_freq_t {
 #if SOC_CLK_OSC_SLOW_SUPPORTED
     uint32_t osc_slow;
 #endif
+#if SOC_CLK_RC_SLOW_SUPPORT_CALIBRATION
+    uint32_t rc_slow;
+#endif
 };
 
 // TODO: Better to implement a spinlock for the static variables
@@ -56,6 +59,7 @@ static esp_clk_tree_calibrated_freq_t s_calibrated_freq = {};
                                            // Usually we calibrate on the divider of the RC_FAST clock, the cal_cycles is divided by
                                            // the divider factor internally in rtc_clk_cal, so the time to spend on calibrating RC_FAST
                                            // is always (10000 / f_rc_fast)
+#define DEFAULT_RC_SLOW_CAL_CYCLES  1024
 
 static uint32_t s_clk_src_accuracy_ppm[SOC_ROOT_CLK_SRC_NUM][ESP_CLK_TREE_ACCURACY_DURATION_NUM] = {
     [SOC_ROOT_CLK_INT_RC_FAST] = SOC_CLK_RC_FAST_ACCURACY_PPM_DEFAULTS,
@@ -223,6 +227,26 @@ uint32_t esp_clk_tree_rc_fast_get_freq_hz(esp_clk_tree_src_freq_precision_t prec
     }
     return SOC_CLK_RC_FAST_FREQ_APPROX;
 #endif //SOC_CLK_RC_FAST_SUPPORT_CALIBRATION
+}
+
+uint32_t esp_clk_tree_rc_slow_get_freq_hz(esp_clk_tree_src_freq_precision_t precision)
+{
+#if SOC_CLK_RC_SLOW_SUPPORT_CALIBRATION
+    if (precision == ESP_CLK_TREE_SRC_FREQ_PRECISION_APPROX) {
+        return SOC_CLK_RC_SLOW_FREQ_APPROX;
+    }
+    // Calibrate directly on RC_SLOW.
+    if (precision != ESP_CLK_TREE_SRC_FREQ_PRECISION_CACHED || !s_calibrated_freq.rc_slow) {
+        s_calibrated_freq.rc_slow = rtc_clk_freq_cal(rtc_clk_cal(CLK_CAL_RC_SLOW, DEFAULT_RC_SLOW_CAL_CYCLES));
+    }
+    return s_calibrated_freq.rc_slow;
+#else
+    if (precision != ESP_CLK_TREE_SRC_FREQ_PRECISION_APPROX) {
+        // No independent RC_SLOW calibration mux on this target
+        ESP_HW_LOGW(TAG, "unable to get the exact freq of rc_slow_clk, returning its approx. freq value");
+    }
+    return SOC_CLK_RC_SLOW_FREQ_APPROX;
+#endif
 }
 
 uint32_t esp_clk_tree_lp_fast_get_freq_hz(esp_clk_tree_src_freq_precision_t precision)

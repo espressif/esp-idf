@@ -111,6 +111,27 @@ static void btdm_lp_soc_etm_set_enable(bool enable);
  ***************************************************************************************************
  */
 #if !CONFIG_IDF_ENV_FPGA
+static uint32_t btdm_lp_get_int_rc_freq(void)
+{
+    uint32_t rtc_freq = 0;
+
+    if (rtc_clk_slow_src_get() != SOC_RTC_SLOW_CLK_SRC_DEFAULT) {
+        esp_clk_tree_src_get_freq_hz(SOC_MOD_CLK_RC_SLOW, ESP_CLK_TREE_SRC_FREQ_PRECISION_EXACT, &rtc_freq);
+        if (!rtc_freq) {
+            esp_clk_tree_src_get_freq_hz(SOC_MOD_CLK_RC_SLOW, ESP_CLK_TREE_SRC_FREQ_PRECISION_APPROX, &rtc_freq);
+            ESP_LOGW(BTDM_LOG_TAG, "Failed to get exact RC_SLOW frequency, using approximate frequency\n");
+        }
+#if CONFIG_IDF_TARGET_ESP32H4
+        /* BT LP clock is RC_SLOW divided by 4. */
+        rtc_freq >>= 2;
+#endif
+        rtc_freq /= 5;
+    } else {
+        rtc_freq = esp_clk_tree_lp_slow_get_freq_hz(ESP_CLK_TREE_SRC_FREQ_PRECISION_CACHED) / 5;
+    }
+    return rtc_freq;
+}
+
 static void
 btdm_lp_rtc_slow_clk_select(uint8_t slow_clk_src)
 {
@@ -189,7 +210,6 @@ btdm_lp_timer_clk_init(esp_bt_ctrl_btdm_config_t *cfg)
     if (s_bt_lpclk_src == MODEM_CLOCK_LPCLK_SRC_INVALID) {
 #if CONFIG_RTC_CLK_SRC_INT_RC
         s_bt_lpclk_src = MODEM_CLOCK_LPCLK_SRC_RC_SLOW;
-        s_bt_lpclk_freq = esp_clk_tree_lp_slow_get_freq_hz(ESP_CLK_TREE_SRC_FREQ_PRECISION_CACHED) / 5;
 #elif CONFIG_RTC_CLK_SRC_EXT_CRYS
         uint32_t clk_freq = 0;
         if ((rtc_clk_slow_src_get() == SOC_RTC_SLOW_CLK_SRC_XTAL32K) &&
@@ -212,6 +232,10 @@ btdm_lp_timer_clk_init(esp_bt_ctrl_btdm_config_t *cfg)
         ESP_LOGE(BTDM_LOG_TAG, "Unsupported clock source");
         assert(0);
 #endif
+    }
+
+    if (s_bt_lpclk_src == MODEM_CLOCK_LPCLK_SRC_RC_SLOW) {
+        s_bt_lpclk_freq = btdm_lp_get_int_rc_freq();
     }
 
     btdm_lp_rtc_slow_clk_select(s_bt_lpclk_src);

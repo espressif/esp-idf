@@ -61,6 +61,7 @@ extern "C" {
 /* With the default value of FOSC_DFREQ = 100, RC_FAST clock frequency is 17.5 MHz +/- 7% */
 #define SOC_CLK_RC_FAST_FREQ_APPROX         17500000                            /*!< Approximate RC_FAST_CLK frequency in Hz */
 #define SOC_CLK_RC_SLOW_FREQ_APPROX         136000                              /*!< Approximate RC_SLOW_CLK frequency in Hz */
+#define SOC_CLK_RC_SLOW_SUPPORT_CALIBRATION (1)     /*!< RC_SLOW_CLK frequency can be measured with CLK_CAL_RC_SLOW */
 #define SOC_CLK_RC32K_FREQ_APPROX           32768                               /*!< Approximate RC32K_CLK frequency in Hz */
 #define SOC_CLK_XTAL32K_FREQ_APPROX         32768                               /*!< Approximate XTAL32K_CLK frequency in Hz */
 
@@ -195,6 +196,7 @@ typedef enum {
                                                     Only in LP_SLEEP mode, select RTC_SLOW_CLK as the clock source;
                                                     In other non-LP_SLEEP mode, select RTC_FAST_CLK as the clock source; */
     SOC_MOD_CLK_LP_PERI,                       /*!< LP_PERI_CLK is derived from LP_DYN_FAST (configurable divider) */
+    SOC_MOD_CLK_RC_SLOW,                       /*!< RC_SLOW_CLK comes from the internal RC slow oscillator */
     SOC_MOD_CLK_INVALID,                       /*!< Indication of the end of the available module clock sources */
 } soc_module_clk_t;
 
