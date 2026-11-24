@@ -50,42 +50,42 @@ typedef enum {
 #endif
 } btc_avrc_act_t;
 
-/* conn_hdl selects the A2DP connection. ESP_A2D_INVALID_CONN_HDL means the
+/* conn_hdl selects the AVRCP session. ESP_AVRC_INVALID_CONN_HDL means the
  * currently active one, so the deprecated APIs keep working. */
 typedef struct {
-    esp_a2d_conn_hdl_t conn_hdl;
+    esp_avrc_conn_hdl_t conn_hdl;
     uint8_t tl; /* transaction label */
     uint8_t key_code;
     uint8_t key_state;
 } pt_cmd_t;
 
 typedef struct {
-    esp_a2d_conn_hdl_t conn_hdl;
+    esp_avrc_conn_hdl_t conn_hdl;
     uint8_t tl;
     uint8_t attr_mask;
 } md_cmd_t;
 
 typedef struct {
-    esp_a2d_conn_hdl_t conn_hdl;
+    esp_avrc_conn_hdl_t conn_hdl;
     uint8_t tl;
     uint8_t event_id;
     uint32_t event_parameter;
 } rn_cmd_t;
 
 typedef struct {
-    esp_a2d_conn_hdl_t conn_hdl;
+    esp_avrc_conn_hdl_t conn_hdl;
     uint8_t tl;
     uint8_t attr_id;
     uint8_t value_id;
 } ps_cmd_t;
 
 typedef struct {
-    esp_a2d_conn_hdl_t conn_hdl;
+    esp_avrc_conn_hdl_t conn_hdl;
     uint8_t tl;
 } get_caps_cmd_t;
 
 typedef struct {
-    esp_a2d_conn_hdl_t conn_hdl;
+    esp_avrc_conn_hdl_t conn_hdl;
     uint8_t tl;
 } get_play_status_cmd_t;
 
@@ -93,7 +93,7 @@ typedef struct {
 #define BTC_AVRC_MAX_VOLUME 0x7f
 
 typedef struct {
-    esp_a2d_conn_hdl_t conn_hdl;
+    esp_avrc_conn_hdl_t conn_hdl;
     uint8_t tl;
     uint8_t volume;
 } set_abs_vol_cmd_t;
@@ -196,6 +196,8 @@ typedef struct {
     /* Non-zero while a stack Play/Pause pair (labels 14/15) is outstanding.
      * Boot time in ms of the send; 0 means none. */
     UINT32                      stack_pt_ms;
+    /* stable user-facing handle for this control block slot. */
+    esp_avrc_conn_hdl_t         avrc_conn_hdl;
 } btc_rc_cb_t;
 
 /*****************************************************************************
@@ -206,7 +208,7 @@ extern btc_rc_cb_t *btc_rc_cb_ptr;
 #endif ///AVRC_DYNAMIC_MEMORY == FALSE
 
 typedef struct {
-    esp_a2d_conn_hdl_t conn_hdl;
+    esp_avrc_conn_hdl_t conn_hdl;
     esp_avrc_rn_event_ids_t event_id;
     esp_avrc_rn_rsp_t rsp;
     esp_avrc_rn_param_t param;

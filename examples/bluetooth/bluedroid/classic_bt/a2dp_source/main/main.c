@@ -109,6 +109,7 @@ static void bt_app_av_state_disconnecting_hdlr(uint16_t event, void *param);
 
 static esp_bd_addr_t s_peer_bda = {0};                        /* Bluetooth Device Address of peer device*/
 static esp_a2d_conn_hdl_t s_a2d_conn_hdl = ESP_A2D_INVALID_CONN_HDL;  /* A2DP connection handle of peer device*/
+static esp_avrc_conn_hdl_t s_avrc_conn_hdl = ESP_AVRC_INVALID_CONN_HDL;  /* AVRCP connection handle of peer device*/
 static uint8_t s_peer_bdname[ESP_BT_GAP_MAX_BDNAME_LEN + 1];  /* Bluetooth Device Name of peer device*/
 static int s_a2d_state = APP_AV_STATE_IDLE;                   /* A2DP global state */
 static int s_media_state = APP_AV_MEDIA_STATE_IDLE;           /* sub states of APP_AV_STATE_CONNECTED */
@@ -746,7 +747,7 @@ static void bt_av_volume_changed(void)
 {
     if (esp_avrc_rn_evt_bit_mask_operation(ESP_AVRC_BIT_MASK_OP_TEST, &s_avrc_peer_rn_cap,
                                            ESP_AVRC_RN_VOLUME_CHANGE)) {
-        esp_avrc_ct_send_register_notification_cmd_by_handle(s_a2d_conn_hdl, APP_RC_CT_TL_RN_VOLUME_CHANGE, ESP_AVRC_RN_VOLUME_CHANGE, 0);
+        esp_avrc_ct_send_register_notification_cmd_by_handle(s_avrc_conn_hdl, APP_RC_CT_TL_RN_VOLUME_CHANGE, ESP_AVRC_RN_VOLUME_CHANGE, 0);
     }
 }
 
@@ -757,7 +758,7 @@ void bt_av_notify_evt_handler(uint8_t event_id, esp_avrc_rn_param_t *event_param
     case ESP_AVRC_RN_VOLUME_CHANGE: {
         ESP_LOGI(BT_RC_CT_TAG, "Volume changed: %d", event_parameter->volume);
         ESP_LOGI(BT_RC_CT_TAG, "Set absolute volume: volume %d", event_parameter->volume + 5);
-        esp_avrc_ct_send_set_absolute_volume_cmd_by_handle(s_a2d_conn_hdl, APP_RC_CT_TL_RN_VOLUME_CHANGE, event_parameter->volume + 5);
+        esp_avrc_ct_send_set_absolute_volume_cmd_by_handle(s_avrc_conn_hdl, APP_RC_CT_TL_RN_VOLUME_CHANGE, event_parameter->volume + 5);
         bt_av_volume_changed();
         break;
     }
@@ -780,8 +781,9 @@ static void bt_av_hdl_avrc_ct_evt(uint16_t event, void *p_param)
         ESP_LOGI(BT_RC_CT_TAG, "AVRC conn_state event: state %d, [%02x:%02x:%02x:%02x:%02x:%02x]",
                  rc->conn_stat.connected, bda[0], bda[1], bda[2], bda[3], bda[4], bda[5]);
 
+        s_avrc_conn_hdl = rc->conn_stat.connected ? rc->conn_stat.conn_hdl : ESP_AVRC_INVALID_CONN_HDL;
         if (rc->conn_stat.connected) {
-            esp_avrc_ct_send_get_rn_capabilities_cmd_by_handle(s_a2d_conn_hdl, APP_RC_CT_TL_GET_CAPS);
+            esp_avrc_ct_send_get_rn_capabilities_cmd_by_handle(s_avrc_conn_hdl, APP_RC_CT_TL_GET_CAPS);
         } else {
             s_avrc_peer_rn_cap.bits = 0;
         }

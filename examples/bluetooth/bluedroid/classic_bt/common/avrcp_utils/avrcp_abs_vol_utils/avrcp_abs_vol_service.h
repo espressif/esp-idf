@@ -21,9 +21,9 @@ typedef enum {
 void avrc_abs_vol_srv_open(void);
 
 /**
- * @brief  A2DP connection handle of the AVRCP controller that registered volume notification.
+ * @brief  AVRCP connection handle of the peer that registered volume notification.
  */
-void avrc_abs_vol_srv_set_conn_hdl(esp_a2d_conn_hdl_t conn_hdl);
+void avrc_abs_vol_srv_set_conn_hdl(esp_avrc_conn_hdl_t conn_hdl);
 
 /**
  * @brief  close AVRCP absolute volume service

@@ -27,7 +27,7 @@ typedef struct {
  ******************************/
 
 static avrc_common_cb_t s_avrc_common_cb;
-static esp_a2d_conn_hdl_t s_ct_conn_hdl = ESP_A2D_INVALID_CONN_HDL;
+static esp_avrc_conn_hdl_t s_ct_conn_hdl = ESP_AVRC_INVALID_CONN_HDL;
 
 /********************************
  * EXTERNAL FUNCTION DEFINITIONS
@@ -43,7 +43,7 @@ void bt_avrc_common_ct_evt_def_hdl(uint16_t event, void *param)
     /* when connection state changed, this event comes */
     case ESP_AVRC_CT_CONNECTION_STATE_EVT: {
         uint8_t *bda = rc->conn_stat.remote_bda;
-        s_ct_conn_hdl = rc->conn_stat.connected ? rc->conn_stat.conn_hdl : ESP_A2D_INVALID_CONN_HDL;
+        s_ct_conn_hdl = rc->conn_stat.connected ? rc->conn_stat.conn_hdl : ESP_AVRC_INVALID_CONN_HDL;
         ESP_LOGI(BT_RC_CT_TAG, "AVRC conn_state event: state %d, [%02x:%02x:%02x:%02x:%02x:%02x]",
                  rc->conn_stat.connected, bda[0], bda[1], bda[2], bda[3], bda[4], bda[5]);
         break;
@@ -183,12 +183,12 @@ void bt_avrc_common_free_metadata(void *p_param)
     }
 }
 
-void bt_avrc_common_ct_set_conn_hdl(esp_a2d_conn_hdl_t conn_hdl)
+void bt_avrc_common_ct_set_conn_hdl(esp_avrc_conn_hdl_t conn_hdl)
 {
     s_ct_conn_hdl = conn_hdl;
 }
 
-esp_a2d_conn_hdl_t bt_avrc_common_ct_get_conn_hdl(void)
+esp_avrc_conn_hdl_t bt_avrc_common_ct_get_conn_hdl(void)
 {
     return s_ct_conn_hdl;
 }
