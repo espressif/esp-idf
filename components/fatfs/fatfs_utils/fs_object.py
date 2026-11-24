@@ -26,6 +26,7 @@ from .utils import lfn_checksum
 from .utils import required_clusters_count
 from .utils import split_content_into_sectors
 from .utils import split_to_name_and_extension
+from .utils import validate_fatfs_name
 
 
 class File:
@@ -261,7 +262,10 @@ class Directory:
 
     @staticmethod
     def _is_valid_sfn(name: str, extension: str) -> bool:
-        if INVALID_SFN_CHARS_PATTERN.search(name) or INVALID_SFN_CHARS_PATTERN.search(name):
+        if INVALID_SFN_CHARS_PATTERN.search(name) or INVALID_SFN_CHARS_PATTERN.search(extension):
+            return False
+        # FatFs removes spaces from short names, so a name with a space needs a long name entry
+        if ' ' in name or ' ' in extension:
             return False
         ret: bool = len(name) <= MAX_NAME_SIZE and len(extension) <= MAX_EXT_SIZE
         return ret
@@ -280,6 +284,8 @@ class Directory:
         and allocates cluster (both the record in FAT and cluster in the data region)
         and entry in the specified directory
         """
+
+        validate_fatfs_name(name, extension, self.fatfs_state.long_names_enabled)
 
         free_cluster: Cluster | None = None
         free_cluster_id = 0x00
@@ -347,15 +353,17 @@ class Directory:
         path_from_root: list[str] | None,
         object_timestamp_: datetime,
     ) -> None:
+        name, extension = split_to_name_and_extension(name)
         free_cluster, free_entry, target_dir = self.allocate_object(
             name=name,
+            extension=extension,
             entity_type=Directory.ATTR_DIRECTORY,
             path_from_root=path_from_root,
             object_timestamp_=object_timestamp_,
         )
 
         directory: Directory = Directory(
-            name=name, fat=self.fat, parent=parent, fatfs_state=self.fatfs_state, entry=free_entry
+            name=name, fat=self.fat, parent=parent, fatfs_state=self.fatfs_state, entry=free_entry, extension=extension
         )
         directory.first_cluster = free_cluster
         directory.init_directory()

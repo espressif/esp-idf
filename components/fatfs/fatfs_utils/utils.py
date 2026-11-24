@@ -14,8 +14,13 @@ from construct import BitStruct
 from construct import Int16ul
 from esp_pylib.logger import log
 
+from .exceptions import InvalidNameException
+
 # the regex pattern defines symbols that are allowed by long file names but not by short file names
 INVALID_SFN_CHARS_PATTERN = re.compile(r'[.+,;=\[\]]')
+# symbols (including control characters) that are not allowed neither in short nor in long file names
+INVALID_FATFS_CHARS_PATTERN = re.compile(r'[\x00-\x1f\x7f"*/:<>?\\|]')
+MAX_LFN_SIZE: int = 255
 
 FATFS_MIN_ALLOC_UNIT: int = 128
 FAT12_MAX_CLUSTERS: int = 4085
@@ -150,6 +155,9 @@ def build_lfn_short_entry_name(name: str, extension: str, order: int, lfn: str =
     within MAX_NAME_SIZE (8) characters together with the suffix.
     """
     suffix = _gen_numname_suffix(order, lfn)
+    # create_name() in ff.c drops spaces when building the short name
+    name = name.replace(' ', '')
+    extension = extension.replace(' ', '')
     name_part = name[: MAX_NAME_SIZE - len(suffix)] + suffix
     padded_name = pad_string(content=name_part, size=MAX_NAME_SIZE)
     padded_ext = pad_string(extension[:MAX_EXT_SIZE], size=MAX_EXT_SIZE)
@@ -182,6 +190,31 @@ def split_to_name_and_extension(full_name: str) -> tuple[str, str]:
 
 def is_valid_fatfs_name(string: str) -> bool:
     return string == string.upper()
+
+
+def validate_fatfs_name(name: str, extension: str, long_names_enabled: bool) -> None:
+    """
+    Checks that the object name and extension contain only characters allowed by FAT
+    and that the full name fits into the long file name entries.
+
+    :raises InvalidNameException: if the name is not valid
+    """
+    full_name = f'{name}.{extension}' if extension else name
+    for part in (name, extension):
+        if INVALID_FATFS_CHARS_PATTERN.search(part):
+            raise InvalidNameException(
+                f'Name "{full_name}" contains a character not allowed in FAT file names '
+                '(control characters and \\ / : * ? " < > | are not allowed).'
+            )
+        if not long_names_enabled and (INVALID_SFN_CHARS_PATTERN.search(part) or ' ' in part):
+            raise InvalidNameException(
+                f'Name "{full_name}" contains a character not allowed in short (8.3) file names '
+                '(+ , ; = [ ] . and space are not allowed). Enable long file name support to use it.'
+            )
+    if long_names_enabled and len(full_name) > MAX_LFN_SIZE:
+        raise InvalidNameException(
+            f'Name "{full_name}" is {len(full_name)} characters long, the maximum is {MAX_LFN_SIZE} characters.'
+        )
 
 
 def split_by_half_byte_12_bit_little_endian(value: int) -> tuple[int, int, int]:

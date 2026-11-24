@@ -20,6 +20,7 @@ from fatfs_utils.boot_sector import BootSector  # noqa E402  # pylint: disable=C
 from fatfs_utils.cluster import Cluster  # noqa E402  # pylint: disable=C0413
 from fatfs_utils.entry import Entry  # noqa E402  # pylint: disable=C0413
 from fatfs_utils.exceptions import InconsistentFATAttributes  # noqa E402  # pylint: disable=C0413
+from fatfs_utils.exceptions import InvalidNameException  # noqa E402  # pylint: disable=C0413
 from fatfs_utils.exceptions import NotInitialized  # noqa E402  # pylint: disable=C0413
 from fatfs_utils.exceptions import TooLongNameException  # noqa E402  # pylint: disable=C0413
 from fatfs_utils.exceptions import WriteDirectoryException  # noqa E402  # pylint: disable=C0413
@@ -302,6 +303,57 @@ class FatFSGen(unittest.TestCase):
     def test_too_long_name_dir_short_names(self) -> None:
         fatfs = fatfsgen.FATFS(fat_tables_cnt=2)
         self.assertRaises(TooLongNameException, fatfs.create_directory, 'TOOLONGNAME')
+
+    def test_illegal_chars_short_names(self) -> None:
+        fatfs = fatfsgen.FATFS(fat_tables_cnt=2)
+        for name in ('A*B', 'A?B', 'A:B', 'A<B', 'A>B', 'A|B', 'A"B', 'A\\B', 'A/B', 'A\x01B', 'A+B', 'A;B', 'A B'):
+            self.assertRaises(InvalidNameException, fatfs.create_file, name)
+            self.assertRaises(InvalidNameException, fatfs.create_directory, name)
+        self.assertRaises(InvalidNameException, fatfs.create_file, 'FILE', extension='T*T')
+        self.assertRaises(InvalidNameException, fatfs.create_file, 'FILE', extension='T,T')
+
+    def test_illegal_chars_long_names(self) -> None:
+        fatfs = fatfsgen.FATFS(fat_tables_cnt=2, long_names_enabled=True)
+        for name in ('a*b', 'a?b', 'a:b', 'a<b', 'a>b', 'a|b', 'a"b', 'a\\b', 'a/b', 'a\x1fb', 'a\x7fb'):
+            self.assertRaises(InvalidNameException, fatfs.create_file, name)
+            self.assertRaises(InvalidNameException, fatfs.create_directory, name)
+        self.assertRaises(InvalidNameException, fatfs.create_file, 'file', extension='t?t')
+
+    def test_legal_special_chars_long_names(self) -> None:
+        fatfs = fatfsgen.FATFS(fat_tables_cnt=2, long_names_enabled=True)
+        fatfs.create_file('a+b;c=d[e],f g', extension='txt')
+        fatfs.create_file('name.with.dots', extension='t+t')
+
+    def test_dotted_dir_short_names(self) -> None:
+        fatfs = fatfsgen.FATFS(fat_tables_cnt=2)
+        fatfs.create_directory('LOGS.OLD')
+        fatfs.create_file('A', extension='TXT', path_from_root=['LOGS.OLD'])
+        fatfs.write_filesystem(CFG['output_file'])
+        file_system = read_filesystem(CFG['output_file'])
+        self.assertEqual(file_system[0x3000:0x300C], b'LOGS    OLD\x10')
+
+    def test_space_in_short_name_uses_lfn(self) -> None:
+        fatfs = fatfsgen.FATFS(fat_tables_cnt=2, long_names_enabled=True)
+        fatfs.create_file('A B', extension='TXT')
+        fatfs.write_filesystem(CFG['output_file'])
+        file_system = read_filesystem(CFG['output_file'])
+        self.assertEqual(file_system[0x300B], 0x0F)  # first entry is the long name entry
+        self.assertEqual(file_system[0x3020:0x302B], b'AB~1    TXT')  # short entry without the space
+
+    def test_too_long_long_name(self) -> None:
+        fatfs = fatfsgen.FATFS(fat_tables_cnt=2, long_names_enabled=True)
+        fatfs.create_file('a' * 251, extension='txt')  # 255 characters in total
+        self.assertRaises(InvalidNameException, fatfs.create_file, 'b' * 252, extension='txt')
+        self.assertRaises(InvalidNameException, fatfs.create_directory, 'c' * 256)
+
+    def test_illegal_name_in_folder(self) -> None:
+        os.makedirs(os.path.join('test_dir', 'bad'))
+        with open(os.path.join('test_dir', 'bad', 'a*b.txt'), 'w') as f:
+            f.write('x')
+        fatfs = fatfsgen.FATFS(fat_tables_cnt=2, long_names_enabled=True)
+        with self.assertRaises(InvalidNameException) as ctx:
+            fatfs.generate(os.path.join('test_dir', 'bad'))
+        self.assertIn('a*b.txt', str(ctx.exception).lower())
 
     def test_fatfs16_detection(self) -> None:
         fatfs = fatfsgen.FATFS(fat_tables_cnt=2, size=16 * 1024 * 1024)

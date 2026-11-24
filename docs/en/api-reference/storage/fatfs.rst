@@ -180,6 +180,10 @@ For example:
 
     fatfs_create_spiflash_image(my_fatfs_partition my_folder FLASH_IN_PROJECT)
 
+The sector size of the generated image is set by :menuitem:`CONFIG_FATFS_SECTOR_SIZE`. Images with wear leveling support (``fatfs_create_spiflash_image``) can use 512 or 4096 bytes. Read-only images without wear leveling (``fatfs_create_rawflash_image``) can also use 1024 or 2048 bytes. FatFs can only mount an image whose sector size is not larger than the greater of 512 and :menuitem:`CONFIG_WL_SECTOR_SIZE`, so the 1024 and 2048 options are only available when :menuitem:`CONFIG_WL_SECTOR_SIZE` is 4096. For the same reason, a 4096-byte image cannot be mounted when :menuitem:`CONFIG_WL_SECTOR_SIZE` is 512.
+
+The generator stops with an error if a file or directory name in ``base_dir`` contains characters that FAT does not allow (control characters and ``\ / : * ? " < > |``), or if a long name is longer than 255 characters. Without long file name support (:menuitem:`CONFIG_FATFS_LONG_FILENAMES`), names must also fit the 8.3 format and must not contain ``+ , ; = [ ]`` or spaces, and only one dot is allowed (between the name and the extension). With long file name support, names that do not fit the 8.3 format or contain any of these characters are stored as long names.
+
 If you generate an image for an SD card, ESP-IDF does not currently provide a host-side flashing step to write that image directly to the card. Use other host tooling, such as ``dd``, to deploy the image.
 
 For an example project, see :example:`storage/fatfs/fatfsgen`.
@@ -478,7 +482,7 @@ Glossary
    * - VFS
      - Virtual File System, an abstraction layer provided by ESP-IDF that allows applications to access different underlying filesystems through unified POSIX and ``stdio.h`` interfaces.
    * - Logical Sector
-     - The logical block size presented to FatFs and the disk I/O layer. For wear-leveled SPI flash, this is the WL sector size. For read-only raw SPI flash partitions, this is the flash-sector size. For SD cards, it is typically 512 bytes.
+     - The logical block size presented to FatFs and the disk I/O layer. For wear-leveled SPI flash, this is the WL sector size. For read-only raw SPI flash partitions, this is the sector size of the image, set by :menuitem:`CONFIG_FATFS_SECTOR_SIZE` when the image is generated with ``fatfs_create_rawflash_image``. For SD cards, it is typically 512 bytes.
    * - WL Sector
      - The logical sector size exposed by the wear leveling layer to FatFs. Depending on ``CONFIG_WL_SECTOR_SIZE``, it is either 512 bytes or 4096 bytes.
    * - Flash Sector
