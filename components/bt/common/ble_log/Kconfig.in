@@ -216,7 +216,9 @@ if BLE_LOG_ENABLED
 
         config BLE_LOG_PRPH_USB_SERIAL_JTAG
             bool "Utilize USB Serial/JTAG as transport"
-            depends on SOC_USB_SERIAL_JTAG_SUPPORTED
+            depends on SOC_USB_SERIAL_JTAG_SUPPORTED && USJ_ENABLE_USB_SERIAL_JTAG
+            depends on !ESP_CONSOLE_USB_SERIAL_JTAG_ENABLED && !ESP_TRACE_TRANSPORT_USB_SERIAL_JTAG
+            depends on !OPENTHREAD_RCP_USB_SERIAL_JTAG
             select BLE_LOG_PRPH_COPY_FIFO
             help
                 Copy each sealed transport into the USB-Serial-JTAG driver
@@ -225,7 +227,24 @@ if BLE_LOG_ENABLED
                 64 bytes and is not configurable. The device stays the
                 ROM USB Serial/JTAG identity (VID 0x303A PID 0x1001).
                 The host opens that ACM port. It does not match PID
-                0x10B1. The default secondary console releases this port.
+                0x10B1.
+
+        if SOC_USB_SERIAL_JTAG_SUPPORTED
+            comment "USB Serial/JTAG unavailable: change primary console in ESP-STDIO"
+            depends on ESP_CONSOLE_USB_SERIAL_JTAG
+
+            comment "USB Serial/JTAG unavailable: select No secondary console in ESP-STDIO"
+            depends on ESP_CONSOLE_SECONDARY_USB_SERIAL_JTAG
+
+            comment "USB Serial/JTAG unavailable: change the ESP Trace transport"
+            depends on ESP_TRACE_TRANSPORT_USB_SERIAL_JTAG
+
+            comment "USB Serial/JTAG unavailable: change the OpenThread RCP transport"
+            depends on OPENTHREAD_RCP_USB_SERIAL_JTAG
+
+            comment "USB Serial/JTAG unavailable: enable the USB-Serial-JTAG Module"
+            depends on !USJ_ENABLE_USB_SERIAL_JTAG
+        endif
     endchoice
 
     if BLE_LOG_PRPH_COPY_FIFO
@@ -301,21 +320,6 @@ if BLE_LOG_ENABLED
     endif
 
     if BLE_LOG_PRPH_USB_SERIAL_JTAG
-        comment "USJ is the primary console: change ESP-STDIO > Channel for console output"
-            depends on ESP_CONSOLE_USB_SERIAL_JTAG
-
-        comment "USJ is the secondary console: choose No secondary console in ESP-STDIO"
-            depends on ESP_CONSOLE_SECONDARY_USB_SERIAL_JTAG
-
-        comment "USJ is used by ESP Trace: choose a different trace transport"
-            depends on ESP_TRACE_TRANSPORT_USB_SERIAL_JTAG
-
-        comment "USJ is used by OpenThread RCP: choose a different RCP transport"
-            depends on OPENTHREAD_RCP_USB_SERIAL_JTAG
-
-        comment "Enable the USB-Serial-JTAG Module in the USB Serial/JTAG driver configuration"
-            depends on !USJ_ENABLE_USB_SERIAL_JTAG
-
         config BLE_LOG_USJ_TX_BUFSIZE
             int "USB Serial/JTAG TX ring size (bytes)"
             range 2048 10240

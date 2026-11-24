@@ -18,18 +18,6 @@
 #include "esp_ipc.h"
 #endif
 
-#if CONFIG_ESP_CONSOLE_USB_SERIAL_JTAG
-#error "BLE Log USJ requires moving the primary console to another output in ESP-STDIO"
-#elif CONFIG_ESP_CONSOLE_SECONDARY_USB_SERIAL_JTAG
-#error "BLE Log USJ requires selecting No secondary console in ESP-STDIO"
-#elif CONFIG_ESP_TRACE_TRANSPORT_USB_SERIAL_JTAG
-#error "BLE Log USJ requires choosing another ESP Trace transport"
-#elif CONFIG_OPENTHREAD_RCP_USB_SERIAL_JTAG
-#error "BLE Log USJ requires choosing another OpenThread RCP transport"
-#elif !CONFIG_USJ_ENABLE_USB_SERIAL_JTAG
-#error "BLE Log USJ requires enabling the USB-Serial-JTAG Module"
-#endif
-
 #define BLE_LOG_USJ_RX_BUFSIZE   128
 #define BLE_LOG_USJ_WRITE_TICKS  0
 
