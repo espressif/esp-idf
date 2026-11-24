@@ -34,7 +34,7 @@ def _make_valid_project(path: Path) -> Path:
     """Write a minimal valid ESP-IDF CMakeLists.txt into *path*."""
     path.mkdir(parents=True, exist_ok=True)
     (path / 'CMakeLists.txt').write_text(
-        f'cmake_minimum_required(VERSION 3.16)\n{IDF_CMAKE_LINE}\nproject(hello_world)\n',
+        f'cmake_minimum_required(VERSION 3.22)\n{IDF_CMAKE_LINE}\nproject(hello_world)\n',
         encoding='utf-8',
     )
     return path
@@ -44,7 +44,7 @@ def _make_invalid_project(path: Path) -> Path:
     """Write a CMakeLists.txt that does NOT include the IDF line."""
     path.mkdir(parents=True, exist_ok=True)
     (path / 'CMakeLists.txt').write_text(
-        'cmake_minimum_required(VERSION 3.16)\nproject(plain_cmake)\n',
+        'cmake_minimum_required(VERSION 3.22)\nproject(plain_cmake)\n',
         encoding='utf-8',
     )
     return path
@@ -233,7 +233,7 @@ class TestIsValidProjectDir:
         path = tmp_path / 'spaced'
         path.mkdir()
         (path / 'CMakeLists.txt').write_text(
-            'cmake_minimum_required(VERSION 3.16)\n'
+            'cmake_minimum_required(VERSION 3.22)\n'
             'include( $ENV{IDF_PATH}/tools/cmake/project.cmake )\n'
             'project(hello_world)\n',
             encoding='utf-8',
@@ -247,7 +247,7 @@ class TestIsValidProjectDir:
         path = tmp_path / 'commented'
         path.mkdir()
         (path / 'CMakeLists.txt').write_text(
-            'cmake_minimum_required(VERSION 3.16)\n'
+            'cmake_minimum_required(VERSION 3.22)\n'
             '# include($ENV{IDF_PATH}/tools/cmake/project.cmake)\n'
             'project(hello_world)\n',
             encoding='utf-8',

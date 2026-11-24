@@ -1424,7 +1424,7 @@ my_ble_uart_project/
 
 **Root `CMakeLists.txt`** (shared `ble_uart` via `EXTRA_COMPONENT_DIRS`):
 ```cmake
-cmake_minimum_required(VERSION 3.16)
+cmake_minimum_required(VERSION 3.22)
 list(APPEND EXTRA_COMPONENT_DIRS "${CMAKE_CURRENT_LIST_DIR}/../path/to/common/ble_uart")
 include($ENV{IDF_PATH}/tools/cmake/project.cmake)
 project(my_ble_uart)

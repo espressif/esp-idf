@@ -78,6 +78,17 @@ repos:
           - cmakelint==1.4.1
         files: 'CMakeLists.txt$|\.cmake$'
         exclude: '\/third_party\/'
+      - id: check-cmake-min-version
+        name: Check CMake minimum version
+        entry: tools/ci/check_cmake_min_version.py
+        language: python
+        files: 'CMakeLists[^/]*\.txt$|\.cmake$'
+      - id: check-cmake-min-version-test
+        name: Test CMake minimum version check
+        entry: python -m unittest tools/ci/test_check_cmake_min_version.py
+        language: python
+        files: 'tools/ci/(test_)?check_cmake_min_version\.py$'
+        pass_filenames: false
       - id: check-codeowners
         name: Validate Codeowner File
         entry: tools/ci/check_codeowners.py ci-check
