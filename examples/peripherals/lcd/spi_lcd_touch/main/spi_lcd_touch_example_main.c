@@ -111,8 +111,6 @@ static void example_lvgl_flush_cb(lv_display_t *disp, const lv_area_t *area, uin
     int offsetx2 = area->x2;
     int offsety1 = area->y1;
     int offsety2 = area->y2;
-    // because SPI LCD is big-endian, we need to swap the RGB bytes order
-    lv_draw_sw_rgb565_swap(px_map, (offsetx2 + 1 - offsetx1) * (offsety2 + 1 - offsety1));
     // copy a buffer's content to a specific area of the display
     esp_lcd_panel_draw_bitmap(panel_handle, offsetx1, offsety1, offsetx2 + 1, offsety2 + 1, px_map);
 }
@@ -231,8 +229,8 @@ void app_main(void)
     lv_display_set_buffers(display, buf1, buf2, draw_buffer_sz, LV_DISPLAY_RENDER_MODE_PARTIAL);
     // associate the mipi panel handle to the display
     lv_display_set_user_data(display, panel_handle);
-    // set color depth
-    lv_display_set_color_format(display, LV_COLOR_FORMAT_RGB565);
+    // the LCD is big-endian, so let LVGL render RGB565 with swapped bytes
+    lv_display_set_color_format(display, LV_COLOR_FORMAT_RGB565_SWAPPED);
     // set the callback which can copy the rendered image to an area of the display
     lv_display_set_flush_cb(display, example_lvgl_flush_cb);
 
