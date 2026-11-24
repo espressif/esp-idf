@@ -330,7 +330,7 @@ test_nvs_gen_check:
     LC_ALL: C.UTF-8
   script:
     - cd ${IDF_PATH}/components/nvs_flash/nvs_partition_tool
-    - pytest_for_ut test_nvs_gen_check.py
+    - pytest_for_ut test_nvs_gen_check.py test_paths_with_spaces.py
 
 test_esp_rom:
   extends: .host_test_template
