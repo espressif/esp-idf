@@ -36,6 +36,19 @@ def test_cpu(dut: IdfDut) -> None:
 @idf_parametrize(
     'config,target',
     [
+        ('psram', 'esp32s3'),
+        ('psram', 'esp32p4'),
+    ],
+    indirect=['config', 'target'],
+)
+def test_cpu_psram(dut: IdfDut) -> None:
+    dut.run_all_single_board_cases(group='cpu_psram', timeout=120)
+
+
+@pytest.mark.generic
+@idf_parametrize(
+    'config,target',
+    [
         ('default', 'supported_targets'),
     ],
     indirect=['config', 'target'],

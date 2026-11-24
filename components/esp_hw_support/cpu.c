@@ -205,10 +205,8 @@ bool esp_cpu_compare_and_set(volatile uint32_t *addr, uint32_t compare_value, ui
         uint32_t intr_level;
         __asm__ __volatile__ ("rsil %0, " XTSTR(XCHAL_EXCM_LEVEL) "\n"
                               : "=r"(intr_level));
-        if (!xt_utils_compare_and_set(&external_ram_cas_lock, 0, 1)) {
-            // External RAM CAS lock already taken. Exit
-            ret = false;
-            goto exit;
+        while (!xt_utils_compare_and_set(&external_ram_cas_lock, 0, 1)) {
+            ;
         }
         // Now we compare and set the target address
         ret = (*addr == compare_value);
@@ -217,7 +215,6 @@ bool esp_cpu_compare_and_set(volatile uint32_t *addr, uint32_t compare_value, ui
         }
         // Release the external RAM CAS lock
         external_ram_cas_lock = 0;
-exit:
         // Re-enable interrupts
         __asm__ __volatile__ ("memw \n"
                               "wsr %0, ps\n"

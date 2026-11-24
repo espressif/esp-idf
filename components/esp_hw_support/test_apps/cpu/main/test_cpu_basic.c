@@ -12,6 +12,8 @@
 #include "unity.h"
 #include "soc/soc_caps.h"
 #include "esp_cpu.h"
+#include "esp_heap_caps.h"
+#include "esp_memory_utils.h"
 #include "esp_timer.h"
 #include "test_utils.h"
 
@@ -212,6 +214,79 @@ TEST_CASE("CPU basic: compare and set fails on mismatched value", "[cpu][cpu_bas
     TEST_ASSERT_FALSE(esp_cpu_compare_and_set(&value, 1, 3));
     TEST_ASSERT_EQUAL_UINT32(2, value);
 }
+
+#if CONFIG_SPIRAM && CONFIG_FREERTOS_NUMBER_OF_CORES > 1
+#define CAS_PSRAM_ITERATIONS 100000
+
+static volatile uint32_t *s_other_core_value;
+static volatile uint32_t s_other_core_failures;
+static volatile bool s_other_core_stop;
+
+static void cas_psram_task(void *arg)
+{
+    TaskHandle_t waiter = (TaskHandle_t)arg;
+
+    xTaskNotifyGive(waiter);
+    // Only this task writes *s_other_core_value, so every compare and set on *s_other_core_value must succeed
+    while (!s_other_core_stop) {
+        uint32_t value = *s_other_core_value;
+        if (!esp_cpu_compare_and_set(s_other_core_value, value, value + 1)) {
+            s_other_core_failures++;
+        }
+    }
+    xTaskNotifyGive(waiter);
+    vTaskSuspend(NULL);
+}
+
+/*
+ * Each core increments its own PSRAM variable with esp_cpu_compare_and_set() at the same time.
+ * Only one core writes each variable, so each call compares against the current value and must return true.
+ * On Xtensa targets, compare and set on PSRAM takes one lock for all PSRAM addresses, so the two cores
+ * contend for that lock. A call that returns false while the other core holds the lock counts as a failure.
+ */
+TEST_CASE("CPU PSRAM: compare and set succeeds while both cores use PSRAM", "[cpu][cpu_psram]")
+{
+    volatile uint32_t *psram_value = heap_caps_calloc(1, sizeof(uint32_t), MALLOC_CAP_SPIRAM);
+    s_other_core_value = heap_caps_calloc(1, sizeof(uint32_t), MALLOC_CAP_SPIRAM);
+    TEST_ASSERT_NOT_NULL(psram_value);
+    TEST_ASSERT_NOT_NULL(s_other_core_value);
+    TEST_ASSERT_TRUE(esp_ptr_external_ram((const void *)psram_value));
+    TEST_ASSERT_TRUE(esp_ptr_external_ram((const void *)s_other_core_value));
+
+    // Start the compare and set loop on the other core and wait for the loop to start
+    TaskHandle_t other_core_task = NULL;
+    s_other_core_failures = 0;
+    s_other_core_stop = false;
+    TEST_ASSERT_EQUAL(pdPASS, xTaskCreatePinnedToCore(cas_psram_task, "cas_psram", 2048, xTaskGetCurrentTaskHandle(),
+                                                      UNITY_FREERTOS_PRIORITY + 1, &other_core_task,
+                                                      !esp_cpu_get_core_id()));
+    TEST_ASSERT_NOT_EQUAL(0, ulTaskNotifyTake(pdTRUE, pdMS_TO_TICKS(1000)));
+
+    // Only this task writes *psram_value, so every compare and set on *psram_value must succeed
+    uint32_t failures = 0;
+    for (int i = 0; i < CAS_PSRAM_ITERATIONS; i++) {
+        uint32_t value = *psram_value;
+        if (!esp_cpu_compare_and_set(psram_value, value, value + 1)) {
+            failures++;
+        }
+    }
+
+    // Stop the loop on the other core and wait for the loop to end before freeing the PSRAM variables
+    s_other_core_stop = true;
+    TEST_ASSERT_NOT_EQUAL(0, ulTaskNotifyTake(pdTRUE, pdMS_TO_TICKS(1000)));
+    vTaskDelete(other_core_task);
+    uint32_t other_core_count = *s_other_core_value;
+    uint32_t count = *psram_value;
+    heap_caps_free((void *)s_other_core_value);
+    heap_caps_free((void *)psram_value);
+
+    // Both cores updated their PSRAM variables, and no call on either core returned false
+    TEST_ASSERT_EQUAL_UINT32(CAS_PSRAM_ITERATIONS, count);
+    TEST_ASSERT_EQUAL_UINT32(0, failures);
+    TEST_ASSERT_NOT_EQUAL(0, other_core_count);
+    TEST_ASSERT_EQUAL_UINT32(0, s_other_core_failures);
+}
+#endif // CONFIG_SPIRAM && CONFIG_FREERTOS_NUMBER_OF_CORES > 1
 
 TEST_CASE("CPU basic: thread pointer can be set and restored", "[cpu][cpu_basic]")
 {
