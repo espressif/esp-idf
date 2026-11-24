@@ -525,7 +525,7 @@ not restored on deinit: restoring it would resume stuffing the FIFO after
 the driver is gone. ROM paths that ignore `g_usb_print` (rare direct
 `usb_serial_device_tx_one_char` calls) cannot be silenced from IDF.
 
-C5, C6, and later USJ chips do not have that `g_usb_print` leak. Channel 2
+C6, H2, and later USJ chips do not have that `g_usb_print` leak. Channel 2
 is still uninstalled so `ets_printf` cannot use a leftover USB putc.
 
 ### Teardown
@@ -560,12 +560,16 @@ DevKitC-02 Type-C is USJ (GPIO18 D-, GPIO19 D+). UART0 is on the header
 pins. Third-party C3 boards often wire the only USB connector to a UART
 bridge and leave GPIO18/19 unconnected.
 
-### Resource occupancy (USJ, measured on a later branch)
+### Resource occupancy (USJ, measured on a later ESP-IDF release)
 
 Measured on `ble_log_usj_test` with `idf.py size-files` / `--archives`
 against `ble_log_usj_test.map`. Flash and static SRAM are link-map bytes.
 Heap rows are the buffers this path allocates at `ble_log_init`, not
 map `.bss`.
+
+These figures come from a later ESP-IDF release, on a USB Serial/JTAG chip
+that this release does not support. They are for reference only and are
+unmeasured on this release's targets.
 
 | Item | Flash | Static SRAM | Heap at init | Notes |
 | --- | --- | --- | --- | --- |
@@ -575,11 +579,14 @@ map `.bss`.
 | BLE Log COPY_FIFO (shared with TinyUSB CDC) | (in `ble_log_rt.c` / `ble_log_lbm_v2.c`) | | Dispatch task stack 1024 B (RISC-V; 2048 B on Xtensa); pool 8 x 640 B = 5120 B plus transport structs and the runtime queue | Same COPY_FIFO path as `CONFIG_BLE_LOG_PRPH_USB`. Not USJ-only. |
 
 CPU: 6.3% of one core (FreeRTOS IDLE delta) while the USJ driver was
-written at its drop-rate load on a USJ target @ 240 MHz. That measurement called
-`usb_serial_jtag_write_bytes` directly (`timeout` 0, whole 640-byte frame
-or none, TX ring 2048). It is not `ble_log_write_hex` occupancy. BLE Log
-uses the same write contract, so the driver portion of CPU is that figure;
-pool encode and dispatch sit on top. C6 is unmeasured. There is no DMA.
+written at its drop-rate load. That figure was measured on a later ESP-IDF
+release, on a USB Serial/JTAG chip running at 240 MHz that this release does
+not support. It is for reference only, and it is unmeasured on this release's
+targets. The measurement called `usb_serial_jtag_write_bytes` directly
+(`timeout` 0, whole 640-byte frame or none, TX ring 2048). It is not
+`ble_log_write_hex` occupancy. BLE Log uses the same write contract, so the
+driver portion of CPU is that figure; pool encode and dispatch sit on top.
+C6 is unmeasured. There is no DMA.
 
 ### Throughput
 
@@ -592,7 +599,7 @@ ring does not increase the link rate.
 | Signaling | USB 2.0 Full Speed, 12 Mbit/s | Datasheet. Not a delivered-byte rate. |
 | Hardware FIFO | 64 bytes TX and RX | `usb_serial_jtag.c` `USB_SER_JTAG_ENDP_SIZE`. |
 | FS bulk ceiling | 19 x 64 B/ms = 1.216 MB/s | USB spec inference. |
-| Driver drop rate | 750 KiB/s device, 726 KiB/s host | A USJ target @ 240 MHz, n=5, 3 s, host-paced ACM reader. Same write contract as BLE Log (`write_bytes` timeout 0, whole 640-byte frame or none, TX ring 2048). The measurement called the driver directly, not `ble_log_write_hex`. CPU occupancy 6.3% (FreeRTOS IDLE delta). No DMA. C6 is unmeasured. |
+| Driver drop rate | 750 KiB/s device, 726 KiB/s host | Measured on a later ESP-IDF release, on a USB Serial/JTAG chip at 240 MHz that this release does not support: reference only, unmeasured on this release's targets. n=5, 3 s, host-paced ACM reader. Same write contract as BLE Log (`write_bytes` timeout 0, whole 640-byte frame or none, TX ring 2048). The measurement called the driver directly, not `ble_log_write_hex`. CPU occupancy 6.3% (FreeRTOS IDLE delta). No DMA. C6 is unmeasured. |
 | Software ring default | 2048 bytes | Same knee as the TinyUSB CDC TX FIFO, and the USJ ring floor recorded above. |
 
 ## Validation apps
