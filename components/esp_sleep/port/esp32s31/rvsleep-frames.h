@@ -149,8 +149,6 @@ STRUCT_BEGIN
     STRUCT_FIELD (long, 4, RV_SLP_CTX_MSCRATCH,         mscratch)
     STRUCT_FIELD (long, 4, RV_SLP_CTX_MISA,             misa)
     STRUCT_FIELD (long, 4, RV_SLP_CTX_MTVT,             mtvt)           /* Machine mode vector interrupt base address register */
-    STRUCT_FIELD (long, 4, RV_SLP_CTX_MSCRATCHCSW,      mscratchcsw)    /* Machine mode multi-mode data backup register */
-    STRUCT_FIELD (long, 4, RV_SLP_CTX_MSCRATCHCSWL,     mscratchcswl)   /* Machine mode interrupt data backup register */
     STRUCT_FIELD (long, 4, RV_SLP_CTX_MXSTATUS,         mxstatus)       /* Extended status register */
     STRUCT_FIELD (long, 4, RV_SLP_CTX_MHCR,             mhcr)           /* Hardware control register */
     STRUCT_FIELD (long, 4, RV_SLP_CTX_MHINT,            mhint)          /* Implicit operation register */

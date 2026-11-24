@@ -63,8 +63,6 @@ FORCE_INLINE_ATTR void restore_mstatus(uint32_t mstatus_val)
 }
 
 #define CUSTOM_CSR_MTVT             (0x307)
-#define CUSTOM_CSR_MSCRATCHCSW      (0x348)
-#define CUSTOM_CSR_MSCRATCHCSWL     (0x349)
 #define CUSTOM_CSR_MXSTATUS         (0x7c0)
 #define CUSTOM_CSR_MHCR             (0x7c1)
 #define CUSTOM_CSR_MHINT            (0x7c5)
@@ -81,8 +79,6 @@ static IRAM_ATTR RvCoreNonCriticalSleepFrame * rv_core_noncritical_regs_save(voi
     frame->mscratch     = RV_READ_CSR(mscratch);
     frame->misa         = RV_READ_CSR(misa);
     frame->mtvt         = RV_READ_CSR(CUSTOM_CSR_MTVT);
-    frame->mscratchcsw  = RV_READ_CSR(CUSTOM_CSR_MSCRATCHCSW);
-    frame->mscratchcswl = RV_READ_CSR(CUSTOM_CSR_MSCRATCHCSWL);
     frame->mxstatus     = RV_READ_CSR(CUSTOM_CSR_MXSTATUS);
     frame->mhcr         = RV_READ_CSR(CUSTOM_CSR_MHCR);
     frame->mhint        = RV_READ_CSR(CUSTOM_CSR_MHINT);
@@ -113,8 +109,6 @@ static IRAM_ATTR void rv_core_noncritical_regs_restore(void)
     RV_WRITE_CSR(mscratch,                 frame->mscratch);
     RV_WRITE_CSR(misa,                     frame->misa);
     RV_WRITE_CSR(CUSTOM_CSR_MTVT,          frame->mtvt);
-    RV_WRITE_CSR(CUSTOM_CSR_MSCRATCHCSW,   frame->mscratchcsw);
-    RV_WRITE_CSR(CUSTOM_CSR_MSCRATCHCSWL,  frame->mscratchcswl);
     RV_WRITE_CSR(CUSTOM_CSR_MXSTATUS,      frame->mxstatus);
     RV_WRITE_CSR(CUSTOM_CSR_MHCR,          frame->mhcr);
     RV_WRITE_CSR(CUSTOM_CSR_MHINT,         frame->mhint);

@@ -148,8 +148,6 @@ STRUCT_END(RvCoreCriticalSleepFrame)
 STRUCT_BEGIN
     STRUCT_FIELD (long, 4, RV_SLP_CTX_MSCRATCH,         mscratch)
     STRUCT_FIELD (long, 4, RV_SLP_CTX_MISA,             misa)
-    STRUCT_FIELD (long, 4, RV_SLP_CTX_MSCRATCHCSW,      mscratchcsw)
-    STRUCT_FIELD (long, 4, RV_SLP_CTX_MSCRATCHCSW1,     mscratchcsw1)
     STRUCT_FIELD (long, 4, RV_SLP_CTX_MCYCLEH,          mcycleh)
     STRUCT_FIELD (long, 4, RV_SLP_CTX_MINSTRET,         minstret)
     STRUCT_FIELD (long, 4, RV_SLP_CTX_MINSTRETH,        minstreth)
