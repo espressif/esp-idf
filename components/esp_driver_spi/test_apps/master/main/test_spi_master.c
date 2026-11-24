@@ -1003,8 +1003,14 @@ TEST_CASE("SPI Master DMA manually unaligned RX test", "[spi]")
     spi_device_interface_config_t devcfg = SPI_DEVICE_TEST_DEFAULT_CONFIG();
     TEST_ESP_OK(spi_bus_add_device(TEST_SPI_HOST, &devcfg, &dev0));
 
-    WORD_ALIGNED_ATTR uint8_t tx_data[8] = {0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88};
-    WORD_ALIGNED_ATTR uint8_t rx_data[8] = {0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA};
+    // With SPI_TRANS_DMA_BUFFER_ALIGN_MANUAL the driver uses the buffers directly, so they must be DMA capable.
+    uint8_t *tx_data = heap_caps_malloc(8, MALLOC_CAP_DMA);
+    uint8_t *rx_data = heap_caps_malloc(8, MALLOC_CAP_DMA);
+    TEST_ASSERT_NOT_NULL(tx_data);
+    TEST_ASSERT_NOT_NULL(rx_data);
+    const uint8_t tx_pattern[8] = {0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88};
+    memcpy(tx_data, tx_pattern, sizeof(tx_pattern));
+    memset(rx_data, 0xAA, 8);
     spi_transaction_t trans_cfg = {
         .tx_buffer        = tx_data,
         .rx_buffer        = rx_data,
@@ -1020,6 +1026,8 @@ TEST_CASE("SPI Master DMA manually unaligned RX test", "[spi]")
 
     TEST_ESP_OK(spi_bus_remove_device(dev0));
     TEST_ESP_OK(spi_bus_free(TEST_SPI_HOST));
+    free(tx_data);
+    free(rx_data);
 }
 #endif
 

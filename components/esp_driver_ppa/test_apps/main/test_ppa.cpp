@@ -28,6 +28,14 @@
 #include "esp_private/esp_pmu.h"
 #include "esp_macros.h"
 
+// Allocate a zeroed, DMA capable buffer (the heap aligns it to the cache line where needed)
+static void *ppa_test_dma_buf_calloc(size_t size)
+{
+    void *buf = heap_caps_calloc(1, size, MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT | MALLOC_CAP_DMA);
+    TEST_ASSERT_NOT_NULL(buf);
+    return buf;
+}
+
 TEST_CASE("ppa_client_do_ppa_operation", "[PPA]")
 {
     const uint32_t w = 480;
@@ -277,7 +285,7 @@ static void ppa_srm_basic_data_correctness_check(bool auto_light_sleep)
     uint8_t *out_buf = static_cast<uint8_t *>(heap_caps_aligned_calloc(4, out_buf_size, sizeof(uint8_t), MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT | MALLOC_CAP_DMA)); // located in internal RAM so even w/ flash encrypted, it won't be affected
     TEST_ASSERT_NOT_NULL(out_buf);
     esp_cache_msync((void *)out_buf, out_buf_size, ESP_CACHE_MSYNC_FLAG_DIR_C2M);
-    const uint16_t in_buf[16] = {
+    const uint16_t in_buf_data[16] = {
         0xFFFF,      0xFFFF, 0xFFFF, 0xFFFF,
         //      /*******************************/
         0xFFFF, /**/ 0x8080, 0x8080, 0x8080, /**/
@@ -294,6 +302,8 @@ static void ppa_srm_basic_data_correctness_check(bool auto_light_sleep)
         //      /*******************************/
         0x0000,      0x0000, 0x0000, 0x0000
     };
+    uint16_t *in_buf = static_cast<uint16_t *>(ppa_test_dma_buf_calloc(sizeof(in_buf_data)));
+    memcpy(in_buf, in_buf_data, sizeof(in_buf_data));
 
 #if CONFIG_PM_ENABLE
     enable_pm_strategy(auto_light_sleep);
@@ -412,6 +422,7 @@ static void ppa_srm_basic_data_correctness_check(bool auto_light_sleep)
     enable_pm_strategy(false);
 #endif
 
+    free(in_buf);
     free(out_buf);
 }
 
@@ -447,7 +458,7 @@ static void ppa_blend_basic_data_correctness_check(bool auto_light_sleep)
     // Alpha of BG will be scaled by 0.8
     // Alpha of FG will be inverted
     const float bg_alpha_scale_ratio = 0.8;
-    const uint8_t in_bg_buf[12] = {
+    const uint8_t in_bg_buf_data[12] = {
         0xFF, 0xFF, 0xFF,      0xFF, 0xFF, 0xFF,
         //                /*************************/
         0xFF, 0xFF, 0xFF, /**/ 0x80, 0x40, 0xA0, /**/
@@ -466,6 +477,8 @@ static void ppa_blend_basic_data_correctness_check(bool auto_light_sleep)
     memcpy(in_fg_buf, in_fg_buf_template, 64);
     esp_cache_msync((void *)in_fg_buf, 64, ESP_CACHE_MSYNC_FLAG_DIR_C2M);
     uint8_t *out_buf = in_fg_buf;
+    uint8_t *in_bg_buf = static_cast<uint8_t *>(ppa_test_dma_buf_calloc(sizeof(in_bg_buf_data)));
+    memcpy(in_bg_buf, in_bg_buf_data, sizeof(in_bg_buf_data));
     // Expected blend output
     // Alpha Blending calculation:
     // A_bg' = (255 * 0.8) / 255 = 0.8, A_fg' = (255 - 0xC0) / 255 = 0.247
@@ -579,15 +592,15 @@ static void ppa_blend_basic_data_correctness_check(bool auto_light_sleep)
 
     // RGB888 mid-grey background (12B) and ARGB8888 foreground (16B). The foreground alpha is
     // inverted to 0, so it contributes nothing and the blend output equals the background color.
-    uint8_t rgb_grey[12];
-    memset(rgb_grey, grey, sizeof(rgb_grey));
-    uint8_t fg_buf[16];
-    memset(fg_buf, 0xFF, sizeof(fg_buf));
+    uint8_t *rgb_grey = static_cast<uint8_t *>(ppa_test_dma_buf_calloc(12));
+    memset(rgb_grey, grey, 12);
+    uint8_t *fg_buf = static_cast<uint8_t *>(ppa_test_dma_buf_calloc(16));
+    memset(fg_buf, 0xFF, 16);
     // DMA outputs require cache-line alignment; yuv_mid is also reused as input for the YUV->RGB pass.
-    uint8_t yuv_mid[64] __attribute__((aligned(64))) = {};
-    uint8_t rgb_back[64] __attribute__((aligned(64)));
-    memset(rgb_back, 0xCC, sizeof(rgb_back));
-    const uint32_t yuv_buf_size = sizeof(yuv_mid);
+    const uint32_t yuv_buf_size = 64;
+    uint8_t *yuv_mid = static_cast<uint8_t *>(ppa_test_dma_buf_calloc(yuv_buf_size));
+    uint8_t *rgb_back = static_cast<uint8_t *>(ppa_test_dma_buf_calloc(64));
+    memset(rgb_back, 0xCC, 64);
 
     const ppa_blend_color_mode_t yuv_cms[] = {
         PPA_BLEND_COLOR_MODE_YUV422_UYVY,
@@ -642,6 +655,10 @@ static void ppa_blend_basic_data_correctness_check(bool auto_light_sleep)
             TEST_ASSERT_INT_WITHIN(16, grey, b); // round-trips back to ~mid-grey
         }
     }
+    free(rgb_grey);
+    free(fg_buf);
+    free(yuv_mid);
+    free(rgb_back);
 #endif // !(CONFIG_IDF_TARGET_ESP32P4 && CONFIG_ESP32P4_SELECTS_REV_LESS_V3)
 
     TEST_ESP_OK(ppa_unregister_client(ppa_client_handle));
@@ -651,6 +668,7 @@ static void ppa_blend_basic_data_correctness_check(bool auto_light_sleep)
 #endif
 
     free(in_fg_buf);
+    free(in_bg_buf);
 }
 
 TEST_CASE("ppa_blend_basic_data_correctness_check", "[PPA]")
@@ -701,16 +719,17 @@ TEST_CASE("ppa_blend_clut_data_correctness_check", "[PPA]")
     TEST_ESP_ERR(ESP_ERR_INVALID_ARG, ppa_set_color_lookup_table((ppa_clut_id_t)0xFF, bg_palette, 4));
 
     // DMA output requires cache line alignment, and the index buffers are reused as DMA input
-    uint8_t l8_buf[64] __attribute__((aligned(64))) = {};
-    uint8_t l4_buf[64] __attribute__((aligned(64))) = {};
-    uint8_t argb_buf[64] __attribute__((aligned(64)));
-    uint8_t rgb_buf[64] __attribute__((aligned(64)));
-    uint8_t out_buf[64] __attribute__((aligned(64)));
+    const size_t buf_size = 64;
+    uint8_t *l8_buf = static_cast<uint8_t *>(ppa_test_dma_buf_calloc(buf_size));
+    uint8_t *l4_buf = static_cast<uint8_t *>(ppa_test_dma_buf_calloc(buf_size));
+    uint8_t *argb_buf = static_cast<uint8_t *>(ppa_test_dma_buf_calloc(buf_size));
+    uint8_t *rgb_buf = static_cast<uint8_t *>(ppa_test_dma_buf_calloc(buf_size));
+    uint8_t *out_buf = static_cast<uint8_t *>(ppa_test_dma_buf_calloc(buf_size));
     uint8_t out_buf_expected[48]; // 16 RGB888 pixels
-    memset(argb_buf, 0xFF, sizeof(argb_buf)); // opaque white
-    memset(rgb_buf, 0x5A, sizeof(rgb_buf));
-    memset(out_buf, 0xCC, sizeof(out_buf));
-    esp_cache_msync((void *)out_buf, sizeof(out_buf), ESP_CACHE_MSYNC_FLAG_DIR_C2M);
+    memset(argb_buf, 0xFF, buf_size); // opaque white
+    memset(rgb_buf, 0x5A, buf_size);
+    memset(out_buf, 0xCC, buf_size);
+    esp_cache_msync((void *)out_buf, buf_size, ESP_CACHE_MSYNC_FLAG_DIR_C2M);
 
     ppa_blend_oper_config_t oper_config = {};
     oper_config.in_bg.pic_w = w;
@@ -722,7 +741,7 @@ TEST_CASE("ppa_blend_clut_data_correctness_check", "[PPA]")
     oper_config.in_fg.block_w = w;
     oper_config.in_fg.block_h = h;
     oper_config.out.buffer = out_buf;
-    oper_config.out.buffer_size = sizeof(out_buf);
+    oper_config.out.buffer_size = buf_size;
     oper_config.out.pic_w = w;
     oper_config.out.pic_h = h;
     oper_config.out.blend_cm = PPA_BLEND_COLOR_MODE_RGB888;
@@ -755,8 +774,8 @@ TEST_CASE("ppa_blend_clut_data_correctness_check", "[PPA]")
     TEST_ASSERT_EQUAL_UINT8_ARRAY((void *)out_buf_expected, (void *)out_buf, sizeof(out_buf_expected));
 
     // Clear output buffer
-    memset(out_buf, 0xCC, sizeof(out_buf));
-    esp_cache_msync((void *)out_buf, sizeof(out_buf), ESP_CACHE_MSYNC_FLAG_DIR_C2M);
+    memset(out_buf, 0xCC, buf_size);
+    esp_cache_msync((void *)out_buf, buf_size, ESP_CACHE_MSYNC_FLAG_DIR_C2M);
 
     // L4: two indices per byte. Both nibbles hold the same index, so the expected result does
     // not depend on which nibble the hardware treats as the first pixel.
@@ -776,8 +795,8 @@ TEST_CASE("ppa_blend_clut_data_correctness_check", "[PPA]")
     TEST_ASSERT_EQUAL_UINT8_ARRAY((void *)out_buf_expected, (void *)out_buf, sizeof(out_buf_expected));
 
     // Clear output buffer
-    memset(out_buf, 0xCC, sizeof(out_buf));
-    esp_cache_msync((void *)out_buf, sizeof(out_buf), ESP_CACHE_MSYNC_FLAG_DIR_C2M);
+    memset(out_buf, 0xCC, buf_size);
+    esp_cache_msync((void *)out_buf, buf_size, ESP_CACHE_MSYNC_FLAG_DIR_C2M);
 
     // Now put the indexed picture on the foreground instead. Its palette is fully opaque, so the
     // alpha blending formula collapses to the foreground color and the background is fully covered.
@@ -800,8 +819,8 @@ TEST_CASE("ppa_blend_clut_data_correctness_check", "[PPA]")
     TEST_ASSERT_EQUAL_UINT8_ARRAY((void *)out_buf_expected, (void *)out_buf, sizeof(out_buf_expected));
 
     // Clear output buffer
-    memset(out_buf, 0xCC, sizeof(out_buf));
-    esp_cache_msync((void *)out_buf, sizeof(out_buf), ESP_CACHE_MSYNC_FLAG_DIR_C2M);
+    memset(out_buf, 0xCC, buf_size);
+    esp_cache_msync((void *)out_buf, buf_size, ESP_CACHE_MSYNC_FLAG_DIR_C2M);
 
     // Overwriting a CLUT that is already in use takes effect on the following transaction
     color_pixel_argb8888_data_t fg_palette_new[4] = {};
@@ -821,8 +840,8 @@ TEST_CASE("ppa_blend_clut_data_correctness_check", "[PPA]")
     TEST_ASSERT_EQUAL_UINT8_ARRAY((void *)out_buf_expected, (void *)out_buf, sizeof(out_buf_expected));
 
     // Clear output buffer
-    memset(out_buf, 0xCC, sizeof(out_buf));
-    esp_cache_msync((void *)out_buf, sizeof(out_buf), ESP_CACHE_MSYNC_FLAG_DIR_C2M);
+    memset(out_buf, 0xCC, buf_size);
+    esp_cache_msync((void *)out_buf, buf_size, ESP_CACHE_MSYNC_FLAG_DIR_C2M);
 
     // A call replaces the whole table, so the entries a longer table wrote earlier do not survive a
     // shorter one. Index 200 is only covered by the long palette, and reads back as zero afterwards.
@@ -832,8 +851,8 @@ TEST_CASE("ppa_blend_clut_data_correctness_check", "[PPA]")
     }
     TEST_ESP_OK(ppa_set_color_lookup_table(PPA_CLUT_BLEND_BG, long_palette, 256));
     TEST_ESP_OK(ppa_set_color_lookup_table(PPA_CLUT_BLEND_BG, bg_palette, 4));
-    memset(l8_buf, 200, sizeof(l8_buf));
-    esp_cache_msync((void *)l8_buf, sizeof(l8_buf), ESP_CACHE_MSYNC_FLAG_DIR_C2M);
+    memset(l8_buf, 200, buf_size);
+    esp_cache_msync((void *)l8_buf, buf_size, ESP_CACHE_MSYNC_FLAG_DIR_C2M);
     oper_config.in_bg.buffer = l8_buf;
     oper_config.in_bg.blend_cm = PPA_BLEND_COLOR_MODE_L8;
     oper_config.in_fg.buffer = argb_buf;
@@ -858,15 +877,15 @@ TEST_CASE("ppa_blend_clut_data_correctness_check", "[PPA]")
     TEST_ESP_ERR(ESP_ERR_INVALID_STATE, ppa_do_blend(ppa_client_handle, &oper_config));
 
     // Clear output buffer
-    memset(out_buf, 0xCC, sizeof(out_buf));
-    esp_cache_msync((void *)out_buf, sizeof(out_buf), ESP_CACHE_MSYNC_FLAG_DIR_C2M);
+    memset(out_buf, 0xCC, buf_size);
+    esp_cache_msync((void *)out_buf, buf_size, ESP_CACHE_MSYNC_FLAG_DIR_C2M);
 
     // The two CLUTs are disabled independently, so the background one still expands correctly. This
     // also proves the shared clock gate and power switch were not turned off while it is still in use.
     for (uint32_t p = 0; p < num_pixels; p++) {
         l8_buf[p] = (uint8_t)(p % 4);
     }
-    esp_cache_msync((void *)l8_buf, sizeof(l8_buf), ESP_CACHE_MSYNC_FLAG_DIR_C2M);
+    esp_cache_msync((void *)l8_buf, buf_size, ESP_CACHE_MSYNC_FLAG_DIR_C2M);
     oper_config.in_bg.buffer = l8_buf;
     oper_config.in_bg.blend_cm = PPA_BLEND_COLOR_MODE_L8;
     oper_config.in_fg.buffer = argb_buf;
@@ -885,6 +904,11 @@ TEST_CASE("ppa_blend_clut_data_correctness_check", "[PPA]")
     TEST_ESP_ERR(ESP_ERR_INVALID_STATE, ppa_do_blend(ppa_client_handle, &oper_config));
 
     TEST_ESP_OK(ppa_unregister_client(ppa_client_handle));
+    free(l8_buf);
+    free(l4_buf);
+    free(argb_buf);
+    free(rgb_buf);
+    free(out_buf);
 }
 
 static void ppa_fill_basic_data_correctness_check(bool auto_light_sleep)

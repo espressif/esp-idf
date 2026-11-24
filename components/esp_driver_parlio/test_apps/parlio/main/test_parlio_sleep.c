@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -59,7 +59,8 @@ static void test_parlio_sleep_retention(bool allow_pd)
     parlio_transmit_config_t transmit_config = {
         .idle_value = 0x00,
     };
-    uint8_t tx_payload[TEST_PAYLOAD_SIZE] = {0};
+    uint8_t *tx_payload = test_parlio_alloc_dma_buffer(TEST_PAYLOAD_SIZE);
+    TEST_ASSERT_NOT_NULL(tx_payload);
     for (int i = 0; i < TEST_PAYLOAD_SIZE; i++) {
         tx_payload[i] = i;
     }
@@ -114,7 +115,8 @@ static void test_parlio_sleep_retention(bool allow_pd)
         .delimiter = deli,
         .flags.partial_rx_en = false,
     };
-    __attribute__((aligned(TEST_PAYLOAD_SIZE))) uint8_t rx_payload[TEST_PAYLOAD_SIZE] = {0};
+    uint8_t *rx_payload = test_parlio_alloc_dma_buffer(TEST_PAYLOAD_SIZE);
+    TEST_ASSERT_NOT_NULL(rx_payload);
 
     // go to sleep
     esp_sleep_context_t sleep_ctx;
@@ -157,6 +159,8 @@ static void test_parlio_sleep_retention(bool allow_pd)
     TEST_ESP_OK(parlio_rx_unit_disable(rx_unit));
     TEST_ESP_OK(parlio_del_rx_delimiter(deli));
     TEST_ESP_OK(parlio_del_rx_unit(rx_unit));
+    free(tx_payload);
+    free(rx_payload);
 }
 
 TEST_CASE("parlio light sleep", "[parlio]")

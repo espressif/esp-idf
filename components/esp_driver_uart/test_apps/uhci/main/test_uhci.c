@@ -265,7 +265,8 @@ TEST_CASE("UHCI write and receive with idle eof", "[uhci]")
     void *args[] = { uhci_ctrl, exit_sema, &trans_count };
     xTaskCreate(uhci_receive_test, "uhci_receive_test", 4096 * 2, args, 5, NULL);
 
-    uint8_t data_wr[DATA_LENGTH];
+    uint8_t *data_wr = heap_caps_malloc(DATA_LENGTH, MALLOC_CAP_DMA | MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT);
+    TEST_ASSERT_NOT_NULL(data_wr);
     for (int i = 0; i < DATA_LENGTH; i++) {
         data_wr[i] = i;
     }
@@ -278,6 +279,7 @@ TEST_CASE("UHCI write and receive with idle eof", "[uhci]")
     vTaskDelay(2);
     TEST_ESP_OK(uhci_del_controller(uhci_ctrl));
     vSemaphoreDelete(exit_sema);
+    free(data_wr);
 }
 
 TEST_CASE("UHCI write and receive with length eof", "[uhci]")
@@ -316,7 +318,8 @@ TEST_CASE("UHCI write and receive with length eof", "[uhci]")
     void *args[] = { uhci_ctrl, exit_sema, &trans_count };
     xTaskCreate(uhci_receive_test, "uhci_receive_test", 4096 * 2, args, 5, NULL);
 
-    uint8_t data_wr[DATA_LENGTH];
+    uint8_t *data_wr = heap_caps_malloc(DATA_LENGTH, MALLOC_CAP_DMA | MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT);
+    TEST_ASSERT_NOT_NULL(data_wr);
     for (int i = 0; i < DATA_LENGTH; i++) {
         data_wr[i] = i;
     }
@@ -326,6 +329,7 @@ TEST_CASE("UHCI write and receive with length eof", "[uhci]")
     vTaskDelay(2);
     TEST_ESP_OK(uhci_del_controller(uhci_ctrl));
     vSemaphoreDelete(exit_sema);
+    free(data_wr);
 }
 
 static void uhci_fill_pattern(uint8_t *buf, size_t len, uint8_t start)
@@ -456,7 +460,8 @@ TEST_CASE("UHCI re-arm receive from ISR callback", "[uhci]")
     // Give the receiver task time to arm the first buffer before transmitting.
     vTaskDelay(100 / portTICK_PERIOD_MS);
 
-    uint8_t data_wr[REARM_BURST_SIZE];
+    uint8_t *data_wr = heap_caps_malloc(REARM_BURST_SIZE, MALLOC_CAP_DMA | MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT);
+    TEST_ASSERT_NOT_NULL(data_wr);
     for (int i = 0; i < REARM_BURST_SIZE; i++) {
         data_wr[i] = i;
     }
@@ -473,6 +478,7 @@ TEST_CASE("UHCI re-arm receive from ISR callback", "[uhci]")
     vTaskDelay(2);
     TEST_ESP_OK(uhci_del_controller(uhci_ctrl));
     vSemaphoreDelete(exit_sema);
+    free(data_wr);
 }
 
 // ---------------------------------------------------------------------------
@@ -560,7 +566,8 @@ TEST_CASE("UHCI continuous receive keeps DMA running across frames", "[uhci]")
     // Arm continuous reception ONCE. Note: no uhci_receive() call between frames below.
     TEST_ESP_OK(uhci_start_receive_continuous(uhci_ctrl, ring, DATA_LENGTH));
 
-    uint8_t data_wr[CONT_BURST_SIZE];
+    uint8_t *data_wr = heap_caps_malloc(CONT_BURST_SIZE, MALLOC_CAP_DMA | MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT);
+    TEST_ASSERT_NOT_NULL(data_wr);
     for (int i = 0; i < CONT_BURST_COUNT; i++) {
         // Distinct content per frame so we can verify ordering and correctness.
         for (int j = 0; j < CONT_BURST_SIZE; j++) {
@@ -587,6 +594,7 @@ TEST_CASE("UHCI continuous receive keeps DMA running across frames", "[uhci]")
     free(ring);
     free(ctx.reasm);
     vQueueDelete(ctx.done_queue);
+    free(data_wr);
 }
 
 TEST_CASE("UHCI single buffer and multi buffer transmit interleaved", "[uhci]")
@@ -622,7 +630,8 @@ TEST_CASE("UHCI single buffer and multi buffer transmit interleaved", "[uhci]")
     void *args[] = { uhci_ctrl, exit_sema, &trans_count };
     xTaskCreate(uhci_receive_test, "uhci_receive_test", 4096 * 2, args, 5, NULL);
 
-    uint8_t data_wr[DATA_LENGTH];
+    uint8_t *data_wr = heap_caps_malloc(DATA_LENGTH, MALLOC_CAP_DMA | MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT);
+    TEST_ASSERT_NOT_NULL(data_wr);
     for (int i = 0; i < DATA_LENGTH; i++) {
         data_wr[i] = i;
     }
@@ -686,6 +695,7 @@ TEST_CASE("UHCI single buffer and multi buffer transmit interleaved", "[uhci]")
     vTaskDelay(2);
     TEST_ESP_OK(uhci_del_controller(uhci_ctrl));
     vSemaphoreDelete(exit_sema);
+    free(data_wr);
 }
 
 #if CONFIG_SPIRAM

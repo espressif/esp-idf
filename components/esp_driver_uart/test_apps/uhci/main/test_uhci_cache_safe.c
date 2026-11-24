@@ -102,7 +102,8 @@ TEST_CASE("UHCI receive from ISR works with cache disabled", "[uhci]")
     };
     TEST_ESP_OK(uhci_register_event_callbacks(uhci_ctrl, &uhci_cbs, &ctx));
 
-    uint8_t data_wr[CACHE_SAFE_BURST_SIZE];
+    uint8_t *data_wr = heap_caps_malloc(CACHE_SAFE_BURST_SIZE, MALLOC_CAP_DMA | MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT);
+    TEST_ASSERT_NOT_NULL(data_wr);
     for (int i = 0; i < CACHE_SAFE_BURST_SIZE; i++) {
         data_wr[i] = i;
     }
@@ -134,4 +135,5 @@ TEST_CASE("UHCI receive from ISR works with cache disabled", "[uhci]")
     for (int i = 0; i < 2; i++) {
         free(ctx.bufs[i]);
     }
+    free(data_wr);
 }

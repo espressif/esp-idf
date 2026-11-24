@@ -62,7 +62,7 @@ static void perform_ota_update(uhci_controller_handle_t uhci_ctrl, ota_rx_contex
 
     // Storage buffer for continuous reception. The driver splits it across the DMA nodes and uses it
     // as a ring, so the OTA image can be much larger than the buffer itself.
-    uint8_t *pdata = heap_caps_calloc(1, UART_DMA_OTA_BUFFER_SIZE, MALLOC_CAP_DEFAULT);
+    uint8_t *pdata = heap_caps_calloc(1, UART_DMA_OTA_BUFFER_SIZE, MALLOC_CAP_DMA);
     assert(pdata);
     ESP_ERROR_CHECK(uhci_start_receive_continuous(uhci_ctrl, pdata, UART_DMA_OTA_BUFFER_SIZE));
 

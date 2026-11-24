@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -219,8 +219,12 @@ TEST_CASE("BitScrambler loads partial LUT from unaligned buffer", "[bs]")
 
 TEST_CASE("BitScrambler with loop instruction", "[bs]")
 {
-    uint8_t data_in[] = {0x00, 0xFF, 0x55};
-    size_t len = sizeof(data_in) / sizeof(data_in[0]) * 64;
+    const uint8_t data_in_pattern[] = {0x00, 0xFF, 0x55};
+    const size_t data_in_len = sizeof(data_in_pattern);
+    uint8_t *data_in = heap_caps_aligned_calloc(8, 1, data_in_len, MALLOC_CAP_DMA | MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT);
+    TEST_ASSERT_NOT_NULL(data_in);
+    memcpy(data_in, data_in_pattern, data_in_len);
+    size_t len = data_in_len * 64;
     uint32_t *data_out = heap_caps_aligned_calloc(8, 1, len, MALLOC_CAP_DMA | MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT);
     TEST_ASSERT_NOT_NULL(data_out);
 
@@ -228,11 +232,11 @@ TEST_CASE("BitScrambler with loop instruction", "[bs]")
     TEST_ESP_OK(bitscrambler_loopback_create(&bs, SOC_BITSCRAMBLER_ATTACH_GPSPI2, len));
     TEST_ESP_OK(bitscrambler_load_program(bs, bitscrambler_program_loop));
     size_t res_len = 0;
-    TEST_ESP_OK(bitscrambler_loopback_run(bs, data_in, sizeof(data_in) / sizeof(data_in[0]), data_out, len, &res_len));
+    TEST_ESP_OK(bitscrambler_loopback_run(bs, data_in, data_in_len, data_out, len, &res_len));
     bitscrambler_free(bs);
 
-    printf("BitScrambler program complete. Input %zu, output %zu bytes:\n", sizeof(data_in) / sizeof(data_in[0]), res_len);
-    TEST_ASSERT_EQUAL(sizeof(data_in) / sizeof(data_in[0]) * 32 + 4, res_len);
+    printf("BitScrambler program complete. Input %zu, output %zu bytes:\n", data_in_len, res_len);
+    TEST_ASSERT_EQUAL(data_in_len * 32 + 4, res_len);
     printf("%08lX\r\n", data_out[0]); // reset code
     TEST_ASSERT_EQUAL(0x00F000F0, data_out[0]);
     // encoding result for 0x00
@@ -258,5 +262,6 @@ TEST_CASE("BitScrambler with loop instruction", "[bs]")
     }
     printf("\n");
 
+    free(data_in);
     free(data_out);
 }
