@@ -1176,12 +1176,30 @@ static esp_err_t SLEEP_FN_ATTR esp_sleep_start(uint32_t sleep_flags, esp_sleep_m
     }
 #endif
     // Restore CPU frequency (Will fallback to rtc_clk_cpu_freq_set_config if PLL source is not configured.)
-    rtc_clk_cpu_freq_set_config_fast(&cpu_freq_config);
 #if SOC_PM_SUPPORT_PMU_MODEM_STATE && !SOC_PM_BBPLL_PD_IN_MODEM_STATE
     if (pmu_sleep_pll_already_enabled()) {
-        rtc_clk_modem_pll_lock_release();
-    }
+        /* While the lock is held the PMU forces the HP_ROOT mux, so the PCR dividers
+         * written here take effect on that forced root, which may differ from the root
+         * the restored dividers were computed for. The order below must therefore follow
+         * the root the dividers belong to. */
+        const uint32_t xtal_freq_mhz = (uint32_t)rtc_clk_xtal_freq_get();
+        if (cpu_freq_config.source_freq_mhz <= xtal_freq_mhz) {
+            /* Low frequency sources AHB divider value are typically 1, set while the PLL root is forced would
+             * overclock the bus, and on a forced XTAL root they would simply not be in effect yet. Release first. */
+            rtc_clk_modem_state_mux_lock_release();
+            rtc_clk_cpu_freq_set_config_fast(&cpu_freq_config);
+        } else {
+            /* PLL dividers match the root currently forced, so program them before
+             * releasing; the reverse order would run the PLL root with the non-PLL
+             * dividers. On an XTAL-forced target this only under-clocks the bus. */
+            rtc_clk_cpu_freq_set_config_fast(&cpu_freq_config);
+            rtc_clk_modem_state_mux_lock_release();
+        }
+    } else
 #endif
+    {
+        rtc_clk_cpu_freq_set_config_fast(&cpu_freq_config);
+    }
     esp_sleep_execute_event_callbacks(SLEEP_EVENT_SW_CLK_READY, (void *)0);
 
     if (!deep_sleep) {

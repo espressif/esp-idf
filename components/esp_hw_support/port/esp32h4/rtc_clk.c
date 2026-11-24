@@ -451,7 +451,7 @@ void rtc_clk_cpu_freq_set_xtal_for_sleep(void)
 }
 #endif
 
-void rtc_clk_modem_pll_lock_release(void)
+void rtc_clk_modem_state_mux_lock_release(void)
 {
     clk_ll_cpu_clk_src_lock_release();
 }

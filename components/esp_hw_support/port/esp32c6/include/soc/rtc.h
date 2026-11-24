@@ -344,7 +344,7 @@ void rtc_clk_cpu_freq_set_xtal(void);
  * clock source of the software system is selected as PLL, we need to release
  * the root clock source locking in the sleep process (a critical section).
  */
-void rtc_clk_modem_pll_lock_release(void);
+void rtc_clk_modem_state_mux_lock_release(void);
 
 /**
  * @brief Get the current APB frequency.
