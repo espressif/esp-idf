@@ -57,7 +57,7 @@ idf.py -D SDKCONFIG_DEFAULTS="sdkconfig.defaults;sdkconfig.perf" set-target esp3
 
 ## Supported targets
 
-ESP32-C3, ESP32-C5, ESP32-C6, ESP32-C61, ESP32-H2, ESP32-H21, ESP32-H4,
-ESP32-S3, ESP32-S31, ESP32-P4 (`SOC_USB_SERIAL_JTAG_SUPPORTED`).
+ESP32-C3, ESP32-C5, ESP32-C6, ESP32-C61, ESP32-H2, ESP32-S3, ESP32-S31
+(`SOC_USB_SERIAL_JTAG_SUPPORTED` and `SOC_BT_SUPPORTED`).
 
 CI builds are temporarily disabled until BLE Log test runners are available.

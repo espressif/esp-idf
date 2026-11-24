@@ -502,8 +502,8 @@ little below 2048 and nothing above it.
 
 ## USB Serial/JTAG transport
 
-On a chip with only USB Serial/JTAG (C3, C5, C6, C61, H2, H21), or when you
-want the USJ jack instead of the USB OTG jack (H4, S3), BLE Log can copy each
+On a chip with only USB Serial/JTAG (C3, C5, C6, C61, H2), or when you want
+the USJ jack instead of the USB OTG jack (S3, S31), BLE Log can copy each
 sealed transport into the USB-Serial-JTAG driver TX ring. The hardware FIFO
 is 64 bytes and is not configurable. The device stays the ROM USB
 Serial/JTAG identity (VID 0x303A PID 0x1001). The host opens that CDC-ACM
@@ -533,8 +533,8 @@ targets the transport writes as soon as the SOF-based
 from before the gate.
 
 On C6 the BLE Log peripheral default stays UART DMA (`SOC_UHCI_SUPPORTED`).
-USJ is opt-in. On H4, OTG TinyUSB and USJ are two choice members because
-they are two ports with two host identities.
+USJ is opt-in. On S3 and S31, OTG TinyUSB and USJ are two choice members
+because they are two ports with two host identities.
 
 ### Console and other FIFO owners
 
