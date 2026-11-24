@@ -6,7 +6,6 @@
 
 #include "sdkconfig.h"
 #include "soc/soc_caps.h"
-#include "phy_init_data.h"
 #include "esp_private/phy.h"
 #include "esp_check.h"
 

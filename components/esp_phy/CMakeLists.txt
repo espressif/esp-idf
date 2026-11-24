@@ -29,12 +29,13 @@ if(CONFIG_ESP_PHY_ENABLED)
 
     if(CONFIG_SOC_IEEE802154_BLE_ONLY)
         list(APPEND srcs "src/phy_init_esp32hxx.c")
-        if(CONFIG_SOC_PM_SUPPORT_REGDMA_TRIGGERED_PHY)
-            list(APPEND srcs "${idf_target}/phy_init_data.c")
-        endif()
     else()
         list(APPEND srcs "src/phy_init.c")
         list(APPEND srcs "${idf_target}/phy_init_data.c")
+    endif()
+
+    if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/${idf_target}/phy_sleep_retention.c")
+        list(APPEND srcs "${idf_target}/phy_sleep_retention.c")
     endif()
 
     if(CONFIG_SOC_BT_SUPPORTED OR CONFIG_SOC_IEEE802154_SUPPORTED OR CONFIG_SOC_IEEE802154_BLE_ONLY)
@@ -79,7 +80,8 @@ endif()
 idf_component_register(SRCS "${srcs}"
                     INCLUDE_DIRS "include" "${idf_target}/include"
                     # 'esp_hal_ana_conv' is required by 'phy_common.c' for the temperature sensor hal
-                    PRIV_REQUIRES nvs_flash esp_driver_gpio esp_hal_ana_conv efuse esp_timer esp_wifi esptool_py
+                    PRIV_REQUIRES nvs_flash esp_driver_gpio esp_hal_ana_conv efuse esp_timer esp_wifi
+                                  esp_sleep esptool_py
                     LDFRAGMENTS "${ldfragments}"
                     EMBED_FILES  ${embed_files}
                     )
@@ -175,9 +177,13 @@ if(CONFIG_ESP_PHY_ENABLED)
             set(phy_init_data_bin "${build_dir}/phy_init_data.bin")
 
             idf_build_get_property(config_dir CONFIG_DIR)
+            idf_build_get_property(sdkconfig_header SDKCONFIG_HEADER)
             add_custom_command(
                 OUTPUT ${phy_init_data_bin}
                 DEPENDS ${CMAKE_CURRENT_LIST_DIR}/${idf_target}/phy_init_data.c
+                        ${CMAKE_CURRENT_LIST_DIR}/${idf_target}/include/phy_init_data.h
+                        ${CMAKE_CURRENT_LIST_DIR}/include/esp_phy_init.h
+                        ${sdkconfig_header}
                 COMMAND ${CMAKE_C_COMPILER} ${CMAKE_C_FLAGS} -c ${CMAKE_CURRENT_LIST_DIR}/${idf_target}/phy_init_data.c
                 -I ${esp_common_dir}/include -I ${CMAKE_CURRENT_LIST_DIR}/include
                 -I ${CMAKE_CURRENT_LIST_DIR}/${idf_target}/include -I ${esp_rom_dir}/include
