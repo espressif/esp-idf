@@ -38,6 +38,14 @@ function(fatfs_create_partition_image partition base_dir)
         set(fatfs_sector_size 4096)
     endif()
 
+    if(arg_WL_INIT AND NOT (fatfs_sector_size EQUAL 512 OR fatfs_sector_size EQUAL 4096))
+        set(message "Failed to create FATFS image for partition '${partition}'."
+                    "Sector size ${fatfs_sector_size} is not supported with wear levelling,"
+                    "select 512 or 4096 in CONFIG_FATFS_SECTOR_SIZE or use fatfs_create_rawflash_image.")
+        fail_at_build_time(fatfs_${partition}_bin "${message}")
+        return()
+    endif()
+
     if("${CONFIG_FATFS_LFN_NONE}")
         set(fatfs_long_names_option)
     elseif("${CONFIG_FATFS_LFN_HEAP}")

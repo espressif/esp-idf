@@ -27,9 +27,19 @@ menu "FAT Filesystem support"
         default FATFS_SECTOR_4096
         help
             Specify the size of the sector in bytes for FATFS partition generator.
+            Sector sizes 1024 and 2048 can only be used for partitions without wear levelling
+            (generated with fatfs_create_rawflash_image). They are available only when
+            WL_SECTOR_SIZE is 4096, because FatFs cannot mount volumes with sectors larger
+            than the largest sector size it is built for (the greater of 512 and WL_SECTOR_SIZE).
 
         config FATFS_SECTOR_512
             bool "512"
+        config FATFS_SECTOR_1024
+            bool "1024"
+            depends on WL_SECTOR_SIZE_4096
+        config FATFS_SECTOR_2048
+            bool "2048"
+            depends on WL_SECTOR_SIZE_4096
         config FATFS_SECTOR_4096
             bool "4096"
     endchoice
