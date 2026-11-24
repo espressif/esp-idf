@@ -11,6 +11,7 @@
 #include "esp_check.h"
 #include "esp_ieee802154.h"
 #include "esp_mac.h"
+#include "esp_openthread_alarm.h"
 #include "esp_openthread_common.h"
 #include "esp_openthread_common_macro.h"
 #include "esp_openthread_platform.h"
@@ -391,6 +392,10 @@ otRadioCaps otPlatRadioGetCaps(otInstance *aInstance)
 
 otError otPlatRadioReceiveAt(otInstance *aInstance, uint8_t aChannel, uint32_t aStart, uint32_t aDuration)
 {
+    uint32_t now = (uint32_t)otPlatTimeGet();
+    if (!esp_openthread_alarm_is_expired(aStart, now) && (aStart - now > OPENTHREAD_CONFIG_CSL_RECEIVE_TIME_AHEAD)) {
+        return OT_ERROR_NONE;
+    }
     esp_ieee802154_set_channel(aChannel);
     esp_ieee802154_receive_at(aStart, aDuration);
     return OT_ERROR_NONE;

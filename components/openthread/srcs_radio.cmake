@@ -18,6 +18,7 @@ set(rcp_srcs
     openthread/src/core/common/binary_search.cpp
     openthread/src/core/common/error.cpp
     openthread/src/core/common/frame_builder.cpp
+    openthread/src/core/common/frame_data.cpp
     openthread/src/core/common/log.cpp
     openthread/src/core/common/random.cpp
     openthread/src/core/common/string.cpp
@@ -37,9 +38,9 @@ set(rcp_srcs
     openthread/src/core/mac/sub_mac.cpp
     openthread/src/core/mac/sub_mac_callbacks.cpp
     openthread/src/core/mac/sub_mac_csl_receiver.cpp
-    openthread/src/core/mac/sub_mac_wed.cpp
     openthread/src/core/radio/radio.cpp
     openthread/src/core/radio/radio_callbacks.cpp
+    openthread/src/core/radio/radio_frame.cpp
     openthread/src/core/radio/radio_platform.cpp
     openthread/src/core/radio/radio_types.cpp
     openthread/src/core/thread/link_quality.cpp
