@@ -29,7 +29,7 @@ idf.py build
 build/esp_stdio_runtime_registration.elf
 ```
 
-See the [Linux target guide](https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-guides/linux-host-testing.html) for details on running ESP-IDF applications on the Linux host.
+See the [Linux target guide](https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-guides/host-apps.html) for details on running ESP-IDF applications on the Linux host.
 
 ### Run on a chip target
 

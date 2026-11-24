@@ -36,7 +36,7 @@ The example could also run on a single SoC which supports both Wi-Fi and Thread 
 Similar to the previous Wi-Fi based Thread Border Route setup, but a device with Ethernet interface is required, such as [ESP32-Ethernet-Kit](https://docs.espressif.com/projects/esp-idf/en/latest/esp32/hw-reference/esp32/get-started-ethernet-kit.html) or [ESP32-P4-Function-EV-Board](https://docs.espressif.com/projects/esp-dev-kits/en/latest/esp32p4/esp32-p4-function-ev-board/index.html).
 
 #### **ESP32-P4 using Wi-Fi Co-Processor**
-This example can also be run using Wi-Fi using the ESP32-P4, which does not natively support Wi-Fi, by incorporating the ESP-Hosted component to enable Wi-Fi connectivity for the ESP32-P4 through a ESP32-C6 co-processor. You may refer to the [ESP-Hosted-MCU documentation](https://github.com/espressif/esp-hosted-mcu/blob/main/docs/esp32_p4_function_ev_board.md) for more information about ESP-Hosted.
+This example can also be run using Wi-Fi using the ESP32-P4, which does not natively support Wi-Fi, by incorporating the ESP-Hosted component to enable Wi-Fi connectivity for the ESP32-P4 through a ESP32-C6 co-processor. You may refer to the [ESP-Hosted-MCU documentation](https://github.com/espressif/esp-hosted-mcu/blob/main/docs/getting-started-mcu.md) for more information about ESP-Hosted.
 
 If you are using the ESP32-P4-Function-EV-Board, you may refer to the [OpenThread Border Router Example](https://github.com/espressif/esp-thread-br/tree/main/examples/basic_thread_border_router) for running a Wi-Fi based Thread Border Router.
 

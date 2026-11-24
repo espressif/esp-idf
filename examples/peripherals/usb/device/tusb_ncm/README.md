@@ -21,9 +21,9 @@ Any ESP board that have USB-OTG supported.
 
 ESP32-P4 does not have integrated Wi-Fi. To use this example on ESP32-P4, Wi-Fi connectivity is provided through the [esp_wifi_remote](https://components.espressif.com/components/espressif/esp_wifi_remote) component.
 
-On ESP32-P4 evaluation boards such as the [ESP32-P4-Function-EV-Board](https://docs.espressif.com/projects/esp-dev-kits/en/latest/esp32p4/esp32-p4-function-ev-board/index.html), an on-board slave SoC (typically ESP32-C6) provides the Wi-Fi link to the host ESP32-P4 over SDIO. See the [ESP-Hosted ESP32-P4 EV Board documentation](https://github.com/espressif/esp-hosted-mcu/blob/main/docs/esp32_p4_function_ev_board.md) for hardware details.
+On ESP32-P4 evaluation boards such as the [ESP32-P4-Function-EV-Board](https://docs.espressif.com/projects/esp-dev-kits/en/latest/esp32p4/esp32-p4-function-ev-board/index.html), an on-board slave SoC (typically ESP32-C6) provides the Wi-Fi link to the host ESP32-P4 over SDIO. See the [ESP-Hosted ESP32-P4 EV Board documentation](https://github.com/espressif/esp-hosted-mcu/blob/main/docs/getting-started-mcu.md#esp32-p4-function-ev-board-host-pin-mapping) for hardware details.
 
-> **Note:** Before running this example, the slave SoC must be running compatible ESP-Hosted co-processor firmware. Evaluation boards are usually shipped with firmware pre-flashed, but it is recommended to update the slave to the latest version. Follow the instructions in [Host Performs Slave OTA](https://github.com/espressif/esp-hosted-mcu/blob/main/examples/host_performs_slave_ota/README.md).
+> **Note:** Before running this example, the slave SoC must be running compatible ESP-Hosted co-processor firmware. Evaluation boards are usually shipped with firmware pre-flashed, but it is recommended to update the slave to the latest version. Follow the instructions in [Co-processor OTA example](https://github.com/espressif/esp-hosted-mcu/blob/main/examples/ota/coprocessor_ota/README.md).
 
 To build for ESP32-P4:
 
