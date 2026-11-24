@@ -50,10 +50,20 @@ FORCE_INLINE_ATTR void _modem_clock_ll_ungate(void)
 /**
  * Select modem root clock source (XTAL or PLL_F160M) on HP_SYS_CLKRST.modem_conf.
  *
- * When switching the mux, only one of the source clocks may be enabled; having
- * both (or neither) enabled during the switch can glitch the modem clock.
- * Hence the two-step write: first enable the target source and disable the
- * other while keeping the old mux select, then flip modem_clk_source_sel.
+ * Both source gates must not be on while modem_clk_source_sel changes: the two
+ * clocks overlap and glitch the modem clock. The safe order is therefore the
+ * opposite of "enable the new source first":
+ *   1. Gate both sources off and leave the mux select unchanged. The modem
+ *      clock stops for this write. That neither-gate window is intentional:
+ *      a stopped clock does not glitch, and the mux is not moved until the
+ *      old source is already off.
+ *   2. Flip modem_clk_source_sel and enable only the target gate in the same
+ *      write, so the mux never points at a still-gated source while the other
+ *      source is on.
+ * Do not collapse this back into one write, and do not enable the target gate
+ * before the old gate is off. Sleep retention uses the same order
+ * (HP_SYS_CLKRST_MODEM_CONF_REG 0x05, both gates off, then 0x1d, mux on
+ * PLL_F160M with only the PLL gate on).
  * modem_clk_source_sel is a hardware mux bit (0: XTAL, 1: PLL_F160M). It is
  * not the soc_module_clk_t value. Other modem_conf fields (e.g.
  * modem_apb_clk_en / modem_rst_en) are preserved.
@@ -65,6 +75,7 @@ FORCE_INLINE_ATTR void _modem_clock_ll_select_clock_source(soc_module_clk_t src)
     hp_sys_clkrst_modem_conf_reg_t conf;
     conf.val = HP_SYS_CLKRST.modem_conf.val;
     if (src == SOC_MOD_CLK_PLL_F160M) {
+        conf.modem_pll_clk_en = 0;
         conf.modem_xtal_clk_en = 0;
         HP_SYS_CLKRST.modem_conf.val = conf.val;
         conf.modem_clk_source_sel = 1;
@@ -72,6 +83,7 @@ FORCE_INLINE_ATTR void _modem_clock_ll_select_clock_source(soc_module_clk_t src)
         HP_SYS_CLKRST.modem_conf.val = conf.val;
     } else if (src == SOC_MOD_CLK_XTAL) {
         conf.modem_pll_clk_en = 0;
+        conf.modem_xtal_clk_en = 0;
         HP_SYS_CLKRST.modem_conf.val = conf.val;
         conf.modem_clk_source_sel = 0;
         conf.modem_xtal_clk_en = 1;
