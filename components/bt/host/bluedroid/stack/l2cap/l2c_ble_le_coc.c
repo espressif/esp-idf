@@ -9,6 +9,7 @@
 
 #include <string.h>
 #include "device/controller.h"
+#include "osi/mutex.h"
 #include "stack/bt_types.h"
 #include "stack/l2cdefs.h"
 #include "l2c_int.h"
@@ -47,6 +48,42 @@ static BOOLEAN l2c_ble_le_coc_send_frame(tL2C_CCB *p_ccb, const UINT8 *data, UIN
 static void l2c_ble_le_coc_apply_default_cfg(tL2CAP_LE_CFG_INFO *cfg);
 static UINT16 l2c_ble_le_coc_effective_mps(tL2C_CCB *p_ccb);
 static UINT16 l2c_ble_le_coc_calc_rx_credits(UINT16 mtu, UINT16 mps);
+static void l2c_ble_le_coc_try_xmit_locked(tL2C_CCB *p_ccb);
+
+/* Serializes le_coc_tx_sdu / credits / xmit_hold_q ownership. try_xmit runs from
+ * BTU (credit indication) and from BTC (L2CA_LECocDataWrite). A plain busy flag
+ * cannot close that window: both tasks observe it clear, one dequeue wins, and
+ * the other stores NULL and faults on p_sdu->len. The lock is not held across
+ * CongestionStatus_Cb, so a non-recursive mutex is enough. */
+static osi_mutex_t s_le_coc_tx_lock;
+
+static void l2c_ble_le_coc_tx_lock(void)
+{
+    if (s_le_coc_tx_lock != NULL) {
+        osi_mutex_lock(&s_le_coc_tx_lock, OSI_MUTEX_MAX_TIMEOUT);
+    }
+}
+
+static void l2c_ble_le_coc_tx_unlock(void)
+{
+    if (s_le_coc_tx_lock != NULL) {
+        osi_mutex_unlock(&s_le_coc_tx_lock);
+    }
+}
+
+void l2c_ble_le_coc_init(void)
+{
+    if (s_le_coc_tx_lock == NULL) {
+        if (osi_mutex_new(&s_le_coc_tx_lock) != 0) {
+            L2C_BLE_COC_TRACE_ERROR("tx lock create failed");
+        }
+    }
+}
+
+void l2c_ble_le_coc_free(void)
+{
+    osi_mutex_free(&s_le_coc_tx_lock);
+}
 
 #if (BLE_L2CAP_COC_SERVER_INCLUDED == TRUE)
 /* Normalize an application/internal result code to a valid LE Credit Based
@@ -389,10 +426,14 @@ void l2c_ble_le_coc_cleanup_ccb(tL2C_CCB *p_ccb)
         osi_free(p_ccb->le_coc_rx_sdu);
         p_ccb->le_coc_rx_sdu = NULL;
     }
+    /* try_xmit on another task may own this buffer. Take the TX lock so the
+     * free cannot land between dequeue and p_sdu->len. */
+    l2c_ble_le_coc_tx_lock();
     if (p_ccb->le_coc_tx_sdu) {
         osi_free(p_ccb->le_coc_tx_sdu);
         p_ccb->le_coc_tx_sdu = NULL;
     }
+    l2c_ble_le_coc_tx_unlock();
 
     p_ccb->le_coc_active = FALSE;
 #if (BLE_L2CAP_ENHANCED_COC_INCLUDED == TRUE)
@@ -859,7 +900,12 @@ void l2c_ble_le_coc_handle_flow_ctrl_credit(tL2C_LCB *p_lcb, UINT8 *p, UINT16 cm
         return;
     }
 
+    /* credits is also decremented by try_xmit on BTC. Fold the addition in
+     * under the same lock so the sum cannot tear or overflow past a concurrent
+     * decrement. */
+    l2c_ble_le_coc_tx_lock();
     if ((p_ccb->peer_conn_cfg.credits + credit) > L2CAP_LE_MAX_CREDIT) {
+        l2c_ble_le_coc_tx_unlock();
         L2C_BLE_COC_TRACE_ERROR("credit overflow lcid=0x%04x", lcid);
         l2c_ble_le_coc_initiate_disc(p_ccb);
         return;
@@ -875,15 +921,23 @@ void l2c_ble_le_coc_handle_flow_ctrl_credit(tL2C_LCB *p_lcb, UINT8 *p, UINT16 cm
      * layer the channel is ready to send while it is being torn down. Mirrors the
      * CST_OPEN guard in l2c_ble_le_coc_try_xmit. Also notify when a channel
      * opened with 0 initial credits receives its first credits on an empty queue
-     * (so cong_sent was never latched). */
+     * (so cong_sent was never latched). Decide under the lock, then drop it
+     * before the callback: the callback posts back to BTC, and BTC may be
+     * blocked in data_write waiting for this lock. */
+    tL2CA_CONGESTION_STATUS_CB *p_cong_cb = NULL;
+    UINT16 saved_lcid = p_ccb->local_cid;
     if (p_ccb->chnl_state == CST_OPEN && p_ccb->p_rcb &&
         p_ccb->p_rcb->api.pL2CA_CongestionStatus_Cb &&
         (p_ccb->cong_sent ||
          (prev_credits == 0 && p_ccb->le_coc_tx_sdu == NULL &&
           fixed_queue_is_empty(p_ccb->xmit_hold_q)))) {
-        UINT16 saved_lcid = p_ccb->local_cid;
         p_ccb->cong_sent = FALSE;
-        (*p_ccb->p_rcb->api.pL2CA_CongestionStatus_Cb)(p_ccb->local_cid, FALSE);
+        p_cong_cb = p_ccb->p_rcb->api.pL2CA_CongestionStatus_Cb;
+    }
+    l2c_ble_le_coc_tx_unlock();
+
+    if (p_cong_cb != NULL) {
+        (*p_cong_cb)(saved_lcid, FALSE);
         /* The callback runs synchronously and may re-enter L2CAP and release this
          * CCB. l2cu_release_ccb() clears in_use/p_lcb but leaves chnl_state intact,
          * so try_xmit's CST_OPEN check alone would not detect a freed slot; re-fetch
@@ -1031,7 +1085,10 @@ static BOOLEAN l2c_ble_le_coc_ccb_still_open(tL2C_CCB *p_ccb, UINT16 saved_lcid)
     return TRUE;
 }
 
-static void l2c_ble_le_coc_try_xmit(tL2C_CCB *p_ccb)
+/* Caller holds s_le_coc_tx_lock. Drops it across CongestionStatus_Cb so that
+ * callback can re-enter data_write and so a BTC task blocked on the lock is
+ * not stuck behind a post back to BTC. */
+static void l2c_ble_le_coc_try_xmit_locked(tL2C_CCB *p_ccb)
 {
     UINT16 mps, chunk, sdu_len, hdr_len;
     const UINT8 *src;
@@ -1069,10 +1126,19 @@ again:
     completed_sdu = FALSE;
     while (p_ccb->peer_conn_cfg.credits > 0) {
         if (p_ccb->le_coc_tx_sdu == NULL) {
+            BT_HDR *p_deq;
+
             if (fixed_queue_is_empty(p_ccb->xmit_hold_q)) {
                 break;
             }
-            p_ccb->le_coc_tx_sdu = (BT_HDR *)fixed_queue_dequeue(p_ccb->xmit_hold_q, 0);
+            /* Timeout 0: dequeue returns NULL when the semaphore is already
+             * taken. Never store that NULL; p_sdu->len is the crash at offset 2. */
+            p_deq = (BT_HDR *)fixed_queue_dequeue(p_ccb->xmit_hold_q, 0);
+            if (p_deq == NULL) {
+                L2C_BLE_COC_TRACE_ERROR("tx dequeue NULL lcid=0x%04x", p_ccb->local_cid);
+                break;
+            }
+            p_ccb->le_coc_tx_sdu = p_deq;
             p_ccb->le_coc_tx_offset = 0;
             p_ccb->le_coc_tx_len_sent = FALSE;
         }
@@ -1132,9 +1198,12 @@ again:
     if (p_ccb->peer_conn_cfg.credits == 0 && p_ccb->p_rcb &&
         p_ccb->p_rcb->api.pL2CA_CongestionStatus_Cb && !p_ccb->cong_sent) {
         UINT16 saved_lcid = p_ccb->local_cid;
+        tL2CA_CONGESTION_STATUS_CB *p_cong_cb = p_ccb->p_rcb->api.pL2CA_CongestionStatus_Cb;
 
         p_ccb->cong_sent = TRUE;
-        (*p_ccb->p_rcb->api.pL2CA_CongestionStatus_Cb)(saved_lcid, TRUE);
+        l2c_ble_le_coc_tx_unlock();
+        (*p_cong_cb)(saved_lcid, TRUE);
+        l2c_ble_le_coc_tx_lock();
         L2C_BLE_COC_TRACE_DEBUG("tx congested lcid=0x%04x", saved_lcid);
         if (!l2c_ble_le_coc_ccb_still_open(p_ccb, saved_lcid)) {
             return;
@@ -1148,11 +1217,16 @@ again:
          * remaining. */
         if (drained) {
             UINT16 saved_lcid = p_ccb->local_cid;
+            tL2CA_CONGESTION_STATUS_CB *p_cong_cb = p_ccb->p_rcb->api.pL2CA_CongestionStatus_Cb;
 
             /* The re-entrancy guard above turns any synchronous re-entry from
-             * this callback into an iterative rerun instead of deep recursion. */
+             * this callback into an iterative rerun instead of deep recursion.
+             * Drop the TX lock first: this callback posts to BTC, and BTC may
+             * already be waiting to take the lock in data_write. */
             p_ccb->cong_sent = FALSE;
-            (*p_ccb->p_rcb->api.pL2CA_CongestionStatus_Cb)(saved_lcid, FALSE);
+            l2c_ble_le_coc_tx_unlock();
+            (*p_cong_cb)(saved_lcid, FALSE);
+            l2c_ble_le_coc_tx_lock();
             if (!l2c_ble_le_coc_ccb_still_open(p_ccb, saved_lcid)) {
                 return;
             }
@@ -1166,6 +1240,16 @@ again:
         goto again;
     }
     p_ccb->le_coc_xmit_busy = FALSE;
+}
+
+static void l2c_ble_le_coc_try_xmit(tL2C_CCB *p_ccb)
+{
+    if (p_ccb == NULL || p_ccb->chnl_state != CST_OPEN) {
+        return;
+    }
+    l2c_ble_le_coc_tx_lock();
+    l2c_ble_le_coc_try_xmit_locked(p_ccb);
+    l2c_ble_le_coc_tx_unlock();
 }
 
 /* Number of SDU buffers this channel currently owns for transmission. The SDU
@@ -1196,12 +1280,16 @@ static UINT16 l2c_ble_le_coc_slots_left(tL2C_CCB *p_ccb)
 UINT16 l2c_ble_le_coc_tx_slots(UINT16 lcid)
 {
     tL2C_CCB *p_ccb;
+    UINT16 slots;
 
     p_ccb = l2cu_find_ccb_by_cid(NULL, lcid);
     if (p_ccb == NULL || !p_ccb->le_coc_active || p_ccb->chnl_state != CST_OPEN) {
         return 0;
     }
-    return l2c_ble_le_coc_slots_left(p_ccb);
+    l2c_ble_le_coc_tx_lock();
+    slots = l2c_ble_le_coc_slots_left(p_ccb);
+    l2c_ble_le_coc_tx_unlock();
+    return slots;
 }
 
 UINT8 l2c_ble_le_coc_data_write(UINT16 lcid, BT_HDR *p_data)
@@ -1230,8 +1318,20 @@ UINT8 l2c_ble_le_coc_data_write(UINT16 lcid, BT_HDR *p_data)
      * returns void, so esp_ble_gatts_send_indicate never sees it) would
      * otherwise keep queueing until the heap is exhausted. L2CAP_DW_FAILED maps
      * to GATT_INTERNAL_ERROR in attp_send_msg_to_l2cap, which does reach a GATT
-     * server through BTA_GATTS_CONF_EVT. */
+     * server through BTA_GATTS_CONF_EVT.
+     * Hold the TX lock only across the depth check and enqueue. try_xmit takes
+     * the lock itself and drops it across the congestion callback; keeping an
+     * extra hold here would leave the lock taken while that callback posts to
+     * BTC. Depth is capped well below the queue capacity, so enqueue does not
+     * block waiting for a dequeue that itself needs this lock. */
+    l2c_ble_le_coc_tx_lock();
+    if (p_ccb->chnl_state != CST_OPEN || !p_ccb->le_coc_active) {
+        l2c_ble_le_coc_tx_unlock();
+        osi_free(p_data);
+        return L2CAP_DW_FAILED;
+    }
     if (l2c_ble_le_coc_xmit_depth(p_ccb) >= L2CAP_LE_COC_MAX_XMIT_SDU) {
+        l2c_ble_le_coc_tx_unlock();
         L2C_BLE_COC_TRACE_WARN("xmit queue full lcid=0x%04x depth=%u, drop SDU len=%u",
                                lcid, L2CAP_LE_COC_MAX_XMIT_SDU, p_data->len);
         osi_free(p_data);
@@ -1243,52 +1343,61 @@ UINT8 l2c_ble_le_coc_data_write(UINT16 lcid, BT_HDR *p_data)
      * ownership of p_data; free it and report failure instead of leaking + losing
      * the SDU while wrongly reporting success. */
     if (!fixed_queue_enqueue(p_ccb->xmit_hold_q, p_data, FIXED_QUEUE_MAX_TIMEOUT)) {
+        l2c_ble_le_coc_tx_unlock();
         L2C_BLE_COC_TRACE_ERROR("xmit enqueue failed lcid=0x%04x", lcid);
         osi_free(p_data);
         return L2CAP_DW_FAILED;
     }
+    l2c_ble_le_coc_tx_unlock();
+
     l2c_ble_le_coc_try_xmit(p_ccb);
 
+    l2c_ble_le_coc_tx_lock();
     if (p_ccb->peer_conn_cfg.credits == 0 &&
         (p_ccb->le_coc_tx_sdu != NULL || !fixed_queue_is_empty(p_ccb->xmit_hold_q))) {
+        l2c_ble_le_coc_tx_unlock();
         return L2CAP_DW_CONGESTED;
     }
+    l2c_ble_le_coc_tx_unlock();
     return L2CAP_DW_SUCCESS;
 }
 
 BOOLEAN l2c_ble_le_coc_is_congested(UINT16 lcid)
 {
     tL2C_CCB *p_ccb;
+    BOOLEAN congested;
 
     p_ccb = l2cu_find_ccb_by_cid(NULL, lcid);
     if (p_ccb == NULL || !p_ccb->le_coc_active || p_ccb->chnl_state != CST_OPEN) {
         return TRUE;
     }
-    if (p_ccb->cong_sent) {
-        return TRUE;
-    }
-    if (p_ccb->le_coc_tx_sdu != NULL || !fixed_queue_is_empty(p_ccb->xmit_hold_q)) {
-        return TRUE;
-    }
-    return FALSE;
+    l2c_ble_le_coc_tx_lock();
+    congested = p_ccb->cong_sent || p_ccb->le_coc_tx_sdu != NULL ||
+                !fixed_queue_is_empty(p_ccb->xmit_hold_q);
+    l2c_ble_le_coc_tx_unlock();
+    return congested;
 }
 
 UINT16 l2c_ble_le_coc_get_sendable_num(UINT16 lcid)
 {
     tL2C_CCB *p_ccb;
+    UINT16 sendable;
 
     p_ccb = l2cu_find_ccb_by_cid(NULL, lcid);
     if (p_ccb == NULL || !p_ccb->le_coc_active || p_ccb->chnl_state != CST_OPEN) {
         return 0;
     }
 
+    l2c_ble_le_coc_tx_lock();
     /* Without a TX credit the peer cannot accept another K-frame, so anything
      * handed down now would only sit in xmit_hold_q holding heap. */
     if (p_ccb->peer_conn_cfg.credits == 0) {
-        return 0;
+        sendable = 0;
+    } else {
+        sendable = l2c_ble_le_coc_slots_left(p_ccb);
     }
-
-    return l2c_ble_le_coc_slots_left(p_ccb);
+    l2c_ble_le_coc_tx_unlock();
+    return sendable;
 }
 
 BOOLEAN l2c_ble_le_coc_give_credits(UINT16 lcid, UINT16 credits)

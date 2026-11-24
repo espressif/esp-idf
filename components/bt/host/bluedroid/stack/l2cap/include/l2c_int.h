@@ -881,6 +881,8 @@ extern BOOLEAN l2ble_sec_access_req(BD_ADDR bd_addr, UINT16 psm, BOOLEAN is_orig
 extern void l2ble_sec_flush_pending_req(tL2C_LCB *p_lcb, void *p_ref_data);
 #endif
 
+extern void l2c_ble_le_coc_init(void);
+extern void l2c_ble_le_coc_free(void);
 extern BOOLEAN l2c_ble_le_coc_is_chan(tL2C_CCB *p_ccb);
 /* Map a BTM security failure (tBTM_STATUS) to the matching LE CoC/ECFC L2CAP
  * result code (0x0005-0x0008) so the peer learns the real reason (authorization

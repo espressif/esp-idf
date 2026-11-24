@@ -1119,7 +1119,13 @@ void l2cu_send_peer_disc_req (tL2C_CCB *p_ccb)
 
     /* Move all queued data packets to the LCB. In FCR mode, assume the higher
        layer checks that all buffers are sent before disconnecting.
+       LE CoC SDUs in this queue are fragmented by l2c_ble_le_coc_try_xmit.
+       Draining them here races with that sender and would put an unfragmented
+       SDU on the ACL. Leave them for CCB cleanup to free.
     */
+#if (BLE_L2CAP_COC_INCLUDED == TRUE)
+    if (!p_ccb->le_coc_active)
+#endif
     if (p_ccb->xmit_hold_q && (p_ccb->peer_cfg.fcr.mode == L2CAP_FCR_BASIC_MODE)) {
         while ((p_buf2 = (BT_HDR *)fixed_queue_dequeue(p_ccb->xmit_hold_q, 0)) != NULL) {
             l2cu_set_acl_hci_header (p_buf2, p_ccb);
@@ -3922,6 +3928,14 @@ BT_HDR *l2cu_get_next_buffer_to_send (tL2C_LCB *p_lcb)
     if (p_ccb == NULL) {
         return (NULL);
     }
+
+#if (BLE_L2CAP_COC_INCLUDED == TRUE)
+    /* LE CoC owns xmit_hold_q. The basic-mode dequeue below would steal an SDU
+     * out from under l2c_ble_le_coc_try_xmit. */
+    if (p_ccb->le_coc_active) {
+        return (NULL);
+    }
+#endif
 
     if (p_ccb->peer_cfg.fcr.mode != L2CAP_FCR_BASIC_MODE) {
 
