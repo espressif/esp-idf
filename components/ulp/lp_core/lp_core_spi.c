@@ -302,6 +302,9 @@ esp_err_t lp_core_lp_spi_bus_deinit(lp_spi_host_t host_id, const lp_spi_bus_conf
 {
     (void)host_id;
 
+    /* Reset LP-SPI peripheral to its power-on state */
+    lp_spi_ll_reset();
+
     /* Disconnect and deinit LP GPIO pins that were used for SPI signals */
     if (bus_config != NULL) {
         if (bus_config->miso_io_num != -1) {
