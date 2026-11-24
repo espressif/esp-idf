@@ -81,6 +81,16 @@ esp_err_t ESP_SYSTEM_IRAM_ATTR esp_backtrace_print(int depth)
 
     const int current_core = xPortGetCoreID();
 
+    if (!xPortInIsrContext()) {
+        /* pxTopOfStack of the running task holds the frame of the last interrupt that the task took, which is stale
+         * in task context. Unwind from here. */
+        RvExcFrame frame = { 0 };
+        UNW_GET_CONTEXT(&frame);
+        print_task_backtrace(NULL, &frame, current_core);
+        return ESP_OK;
+    }
+
+    /* In an interrupt, pxTopOfStack of the running task holds the frame of the code that the interrupt stopped */
     TaskSnapshot_t snapshot = { 0 };
     BaseType_t ret = vTaskGetSnapshot(xTaskGetCurrentTaskHandleForCore(current_core), &snapshot);
 

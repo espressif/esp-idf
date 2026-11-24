@@ -105,13 +105,14 @@ esp_err_t esp_backtrace_print_from_frame(int depth, const esp_backtrace_frame_t*
  *
  * @note On RISC-V targets printing a backtrace at run-time is only available if
  *       CONFIG_ESP_SYSTEM_USE_EH_FRAME or CONFIG_ESP_SYSTEM_USE_FRAME_POINTER is
- *       selected. Otherwise we simply print a register dump. Function assumes it is
- *       called in a context where the calling task will not migrate to another core,
- *       e.g. interrupt context or panic handler.
+ *       selected. Otherwise we simply print a register dump.
+ * @note Can be called from task context, interrupt context or the panic handler.
+ *       In an interrupt, the backtrace starts at the code that the interrupt stopped.
  *
  * @return
- *      - ESP_OK    Backtrace successfully printed to completion or to depth limit
- *      - ESP_FAIL  Backtrace is corrupted
+ *      - ESP_OK              Backtrace successfully printed to completion or to depth limit
+ *      - ESP_FAIL            Backtrace is corrupted
+ *      - ESP_ERR_NOT_FOUND   (RISC-V only) The interrupted task's saved frame could not be read
  */
 esp_err_t esp_backtrace_print(int depth);
 
