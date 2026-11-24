@@ -35,14 +35,14 @@ typedef struct {
 static esp_openthread_alarm_t s_alarms[OT_INSTANCE_COUNT];
 static const char *alarm_workflow = "alarm";
 
-static inline bool is_expired(uint32_t target, uint32_t now)
+bool esp_openthread_alarm_is_expired(uint32_t target, uint32_t now)
 {
     return (((now - target) & (1 << 31)) == 0);
 }
 
 static inline uint32_t calculate_duration(uint32_t target, uint32_t now)
 {
-    return is_expired(target, now) ? 0 : target - now;
+    return esp_openthread_alarm_is_expired(target, now) ? 0 : target - now;
 }
 
 uint64_t otPlatTimeGet(void)
@@ -143,7 +143,7 @@ esp_err_t esp_openthread_alarm_process(otInstance *aInstance, const esp_openthre
     OT_UNUSED_VARIABLE(mainloop);
     for (int idx = 0; idx < OT_INSTANCE_COUNT; idx++) {
         otInstance *instance = esp_openthread_get_instance_from_idx(idx);
-        if (s_alarms[idx].is_ms_running && is_expired(s_alarms[idx].alarm_ms, otPlatAlarmMilliGetNow())) {
+        if (s_alarms[idx].is_ms_running && esp_openthread_alarm_is_expired(s_alarms[idx].alarm_ms, otPlatAlarmMilliGetNow())) {
             s_alarms[idx].is_ms_running = false;
 
 #if OPENTHREAD_CONFIG_DIAG_ENABLE
@@ -157,7 +157,7 @@ esp_err_t esp_openthread_alarm_process(otInstance *aInstance, const esp_openthre
 
             ESP_LOGD(OT_PLAT_LOG_TAG, "Millisecond timer alarm fired");
         }
-        if (s_alarms[idx].is_us_running && is_expired(s_alarms[idx].alarm_us, otPlatAlarmMicroGetNow())) {
+        if (s_alarms[idx].is_us_running && esp_openthread_alarm_is_expired(s_alarms[idx].alarm_us, otPlatAlarmMicroGetNow())) {
             s_alarms[idx].is_us_running = false;
             otPlatAlarmMicroFired(instance);
             ESP_LOGD(OT_PLAT_LOG_TAG, "Microsecond timer alarm fired");

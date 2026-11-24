@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -29,14 +29,14 @@ static uint32_t s_alarm_us = 0;
 static bool s_is_us_running = false;
 static const char *alarm_workflow = "alarm";
 
-static inline bool is_expired(uint32_t target, uint32_t now)
+bool esp_openthread_alarm_is_expired(uint32_t target, uint32_t now)
 {
     return (((now - target) & (1 << 31)) == 0);
 }
 
 static inline uint32_t calculate_duration(uint32_t target, uint32_t now)
 {
-    return is_expired(target, now) ? 0 : target - now;
+    return esp_openthread_alarm_is_expired(target, now) ? 0 : target - now;
 }
 
 uint64_t otPlatTimeGet(void)
@@ -126,7 +126,7 @@ void esp_openthread_alarm_update(esp_openthread_mainloop_context_t *mainloop)
 
 esp_err_t esp_openthread_alarm_process(otInstance *aInstance, const esp_openthread_mainloop_context_t *mainloop)
 {
-    if (s_is_ms_running && is_expired(s_alarm_ms, otPlatAlarmMilliGetNow())) {
+    if (s_is_ms_running && esp_openthread_alarm_is_expired(s_alarm_ms, otPlatAlarmMilliGetNow())) {
         s_is_ms_running = false;
 
 #if OPENTHREAD_CONFIG_DIAG_ENABLE
@@ -140,7 +140,7 @@ esp_err_t esp_openthread_alarm_process(otInstance *aInstance, const esp_openthre
 
         ESP_LOGD(OT_PLAT_LOG_TAG, "Millisecond timer alarm fired");
     }
-    if (s_is_us_running && is_expired(s_alarm_us, otPlatAlarmMicroGetNow())) {
+    if (s_is_us_running && esp_openthread_alarm_is_expired(s_alarm_us, otPlatAlarmMicroGetNow())) {
         s_is_us_running = false;
         otPlatAlarmMicroFired(aInstance);
         ESP_LOGD(OT_PLAT_LOG_TAG, "Microsecond timer alarm fired");
