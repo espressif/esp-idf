@@ -85,6 +85,7 @@ const DRAM_ATTR spi_flash_guard_funcs_t g_flash_guard_no_os_ops = {
     .end                    = spi_flash_enable_interrupts_caches_no_os,
 };
 
+#if !CONFIG_SPI_FLASH_ROM_IMPL
 static const spi_flash_guard_funcs_t *s_flash_guard_ops;
 
 void IRAM_ATTR spi_flash_guard_set(const spi_flash_guard_funcs_t *funcs)
@@ -96,6 +97,7 @@ const spi_flash_guard_funcs_t *IRAM_ATTR spi_flash_guard_get(void)
 {
     return s_flash_guard_ops;
 }
+#endif // !CONFIG_SPI_FLASH_ROM_IMPL
 
 #if CONFIG_SPI_FLASH_ROM_IMPL
 #include "esp_heap_caps.h"

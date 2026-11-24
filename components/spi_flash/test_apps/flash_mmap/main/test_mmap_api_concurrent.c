@@ -13,8 +13,11 @@
 #include "test_utils.h"
 #include "test_mmap_utils.h"
 #include "spi_flash_mmap.h"
+#include "esp_attr.h"
+#include "esp_rom_caps.h"
 #include "esp_flash.h"
 #include "esp_cache.h"
+#include "esp_private/spi_flash_os.h"
 
 
 //XIP_PSRAM or RAM_APP enabled
@@ -378,4 +381,170 @@ TEST_CASE("flash_mmap region unaffected by concurrent flash erase of separate re
     test_concurrent_erase_core(&ctx, true);
 
     TEST_ASSERT_TRUE_MESSAGE(ctx.data_ok, "Region A data was corrupted during concurrent erase of region B");
+}
+
+#if CONFIG_SPI_FLASH_ROM_IMPL && ESP_ROM_HAS_SPI_FLASH_MMAP
+static DRAM_ATTR const spi_flash_guard_funcs_t *s_orig_guard_ops;
+static DRAM_ATTR volatile int s_guard_start_cnt;
+static DRAM_ATTR volatile int s_guard_end_cnt;
+
+static void IRAM_ATTR test_guard_start(void)
+{
+    s_guard_start_cnt++;
+    if (s_orig_guard_ops && s_orig_guard_ops->start) {
+        s_orig_guard_ops->start();
+    }
+}
+
+static void IRAM_ATTR test_guard_end(void)
+{
+    if (s_orig_guard_ops && s_orig_guard_ops->end) {
+        s_orig_guard_ops->end();
+    }
+    s_guard_end_cnt++;
+}
+
+static const DRAM_ATTR spi_flash_guard_funcs_t s_test_guard_ops = {
+    .start = test_guard_start,
+    .end   = test_guard_end,
+};
+
+TEST_CASE("ROM spi_flash_mmap invokes registered spi_flash_guard_ops", "[spi_flash][mmap]")
+{
+    const esp_partition_t *part = get_test_data_partition();
+    TEST_ASSERT_NOT_NULL(part);
+
+    const spi_flash_guard_funcs_t *orig_ops = spi_flash_guard_get();
+    TEST_ASSERT_NOT_NULL(orig_ops);
+
+    s_orig_guard_ops = orig_ops;
+    s_guard_start_cnt = 0;
+    s_guard_end_cnt = 0;
+
+    spi_flash_guard_set(&s_test_guard_ops);
+
+    const void *ptr = NULL;
+    spi_flash_mmap_handle_t handle = 0;
+    esp_err_t err = spi_flash_mmap(part->address, CONFIG_MMU_PAGE_SIZE,
+                                   SPI_FLASH_MMAP_FLAG_DATA, &ptr, &handle);
+    if (err == ESP_OK) {
+        spi_flash_munmap(handle);
+    }
+
+    /* Always restore the original guard ops before asserting so a test failure
+     * cannot leave custom hooks installed for subsequent test cases. */
+    spi_flash_guard_set(orig_ops);
+
+    TEST_ESP_OK(err);
+    TEST_ASSERT_GREATER_OR_EQUAL_MESSAGE(
+        2, s_guard_start_cnt,
+        "ROM spi_flash_mmap/munmap did not invoke registered spi_flash_guard_ops->start()");
+    TEST_ASSERT_EQUAL_MESSAGE(
+        s_guard_start_cnt, s_guard_end_cnt,
+        "Mismatched spi_flash_guard_ops start/end invocations");
+}
+#endif // CONFIG_SPI_FLASH_ROM_IMPL && ESP_ROM_HAS_SPI_FLASH_MMAP
+
+#define CONCURRENT_MMAP_READER_ROUNDS   400
+#define CONCURRENT_MMAP_READER_SIZE     64
+
+typedef struct {
+    SemaphoreHandle_t start_gate;
+    SemaphoreHandle_t done;
+    uint32_t mmap_addr;
+    uint8_t expected[CONCURRENT_MMAP_READER_SIZE];
+    esp_err_t err;
+    bool data_ok;
+} concurrent_mmap_reader_ctx_t;
+
+static void concurrent_mmap_reader_task(void *arg)
+{
+    concurrent_mmap_reader_ctx_t *ctx = (concurrent_mmap_reader_ctx_t *)arg;
+    xSemaphoreTake(ctx->start_gate, portMAX_DELAY);
+
+    for (int i = 0; i < CONCURRENT_MMAP_READER_ROUNDS; i++) {
+        const void *ptr = NULL;
+        spi_flash_mmap_handle_t handle = 0;
+        /* Omit SPI_FLASH_MMAP_FLAG_BLOCKS_WRITE so both mmap and munmap execute
+         * concurrently across cores without involving flash write/erase freeze paths. */
+        esp_err_t err = spi_flash_mmap(ctx->mmap_addr, CONCURRENT_MMAP_READER_SIZE,
+                                       SPI_FLASH_MMAP_FLAG_DATA, &ptr, &handle);
+        if (err != ESP_OK) {
+            ctx->err = err;
+            break;
+        }
+        if (memcmp(ptr, ctx->expected, CONCURRENT_MMAP_READER_SIZE) != 0) {
+            ctx->data_ok = false;
+            spi_flash_munmap(handle);
+            break;
+        }
+        spi_flash_munmap(handle);
+    }
+
+    xSemaphoreGive(ctx->done);
+    vTaskDelete(NULL);
+}
+
+TEST_CASE("flash_mmap concurrent mmap and munmap across tasks on distinct pages", "[spi_flash][mmap]")
+{
+    const esp_partition_t *part = get_test_data_partition();
+    TEST_ASSERT_NOT_NULL(part);
+    TEST_ASSERT_TRUE(part->size >= 2 * CONFIG_MMU_PAGE_SIZE);
+
+    SemaphoreHandle_t start_gate = xSemaphoreCreateCounting(2, 0);
+    TEST_ASSERT_NOT_NULL(start_gate);
+
+    concurrent_mmap_reader_ctx_t workers[2] = {
+        {
+            .start_gate = start_gate,
+            .done = xSemaphoreCreateBinary(),
+            .mmap_addr = part->address,
+            .err = ESP_OK,
+            .data_ok = true,
+        },
+        {
+            .start_gate = start_gate,
+            .done = xSemaphoreCreateBinary(),
+            .mmap_addr = part->address + CONFIG_MMU_PAGE_SIZE,
+            .err = ESP_OK,
+            .data_ok = true,
+        },
+    };
+    TEST_ASSERT_NOT_NULL(workers[0].done);
+    TEST_ASSERT_NOT_NULL(workers[1].done);
+
+    for (int w = 0; w < 2; w++) {
+        for (size_t i = 0; i < CONCURRENT_MMAP_READER_SIZE; i++) {
+            workers[w].expected[i] = (uint8_t)((w ? 0x50 : 0xA0) + i);
+        }
+        TEST_ESP_OK(esp_flash_erase_region(NULL, workers[w].mmap_addr, SPI_FLASH_SEC_SIZE));
+        TEST_ESP_OK(esp_flash_write(NULL, workers[w].expected, workers[w].mmap_addr, CONCURRENT_MMAP_READER_SIZE));
+    }
+
+#if CONFIG_FREERTOS_UNICORE
+    const BaseType_t core0 = 0;
+    const BaseType_t core1 = 0;
+#else
+    const BaseType_t core0 = 0;
+    const BaseType_t core1 = 1;
+#endif
+    const UBaseType_t worker_prio = uxTaskPriorityGet(NULL) > 1 ? uxTaskPriorityGet(NULL) - 1 : 1;
+    TEST_ASSERT_EQUAL(pdTRUE, xTaskCreatePinnedToCore(concurrent_mmap_reader_task, "mmap_r0", 4096, &workers[0], worker_prio, NULL, core0));
+    TEST_ASSERT_EQUAL(pdTRUE, xTaskCreatePinnedToCore(concurrent_mmap_reader_task, "mmap_r1", 4096, &workers[1], worker_prio, NULL, core1));
+
+    xSemaphoreGive(start_gate);
+    xSemaphoreGive(start_gate);
+
+    TEST_ASSERT_EQUAL(pdTRUE, xSemaphoreTake(workers[0].done, pdMS_TO_TICKS(15000)));
+    TEST_ASSERT_EQUAL(pdTRUE, xSemaphoreTake(workers[1].done, pdMS_TO_TICKS(15000)));
+    vTaskDelay(pdMS_TO_TICKS(50));
+
+    vSemaphoreDelete(workers[0].done);
+    vSemaphoreDelete(workers[1].done);
+    vSemaphoreDelete(start_gate);
+
+    TEST_ESP_OK(workers[0].err);
+    TEST_ESP_OK(workers[1].err);
+    TEST_ASSERT_TRUE_MESSAGE(workers[0].data_ok, "worker 0 read corrupted mmap data");
+    TEST_ASSERT_TRUE_MESSAGE(workers[1].data_ok, "worker 1 read corrupted mmap data");
 }

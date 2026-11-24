@@ -6,6 +6,7 @@
 
 #include <stdlib.h>
 #include <assert.h>
+#include <stdatomic.h>
 #include <string.h>
 #include <stdio.h>
 #include <freertos/FreeRTOS.h>
@@ -199,16 +200,18 @@ static void mmap_lock_unfreeze(void)
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // Interfaces for mmap API and external caller (flash driver).
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-//the count and the mapping table (esp_mmu_map) can only be touched when the mmap lock is acquired
-static int s_mmap_remain_count; //number of mmap regions that are still in use
+// The mmap lock is shared by every holder, so this counter is updated concurrently.
+static atomic_int s_mmap_remain_count;
 
 #define MMAP_CNT_INCREASE()  do { \
-    assert(s_mmap_remain_count >= 0); \
-    s_mmap_remain_count++; \
+    int prev = atomic_fetch_add_explicit(&s_mmap_remain_count, 1, memory_order_relaxed); \
+    assert(prev >= 0); \
+    (void)prev; \
 } while (0)
 #define MMAP_CNT_DECREASE()  do { \
-    s_mmap_remain_count--; \
-    assert(s_mmap_remain_count >= 0); \
+    int prev = atomic_fetch_sub_explicit(&s_mmap_remain_count, 1, memory_order_relaxed); \
+    assert(prev > 0); \
+    (void)prev; \
 } while (0)
 
 esp_err_t flash_mmap_lock_init(void)
@@ -218,7 +221,7 @@ esp_err_t flash_mmap_lock_init(void)
 
 bool flash_mmap_remain(void)
 {
-    return s_mmap_remain_count > 0;
+    return atomic_load_explicit(&s_mmap_remain_count, memory_order_relaxed) > 0;
 }
 
 void flash_mmap_lock_freeze(void)
