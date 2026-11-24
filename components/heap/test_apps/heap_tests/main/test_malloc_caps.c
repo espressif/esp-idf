@@ -44,8 +44,8 @@ TEST_CASE("Capabilities allocator test", "[heap]")
     //Both should have gone down by 10K; 8bit capable ram is also 32-bit capable
     TEST_ASSERT(free8<=(free8start-10*1024));
     TEST_ASSERT(free32<=(free32start-10*1024));
-    //Assume we got DRAM back
-    TEST_ASSERT(esp_ptr_in_dram(m1));
+    //Assume we got internal RAM back (this can be RTC memory if it is used as heap)
+    TEST_ASSERT(esp_ptr_internal(m1));
     free(m1);
 
     //The goal here is to allocate from IRAM. Since there is no external IRAM (yet)
@@ -91,19 +91,19 @@ TEST_CASE("Capabilities allocator test", "[heap]")
 
     printf("Test if allocating executable code still gives IRAM, even with dedicated IRAM region depleted\n");
     if(free_iram) {
-        // (the allocation should come from D/IRAM)
+        // (the allocation should come from D/IRAM, or RTC fast memory if it is used as heap)
         free_iram = heap_caps_get_free_size(MALLOC_CAP_EXEC);
         m1= heap_caps_malloc(MIN(free_iram / 2, 10*1024), MALLOC_CAP_EXEC);
         printf("--> %p\n", m1);
-        TEST_ASSERT(esp_ptr_in_iram(m1) || esp_ptr_in_diram_iram(m1));
+        TEST_ASSERT(esp_ptr_in_iram(m1) || esp_ptr_in_diram_iram(m1) || esp_ptr_in_rtc_iram_fast(m1));
         for (x=0; x<10; x++) free(m2[x]);
 
     } else {
-        // (the allocation should come from D/IRAM)
+        // (the allocation should come from D/IRAM, or RTC fast memory if it is used as heap)
         free_iram = heap_caps_get_free_size(MALLOC_CAP_EXEC);
         m1= heap_caps_malloc(MIN(free_iram / 2, 10*1024), MALLOC_CAP_EXEC);
         printf("--> %p\n", m1);
-        TEST_ASSERT(esp_ptr_in_iram(m1) || esp_ptr_in_diram_iram(m1));
+        TEST_ASSERT(esp_ptr_in_iram(m1) || esp_ptr_in_diram_iram(m1) || esp_ptr_in_rtc_iram_fast(m1));
     }
 
     free(m1);

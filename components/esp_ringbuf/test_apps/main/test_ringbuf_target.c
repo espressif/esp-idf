@@ -187,8 +187,8 @@ TEST_CASE("Test ringbuffer with caps", "[esp_ringbuf]")
 
     // Get the ring buffer's memory
     TEST_ASSERT_EQUAL(pdTRUE, xRingbufferGetStaticBuffer(rb_handle, &rb_storage, &rb_obj));
-    TEST_ASSERT(esp_ptr_in_dram(rb_storage));
-    TEST_ASSERT(esp_ptr_in_dram(rb_obj));
+    TEST_ASSERT(esp_ptr_internal(rb_storage));
+    TEST_ASSERT(esp_ptr_internal(rb_obj));
 
     // Free the ring buffer
     vRingbufferDeleteWithCaps(rb_handle);
