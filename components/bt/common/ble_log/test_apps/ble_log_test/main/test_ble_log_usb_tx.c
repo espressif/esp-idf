@@ -28,12 +28,12 @@ TEST_CASE("USB TX drops with a warning when the CDC FIFO cannot hold a frame",
     TEST_ASSERT_TRUE(ble_log_usb_tx_should_warn(BLE_LOG_USB_TX_DROP_FIFO_FULL));
 }
 
-TEST_CASE("USB TX drops silently when CDC is not connected",
+TEST_CASE("USB TX drops with a warning when CDC is not connected",
           "[ble_log][usb_tx]")
 {
     TEST_ASSERT_EQUAL(BLE_LOG_USB_TX_DROP_NOT_CONNECTED,
                       ble_log_usb_tx_action(false, 2048, 640));
-    TEST_ASSERT_FALSE(
+    TEST_ASSERT_TRUE(
         ble_log_usb_tx_should_warn(BLE_LOG_USB_TX_DROP_NOT_CONNECTED));
 }
 
