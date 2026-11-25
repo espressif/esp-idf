@@ -57,7 +57,7 @@ void BTA_PbaClientRegister(const char *server_name)
 
     if ((p_buf = (tBTA_PBA_CLIENT_API_REGISTER *) osi_malloc(sizeof(tBTA_PBA_CLIENT_API_REGISTER))) != NULL) {
         p_buf->hdr.event = BTA_PBA_CLIENT_API_REGISTER_EVT;
-        memcpy(p_buf->name, server_name, strlen(server_name) + 1);
+        BCM_STRLCPY_S(p_buf->name, server_name, BTA_SERVICE_NAME_LEN + 1);
         bta_sys_sendmsg(p_buf);
     }
 }

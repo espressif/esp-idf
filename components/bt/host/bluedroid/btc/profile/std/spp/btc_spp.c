@@ -308,17 +308,34 @@ static void close_timeout_handler(void *arg)
 {
     btc_msg_t msg;
     bt_status_t status;
-    spp_slot_t *slot = (spp_slot_t *)arg;
+    uint32_t id = (uint32_t)(uintptr_t)arg;
+    void *alarm_arg = NULL;
+
+    if (!is_spp_ready()) {
+        return;
+    }
+    spp_lock();
+    if (!is_spp_ready()) {
+        spp_unlock();
+        return;
+    }
+    spp_slot_t *slot = spp_find_slot_by_id(id);
+    if (!slot) {
+        spp_unlock();
+        return;
+    }
+    alarm_arg = slot->alarm_arg;
+    slot->alarm_arg = NULL;
+    spp_unlock();
 
     msg.sig = BTC_SIG_API_CB;
     msg.pid = BTC_PID_SPP;
     msg.act = BTA_JV_RFCOMM_CLOSE_EVT;
 
-    status = btc_transfer_context(&msg, slot->alarm_arg, sizeof(tBTA_JV), NULL, NULL);
+    status = btc_transfer_context(&msg, alarm_arg, sizeof(tBTA_JV), NULL, NULL);
 
-    if (slot->alarm_arg) {
-        osi_free(slot->alarm_arg);
-        slot->alarm_arg = NULL;
+    if (alarm_arg) {
+        osi_free(alarm_arg);
     }
 
     if (status != BT_STATUS_SUCCESS) {
@@ -1380,7 +1397,7 @@ void btc_spp_cb_handler(btc_msg_t *msg)
                     memcpy(p_arg, p_data, sizeof(tBTA_JV));
                     slot->alarm_arg = (void *)p_arg;
                     if ((slot->close_alarm =
-                             osi_alarm_new("slot", close_timeout_handler, (void *)slot, NULL)) == NULL) {
+                             osi_alarm_new("slot", close_timeout_handler, (void *)slot->id, NULL)) == NULL) {
                         osi_free(p_arg);
                         slot->alarm_arg = NULL;
                         param.close.status = ESP_SPP_NO_RESOURCE;

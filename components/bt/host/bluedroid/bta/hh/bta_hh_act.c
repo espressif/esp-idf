@@ -249,9 +249,11 @@ static void bta_hh_sdp_cback(UINT16 result, UINT16 attr_mask,
     /* free disc_db when SDP is completed */
     bta_hh_free_disc_db();
 
-    /* send SDP_CMPL_EVT into state machine */
-    data.status = status;
-    bta_hh_sm_execute(p_cb, BTA_HH_SDP_CMPL_EVT, &data);
+    if (p_cb) {
+        /* send SDP_CMPL_EVT into state machine */
+        data.status = status;
+        bta_hh_sm_execute(p_cb, BTA_HH_SDP_CMPL_EVT, &data);
+    }
 
     return;
 }
@@ -306,9 +308,11 @@ static void bta_hh_di_sdp_cback(UINT16 result)
 
     if (status != BTA_HH_OK) {
         bta_hh_free_disc_db();
-        /* send SDP_CMPL_EVT into state machine */
-        data.status = status;
-        bta_hh_sm_execute(p_cb, BTA_HH_SDP_CMPL_EVT, &data);
+        if (p_cb) {
+            /* send SDP_CMPL_EVT into state machine */
+            data.status = status;
+            bta_hh_sm_execute(p_cb, BTA_HH_SDP_CMPL_EVT, &data);
+        }
     }
     return;
 

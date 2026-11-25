@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -136,6 +136,9 @@ hci_h4_sm_w4_header(struct hci_h4_sm *h4sm, struct hci_h4_input_buffer *ib)
 
         os_mbuf_append(h4sm->om, h4sm->hdr, h4sm->len);
         h4sm->exp_len = get_le16(&h4sm->hdr[2]) + 4;
+        if (h4sm->exp_len < 4) {
+            return -2;
+        }
         break;
 #if !CONFIG_BT_CONTROLLER_ENABLED
     case HCI_H4_EVT:

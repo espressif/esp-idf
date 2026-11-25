@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -148,6 +148,10 @@ void
 esp_vhci_host_send_packet(uint8_t *data, uint16_t len)
 {
     if (esp_bt_controller_get_status() != ESP_BT_CONTROLLER_STATUS_ENABLED) {
+        return;
+    }
+
+    if (data == NULL || len == 0) {
         return;
     }
 

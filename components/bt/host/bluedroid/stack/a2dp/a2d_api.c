@@ -78,15 +78,15 @@ static void a2d_sdp_cback(UINT16 status)
             }
 
             /* get service name */
-            if ((p_attr = SDP_FindAttributeInRec(p_rec,
-                                                 ATTR_ID_SERVICE_NAME)) != NULL) {
+            if ((p_attr = SDP_FindAttributeInRec(p_rec, ATTR_ID_SERVICE_NAME)) != NULL &&
+                    SDP_DISC_ATTR_TYPE(p_attr->attr_len_type) == TEXT_STR_DESC_TYPE) {
                 a2d_svc.p_service_name = (char *) p_attr->attr_value.v.array;
                 a2d_svc.service_len    = SDP_DISC_ATTR_LEN(p_attr->attr_len_type);
             }
 
             /* get provider name */
-            if ((p_attr = SDP_FindAttributeInRec(p_rec,
-                                                 ATTR_ID_PROVIDER_NAME)) != NULL) {
+            if ((p_attr = SDP_FindAttributeInRec(p_rec, ATTR_ID_PROVIDER_NAME)) != NULL &&
+                    SDP_DISC_ATTR_TYPE(p_attr->attr_len_type) == TEXT_STR_DESC_TYPE) {
                 a2d_svc.p_provider_name = (char *) p_attr->attr_value.v.array;
                 a2d_svc.provider_len    = SDP_DISC_ATTR_LEN(p_attr->attr_len_type);
             }

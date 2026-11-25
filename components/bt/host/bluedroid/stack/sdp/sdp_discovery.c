@@ -940,7 +940,11 @@ static UINT8 *add_attr (UINT8 *p, UINT8 *p_end, tSDP_DISCOVERY_DB *p_db, tSDP_DI
 
     nest_level &= ~(SDP_ADDITIONAL_LIST_MASK);
 
+    if (p >= p_end) {
+        return NULL;
+    }
     type = *p++;
+
     p = sdpu_get_len_from_type (p, p_end, type, &attr_len);
     if ((p == NULL) || (p > p_end) || ((UINT32)(p_end - p) < attr_len)) {
         SDP_TRACE_WARNING ("SDP - Bad len in attr_rsp %d\n", attr_len);
@@ -951,9 +955,13 @@ static UINT8 *add_attr (UINT8 *p, UINT8 *p_end, tSDP_DISCOVERY_DB *p_db, tSDP_DI
     attr_len &= SDP_DISC_ATTR_LEN_MASK;
     attr_type = (type >> 3) & 0x0f;
 
-    /* See if there is enough space in the database */
-    if (attr_len > 4) {
-        total_len = attr_len - 4 + (UINT16)sizeof (tSDP_DISC_ATTR);
+    /* Text and URL values keep one extra byte for a NUL terminator. */
+    UINT32 value_len = attr_len;
+    if (attr_type == TEXT_STR_DESC_TYPE || attr_type == URL_DESC_TYPE) {
+        value_len++;
+    }
+    if (value_len > 4) {
+        total_len = value_len - 4 + (UINT16)sizeof (tSDP_DISC_ATTR);
     } else {
         total_len = sizeof (tSDP_DISC_ATTR);
     }
@@ -1089,6 +1097,7 @@ static UINT8 *add_attr (UINT8 *p, UINT8 *p_end, tSDP_DISCOVERY_DB *p_db, tSDP_DI
     case TEXT_STR_DESC_TYPE:
     case URL_DESC_TYPE:
         BE_STREAM_TO_ARRAY (p, p_attr->attr_value.v.array, (INT32)attr_len);
+        p_attr->attr_value.v.array[attr_len] = '\0';
         break;
 
     case BOOLEAN_DESC_TYPE:

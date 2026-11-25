@@ -3692,11 +3692,17 @@ bt_status_t btc_a2d_src_audio_data_send(esp_a2d_conn_hdl_t conn_hdl, esp_a2d_aud
 #if (BTC_AV_CODEC_AAC_INCLUDED == TRUE)
         case BTC_AV_CODEC_M24: {
             uint8_t *p_latm_buf = (uint8_t *)(p_buf + 1) + buf_offset;
-            uint16_t latm_hdr_cap = (uint16_t)(audio_buf->data - p_latm_buf);
+            uintptr_t data_addr = (uintptr_t)audio_buf->data;
+            uintptr_t latm_addr = (uintptr_t)p_latm_buf;
+            uint16_t latm_hdr_cap;
+
+            if (data_addr <= latm_addr || (data_addr - latm_addr) > UINT16_MAX) {
+                return BT_STATUS_FAIL;
+            }
+            latm_hdr_cap = (uint16_t)(data_addr - latm_addr);
 
             data_len = audio_buf->data_len;
-
-            if (latm_hdr_cap == 0U || data_len + latm_hdr_cap > btc_av_cb.mtu) {
+            if (data_len + latm_hdr_cap > btc_av_cb.mtu) {
                 return BT_STATUS_FAIL;
             }
             if (!btc_a2dp_latm_build_hdr(cur_codec_info.info, data_len, p_latm_buf, latm_hdr_cap)) {
@@ -3711,7 +3717,7 @@ bt_status_t btc_a2d_src_audio_data_send(esp_a2d_conn_hdl_t conn_hdl, esp_a2d_aud
             return BT_STATUS_UNSUPPORTED;
     }
 
-    assert(audio_buf->data - (UINT8 *)(p_buf + 1) >= buf_offset);
+    assert((uintptr_t)audio_buf->data >= (uintptr_t)(p_buf + 1) + buf_offset);
     /* since p_buf and audio_buf point to the same memory, backup those value before modify p_buf */
     uint16_t saved_number_frame = audio_buf->number_frame;
     uint32_t saved_timestamp = audio_buf->timestamp;

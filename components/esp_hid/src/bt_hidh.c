@@ -414,6 +414,7 @@ static void esp_hh_cb(esp_hidh_cb_event_t event, esp_hidh_cb_param_t *param)
                             dev->usage = map->usage;
                         }
                         dev->reports = NULL;
+                        dev->reports_len = 0;
                         for (uint8_t i = 0; i < map->reports_len; i++) {
                             r = &map->reports[i];
                             report = (esp_hidh_dev_report_t *)malloc(sizeof(esp_hidh_dev_report_t));
@@ -430,8 +431,8 @@ static void esp_hh_cb(esp_hidh_cb_event_t event, esp_hidh_cb_param_t *param)
                             report->usage = r->usage;
                             report->next = dev->reports;
                             dev->reports = report;
+                            dev->reports_len++;
                         }
-                        dev->reports_len = map->reports_len;
                         free(map->reports);
                         free(map);
                         map = NULL;

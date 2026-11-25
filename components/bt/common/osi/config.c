@@ -542,8 +542,7 @@ bool config_save(const config_t *config, const char *filename)
         }
     }else {
         int count = (int)(w_cnt_total / CONFIG_FILE_MAX_SIZE);
-        assert(count <= 0xFF);
-        for (uint8_t i = 0; i <= count; i++)
+        for (int i = 0; i <= count; i++)
         {
             snprintf(keyname, keyname_bufsz, "%s%d", CONFIG_KEY, i);
             if (i == count) {

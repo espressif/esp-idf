@@ -1814,11 +1814,11 @@ BOOLEAN L2CA_ConnectFixedChnl (UINT16 fixed_cid, BD_ADDR rem_bda, tBLE_ADDR_TYPE
         } else
 #endif
         {
-            peer_channel_mask = p_lcb->peer_chnl_mask[0];
+            peer_channel_mask = p_lcb->peer_chnl_mask[fixed_cid / 8];
         }
 
         // Check for supported channel
-        if (!(peer_channel_mask & (1 << fixed_cid))) {
+        if (!(peer_channel_mask & (1U << (fixed_cid % 8)))) {
             L2CAP_TRACE_EVENT  ("%s() CID:0x%04x  BDA: %08x%04x not supported", __func__,
                                 fixed_cid, (rem_bda[0] << 24) + (rem_bda[1] << 16) + (rem_bda[2] << 8) + rem_bda[3],
                                 (rem_bda[4] << 8) + rem_bda[5]);
@@ -1938,10 +1938,10 @@ UINT16 L2CA_SendFixedChnlData (UINT16 fixed_cid, BD_ADDR rem_bda, BT_HDR *p_buf)
     } else
 #endif
     {
-        peer_channel_mask = p_lcb->peer_chnl_mask[0];
+        peer_channel_mask = p_lcb->peer_chnl_mask[fixed_cid / 8];
     }
 
-    if ((peer_channel_mask & (1 << fixed_cid)) == 0) {
+    if ((peer_channel_mask & (1U << (fixed_cid % 8))) == 0) {
         L2CAP_TRACE_WARNING ("L2CA_SendFixedChnlData() - peer does not support fixed chnl: 0x%04x", fixed_cid);
         osi_free (p_buf);
         return (L2CAP_DW_FAILED);

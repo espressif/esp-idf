@@ -124,6 +124,11 @@ void bta_hh_clean_up_kdev(tBTA_HH_DEV_CB *p_cb)
         return;
     }
 
+    /* A late SDP callback must not apply its result to this device. */
+    if (bta_hh_cb.p_cur == p_cb) {
+        bta_hh_cb.p_cur = NULL;
+    }
+
     if (p_cb->hid_handle != BTA_HH_INVALID_HANDLE ) {
 #if BTA_HH_LE_INCLUDED == TRUE
         if (p_cb->is_le_device) {

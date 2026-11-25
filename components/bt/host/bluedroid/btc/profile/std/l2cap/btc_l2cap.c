@@ -341,17 +341,30 @@ static void close_timeout_handler(void *arg)
 {
     btc_msg_t msg;
     bt_status_t status;
-    l2cap_slot_t *slot = (l2cap_slot_t *)arg;
+    uint32_t id = (uint32_t)(uintptr_t)arg;
+    void *alarm_arg = NULL;
+
+    if (!is_l2cap_init()) {
+        return;
+    }
+    osi_mutex_lock(&l2cap_local_param.l2cap_slot_mutex, OSI_MUTEX_MAX_TIMEOUT);
+    l2cap_slot_t *slot = l2cap_find_slot_by_id(id);
+    if (!slot) {
+        osi_mutex_unlock(&l2cap_local_param.l2cap_slot_mutex);
+        return;
+    }
+    alarm_arg = slot->alarm_arg;
+    slot->alarm_arg = NULL;
+    osi_mutex_unlock(&l2cap_local_param.l2cap_slot_mutex);
 
     msg.sig = BTC_SIG_API_CB;
     msg.pid = BTC_PID_L2CAP;
     msg.act = BTA_JV_L2CAP_CLOSE_EVT;
 
-    status = btc_transfer_context(&msg, slot->alarm_arg, sizeof(tBTA_JV_L2CAP_CLOSE), NULL, NULL);
+    status = btc_transfer_context(&msg, alarm_arg, sizeof(tBTA_JV_L2CAP_CLOSE), NULL, NULL);
 
-    if (slot->alarm_arg) {
-        osi_free(slot->alarm_arg);
-        slot->alarm_arg = NULL;
+    if (alarm_arg) {
+        osi_free(alarm_arg);
     }
 
     if (status != BT_STATUS_SUCCESS) {
@@ -1028,7 +1041,7 @@ void btc_l2cap_cb_handler(btc_msg_t *msg)
                 memcpy(p_arg, &p_data->l2c_close, sizeof(tBTA_JV_L2CAP_CLOSE));
                 slot->alarm_arg = (void *)p_arg;
                 if ((slot->close_alarm =
-                            osi_alarm_new("slot", close_timeout_handler, (void *)slot, NULL)) == NULL) {
+                            osi_alarm_new("slot", close_timeout_handler, (void *)slot->id, NULL)) == NULL) {
                     osi_free(p_arg);
                     slot->alarm_arg = NULL;
                     param.close.status = ESP_BT_L2CAP_NO_RESOURCE;
