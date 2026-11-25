@@ -6,9 +6,8 @@ Open that CDC-ACM port for the binary log stream. Do not open the JTAG
 interface. Do not scan for PID 0x10B1 or for the product string
 `BLE-Log-Port`.
 
-The app releases the console in `sdkconfig.defaults`
-(`ESP_CONSOLE_UART_DEFAULT` and `ESP_CONSOLE_SECONDARY_NONE`). It does
-not turn the console off through a Kconfig `select`.
+The smoke app uses UART0 for console output. Its `sdkconfig.defaults` sets
+`CONFIG_ESP_CONSOLE_SECONDARY_NONE=y` to reserve USJ for BLE Log.
 
 ## Modes
 
