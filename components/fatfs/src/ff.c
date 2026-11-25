@@ -542,14 +542,30 @@ static WCHAR LfnBuf[FF_MAX_LFN + 1];		/* LFN working buffer */
 #define LEAVE_MKFS(res)	return res
 
 #elif FF_USE_LFN == 3 	/* LFN enabled with dynamic working buffer on the heap */
+#if FF_LFN_WORK_SIZE != (FF_MAX_LFN + 1) * 2 + (FF_FS_EXFAT ? MAXDIRB(FF_MAX_LFN) : 0)
+#error FF_LFN_WORK_SIZE in ff.h does not match the LFN working buffer layout
+#endif
 #if FF_FS_EXFAT
-#define DEF_NAMEBUFF		WCHAR *lfn;	/* Pointer to LFN working buffer and directory entry block scratchpad buffer */
-#define INIT_NAMEBUFF(fs)	{ lfn = ff_memalloc((FF_MAX_LFN+1)*2 + MAXDIRB(FF_MAX_LFN)); if (!lfn) LEAVE_FF(fs, FR_NOT_ENOUGH_CORE); (fs)->lfnbuf = lfn; (fs)->dirbuf = (BYTE*)(lfn+FF_MAX_LFN+1); }
-#define FREE_NAMEBUFF()	ff_memfree(lfn)
+#define DEF_NAMEBUFF		WCHAR *lfn; BYTE lfn_heap;	/* Pointer to LFN working buffer and directory entry block scratchpad buffer */
+#define INIT_NAMEBUFF(fs)	{ \
+		lfn = (fs)->lfnwork; \
+		lfn_heap = !lfn; \
+		if (lfn_heap) lfn = ff_memalloc(FF_LFN_WORK_SIZE); \
+		if (!lfn) LEAVE_FF(fs, FR_NOT_ENOUGH_CORE); \
+		(fs)->lfnbuf = lfn; \
+		(fs)->dirbuf = (BYTE*)(lfn+FF_MAX_LFN+1); \
+	}
+#define FREE_NAMEBUFF()	{ if (lfn_heap) ff_memfree(lfn); }
 #else
-#define DEF_NAMEBUFF		WCHAR *lfn;	/* Pointer to LFN working buffer */
-#define INIT_NAMEBUFF(fs)	{ lfn = ff_memalloc((FF_MAX_LFN+1)*2); if (!lfn) LEAVE_FF(fs, FR_NOT_ENOUGH_CORE); (fs)->lfnbuf = lfn; }
-#define FREE_NAMEBUFF()	ff_memfree(lfn)
+#define DEF_NAMEBUFF		WCHAR *lfn; BYTE lfn_heap;	/* Pointer to LFN working buffer */
+#define INIT_NAMEBUFF(fs)	{ \
+		lfn = (fs)->lfnwork; \
+		lfn_heap = !lfn; \
+		if (lfn_heap) lfn = ff_memalloc(FF_LFN_WORK_SIZE); \
+		if (!lfn) LEAVE_FF(fs, FR_NOT_ENOUGH_CORE); \
+		(fs)->lfnbuf = lfn; \
+	}
+#define FREE_NAMEBUFF()	{ if (lfn_heap) ff_memfree(lfn); }
 #endif
 #define LEAVE_MKFS(res)	{ if (!work) ff_memfree(buf); return res; }
 #define MAX_MALLOC	0x8000	/* Must be >=FF_MAX_SS */
@@ -3513,10 +3529,7 @@ static FRESULT mount_volume (	/* FR_OK(0): successful, !=0: an error occurred */
 	if (SS(fs) > FF_MAX_SS || SS(fs) < FF_MIN_SS || (SS(fs) & (SS(fs) - 1))) return FR_DISK_ERR;
 #endif
 #if FF_USE_DYN_BUFFER
-    if (!fs->win) {
-        fs->win = ff_memalloc(SS(fs));		/* Allocate memory for sector buffer */
-        if (!fs->win) return FR_NOT_ENOUGH_CORE;
-    }
+    if (!fs->win) return FR_NOT_ENOUGH_CORE;
 #endif
 
 	/* Find an FAT volume on the hosting drive */
@@ -3772,12 +3785,6 @@ FRESULT f_mount (
 #if FF_FS_REENTRANT				/* Discard mutex of the current volume */
 		ff_mutex_delete(vol);
 #endif
-#if FF_USE_DYN_BUFFER
-        if (cfs->win) {           /* Check if the buffer was ever allocated */
-            ff_memfree(cfs->win);   /* Deallocate buffer allocated for the filesystem object */
-            cfs->win = NULL;
-        }
-#endif
 		cfs->fs_type = 0;		/* Invalidate the filesystem object to be unregistered */
 	}
 
@@ -3826,6 +3833,9 @@ FRESULT f_open (
 
 
 	if (!fp) return FR_INVALID_OBJECT;	/* Reject null pointer */
+#if !FF_FS_TINY && FF_USE_DYN_BUFFER
+	if (!fp->buf) return FR_NOT_ENOUGH_CORE;
+#endif
 
 	/* Get logical drive number and mount the volume if needed */
 	mode &= FF_FS_READONLY ? FA_READ : FA_READ | FA_WRITE | FA_CREATE_ALWAYS | FA_CREATE_NEW | FA_OPEN_ALWAYS | FA_OPEN_APPEND;
@@ -3961,15 +3971,6 @@ FRESULT f_open (
 			fp->fptr = 0;		/* Set file pointer top of the file */
 #if !FF_FS_READONLY
 #if !FF_FS_TINY
-#if FF_USE_DYN_BUFFER
-            if (!fp->buf) {
-                fp->buf = ff_memalloc(SS(fs));
-                if (!fp->buf) {
-                    res = FR_NOT_ENOUGH_CORE;	/* Not enough memory */
-                    goto fail;
-                }
-            }
-#endif
             memset(fp->buf, 0, SS(fs));    /* Clear sector buffer */
 #endif
 			if ((mode & FA_SEEKEND) && fp->obj.objsize > 0) {	/* Seek to end of file if FA_OPEN_APPEND is specified */
@@ -4009,17 +4010,7 @@ FRESULT f_open (
 
 	if (res != FR_OK) {
         fp->obj.fs = 0;	/* Invalidate file object on error */
-#if !FF_FS_TINY && FF_USE_DYN_BUFFER
-        if (fp->buf) {
-            ff_memfree(fp->buf);
-            fp->buf = NULL;
-        }
-#endif
     }
-
-#if !FF_FS_TINY && FF_USE_DYN_BUFFER
-fail:
-#endif
 
 	LEAVE_FF(fs, res);
 }
@@ -4359,12 +4350,6 @@ FRESULT f_close (
 #endif
 		}
 	}
-#if !FF_FS_TINY && FF_USE_DYN_BUFFER
-    if (fp->buf) {
-        ff_memfree(fp->buf);
-        fp->buf = NULL;
-    }
-#endif
 	return res;
 }
 

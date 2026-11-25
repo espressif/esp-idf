@@ -82,6 +82,7 @@ FatFs 组件提供了便利的封装函数，用于通过 VFS 层挂载文件系
 FatFs 组件提供以下配置选项：
 
 * ``CONFIG_FATFS_LONG_FILENAMES`` - 选择 FatFs 库如何处理长文件名 (LFN) 支持。可用选项包括 :menuitem:`CONFIG_FATFS_LFN_NONE <CONFIG_FATFS_LFN_NONE>` 以禁用 LFN 支持并将名称限制为 `8.3 格式 <https://en.wikipedia.org/wiki/8.3_filename>`_ （仅 SFN）， :menuitem:`CONFIG_FATFS_LFN_HEAP <CONFIG_FATFS_LFN_HEAP>` 以启用 LFN 支持并将 LFN 工作缓冲区存储在堆上（默认），以及 :menuitem:`CONFIG_FATFS_LFN_STACK <CONFIG_FATFS_LFN_STACK>` 以启用 LFN 支持并将 LFN 工作缓冲区存储在栈上。详细信息请参阅 `FatFs 文件名 <http://elm-chan.org/fsw/ff/doc/filename.html>`_。
+* ``CONFIG_FATFS_HEAP_CAPS`` - 选择 VFS 封装在分配扇区窗口和长文件名缓冲区时使用的堆功能。当启用 :ref:`CONFIG_FATFS_USE_DYN_BUFFERS` 或 :menuitem:`CONFIG_FATFS_LFN_HEAP <CONFIG_FATFS_LFN_HEAP>` 时显示。调用者提供这些缓冲区中的每一个，或者一个都不提供；封装随后全部分配，并随实例一起释放。:menuitem:`CONFIG_FATFS_HEAP_CAPS_DEFAULT <CONFIG_FATFS_HEAP_CAPS_DEFAULT>` 使用与其他 FatFs 分配相同的放置方式，并在选中该方式时包含支持 DMA 的内存。:menuitem:`CONFIG_FATFS_HEAP_CAPS_INTERNAL <CONFIG_FATFS_HEAP_CAPS_INTERNAL>` 使用内部 RAM。:menuitem:`CONFIG_FATFS_HEAP_CAPS_SPIRAM <CONFIG_FATFS_HEAP_CAPS_SPIRAM>` 优先使用外部 RAM，失败时回退到内部 RAM。后两个选项不请求 DMA 对齐。
 * :menuitem:`CONFIG_FATFS_VOLUME_COUNT` - 设置逻辑 FatFs 卷的数量。增加此值可能会增加基础内存使用量。
 * :menuitem:`CONFIG_FATFS_ALLOC_PREFER_EXTRAM` - 如果启用，FatFs 库在分配内部缓冲区时优先使用外部 RAM。如果外部 RAM 分配失败，则回退到内部 RAM。这可能会对热 I/O 路径产生明显的性能开销。禁用此选项可优先考虑性能；启用可减少内部 RAM 使用量。
 * :menuitem:`CONFIG_FATFS_ALLOC_PREFER_ALIGNED_WORK_BUFFERS` - 如果启用，FatFs 库首先尝试在支持 DMA、缓存对齐的内存中分配堆工作缓冲区，以便 SDMMC 传输避免额外的拷贝。此选项在使用 PSRAM 和 SDMMC DMA 的目标芯片上（例如 ESP32-P4）非常有用。如果同时启用此选项和 :menuitem:`CONFIG_FATFS_ALLOC_PREFER_EXTRAM`，FatFs 库会先尝试支持 DMA 的 RAM，然后是外部 RAM，最后是内部 RAM。
@@ -446,6 +447,62 @@ exFAT 使用不同的元数据布局。除了 FAT 区域外，它还需要一个
 #. 通过使用挂载路径调用 :cpp:func:`esp_vfs_fat_unregister_path` 来删除 VFS 注册并释放在挂载过程的步骤 1 中分配的 ``FATFS`` 结构。
 
 调用 FatFs 库提供的底层函数时，使用不带挂载点前缀的路径。例如，使用 ``"/hello.txt"``。
+
+.. _fatfs-instances:
+
+在不挂载的情况下使用 FAT 文件系统实例
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+挂载函数由三层构成，每一层都可以直接用在 :doc:`块设备层 <blockdev>` 设备上：
+
+- :cpp:func:`esp_vfs_fat_init` / :cpp:func:`esp_vfs_fat_deinit` 在调用者提供的内存中初始化一个 FAT 文件系统实例：一个 :cpp:type:`esp_vfs_fat_ctx_t`，以及 :cpp:type:`esp_vfs_fat_resources_t` 所描述的资源。这些内存可以是静态的、堆上的，或任何寿命长于该实例的其他内存。
+- :cpp:func:`esp_vfs_fat_create` / :cpp:func:`esp_vfs_fat_destroy` 从堆中分配上述内存，然后调用上面的函数。
+- :cpp:func:`esp_vfs_fat_mount` / :cpp:func:`esp_vfs_fat_unmount` 还会把该实例注册到 VFS。:cpp:func:`esp_vfs_fat_bdl_mount` / :cpp:func:`esp_vfs_fat_bdl_unmount` 与之等效。
+
+已初始化的实例可以在注册到 VFS 之前使用，也可以完全不注册。:cpp:func:`esp_vfs_fat_get_fs` 按值返回 :cpp:type:`esp_vfs_fs_t`，其中包含操作表、传给这些操作的上下文，以及 ``ESP_VFS_FLAG_READONLY_FS`` 之类的 VFS 标志。该描述符可以用 :cpp:func:`esp_vfs_register_fs_instance` 注册，也可以由另一个文件系统持有并转发调用。例如，覆盖文件系统可以持有上层和下层两个 FAT 实例的描述符，而只注册自己。这种文件系统必须遵守所持描述符的 ``flags``，因为 VFS 只对已注册的条目强制执行这些标志。
+
+资源包括：
+
+- ``files``：:cpp:type:`esp_vfs_fat_file_t` 数组，每个可同时打开的文件占一项。必需。
+- ``sector_buffers``：卷窗口以及每个文件槽一个扇区缓冲区，大小为 :c:macro:`ESP_VFS_FAT_SECTOR_BUFFERS_SIZE` 字节。仅在启用 :ref:`CONFIG_FATFS_USE_DYN_BUFFERS` 时使用；否则这些缓冲区是上下文和文件槽的一部分。大小取决于块设备的扇区大小，由 :cpp:func:`esp_vfs_fat_get_sector_size` 返回；:c:macro:`ESP_VFS_FAT_MAX_SECTOR_SIZE` 给出静态分配的上限。该内存必须满足块设备的对齐和 DMA 要求。
+- ``lfn_buffer``：长文件名工作缓冲区，大小为 :c:macro:`ESP_VFS_FAT_LFN_BUFFER_SIZE` 字节，2 字节对齐。仅在选择 :menuitem:`CONFIG_FATFS_LFN_HEAP <CONFIG_FATFS_LFN_HEAP>` 时使用。
+
+本配置使用的每个缓冲区都要提供，或者全部留空为 NULL。缓冲区为 NULL 时，VFS 封装按 ``CONFIG_FATFS_HEAP_CAPS`` 分配它们：卷窗口和 LFN 缓冲区在实例的整个生命周期内存在，每个文件的扇区窗口只在该文件打开期间存在。调用者提供的缓冲区仍归调用者所有。实例锁和 FatFs 卷互斥量总是在初始化实例时从堆分配，并在反初始化时释放；调用者提供缓冲区时，文件 I/O 不使用堆。快速查找表（参见 :ref:`CONFIG_FATFS_USE_FASTSEEK`）是每个 :cpp:type:`esp_vfs_fat_file_t` 的一部分。
+
+.. code-block:: c
+
+    #define MAX_FILES 4
+
+    static esp_vfs_fat_ctx_t s_fat;
+    static esp_vfs_fat_file_t s_fat_files[MAX_FILES];
+    static uint8_t s_sector_buffers[ESP_VFS_FAT_SECTOR_BUFFERS_SIZE(MAX_FILES, ESP_VFS_FAT_MAX_SECTOR_SIZE)] __attribute__((aligned(4)));
+    static uint16_t s_lfn_buffer[(ESP_VFS_FAT_LFN_BUFFER_SIZE + 1) / 2];
+
+    const esp_vfs_fat_resources_t res = {
+        .files = s_fat_files,
+        .max_files = MAX_FILES,
+        .sector_buffers = s_sector_buffers,
+        .sector_buffers_size = sizeof(s_sector_buffers),
+        .lfn_buffer = s_lfn_buffer,
+        .lfn_buffer_size = sizeof(s_lfn_buffer),
+    };
+    esp_vfs_fat_mount_config_t cfg = VFS_FAT_MOUNT_DEFAULT_CONFIG();
+    ESP_ERROR_CHECK(esp_vfs_fat_init(&s_fat, &res, bdl, &cfg));
+    ESP_ERROR_CHECK(esp_vfs_register_fs_instance("/data", esp_vfs_fat_get_fs(&s_fat)));
+    /* ... */
+    ESP_ERROR_CHECK(esp_vfs_unregister_fs("/data"));
+    ESP_ERROR_CHECK(esp_vfs_fat_deinit(&s_fat));
+
+使用 :cpp:func:`esp_vfs_fat_ctx_info`、:cpp:func:`esp_vfs_fat_ctx_create_contiguous_file` 和 :cpp:func:`esp_vfs_fat_ctx_test_contiguous_file` 查询没有挂载路径的实例。
+
+说明：
+
+- :cpp:type:`esp_vfs_fat_ctx_t` 和 :cpp:type:`esp_vfs_fat_file_t` 的内容是私有的。类型保持完整只是为了能够分配；在 FatFs 组件之外访问其 ``priv`` 成员会产生弃用警告。
+- 实例不取得块设备的所有权。只在 :cpp:func:`esp_vfs_fat_deinit` 之后释放该设备。
+- 一个块设备同一时间只能支撑一个实例。
+- 每个实例，无论是否已挂载，都占用一个 FatFs 卷，因此 :ref:`CONFIG_FATFS_VOLUME_COUNT` 限制实例的数量。
+- 在提供全部资源时，初始化只分配实例锁和 FatFs 卷互斥量，格式化以及打开、读取、写入、定位和关闭文件都不会分配内存。格式化把卷窗口当作工作区。目录遍历、重命名、截断、连续文件函数以及 VFS 注册仍会分配内存。
+- 实例仍注册在 VFS 中，或仍被另一个文件系统引用时，不要调用 :cpp:func:`esp_vfs_fat_deinit`。
 
 .. _fatfs-diskio-layer:
 

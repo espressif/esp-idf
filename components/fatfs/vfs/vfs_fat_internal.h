@@ -16,6 +16,85 @@
 #include <sys/param.h>
 #include <stddef.h>
 
+/* Internal view of a FATFS instance; this is what VFS operations receive as their context */
+typedef struct esp_vfs_fat_ctx_priv vfs_fat_ctx_t;
+
+/* The internal view is the first member of the public context */
+static inline esp_vfs_fat_ctx_t *vfs_fat_outer(vfs_fat_ctx_t *fat_ctx)
+{
+    return (esp_vfs_fat_ctx_t *)fat_ctx;
+}
+
+/**
+ * @brief Allocate a context together with max_files file slots in a single block
+ *
+ * @return context to be released with vfs_fat_free(), or NULL if out of memory
+ */
+esp_vfs_fat_ctx_t *vfs_fat_alloc(size_t max_files, esp_vfs_fat_file_t **out_files);
+
+/**
+ * @brief Free a context allocated by vfs_fat_alloc()
+ */
+void vfs_fat_free(esp_vfs_fat_ctx_t *ctx);
+
+/**
+ * @brief Prepare the VFS-facing part of an instance (lock, file slots, drive prefix)
+ *
+ * Zeroes `fat_ctx` and `files`; does not touch FATFS drives or VFS registration.
+ */
+void vfs_fat_ctx_setup(vfs_fat_ctx_t *fat_ctx, esp_vfs_fat_file_t *files, size_t max_files, const char *fat_drive);
+
+/**
+ * @brief Release resources acquired by vfs_fat_ctx_setup() and by open files
+ */
+void vfs_fat_ctx_teardown(vfs_fat_ctx_t *fat_ctx);
+
+/**
+ * @brief Use caller-provided sector buffers for the volume window and the file slots
+ *
+ * Call after vfs_fat_ctx_setup() and before mounting. `sector_buffers` holds
+ * ESP_VFS_FAT_SECTOR_BUFFERS_SIZE(max_files, sector_size) bytes.
+ */
+void vfs_fat_ctx_attach_buffers(vfs_fat_ctx_t *fat_ctx, uint8_t *sector_buffers, size_t sector_size);
+
+/**
+ * @brief Allocate the volume window and switch the instance to wrapper-allocated sector buffers
+ *
+ * Used when the caller did not supply sector_buffers. File windows of `sector_size` bytes are
+ * then allocated on open and freed on close. Everything is freed by vfs_fat_ctx_teardown().
+ * No effect unless CONFIG_FATFS_USE_DYN_BUFFERS is enabled.
+ */
+esp_err_t vfs_fat_alloc_sector_buffers(vfs_fat_ctx_t *fat_ctx, size_t sector_size);
+
+/**
+ * @brief Give the instance's FATFS its LFN working buffer
+ *
+ * Call after vfs_fat_ctx_setup() and before mounting. No effect unless CONFIG_FATFS_LFN_HEAP is
+ * selected. A NULL `lfn_buffer` makes the wrapper allocate ESP_VFS_FAT_LFN_BUFFER_SIZE bytes with
+ * the capabilities selected by CONFIG_FATFS_HEAP_CAPS, freed by vfs_fat_ctx_teardown(). A caller
+ * buffer is left to the caller.
+ */
+esp_err_t vfs_fat_attach_lfn_buffer(vfs_fat_ctx_t *fat_ctx, void *lfn_buffer);
+
+/**
+ * @brief Register an instance with VFS at base_path and make it findable by path
+ *
+ * Path-based functions such as esp_vfs_fat_info() only work for instances registered this way.
+ */
+esp_err_t vfs_fat_register_path(vfs_fat_ctx_t *fat_ctx, const char *base_path);
+
+/**
+ * @brief Undo vfs_fat_register_path()
+ */
+esp_err_t vfs_fat_unregister_path(vfs_fat_ctx_t *fat_ctx);
+
+/**
+ * @brief Find an instance registered with vfs_fat_register_path()
+ *
+ * @return instance, or NULL if nothing is registered at base_path
+ */
+vfs_fat_ctx_t *vfs_fat_find_by_path(const char *base_path);
+
 typedef struct vfs_fat_spiflash_ctx_t {
     const esp_partition_t *partition;           //The partition where the FAT is located
     bool by_label;                              //If the partition is mounted by label or not
@@ -36,13 +115,6 @@ static inline size_t esp_vfs_fat_get_allocation_unit_size(
     alloc_unit_size = MIN(alloc_unit_size, max_size);
     return alloc_unit_size;
 }
-
-typedef struct vfs_fat_bdl_ctx_t {
-    esp_blockdev_handle_t bdl_handle;           //BDL device handle
-    BYTE pdrv;                                  //Drive number that is mounted
-    FATFS *fs;                                  //FAT structure pointer that is registered
-    esp_vfs_fat_mount_config_t mount_config;    //Mount configuration
-} vfs_fat_bdl_ctx_t;
 
 #ifndef CONFIG_IDF_TARGET_LINUX
 typedef struct vfs_fat_sd_ctx_t {

@@ -58,9 +58,17 @@ TEST_CASE("BDL: Create volume on memory BDL, write and read back data", "[fatfs]
     REQUIRE(f_mkfs(drv, &opt, work_area, sizeof(work_area)) == FR_OK);
 
     FATFS fs = {};
+#if FF_USE_DYN_BUFFER
+    static BYTE win[FF_MAX_SS];
+    fs.win = win;
+#endif
     REQUIRE(f_mount(&fs, drv, 1) == FR_OK);
 
     FIL file = {};
+#if !FF_FS_TINY && FF_USE_DYN_BUFFER
+    static BYTE file_buf[FF_MAX_SS];
+    file.buf = file_buf;
+#endif
     UINT bw;
     REQUIRE(f_open(&file, "test.txt", FA_OPEN_ALWAYS | FA_READ | FA_WRITE) == FR_OK);
 
@@ -192,10 +200,8 @@ TEST_CASE("BDL VFS: mount, write and read via POSIX API", "[fatfs][bdl][vfs]")
     REQUIRE(esp_blockdev_memory_get_from_buffer(backing, sizeof(backing),
                                                 &geometry, false, &mem_dev) == ESP_OK);
 
-    esp_vfs_fat_mount_config_t mount_config = {
-        .format_if_mount_failed = true,
-        .max_files = 5,
-    };
+    esp_vfs_fat_mount_config_t mount_config = VFS_FAT_MOUNT_DEFAULT_CONFIG();
+    mount_config.format_if_mount_failed = true;
     REQUIRE(esp_vfs_fat_bdl_mount("/bdl", mem_dev, &mount_config) == ESP_OK);
 
     const char *test_str = "BDL FatFS test data!\n";

@@ -85,14 +85,18 @@ TEST_CASE("(BDL) diskio register, format, write and read on partition", "[fatfs]
     ff_memfree(workbuf);
 
     FATFS fs;
+    memset(&fs, 0, sizeof(fs));
 #if FF_USE_DYN_BUFFER
-    fs.win = NULL;
+    static BYTE win[FF_MAX_SS];
+    fs.win = win;
 #endif
     TEST_ASSERT_EQUAL(FR_OK, f_mount(&fs, drv, 1));
 
     FIL file;
+    memset(&file, 0, sizeof(file));
 #if !FF_FS_TINY && FF_USE_DYN_BUFFER
-    file.buf = NULL;
+    static BYTE file_buf[FF_MAX_SS];
+    file.buf = file_buf;
 #endif
     UINT bw;
     TEST_ASSERT_EQUAL(FR_OK, f_open(&file, "test.txt", FA_OPEN_ALWAYS | FA_READ | FA_WRITE));

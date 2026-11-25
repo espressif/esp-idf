@@ -16,33 +16,12 @@
 
 static const char *TAG = "vfs_fat_bdl";
 
-static vfs_fat_bdl_ctx_t *s_bdl_ctx[FF_VOLUMES] = {};
-
-static bool get_ctx_id_by_bdl(esp_blockdev_handle_t bdl, uint32_t *out_id)
-{
-    for (int i = 0; i < FF_VOLUMES; i++) {
-        if (s_bdl_ctx[i] && s_bdl_ctx[i]->bdl_handle == bdl) {
-            *out_id = i;
-            return true;
-        }
-    }
-    return false;
-}
-
-static uint32_t get_unused_ctx_id(void)
-{
-    for (uint32_t i = 0; i < FF_VOLUMES; i++) {
-        if (!s_bdl_ctx[i]) {
-            return i;
-        }
-    }
-    return FF_VOLUMES;
-}
-
+/* `work` (one sector at least) is used for formatting if not NULL, otherwise a buffer is allocated */
 static esp_err_t try_mount_rw(FATFS *fs, const char *drv,
                                const esp_vfs_fat_mount_config_t *mount_config,
                                vfs_fat_x_ctx_flags_t *out_flags,
-                               size_t sec_num, size_t sec_size)
+                               size_t sec_num, size_t sec_size,
+                               void *work, size_t work_size)
 {
     FRESULT fresult = f_mount(fs, drv, 1);
     if (fresult == FR_OK) {
@@ -60,10 +39,14 @@ static esp_err_t try_mount_rw(FATFS *fs, const char *drv,
 
     ESP_LOGW(TAG, "f_mount failed (%d), formatting...", fresult);
 
-    const size_t workbuf_size = 4096;
-    void *workbuf = ff_memalloc(workbuf_size);
+    size_t workbuf_size = work_size;
+    void *workbuf = work;
     if (workbuf == NULL) {
-        return ESP_ERR_NO_MEM;
+        workbuf_size = 4096;
+        workbuf = ff_memalloc(workbuf_size);
+        if (workbuf == NULL) {
+            return ESP_ERR_NO_MEM;
+        }
     }
 
     size_t alloc_unit_size = esp_vfs_fat_get_allocation_unit_size(
@@ -79,7 +62,9 @@ static esp_err_t try_mount_rw(FATFS *fs, const char *drv,
         alloc_unit_size
     };
     fresult = f_mkfs(drv, &opt, workbuf, workbuf_size);
-    free(workbuf);
+    if (work == NULL) {
+        ff_memfree(workbuf);
+    }
     ESP_RETURN_ON_FALSE(fresult == FR_OK, ESP_FAIL, TAG, "f_mkfs failed (%d)", fresult);
 
     if (out_flags) {
@@ -93,18 +78,53 @@ static esp_err_t try_mount_rw(FATFS *fs, const char *drv,
     return ESP_OK;
 }
 
-esp_err_t esp_vfs_fat_bdl_mount(const char *base_path,
-                                esp_blockdev_handle_t bdl_handle,
-                                const esp_vfs_fat_mount_config_t *mount_config)
+size_t esp_vfs_fat_get_sector_size(esp_blockdev_handle_t bdl_handle)
 {
-    esp_err_t ret = ESP_OK;
-    vfs_fat_bdl_ctx_t *ctx = NULL;
+    return ff_diskio_bdl_get_sector_size(bdl_handle);
+}
 
-    ESP_RETURN_ON_FALSE(base_path, ESP_ERR_INVALID_ARG, TAG, "base_path is NULL");
+esp_err_t esp_vfs_fat_init(esp_vfs_fat_ctx_t *ctx, const esp_vfs_fat_resources_t *resources,
+                           esp_blockdev_handle_t bdl_handle, const esp_vfs_fat_mount_config_t *mount_config)
+{
+    ESP_RETURN_ON_FALSE(ctx && resources, ESP_ERR_INVALID_ARG, TAG, "ctx or resources is NULL");
+    ESP_RETURN_ON_FALSE(resources->files && resources->max_files > 0, ESP_ERR_INVALID_ARG, TAG, "invalid file slots");
     ESP_RETURN_ON_FALSE(bdl_handle != ESP_BLOCKDEV_HANDLE_INVALID, ESP_ERR_INVALID_ARG, TAG, "invalid BDL handle");
     ESP_RETURN_ON_FALSE(mount_config, ESP_ERR_INVALID_ARG, TAG, "mount_config is NULL");
     ESP_RETURN_ON_FALSE(!(mount_config->read_only && mount_config->format_if_mount_failed),
-                         ESP_ERR_INVALID_ARG, TAG, "read_only and format_if_mount_failed are mutually exclusive");
+                        ESP_ERR_INVALID_ARG, TAG, "read_only and format_if_mount_failed are mutually exclusive");
+    /* Also keeps ff_diskio_clear_pdrv_bdl(), which matches by handle, from touching another instance */
+    ESP_RETURN_ON_FALSE(ff_diskio_get_pdrv_bdl(bdl_handle) == 0xFF, ESP_ERR_INVALID_STATE, TAG,
+                        "BDL is already used by another FATFS instance");
+
+    const size_t max_files = resources->max_files;
+    const size_t sec_size = esp_vfs_fat_get_sector_size(bdl_handle);
+    ESP_RETURN_ON_FALSE(sec_size != 0, ESP_ERR_INVALID_ARG, TAG, "BDL geometry is incompatible with FATFS");
+
+    const bool need_sectors = ESP_VFS_FAT_SECTOR_BUFFERS_SIZE(max_files, sec_size) > 0;
+    const bool need_lfn = ESP_VFS_FAT_LFN_BUFFER_SIZE > 0;
+    const bool has_sectors = resources->sector_buffers != NULL;
+    const bool has_lfn = resources->lfn_buffer != NULL;
+    /* Caller supplies every buffer this configuration uses, or none; the wrapper then allocates them all */
+    ESP_RETURN_ON_FALSE(!(need_sectors && need_lfn && has_sectors != has_lfn), ESP_ERR_INVALID_ARG, TAG,
+                        "pass sector_buffers and lfn_buffer together, or leave both NULL");
+
+    uint8_t *sector_buffers = NULL;
+    const size_t sector_buffers_needed = ESP_VFS_FAT_SECTOR_BUFFERS_SIZE(max_files, sec_size);
+    if (has_sectors && need_sectors) {
+        ESP_RETURN_ON_FALSE(resources->sector_buffers_size >= sector_buffers_needed, ESP_ERR_INVALID_SIZE, TAG,
+                            "sector_buffers needs %u bytes", (unsigned)sector_buffers_needed);
+        sector_buffers = resources->sector_buffers;
+    }
+    void *lfn_buffer = NULL;
+#if FF_USE_LFN == 3
+    if (has_lfn) {
+        ESP_RETURN_ON_FALSE(resources->lfn_buffer_size >= ESP_VFS_FAT_LFN_BUFFER_SIZE, ESP_ERR_INVALID_SIZE, TAG,
+                            "lfn_buffer needs %u bytes", (unsigned)ESP_VFS_FAT_LFN_BUFFER_SIZE);
+        ESP_RETURN_ON_FALSE(((uintptr_t)resources->lfn_buffer & 1) == 0, ESP_ERR_INVALID_ARG, TAG,
+                            "lfn_buffer must be 2-byte aligned");
+        lfn_buffer = resources->lfn_buffer;
+    }
+#endif
 
     BYTE pdrv = 0xFF;
     if (ff_diskio_get_drive(&pdrv) != ESP_OK) {
@@ -114,92 +134,166 @@ esp_err_t esp_vfs_fat_bdl_mount(const char *base_path,
     ESP_LOGD(TAG, "using pdrv=%i", pdrv);
     char drv[3] = {(char)('0' + pdrv), ':', 0};
 
-    ESP_GOTO_ON_ERROR(ff_diskio_register_bdl(pdrv, bdl_handle), fail, TAG,
-                      "ff_diskio_register_bdl failed pdrv=%i, error - 0x(%x)", pdrv, ret);
+    vfs_fat_ctx_t *fat_ctx = &ctx->priv;
+    vfs_fat_ctx_setup(fat_ctx, resources->files, max_files, drv);
+    esp_err_t ret = vfs_fat_attach_lfn_buffer(fat_ctx, lfn_buffer);
+    if (ret != ESP_OK) {
+        vfs_fat_ctx_teardown(fat_ctx);
+        return ret;
+    }
+    if (sector_buffers) {
+        vfs_fat_ctx_attach_buffers(fat_ctx, sector_buffers, sec_size);
+    } else {
+        ret = vfs_fat_alloc_sector_buffers(fat_ctx, sec_size);
+        if (ret != ESP_OK) {
+            vfs_fat_ctx_teardown(fat_ctx);
+            return ret;
+        }
+    }
+    fat_ctx->pdrv = pdrv;
+    fat_ctx->bdl = bdl_handle;
+    fat_ctx->mount_config = *mount_config;
 
-    FATFS *fs = NULL;
-    esp_vfs_fat_conf_t conf = {
-        .base_path = base_path,
-        .fat_drive = drv,
-        .max_files = mount_config->max_files,
-    };
-    ret = esp_vfs_fat_register(&conf, &fs);
-    if (ret == ESP_ERR_INVALID_STATE) {
-        // already registered with VFS
-    } else if (ret != ESP_OK) {
-        ESP_LOGD(TAG, "esp_vfs_fat_register failed 0x(%x)", ret);
-        goto fail;
+    ret = ff_diskio_register_bdl(pdrv, bdl_handle);
+    if (ret != ESP_OK) {
+        ESP_LOGE(TAG, "ff_diskio_register_bdl failed pdrv=%i, error - 0x(%x)", pdrv, ret);
+        vfs_fat_ctx_teardown(fat_ctx);
+        return ret;
     }
 
     WORD sec_size_w;
-    if (disk_ioctl(pdrv, GET_SECTOR_SIZE, &sec_size_w) != RES_OK) {
+    if (disk_ioctl(pdrv, GET_SECTOR_SIZE, &sec_size_w) != RES_OK || sec_size_w != sec_size) {
         ESP_LOGE(TAG, "failed to query sector size from diskio");
         ret = ESP_FAIL;
         goto fail;
     }
-    size_t sec_size = (size_t)sec_size_w;
     size_t sec_num = (size_t)(bdl_handle->geometry.disk_size / sec_size);
 
+    /* The volume window is idle while formatting, so it doubles as the f_mkfs work area */
+    void *mkfs_work = NULL;
+    size_t mkfs_work_size = 0;
+#if FF_USE_DYN_BUFFER
+    mkfs_work = fat_ctx->fs.win;
+    mkfs_work_size = sec_size;
+#else
+    mkfs_work = fat_ctx->fs.win;
+    mkfs_work_size = sizeof(fat_ctx->fs.win);
+#endif
+
     if (bdl_handle->device_flags.read_only) {
-        FRESULT fresult = f_mount(fs, drv, 1);
+        FRESULT fresult = f_mount(&fat_ctx->fs, drv, 1);
         if (fresult != FR_OK) {
             ESP_LOGW(TAG, "f_mount failed (%d)", fresult);
             ret = ESP_FAIL;
             goto fail;
         }
     } else {
-        vfs_fat_x_ctx_flags_t flags = 0;
-        ret = try_mount_rw(fs, drv, mount_config, &flags, sec_num, sec_size);
+        ret = try_mount_rw(&fat_ctx->fs, drv, mount_config, &fat_ctx->state, sec_num, sec_size,
+                           mkfs_work, mkfs_work_size);
         if (ret != ESP_OK) {
             goto fail;
         }
     }
 
-    ctx = calloc(1, sizeof(vfs_fat_bdl_ctx_t));
-    ESP_GOTO_ON_FALSE(ctx, ESP_ERR_NO_MEM, fail, TAG, "no mem");
-    ctx->bdl_handle = bdl_handle;
-    ctx->pdrv = pdrv;
-    ctx->fs = fs;
-    memcpy(&ctx->mount_config, mount_config, sizeof(esp_vfs_fat_mount_config_t));
-
-    uint32_t ctx_id = get_unused_ctx_id();
-    assert(ctx_id != FF_VOLUMES);
-    s_bdl_ctx[ctx_id] = ctx;
-
     if (bdl_handle->device_flags.read_only || mount_config->read_only) {
-        esp_vfs_set_readonly_flag(base_path);
+        fat_ctx->vfs_flags |= ESP_VFS_FLAG_READONLY_FS;
     }
-
     return ESP_OK;
 
 fail:
-    f_mount(0, drv, 0);
-    esp_vfs_fat_unregister_path(base_path);
+    /* Clears FatFs[vol] so the volume does not keep pointing into this context */
+    f_mount(NULL, drv, 0);
     ff_diskio_unregister(pdrv);
-    free(ctx);
+    ff_diskio_clear_pdrv_bdl(bdl_handle);
+    vfs_fat_ctx_teardown(fat_ctx);
     return ret;
+}
+
+esp_err_t esp_vfs_fat_deinit(esp_vfs_fat_ctx_t *ctx)
+{
+    ESP_RETURN_ON_FALSE(ctx, ESP_ERR_INVALID_ARG, TAG, "ctx is NULL");
+    vfs_fat_ctx_t *fat_ctx = &ctx->priv;
+    ESP_RETURN_ON_FALSE(fat_ctx->base_path[0] == '\0', ESP_ERR_INVALID_STATE, TAG,
+                        "instance is still registered at %s", fat_ctx->base_path);
+
+    char drv[3] = {(char)('0' + fat_ctx->pdrv), ':', 0};
+    f_mount(NULL, drv, 0);
+    ff_diskio_unregister(fat_ctx->pdrv);
+    ff_diskio_clear_pdrv_bdl(fat_ctx->bdl);
+    vfs_fat_ctx_teardown(fat_ctx);
+    return ESP_OK;
+}
+
+esp_err_t esp_vfs_fat_create(esp_blockdev_handle_t bdl_handle, const esp_vfs_fat_mount_config_t *mount_config,
+                             esp_vfs_fat_ctx_t **out_ctx)
+{
+    ESP_RETURN_ON_FALSE(mount_config && out_ctx, ESP_ERR_INVALID_ARG, TAG, "invalid argument");
+    *out_ctx = NULL;
+
+    size_t max_files = mount_config->max_files > 0 ? (size_t)mount_config->max_files : 1;
+    esp_vfs_fat_file_t *files = NULL;
+    esp_vfs_fat_ctx_t *ctx = vfs_fat_alloc(max_files, &files);
+    ESP_RETURN_ON_FALSE(ctx, ESP_ERR_NO_MEM, TAG, "no mem");
+
+    const esp_vfs_fat_resources_t resources = {
+        .files = files,
+        .max_files = max_files,
+    };
+    esp_err_t ret = esp_vfs_fat_init(ctx, &resources, bdl_handle, mount_config);
+    if (ret != ESP_OK) {
+        vfs_fat_free(ctx);
+        return ret;
+    }
+    *out_ctx = ctx;
+    return ESP_OK;
+}
+
+esp_err_t esp_vfs_fat_destroy(esp_vfs_fat_ctx_t *ctx)
+{
+    ESP_RETURN_ON_ERROR(esp_vfs_fat_deinit(ctx), TAG, "deinit failed");
+    vfs_fat_free(ctx);
+    return ESP_OK;
+}
+
+esp_err_t esp_vfs_fat_mount(const char *base_path, esp_blockdev_handle_t bdl_handle,
+                            const esp_vfs_fat_mount_config_t *mount_config)
+{
+    ESP_RETURN_ON_FALSE(base_path, ESP_ERR_INVALID_ARG, TAG, "base_path is NULL");
+
+    esp_vfs_fat_ctx_t *ctx = NULL;
+    ESP_RETURN_ON_ERROR(esp_vfs_fat_create(bdl_handle, mount_config, &ctx), TAG, "failed to create FATFS instance");
+
+    esp_err_t ret = vfs_fat_register_path(&ctx->priv, base_path);
+    if (ret != ESP_OK) {
+        ESP_LOGE(TAG, "failed to register %s (0x%x)", base_path, ret);
+        esp_vfs_fat_destroy(ctx);
+        return ret;
+    }
+    return ESP_OK;
+}
+
+esp_err_t esp_vfs_fat_unmount(const char *base_path)
+{
+    vfs_fat_ctx_t *fat_ctx = base_path ? vfs_fat_find_by_path(base_path) : NULL;
+    ESP_RETURN_ON_FALSE(fat_ctx && !fat_ctx->legacy, ESP_ERR_INVALID_STATE, TAG,
+                        "no instance mounted at this path with esp_vfs_fat_mount");
+
+    esp_err_t err = vfs_fat_unregister_path(fat_ctx);
+    esp_err_t err_destroy = esp_vfs_fat_destroy(vfs_fat_outer(fat_ctx));
+    return err != ESP_OK ? err : err_destroy;
+}
+
+esp_err_t esp_vfs_fat_bdl_mount(const char *base_path,
+                                esp_blockdev_handle_t bdl_handle,
+                                const esp_vfs_fat_mount_config_t *mount_config)
+{
+    return esp_vfs_fat_mount(base_path, bdl_handle, mount_config);
 }
 
 esp_err_t esp_vfs_fat_bdl_unmount(const char *base_path, esp_blockdev_handle_t bdl_handle)
 {
-    BYTE pdrv = ff_diskio_get_pdrv_bdl(bdl_handle);
-    ESP_RETURN_ON_FALSE(pdrv != 0xff, ESP_ERR_INVALID_STATE, TAG,
-                        "BDL device isn't registered, call esp_vfs_fat_bdl_mount first");
-
-    uint32_t id = FF_VOLUMES;
-    ESP_RETURN_ON_FALSE(get_ctx_id_by_bdl(bdl_handle, &id), ESP_ERR_INVALID_STATE, TAG,
-                        "BDL device isn't registered, call esp_vfs_fat_bdl_mount first");
-    assert(id != FF_VOLUMES);
-
-    char drv[3] = {(char)('0' + pdrv), ':', 0};
-    f_mount(0, drv, 0);
-    ff_diskio_unregister(pdrv);
-    ff_diskio_clear_pdrv_bdl(bdl_handle);
-
-    esp_err_t err = esp_vfs_fat_unregister_path(base_path);
-
-    free(s_bdl_ctx[id]);
-    s_bdl_ctx[id] = NULL;
-
-    return err;
+    vfs_fat_ctx_t *fat_ctx = base_path ? vfs_fat_find_by_path(base_path) : NULL;
+    ESP_RETURN_ON_FALSE(fat_ctx && !fat_ctx->legacy && fat_ctx->bdl == bdl_handle, ESP_ERR_INVALID_STATE, TAG,
+                        "BDL device isn't mounted at this path, call esp_vfs_fat_bdl_mount first");
+    return esp_vfs_fat_unmount(base_path);
 }

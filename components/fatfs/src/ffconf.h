@@ -361,7 +361,7 @@
 /* The option FF_USE_DYN_BUFFER controls source of size used for buffers in the FS and FIL objects.
 /
 /   0: Disable dynamic buffer size and use static size buffers defined by FF_MAX_SS.
-/   1: Enable dynamic buffer size and use ff_memmalloc() to allocate buffers.
+/   1: Enable dynamic buffer size; the caller provides the buffers.
 */
 
 
