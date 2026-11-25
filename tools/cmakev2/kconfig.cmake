@@ -39,6 +39,21 @@ set(CONFIGDEP_MIN_KCONFIG_VERSION "3.6.0")
 function(__init_kconfig)
     idf_build_get_property(idf_path IDF_PATH)
 
+    # externalproject_add gives a subproject the main project's whole
+    # environment, and __get_default_value below prefers the environment over
+    # the command line. In the main project's environment, SDKCONFIG is the
+    # main project's sdkconfig path, SDKCONFIG_DEFAULTS lists the main
+    # project's defaults files and GENERATE_SDKCONFIG says whether to write an
+    # sdkconfig. A subproject that kept the three variables would read the main
+    # project's sdkconfig with the main project's defaults files and could
+    # overwrite it. A subproject that shares the main project's configuration is
+    # passed the values it needs on the command line instead.
+    if(IDF_SUBPROJECT)
+        unset(ENV{SDKCONFIG})
+        unset(ENV{SDKCONFIG_DEFAULTS})
+        unset(ENV{GENERATE_SDKCONFIG})
+    endif()
+
     # Initialize the SDKCONFIG file path build property.
     __get_default_value(VARIABLE SDKCONFIG
                         DEFAULT "${CMAKE_SOURCE_DIR}/sdkconfig"
@@ -46,6 +61,7 @@ function(__init_kconfig)
     __get_absolute_paths(PATHS "${sdkconfig}" OUTPUT sdkconfig)
     idf_build_set_property(SDKCONFIG "${sdkconfig}")
     idf_build_set_property(__SDKCONFIG_ORIG "${sdkconfig}")
+    __subproject_check_sdkconfig()
 
     # Initialize the SDKCONFIG_DEFAULTS build property. __init_idf_target()
     # reads this property to detect the target from the defaults files, so it
@@ -234,16 +250,31 @@ function(__generate_sdkconfig)
     # otherwise leaves a value accumulated on the build property untouched.
     __resolve_sdkconfig_defaults()
 
+    # The SDKCONFIG build property can be set after idf.cmake is included.
+    __subproject_check_sdkconfig()
+
     # Collect Kconfig files from discovered components
     __consolidate_component_kconfig_files()
 
     # Collect Kconfig files from bootloader components
     __collect_kconfig_files_from_bootloader_components()
 
+    # The imported config options are checked in the last kconfgen pass only.
+    # The earlier passes run before the component manager has added its
+    # components, so the config options those declare are missing there.
+    idf_build_get_property(kconfgen_quiet __KCONFGEN_QUIET)
+    set(check_imported_config FALSE)
+    if(IDF_SUBPROJECT_IMPORTED_CONFIG AND NOT kconfgen_quiet)
+        set(check_imported_config TRUE)
+    endif()
+
     # Check if sdkconfig needs to be generated
     __should_generate_sdkconfig(OUTPUT generate)
     if(NOT generate)
         idf_dbg("Configuration files have not changed, skipping sdkconfig generation.")
+        if(check_imported_config)
+            __subproject_check_imported_config()
+        endif()
         return()
     endif()
 
@@ -254,6 +285,10 @@ function(__generate_sdkconfig)
 
     # Generate Kconfig outputs
     __generate_kconfig_outputs()
+
+    if(check_imported_config)
+        __subproject_check_imported_config()
+    endif()
 
     # Mirror CONFIG_* values onto build properties so
     # `idf_build_get_property(var CONFIG_FOO)` keeps working.
@@ -804,17 +839,29 @@ function(__create_base_kconfgen_command sdkconfig sdkconfig_defaults)
 
     # Store base command as a build property
     idf_build_set_property(__BASE_KCONFGEN_CMD "${base_kconfgen_cmd}")
+
+    # Only the kconfgen run of the configure step reads the imported config
+    # options. The configuration targets read the sdkconfig, because
+    # menuconfig reads its --config file again after saving and writes the
+    # sdkconfig from it.
+    set(configure_kconfgen_cmd "${base_kconfgen_cmd}")
+    if(IDF_SUBPROJECT_IMPORTED_CONFIG)
+        __subproject_import_config(INPUT "${sdkconfig_orig}" OUTPUT imported_sdkconfig)
+        string(REPLACE "--config;${sdkconfig_orig}" "--config;${imported_sdkconfig}"
+               configure_kconfgen_cmd "${base_kconfgen_cmd}")
+    endif()
+    idf_build_set_property(__CONFIGURE_KCONFGEN_CMD "${configure_kconfgen_cmd}")
 endfunction()
 
 #[[
     __run_kconfgen()
 
-    Run kconfgen and generate all output files using the stored base command.
-    Assumes that the base command is already created by
+    Run kconfgen and generate all output files using the stored configure
+    command. Assumes that the command is already created by
     __create_base_kconfgen_command().
 #]]
 function(__run_kconfgen)
-    idf_build_get_property(base_kconfgen_cmd __BASE_KCONFGEN_CMD)
+    idf_build_get_property(base_kconfgen_cmd __CONFIGURE_KCONFGEN_CMD)
     idf_build_get_property(kconfgen_outputs_cmd __KCONFGEN_OUTPUTS_CMD)
     idf_build_get_property(config_env_path __CONFIG_ENV_PATH)
 

@@ -9,8 +9,9 @@ idf_component_register(PRIV_REQUIRES partition_table esptool_py)
 
 # Do not generate flash file when building bootloader or is in early expansion of the build
 # This also applies to the ESP-TEE build, as the esp_tee component only requires the
-# Kconfig options from the bootloader
-if(BOOTLOADER_BUILD OR esp_tee_build OR NOT CONFIG_APP_BUILD_BOOTLOADER)
+# Kconfig options from the bootloader. A subproject added with
+# idf_subproject_add() does not build a bootloader either.
+if(BOOTLOADER_BUILD OR esp_tee_build OR IDF_SUBPROJECT OR NOT CONFIG_APP_BUILD_BOOTLOADER)
     return()
 endif()
 

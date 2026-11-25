@@ -31,6 +31,14 @@ function(__init_component_manager)
                         OUTPUT cmgr_iface)
     idf_build_set_property(IDF_COMPONENT_MANAGER_INTERFACE_VERSION ${cmgr_iface})
 
+    # externalproject_add gives a subproject the main project's whole
+    # environment, where DEPENDENCIES_LOCK is the main project's lock file. A
+    # subproject that kept it would write its own dependencies into the main
+    # project's lock file.
+    if(IDF_SUBPROJECT)
+        unset(ENV{DEPENDENCIES_LOCK})
+    endif()
+
     # Set DEPENDENCIES_LOCK if provided via environment or CMake variable.
     __get_default_value(VARIABLE DEPENDENCIES_LOCK
                         DEFAULT ""

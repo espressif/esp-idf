@@ -51,6 +51,7 @@ Component properties are attached to a single component and are read and written
 .. cmakev2:include:: ../../../../tools/cmakev2/manager.cmake
 .. cmakev2:include:: ../../../../tools/cmakev2/project.cmake
 .. cmakev2:include:: ../../../../tools/cmakev2/size.cmake
+.. cmakev2:include:: ../../../../tools/cmakev2/subproject.cmake
 .. cmakev2:include:: ../../../../tools/cmakev2/uf2.cmake
 .. cmakev2:include:: ../../../../tools/cmakev2/utilities.cmake
 .. cmakev2:include:: ../../../../tools/cmakev2/component_validation.cmake
