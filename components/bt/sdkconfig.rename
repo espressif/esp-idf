@@ -290,6 +290,3 @@ CONFIG_BT_NIMBLE_COEX_PHY_CODED_TX_RX_TLIM_DIS              CONFIG_BT_LE_COEX_PH
 # BLE Log: periodic Internal Snapshots are always enabled now; the legacy
 # TS switch only gates the analyzer toggle IO.
 CONFIG_BLE_LOG_TS_ENABLED                                   CONFIG_BLE_LOG_TS_SYNC_TOGGLE_IO_ENABLED
-
-CONFIG_BLE_LOG_USB_CDC_TX_BUFSIZE                               CONFIG_TINYUSB_CDC_TX_BUFSIZE
-CONFIG_BLE_LOG_USB_CDC_EP_BUFSIZE                               CONFIG_TINYUSB_CDC_EP_BUFSIZE
