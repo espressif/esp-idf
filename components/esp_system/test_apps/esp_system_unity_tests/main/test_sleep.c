@@ -481,7 +481,7 @@ static void check_wake_stub(void)
 {
     TEST_ASSERT_EQUAL(ESP_RST_DEEPSLEEP, esp_reset_reason());
     TEST_ASSERT_EQUAL_HEX32((uint32_t) &wake_stub, s_wake_stub_var);
-#if !CONFIG_IDF_TARGET_ESP32S3 && !CONFIG_IDF_TARGET_ESP32C6 && !CONFIG_IDF_TARGET_ESP32H2
+#if !SOC_PM_SUPPORT_DEEPSLEEP_CHECK_STUB_ONLY
     /* ROM code clears wake stub entry address */
     TEST_ASSERT_NULL(esp_get_deep_sleep_wake_stub());
 #endif
