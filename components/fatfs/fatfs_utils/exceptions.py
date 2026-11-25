@@ -6,6 +6,7 @@ from esp_pylib.errors import FatalError
 __all__ = [
     'FatalError',
     'InconsistentFATAttributes',
+    'InvalidNameException',
     'LowerCaseException',
     'NoFreeClusterException',
     'NotInitialized',
@@ -42,6 +43,15 @@ class LowerCaseException(Exception):
 class TooLongNameException(Exception):
     """
     Exception is raised when long name support is not enabled and user tries to write file longer then allowed
+    """
+
+    pass
+
+
+class InvalidNameException(Exception):
+    """
+    Exception is raised when the file or directory name contains characters not allowed by FAT
+    or exceeds the maximal length of the long file name
     """
 
     pass

@@ -181,6 +181,10 @@ ESP-IDF 提供了一个 FatFs 分区生成器 :component_file:`wl_fatfsgen.py <f
 
     fatfs_create_spiflash_image(my_fatfs_partition my_folder FLASH_IN_PROJECT)
 
+生成镜像的扇区大小由 :menuitem:`CONFIG_FATFS_SECTOR_SIZE` 设置。支持磨损均衡的镜像 (``fatfs_create_spiflash_image``) 可以使用 512 或 4096 字节。不带磨损均衡的只读镜像 (``fatfs_create_rawflash_image``) 还可以使用 1024 或 2048 字节。FatFs 只能挂载扇区大小不超过 512 与 :menuitem:`CONFIG_WL_SECTOR_SIZE` 中较大值的镜像，因此仅当 :menuitem:`CONFIG_WL_SECTOR_SIZE` 为 4096 时才提供 1024 和 2048 选项。出于同样的原因，当 :menuitem:`CONFIG_WL_SECTOR_SIZE` 为 512 时，无法挂载扇区大小为 4096 字节的镜像。
+
+如果 ``base_dir`` 中的文件名或目录名包含 FAT 不允许的字符（控制字符以及 ``\ / : * ? " < > |``），或长文件名超过 255 个字符，生成器会报错并停止。未启用长文件名支持 (:menuitem:`CONFIG_FATFS_LONG_FILENAMES`) 时，名称还必须符合 8.3 格式，不能包含 ``+ , ; = [ ]`` 或空格，并且只能包含一个点（位于文件名和扩展名之间）。启用长文件名支持时，不符合 8.3 格式或包含上述字符的名称将以长文件名形式存储。
+
 如果你为 SD 卡生成镜像，ESP-IDF 目前不提供主机端烧录步骤来将镜像直接写入卡。请使用其他主机工具（例如 ``dd``）来部署镜像。
 
 有关示例项目，请参阅 :example:`storage/fatfs/fatfsgen`。
@@ -535,7 +539,7 @@ ESP-IDF 为支持的存储介质提供便利封装函数。这些包括：
    * - VFS
      - 虚拟文件系统，ESP-IDF 提供的抽象层，允许应用程序通过统一的 POSIX 和 ``stdio.h`` 接口访问不同的底层文件系统。
    * - 逻辑扇区
-     - 呈现给 FatFs 和磁盘 I/O 层的逻辑块大小。对于带磨损均衡的 SPI flash，这是 WL 扇区大小。对于只读原始 SPI flash 分区，这是 flash 扇区大小。对于 SD 卡，通常为 512 字节。
+     - 呈现给 FatFs 和磁盘 I/O 层的逻辑块大小。对于带磨损均衡的 SPI flash，这是 WL 扇区大小。对于只读原始 SPI flash 分区，这是镜像的扇区大小，在使用 ``fatfs_create_rawflash_image`` 生成镜像时由 :menuitem:`CONFIG_FATFS_SECTOR_SIZE` 设置。对于 SD 卡，通常为 512 字节。
    * - WL 扇区
      - 磨损均衡层暴露给 FatFs 的逻辑扇区大小。根据 ``CONFIG_WL_SECTOR_SIZE``，可以是 512 字节或 4096 字节。
    * - flash 扇区
