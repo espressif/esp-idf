@@ -66,13 +66,19 @@ Clock Source
 
 .. only:: SOC_I2S_SUPPORTS_APLL
 
+    .. _i2s-apll-access-mode:
+
     APLL Access Mode
     ^^^^^^^^^^^^^^^^
 
-    After selecting :cpp:enumerator:`i2s_clock_src_t::I2S_CLK_SRC_APLL`, use ``flags.clk_src_adjustable`` in the STD, TDM, PDM TX, and PDM RX clock configuration structures to select the APLL access mode:
+    After selecting :cpp:enumerator:`i2s_clock_src_t::I2S_CLK_SRC_APLL`, use ``flags.clk_src_fixed`` in the STD, TDM, PDM TX, and PDM RX clock configuration structures to select the APLL access mode:
 
-    - ``false`` (default): Use APLL in fixed mode, allowing it to be shared by multiple peripherals. When APLL is used for the first time and has not yet been configured, I2S selects an appropriate APLL frequency according to the sample rate. If APLL is already configured, I2S reuses the existing frequency and adjusts its own divider. The configuration fails if the existing frequency cannot produce a valid I2S clock.
-    - ``true``: Use APLL exclusively in adjustable mode. I2S can adjust the APLL frequency during clock reconfiguration or :cpp:func:`i2s_channel_tune_rate` to obtain finer clock division, while other peripherals cannot acquire APLL at the same time. Because duplex channels acquire APLL separately, they cannot both use adjustable mode.
+    - ``false`` (default): Use APLL exclusively in adjustable mode. I2S can adjust the APLL frequency during clock reconfiguration or :cpp:func:`i2s_channel_tune_rate` to obtain finer clock division, while other peripherals cannot acquire APLL at the same time. The two channels in full-duplex can share adjustable APLL. For details, see :ref:`i2s-full-duplex-adjustable-apll`.
+    - ``true``: Use APLL in fixed mode, allowing it to be shared by multiple peripherals or unrelated I2S channels. When APLL is used for the first time and has not yet been configured, I2S selects an appropriate APLL frequency according to the sample rate. If APLL is already configured, I2S reuses the existing frequency and adjusts its own divider. The configuration fails if the existing frequency cannot produce a valid I2S clock.
+
+    .. note::
+
+        Two unrelated simplex channels or separate I2S controllers cannot use adjustable APLL at the same time. PDM channels retain exclusive per-channel adjustable access and do not participate in full-duplex APLL management. If APLL needs to be shared with other peripherals or unrelated I2S channels, set ``flags.clk_src_fixed`` to ``true``.
 
 Clock Terminology
 ^^^^^^^^^^^^^^^^^
@@ -86,6 +92,28 @@ Clock Terminology
 .. note::
 
     Normally, MCLK should be the multiple of ``sample rate`` and BCLK at the same time. The field :cpp:member:`i2s_std_clk_config_t::mclk_multiple` indicates the multiple of MCLK to the ``sample rate``. In most cases, ``I2S_MCLK_MULTIPLE_256`` should be enough. However, if ``slot_bit_width`` is set to ``I2S_SLOT_BIT_WIDTH_24BIT``, to keep MCLK a multiple to the BCLK, :cpp:member:`i2s_std_clk_config_t::mclk_multiple` should be set to multiples that are divisible by 3 such as ``I2S_MCLK_MULTIPLE_384``. Otherwise, WS will be inaccurate.
+
+.. _i2s-clock-jitter:
+
+Clock Accuracy and Jitter
+^^^^^^^^^^^^^^^^^^^^^^^^^
+
+I2S derives MCLK, BCLK, and WS by dividing a source clock. When the source clock cannot be divided by an integer to produce the target MCLK, the hardware uses fractional division so that the average frequency over time approaches the target. Adjacent clock periods can then use different division values, causing periodic variation in the output edge spacing. This is divider-induced clock jitter. Even when the measured average sample rate is accurate, period-level variation can still affect audio codecs that require a high-quality clock.
+
+Use the following approaches to reduce divider-induced jitter:
+
+- Select an ``mclk_multiple`` that keeps MCLK, BCLK, and the sample rate at integer ratios. For example, 24-bit slots typically use :cpp:enumerator:`i2s_mclk_multiple_t::I2S_MCLK_MULTIPLE_384` as the MCLK-to-sample-rate multiplication factor.
+- Select a source clock that is closer to the target frequency and permits integer division.
+
+.. only:: SOC_I2S_SUPPORTS_APLL
+
+    When using APLL with the default ``flags.clk_src_fixed = false``, adjustable mode is selected. The driver adjusts the APLL frequency during initialization and clock reconfiguration to prioritize integer division and minimize divider-induced jitter. However, in this mode, I2S acquires APLL exclusively, preventing other peripherals or unrelated I2S channels from using it at the same time.
+
+    If ``flags.clk_src_fixed`` is set to ``true`` (fixed mode) to share APLL, subsequent clock reconfiguration normally adjusts only the I2S divider. If the existing APLL frequency cannot produce the new sample rate through integer division, fractional division and additional jitter may result. For detailed rules of both modes, see :ref:`i2s-apll-access-mode`.
+
+.. note::
+
+    These approaches primarily reduce jitter introduced by clock division. They cannot eliminate phase noise from the source clock itself or signal-integrity issues introduced by external circuitry.
 
 .. only:: esp32
 
@@ -1103,6 +1131,19 @@ There are two methods to allocate a pair of full-duplex channels:
     - both channels produce the same frame timing, i.e. the same ``sample_rate_hz`` and the same total bits per frame (``total_slot * slot_bit_width``).
 
     The clock source, external clock frequency (``ext_clk_freq_hz``), and MCLK-related configuration, including the ``mclk`` pin, ``mclk_multiple``, and MCLK inversion setting, are not used as conditions for constituting full-duplex. The slot layout itself may also differ. For example, an STD channel and a TDM channel, or a 2-slot/32-bit channel paired with a 4-slot/16-bit channel, can still constitute full-duplex because the number of bits per frame is the same. Once a pair of full-duplex channels is established, the paired channel handle can be retrieved from :cpp:type:`i2s_chan_info_t`::pair_chan returned by :cpp:func:`i2s_channel_get_info`.
+
+.. only:: SOC_I2S_SUPPORTS_APLL
+
+    .. _i2s-full-duplex-adjustable-apll:
+
+    Adjustable APLL in Full-Duplex
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+    If both STD/TDM channels in full-duplex use APLL in adjustable mode, the driver manages them as a whole, and both channels use the same APLL frequency:
+
+    - The APLL frequency is decided by the master. When the master is initialized, reconfigures its clock, or tunes its rate, the driver adjusts the APLL frequency so that the master uses integer division to reduce clock jitter, and refreshes the divider of the slave automatically. No extra operation is needed on the slave.
+    - When the slave is initialized or reconfigures its clock, the driver keeps the current APLL frequency whenever possible. Only when the current frequency cannot provide the MCLK required by the slave does the driver adjust the APLL frequency, still keeping integer division for the master.
+    - If no APLL frequency satisfies both sides, initialization or clock reconfiguration fails.
 
 .. only:: SOC_I2S_HW_VERSION_1
 

@@ -298,6 +298,11 @@ esp_err_t i2s_channel_preload_data(i2s_chan_handle_t tx_handle, const void *src,
  *        So that to avoid exsaust of the memory to store the data from producer.
  *        Please take care the how different the frequency error can be tolerant by your codec,
  *        otherwise the codec might stop working if the frequency changes a lot.
+ * @note  In full-duplex mode, when both channels share adjustable APLL, the shared APLL is planned from the MCLK
+ *        in each channel's clock configuration. While the paired channel is running, the shared adjustable APLL
+ *        frequency is kept, so the tuned MCLK must fit the current APLL frequency and might use fractional division.
+ *        Tuning a slave channel never retargets adjustable APLL. On HW v2, it only changes the local divider of
+ *        the slave. On HW v1, TX and RX share the MCLK divider, so tuning either channel changes the MCLK of both.
  *
  * @param[in]  handle       I2S channel handler
  * @param[in]  tune_cfg     The clock tuning configuration, can be NULL if only need the current clock result
@@ -305,7 +310,9 @@ esp_err_t i2s_channel_preload_data(i2s_chan_handle_t tx_handle, const void *src,
  * @return
  *      - ESP_OK                 Tune the clock successfully
  *      - ESP_ERR_INVALID_ARG    Tune the clock failed because of the invalid argument like NULL pointer or out of range
- *      - ESP_ERR_INVALID_STATE  Tune the clock failed because the channel is not in READY state
+ *      - ESP_ERR_INVALID_STATE  Tune the clock failed because the channel is not in READY state, its duplex peer
+ *                               is stopping, or the current shared adjustable APLL can't provide the tuned MCLK
+ *                               while the duplex peer is running
  *      - ESP_ERR_NOT_SUPPORTED  Tune the clock failed because this function does not support to tune the external clock source
  */
 esp_err_t i2s_channel_tune_rate(i2s_chan_handle_t handle, const i2s_tuning_config_t *tune_cfg, i2s_tuning_info_t *tune_info);

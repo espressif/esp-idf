@@ -86,6 +86,8 @@ extern "C" {
 
 void i2s_test_common_sample_rate(i2s_chan_handle_t rx_chan, i2s_std_clk_config_t *clk_cfg,
                                  uint32_t error_divisor);
+void i2s_test_check_sample_rate(i2s_chan_handle_t rx_chan, uint32_t expected_rate_hz,
+                                uint32_t error_divisor);
 
 #ifdef __cplusplus
 }

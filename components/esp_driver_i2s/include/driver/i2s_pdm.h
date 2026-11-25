@@ -150,7 +150,7 @@ typedef struct {
     uint32_t                bclk_div;           /*!< The division from MCLK to BCLK. The typical and minimum value is I2S_PDM_RX_BCLK_DIV_MIN.
                                                  *   It will be set to I2S_PDM_RX_BCLK_DIV_MIN by default if it is smaller than I2S_PDM_RX_BCLK_DIV_MIN */
     struct {
-        uint32_t            clk_src_adjustable : 1; /*!< Set to enable clock source frequency adjustment. Only supported for `I2S_CLK_SRC_APLL` for now */
+        uint32_t            clk_src_fixed : 1; /*!< Set to keep the clock source frequency fixed so it can be shared with other peripherals. When `false` (default), the driver may adjust the clock source frequency exclusively when supported (currently `I2S_CLK_SRC_APLL`) */
     } flags;                                    /*!< I2S clock configuration flags */
 } i2s_pdm_rx_clk_config_t;
 
@@ -497,7 +497,7 @@ typedef struct {
     uint32_t                bclk_div;           /*!< The division from MCLK to BCLK. The minimum value is I2S_PDM_TX_BCLK_DIV_MIN.
                                                  *   It will be set to I2S_PDM_TX_BCLK_DIV_MIN by default if it is smaller than I2S_PDM_TX_BCLK_DIV_MIN */
     struct {
-        uint32_t            clk_src_adjustable : 1; /*!< Set to enable clock source frequency adjustment. Only supported for `I2S_CLK_SRC_APLL` for now */
+        uint32_t            clk_src_fixed : 1; /*!< Set to keep the clock source frequency fixed so it can be shared with other peripherals. When `false` (default), the driver may adjust the clock source frequency exclusively when supported (currently `I2S_CLK_SRC_APLL`) */
     } flags;                                    /*!< I2S clock configuration flags */
 } i2s_pdm_tx_clk_config_t;
 

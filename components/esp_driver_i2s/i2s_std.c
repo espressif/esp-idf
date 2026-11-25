@@ -27,20 +27,37 @@
 
 const static char *TAG = "i2s_std";
 
-static esp_err_t i2s_std_calculate_clock(i2s_chan_handle_t handle, const i2s_std_clk_config_t *clk_cfg,
-                                         i2s_apll_operation_t *apll_operation, i2s_hal_clock_info_t *clk_info)
+/* A master or an auto-demoted duplex slave derives MCLK from mclk_multiple, while an explicit slave derives it from BCLK. */
+static uint64_t i2s_std_calc_mclk_hz(const i2s_std_clk_config_t *clk_cfg, uint64_t bclk_hz, bool use_mclk_multiple)
 {
+    if (use_mclk_multiple) {
+        return (uint64_t)clk_cfg->sample_rate_hz * clk_cfg->mclk_multiple;
+    }
+    return bclk_hz * MAX(clk_cfg->bclk_div, 8);
+}
+
+/* Derive and validate the STD BCLK/MCLK requirements without acquiring a clock source or writing hardware. */
+static esp_err_t i2s_std_prepare_clock(i2s_chan_handle_t handle, const i2s_std_clk_config_t *clk_cfg,
+                                       uint32_t slot_bits, i2s_hal_clock_info_t *clk_info)
+{
+    /* A standard frame always has 2 slots; derive from constant so this helper can run before set_slot */
+    const uint32_t total_slot = 2;
     uint32_t rate = clk_cfg->sample_rate_hz;
-    i2s_std_slot_config_t *slot_cfg = &((i2s_std_config_t *)(handle->mode_info))->slot_cfg;
-    uint32_t slot_bits = slot_cfg->slot_bit_width;
+    uint64_t expected_bclk = (uint64_t)rate * total_slot * slot_bits;
+    ESP_RETURN_ON_FALSE(expected_bclk && expected_bclk <= UINT32_MAX, ESP_ERR_INVALID_ARG, TAG,
+                        "BCLK frequency is out of range");
+    clk_info->bclk = (uint32_t)expected_bclk;
     /* Calculate multiple
      * Fmclk = bck_div*fbck = fsclk/(mclk_div+b/a) */
-    if (handle->role == I2S_ROLE_MASTER || handle->full_duplex_slave) {
-        clk_info->bclk = rate * handle->total_slot * slot_bits;
-        clk_info->mclk = rate * clk_cfg->mclk_multiple;
-        clk_info->bclk_div = clk_info->mclk / clk_info->bclk;
+    bool use_mclk_multiple = handle->role == I2S_ROLE_MASTER || handle->full_duplex_slave;
+    uint64_t expected_mclk = i2s_std_calc_mclk_hz(clk_cfg, expected_bclk, use_mclk_multiple);
+    ESP_RETURN_ON_FALSE(expected_mclk && expected_mclk <= UINT32_MAX, ESP_ERR_INVALID_ARG, TAG,
+                        "MCLK frequency is out of range");
+    clk_info->mclk = (uint32_t)expected_mclk;
+    clk_info->bclk_div = clk_info->mclk / clk_info->bclk;
+    if (use_mclk_multiple) {
         if (clk_info->mclk % clk_info->bclk != 0) {
-            ESP_LOGW(TAG, "the current mclk multiple cannot perform integer division (slot_num: %"PRIu32", slot_bits: %"PRIu32")", handle->total_slot, slot_bits);
+            ESP_LOGW(TAG, "the current mclk multiple cannot perform integer division (slot_num: %"PRIu32", slot_bits: %"PRIu32")", total_slot, slot_bits);
         }
         /* As an internal full-duplex slave, the BCLK/WS are looped back from the on-chip master, but the slave logic
          * still needs enough MCLK/BCLK ratio to sample correctly. Measured minimums: TX slave >= 6, RX slave >= 4. */
@@ -52,44 +69,13 @@ static esp_err_t i2s_std_calculate_clock(i2s_chan_handle_t handle, const i2s_std
                          clk_info->bclk_div, handle->dir == I2S_DIR_TX ? "tx" : "rx", min_bclk_div);
             }
         }
-    } else {
-        if (clk_cfg->bclk_div < 8) {
-            ESP_LOGW(TAG, "the current bclk division is too small, adjust the bclk division to 8");
-            clk_info->bclk_div = 8;
-        } else {
-            clk_info->bclk_div = clk_cfg->bclk_div;
-        }
-        clk_info->bclk = rate * handle->total_slot * slot_bits;
-        clk_info->mclk = clk_info->bclk * clk_info->bclk_div;
+    } else if (clk_cfg->bclk_div < 8) {
+        ESP_LOGW(TAG, "the current bclk division is too small, adjust the bclk division to 8");
     }
-#if SOC_I2S_HW_VERSION_2
-    handle->is_external = clk_cfg->clk_src == I2S_CLK_SRC_EXTERNAL;
-    if (handle->is_external) {
-        if (clk_cfg->flags.clk_src_adjustable) {
-            ESP_LOGW(TAG, "adjustable clock source is only supported for APLL; ignoring");
-        }
-        clk_info->sclk = clk_cfg->ext_clk_freq_hz;
-    } else {
-        ESP_RETURN_ON_ERROR(i2s_resolve_source_clk_freq(handle, clk_cfg->clk_src, clk_cfg->flags.clk_src_adjustable,
-                                                        clk_info->mclk, apll_operation, &clk_info->sclk),
-                            TAG, "source clock frequency get failed");
-    }
-    float min_mclk_div = handle->is_external ? 0.99 : 1.99;
-#else
-    ESP_RETURN_ON_ERROR(i2s_resolve_source_clk_freq(handle, clk_cfg->clk_src, clk_cfg->flags.clk_src_adjustable,
-                                                    clk_info->mclk, apll_operation, &clk_info->sclk),
-                        TAG, "source clock frequency get failed");
-    float min_mclk_div = 1.99;
-#endif
-    clk_info->mclk_div = clk_info->sclk / clk_info->mclk;
-
-    /* Check if the configuration is correct. Use float for check in case the mclk division might be carried up in the fine division calculation */
-    ESP_RETURN_ON_FALSE((float)clk_info->sclk > clk_info->mclk * min_mclk_div, ESP_ERR_INVALID_ARG, TAG, "sample rate is too large");
-    ESP_RETURN_ON_FALSE(clk_info->mclk_div < I2S_LL_CLK_FRAC_DIV_N_MAX, ESP_ERR_INVALID_ARG, TAG, "sample rate is too small");
-
     return ESP_OK;
 }
 
+/* Prepare the source-clock transaction, validate its dividers, then apply and commit the STD clock configuration. */
 static esp_err_t i2s_std_set_clock(i2s_chan_handle_t handle, const i2s_std_clk_config_t *clk_cfg)
 {
     esp_err_t ret = ESP_OK;
@@ -99,36 +85,37 @@ static esp_err_t i2s_std_set_clock(i2s_chan_handle_t handle, const i2s_std_clk_c
                         (clk_cfg->mclk_multiple % 3 == 0), ESP_ERR_INVALID_ARG, TAG,
                         "The 'mclk_multiple' should be the multiple of 3 while using 24-bit data width");
 
-    i2s_clock_src_t clk_src = clk_cfg->clk_src;
-#ifdef I2S_LL_DEFAULT_CLK_SRC
-    if (clk_src == I2S_CLK_SRC_DEFAULT) {
-        clk_src = I2S_LL_DEFAULT_CLK_SRC;
+    i2s_hal_clock_info_t clk_info = {};
+    i2s_clock_src_transaction_t clock_transaction = {};
+
+    // Calculate the requested clocks before acquiring or modifying the selected source
+    ESP_GOTO_ON_ERROR(i2s_std_prepare_clock(handle, clk_cfg, real_slot_bit, &clk_info),
+                      err, TAG, "clock request calculation failed");
+    bool clk_src_adjustable = !clk_cfg->flags.clk_src_fixed;
+    ESP_GOTO_ON_ERROR(i2s_clock_src_acquire(handle, clk_cfg->clk_src,
+                                            clk_src_adjustable, &clock_transaction),
+                      err, TAG, "clock source acquire failed");
+    bool external_clk = false;
+    float min_mclk_div = 1.99;
+#if SOC_I2S_HW_VERSION_2
+    external_clk = clk_cfg->clk_src == I2S_CLK_SRC_EXTERNAL;
+    handle->is_external = external_clk;
+    if (external_clk) {
+        clk_info.sclk = clk_cfg->ext_clk_freq_hz;
+        min_mclk_div = 0.99;
     }
 #endif
-
-    i2s_hal_clock_info_t clk_info;
-    i2s_apll_operation_t apll_operation = {};
-    bool reuse_apll = false;
-    bool target_acquired = false;
-    const esp_clk_tree_src_config_t *resource_config = NULL;
-#if SOC_I2S_SUPPORTS_APLL
-    esp_clk_tree_src_config_t apll_resource_config = {
-        .flags.adjustable = clk_cfg->flags.clk_src_adjustable,
-    };
-    if (clk_src == I2S_CLK_SRC_APLL) {
-        reuse_apll = handle->state != I2S_CHAN_STATE_REGISTER && handle->clk_src == I2S_CLK_SRC_APLL;
-        resource_config = &apll_resource_config;
+    if (!external_clk) {
+        ESP_GOTO_ON_ERROR(i2s_resolve_source_clk_freq(handle, clk_cfg->clk_src,
+                                                      clk_src_adjustable, clk_info.mclk,
+                                                      &clock_transaction, &clk_info.sclk),
+                          err, TAG, "source clock frequency get failed");
     }
-#endif
-    if (!reuse_apll) {
-        ESP_GOTO_ON_ERROR(esp_clk_tree_acquire_src((soc_module_clk_t)clk_src, resource_config),
-                          err, TAG, "clock source acquire failed");
-        target_acquired = true;
-    }
-
-    // Calculate clock parameters after reserving the selected clock source
-    ESP_GOTO_ON_ERROR(i2s_std_calculate_clock(handle, clk_cfg, &apll_operation, &clk_info),
-                      err, TAG, "clock calculation failed");
+    clk_info.mclk_div = clk_info.sclk / clk_info.mclk;
+    ESP_GOTO_ON_FALSE((float)clk_info.sclk > clk_info.mclk * min_mclk_div,
+                      ESP_ERR_INVALID_ARG, err, TAG, "sample rate is too large");
+    ESP_GOTO_ON_FALSE(clk_info.mclk_div < I2S_LL_CLK_FRAC_DIV_N_MAX,
+                      ESP_ERR_INVALID_ARG, err, TAG, "sample rate is too small");
 
     hal_utils_clk_div_t ret_mclk_div = {};
     i2s_hal_calc_mclk_precise_division(clk_info.sclk, clk_info.mclk, &ret_mclk_div);
@@ -147,10 +134,11 @@ static esp_err_t i2s_std_set_clock(i2s_chan_handle_t handle, const i2s_std_clk_c
     portEXIT_CRITICAL(&g_i2s.spinlock);
 
     /* Update the mode info: clock configuration */
-    i2s_apll_operation_finish(handle, &apll_operation, true);
+    i2s_clock_src_commit(handle, &clock_transaction);
     memcpy(&(std_cfg->clk_cfg), clk_cfg, sizeof(i2s_std_clk_config_t));
     handle->clk_src = clk_cfg->clk_src;
     handle->sclk_hz = clk_info.sclk;
+    handle->target_mclk_hz = clk_info.mclk;
     handle->origin_mclk_hz = ((uint64_t)clk_info.sclk * ret_mclk_div.denominator) / tmp_div;
     handle->curr_mclk_hz = handle->origin_mclk_hz;
     handle->bclk_hz = clk_info.bclk;
@@ -160,15 +148,10 @@ static esp_err_t i2s_std_set_clock(i2s_chan_handle_t handle, const i2s_std_clk_c
 
     return ret;
 
-err:
-    i2s_apll_operation_finish(handle, &apll_operation, false);
-    if (target_acquired) {
-        esp_err_t release_ret = esp_clk_tree_release_src((soc_module_clk_t)clk_src);
-        if (release_ret != ESP_OK) {
-            return release_ret;
-        }
+err: {
+        esp_err_t abort_ret = i2s_clock_src_abort(handle, &clock_transaction);
+        return abort_ret == ESP_OK ? ret : abort_ret;
     }
-    return ret;
 }
 
 static i2s_std_slot_config_t s_i2s_std_normalize_slot_config(const i2s_std_slot_config_t *slot_cfg)
@@ -301,8 +284,13 @@ static esp_err_t i2s_std_set_gpio(i2s_chan_handle_t handle, const i2s_std_gpio_c
     return ESP_OK;
 }
 
-static esp_err_t s_i2s_channel_try_to_constitute_std_duplex(i2s_chan_handle_t handle, const i2s_std_config_t *std_cfg)
+static esp_err_t s_i2s_channel_try_to_constitute_std_duplex(i2s_chan_handle_t handle,
+                                                            const i2s_std_config_t *std_cfg,
+                                                            i2s_controller_t **locked_controller)
 {
+#if !SOC_I2S_HW_VERSION_1
+    (void)locked_controller;
+#endif
     /* Build the duplex candidate from the current channel's configuration */
     i2s_duplex_candidate_t candidate = {0};
     candidate.ws_pin = std_cfg->gpio_cfg.ws;
@@ -322,7 +310,7 @@ static esp_err_t s_i2s_channel_try_to_constitute_std_duplex(i2s_chan_handle_t ha
      * initialized yet, duplex will be constituted when the second channel is initialized. */
 #if SOC_I2S_HW_VERSION_1
     if (!handle->controller->full_duplex) {
-        i2s_chan_handle_t another = handle->dir == I2S_DIR_RX ? handle->controller->tx_chan : handle->controller->rx_chan;
+        i2s_chan_handle_t another = i2s_channel_get_peer(handle);
         if (another && another->state >= I2S_CHAN_STATE_READY) {
             bool port_changed = false;
             if (handle->is_port_auto) {
@@ -333,7 +321,7 @@ static esp_err_t s_i2s_channel_try_to_constitute_std_duplex(i2s_chan_handle_t ha
                     }
                     ESP_LOGD(TAG, "Trying to move %s channel from port %d to %d",
                              handle->dir == I2S_DIR_TX ? "TX" : "RX", handle->controller->id, i);
-                    if (i2s_channel_change_port(handle, i) == ESP_OK) {
+                    if (i2s_channel_change_port(handle, i, locked_controller) == ESP_OK) {
                         ESP_LOGD(TAG, "Move success!");
                         port_changed = true;
                         break;
@@ -361,7 +349,13 @@ esp_err_t i2s_channel_init_std_mode(i2s_chan_handle_t handle, const i2s_std_conf
     I2S_NULL_POINTER_CHECK(TAG, handle);
     esp_err_t ret = ESP_OK;
 
-    xSemaphoreTake(handle->mutex, portMAX_DELAY);
+    i2s_controller_t *locked_controller = i2s_channel_lock(handle);
+    bool clock_configured = false;
+    bool init_started = false;
+    bool was_full_duplex = handle->controller->full_duplex;
+    ESP_GOTO_ON_FALSE(handle->state == I2S_CHAN_STATE_REGISTER, ESP_ERR_INVALID_STATE, err, TAG, "the channel has initialized already");
+    ESP_GOTO_ON_ERROR(i2s_channel_check_init_state(handle), err, TAG, "invalid peer state for initialization");
+    init_started = true;
     handle->mode = I2S_COMM_MODE_STD;
     /* Allocate memory for storing the configurations of standard mode */
     if (handle->mode_info) {
@@ -369,9 +363,8 @@ esp_err_t i2s_channel_init_std_mode(i2s_chan_handle_t handle, const i2s_std_conf
     }
     handle->mode_info = calloc(1, sizeof(i2s_std_config_t));
     ESP_GOTO_ON_FALSE(handle->mode_info, ESP_ERR_NO_MEM, err, TAG, "no memory for storing the configurations");
-    ESP_GOTO_ON_FALSE(handle->state == I2S_CHAN_STATE_REGISTER, ESP_ERR_INVALID_STATE, err, TAG, "the channel has initialized already");
     /* Try to constitute full-duplex mode if the STD configuration is totally same as another channel */
-    ret = s_i2s_channel_try_to_constitute_std_duplex(handle, std_cfg);
+    ret = s_i2s_channel_try_to_constitute_std_duplex(handle, std_cfg, &locked_controller);
 #if SOC_I2S_HW_VERSION_1
     ESP_GOTO_ON_ERROR(ret, err, TAG, "Failed to constitute full-duplex mode");
 #endif
@@ -382,6 +375,7 @@ esp_err_t i2s_channel_init_std_mode(i2s_chan_handle_t handle, const i2s_std_conf
     /* i2s_set_std_slot should be called before i2s_set_std_clock while initializing, because clock is relay on the slot */
     ESP_GOTO_ON_ERROR(i2s_std_set_slot(handle, &std_cfg->slot_cfg), err, TAG, "initialize channel failed while setting slot");
     ESP_GOTO_ON_ERROR(i2s_std_set_clock(handle, &std_cfg->clk_cfg), err, TAG, "initialize channel failed while setting clock");
+    clock_configured = true;
     /* i2s_std_set_gpio should be called after i2s_std_set_clock as mclk relies on the clock source */
     ESP_GOTO_ON_ERROR(i2s_std_set_gpio(handle, &std_cfg->gpio_cfg), err, TAG, "initialize channel failed while setting gpio pins");
     if (I2S_CHANNEL_USES_DMA(handle)) {
@@ -410,13 +404,16 @@ esp_err_t i2s_channel_init_std_mode(i2s_chan_handle_t handle, const i2s_std_conf
 
     /* Initialization finished, mark state as ready */
     handle->state = I2S_CHAN_STATE_READY;
-    xSemaphoreGive(handle->mutex);
+    i2s_channel_unlock(locked_controller);
     ESP_LOGD(TAG, "The %s channel on I2S%d has been initialized to STD mode successfully",
              handle->dir == I2S_DIR_TX ? "tx" : "rx", handle->controller->id);
     return ret;
 
 err:
-    xSemaphoreGive(handle->mutex);
+    if (init_started) {
+        i2s_channel_rollback_init(handle, clock_configured, !was_full_duplex);
+    }
+    i2s_channel_unlock(locked_controller);
     return ret;
 }
 
@@ -427,35 +424,18 @@ esp_err_t i2s_channel_reconfig_std_clock(i2s_chan_handle_t handle, const i2s_std
 
     esp_err_t ret = ESP_OK;
 
-    xSemaphoreTake(handle->mutex, portMAX_DELAY);
+    i2s_controller_t *locked_controller = i2s_channel_lock(handle);
     ESP_GOTO_ON_FALSE(handle->mode == I2S_COMM_MODE_STD, ESP_ERR_INVALID_ARG, err, TAG, "this handle is not working in standard mode");
-    ESP_GOTO_ON_FALSE(handle->state == I2S_CHAN_STATE_READY, ESP_ERR_INVALID_STATE, err, TAG, "invalid state, I2S should be disabled before reconfiguring the clock");
+    ESP_GOTO_ON_ERROR(i2s_channel_check_reconfig_state(handle), err, TAG, "invalid state for clock reconfiguration");
 
     i2s_std_config_t *std_cfg = (i2s_std_config_t *)handle->mode_info;
     ESP_GOTO_ON_FALSE(std_cfg, ESP_ERR_INVALID_STATE, err, TAG, "initialization not complete");
 
     i2s_clock_src_t old_clk_src = std_cfg->clk_cfg.clk_src;
-#ifdef I2S_LL_DEFAULT_CLK_SRC
-    if (old_clk_src == I2S_CLK_SRC_DEFAULT) {
-        old_clk_src = I2S_LL_DEFAULT_CLK_SRC;
-    }
-#endif
-
+    bool old_apll_adjustable = i2s_channel_is_apll_adjustable(handle);
     ESP_GOTO_ON_ERROR(i2s_std_set_clock(handle, clk_cfg), err, TAG, "update clock failed");
-
-    bool reuse_apll = false;
-#if SOC_I2S_SUPPORTS_APLL
-    reuse_apll = old_clk_src == I2S_CLK_SRC_APLL && clk_cfg->clk_src == I2S_CLK_SRC_APLL;
-#endif
-    // APLL keeps its existing ownership, while other sources were acquired again during reconfiguration.
-    if (!reuse_apll) {
-        ESP_GOTO_ON_ERROR(esp_clk_tree_release_src((soc_module_clk_t)old_clk_src), err, TAG, "clock source disable failed");
-    }
-#if SOC_I2S_SUPPORTS_APLL
-    if (old_clk_src == I2S_CLK_SRC_APLL && clk_cfg->clk_src != I2S_CLK_SRC_APLL) {
-        handle->apll_adjustable = false;
-    }
-#endif
+    ESP_GOTO_ON_ERROR(i2s_channel_release_replaced_clk_src(handle, old_clk_src, old_apll_adjustable),
+                      err, TAG, "clock source disable failed");
 
 #ifdef CONFIG_PM_ENABLE
     // Create/Re-create power management lock
@@ -467,11 +447,11 @@ esp_err_t i2s_channel_reconfig_std_clock(i2s_chan_handle_t handle, const i2s_std
     }
 #endif //CONFIG_PM_ENABLE
 
-    xSemaphoreGive(handle->mutex);
+    i2s_channel_unlock(locked_controller);
 
     return ESP_OK;
 err:
-    xSemaphoreGive(handle->mutex);
+    i2s_channel_unlock(locked_controller);
     return ret;
 }
 
@@ -482,40 +462,32 @@ esp_err_t i2s_channel_reconfig_std_slot(i2s_chan_handle_t handle, const i2s_std_
 
     esp_err_t ret = ESP_OK;
 
-    xSemaphoreTake(handle->mutex, portMAX_DELAY);
+    i2s_controller_t *locked_controller = i2s_channel_lock(handle);
     ESP_GOTO_ON_FALSE(handle->mode == I2S_COMM_MODE_STD, ESP_ERR_INVALID_ARG, err, TAG, "this handle is not working in standard mode");
-    ESP_GOTO_ON_FALSE(handle->state == I2S_CHAN_STATE_READY, ESP_ERR_INVALID_STATE, err, TAG, "invalid state, I2S should be disabled before reconfiguring the slot");
+    ESP_GOTO_ON_ERROR(i2s_channel_check_reconfig_state(handle), err, TAG, "invalid state for slot reconfiguration");
 
     i2s_std_config_t *std_cfg = (i2s_std_config_t *)handle->mode_info;
     ESP_GOTO_ON_FALSE(std_cfg, ESP_ERR_INVALID_STATE, err, TAG, "initialization not complete");
 
-    uint32_t old_slot_bit_width = std_cfg->slot_cfg.slot_bit_width;
+    /* If the slot bit width changes, then need to update the clock */
+    uint32_t new_slot_bit_width = s_i2s_std_normalize_slot_config(slot_cfg).slot_bit_width;
+    bool update_clock = new_slot_bit_width != std_cfg->slot_cfg.slot_bit_width;
 
     ESP_GOTO_ON_ERROR(i2s_std_set_slot(handle, slot_cfg), err, TAG, "set i2s standard slot failed");
 
-    /* If the slot bit width changed, then need to update the clock */
-    if (std_cfg->slot_cfg.slot_bit_width != old_slot_bit_width) {
+    if (update_clock) {
         i2s_clock_src_t old_clk_src = std_cfg->clk_cfg.clk_src;
-#ifdef I2S_LL_DEFAULT_CLK_SRC
-        if (old_clk_src == I2S_CLK_SRC_DEFAULT) {
-            old_clk_src = I2S_LL_DEFAULT_CLK_SRC;
-        }
-#endif
+        bool old_apll_adjustable = i2s_channel_is_apll_adjustable(handle);
         ESP_GOTO_ON_ERROR(i2s_std_set_clock(handle, &std_cfg->clk_cfg), err, TAG, "update clock failed");
-        // disable old clock source after new clock is successfully configured
-#if SOC_I2S_SUPPORTS_APLL
-        if (old_clk_src != I2S_CLK_SRC_APLL)
-#endif
-        {
-            ESP_GOTO_ON_ERROR(esp_clk_tree_release_src((soc_module_clk_t)old_clk_src), err, TAG, "clock source disable failed");
-        }
+        ESP_GOTO_ON_ERROR(i2s_channel_release_replaced_clk_src(handle, old_clk_src, old_apll_adjustable),
+                          err, TAG, "clock source disable failed");
     }
 
-    xSemaphoreGive(handle->mutex);
+    i2s_channel_unlock(locked_controller);
 
     return ESP_OK;
 err:
-    xSemaphoreGive(handle->mutex);
+    i2s_channel_unlock(locked_controller);
     return ret;
 }
 
@@ -526,18 +498,18 @@ esp_err_t i2s_channel_reconfig_std_gpio(i2s_chan_handle_t handle, const i2s_std_
 
     esp_err_t ret = ESP_OK;
 
-    xSemaphoreTake(handle->mutex, portMAX_DELAY);
+    i2s_controller_t *locked_controller = i2s_channel_lock(handle);
     ESP_GOTO_ON_FALSE(handle->mode == I2S_COMM_MODE_STD, ESP_ERR_INVALID_ARG, err, TAG, "This handle is not working in standard mode");
-    ESP_GOTO_ON_FALSE(handle->state == I2S_CHAN_STATE_READY, ESP_ERR_INVALID_STATE, err, TAG, "Invalid state, I2S should be disabled before reconfiguring the gpio");
+    ESP_GOTO_ON_ERROR(i2s_channel_check_reconfig_state(handle), err, TAG, "invalid state for GPIO reconfiguration");
 
     if (handle->reserve_gpio_mask) {
         i2s_output_gpio_revoke(handle, handle->reserve_gpio_mask);
     }
     ESP_GOTO_ON_ERROR(i2s_std_set_gpio(handle, gpio_cfg), err, TAG, "set i2s standard slot failed");
-    xSemaphoreGive(handle->mutex);
+    i2s_channel_unlock(locked_controller);
 
     return ESP_OK;
 err:
-    xSemaphoreGive(handle->mutex);
+    i2s_channel_unlock(locked_controller);
     return ret;
 }
