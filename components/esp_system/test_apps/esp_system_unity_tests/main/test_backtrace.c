@@ -178,6 +178,29 @@ TEST_CASE("Test esp_backtrace_print_all_tasks() on RISC-V", "[esp_system]")
     }
 }
 
+/* Busy-waits for at least one full tick period, so that the tick interrupt of this core saves a frame of this task
+ * outside esp_backtrace_print(). The test does not depend on where that frame is. */
+static void __attribute__((noinline)) spin_across_tick(void)
+{
+    const TickType_t start = xTaskGetTickCount();
+    while (xTaskGetTickCount() - start < 2) {
+        ;
+    }
+}
+
+static void __attribute__((noinline)) backtrace_print_caller(void)
+{
+    TEST_ASSERT_EQUAL(ESP_OK, esp_backtrace_print(10));
+}
+
+TEST_CASE("Test esp_backtrace_print() from a task prints the backtrace of its caller", "[esp_system]")
+{
+    spin_across_tick();
+    printf("Backtrace of the caller:\n");
+    backtrace_print_caller();
+    printf("Backtrace of the caller done\n");
+}
+
 #endif // CONFIG_IDF_TARGET_ARCH_RISCV
 
 #if CONFIG_ESP_SYSTEM_USE_FRAME_POINTER

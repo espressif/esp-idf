@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -10,6 +10,8 @@
 #include "unity.h"
 #include "esp_timer.h"
 #include "esp_debug_helpers.h"
+#include "freertos/FreeRTOS.h"
+#include "freertos/task.h"
 /**
  * @brief Symbols defined by the linker.
  * Retrieve the addresses of both .eh_frame_hdr and .eh_frame sections.
@@ -44,6 +46,28 @@ TEST_CASE("Test task wdt can print backtrace with eh-frame", "eh-frame")
 TEST_CASE("Test panic can print backtrace with eh-frame", "eh-frame")
 {
     asm("unimp");
+}
+
+/* Busy-waits for at least one full tick period, so that the tick interrupt of this core saves a frame of this task
+ * outside esp_backtrace_print(). The test does not depend on where that frame is. */
+static void __attribute__((noinline)) spin_across_tick(void)
+{
+    const TickType_t start = xTaskGetTickCount();
+    while (xTaskGetTickCount() - start < 2) {
+    }
+}
+
+static void __attribute__((noinline)) backtrace_print_caller(void)
+{
+    TEST_ASSERT_EQUAL(ESP_OK, esp_backtrace_print(10));
+}
+
+TEST_CASE("Test esp_backtrace_print() from a task prints the backtrace of its caller with eh-frame", "eh-frame")
+{
+    spin_across_tick();
+    printf("Backtrace of the caller:\n");
+    backtrace_print_caller();
+    printf("Backtrace of the caller done\n");
 }
 
 void app_main(void)
