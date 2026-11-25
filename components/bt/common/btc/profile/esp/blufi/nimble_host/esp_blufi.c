@@ -426,16 +426,30 @@ static void deinit_gatt_values(void)
 int esp_blufi_gatt_svr_init(void)
 {
     int rc;
+
+#if !SOC_MPI_SUPPORTED
+    rc = blufi_rx_worker_start();
+    if (rc != 0) {
+        return rc;
+    }
+#endif
+
     ble_svc_gap_init();
     ble_svc_gatt_init();
 
     rc = ble_gatts_count_cfg(gatt_svr_svcs);
     if (rc != 0) {
+#if !SOC_MPI_SUPPORTED
+        blufi_rx_worker_stop();
+#endif
         return rc;
     }
 
     rc = ble_gatts_add_svcs(gatt_svr_svcs);
     if (rc != 0) {
+#if !SOC_MPI_SUPPORTED
+        blufi_rx_worker_stop();
+#endif
         return rc;
     }
 
@@ -445,6 +459,10 @@ int esp_blufi_gatt_svr_init(void)
 
 int esp_blufi_gatt_svr_deinit(void)
 {
+#if !SOC_MPI_SUPPORTED
+    blufi_rx_worker_stop();
+#endif
+
     deinit_gatt_values();
 
     ble_gatts_free_svcs();
