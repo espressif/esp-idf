@@ -29,7 +29,7 @@ if(CONFIG_SOC_GPSPI_SUPPORTED)
     )
 
     if(CONFIG_SOC_SPI_SUPPORT_SLAVE_HD_VER2)
-        list(APPEND srcs "spi_slave_hd_hal.c")
+        list(APPEND srcs "spi_slave_hd_hal.c" "spi_slave_hd_hal_iram.c")
     endif()
 endif()
 
