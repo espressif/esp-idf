@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -472,10 +472,10 @@ esp_err_t dw_gdma_lli_set_next(dw_gdma_lli_handle_t lli, dw_gdma_lli_handle_t ne
 
 esp_err_t dw_gdma_channel_config_transfer(dw_gdma_channel_handle_t chan, const dw_gdma_block_transfer_config_t *config)
 {
-    ESP_RETURN_ON_FALSE(chan && config, ESP_ERR_INVALID_ARG, TAG, "invalid argument");
-    ESP_RETURN_ON_FALSE(chan->src_transfer_type != DW_GDMA_BLOCK_TRANSFER_LIST &&
-                        chan->dst_transfer_type != DW_GDMA_BLOCK_TRANSFER_LIST,
-                        ESP_ERR_INVALID_STATE, TAG, "invalid transfer type");
+    ESP_RETURN_ON_FALSE_ISR(chan && config, ESP_ERR_INVALID_ARG, TAG, "invalid argument");
+    ESP_RETURN_ON_FALSE_ISR(chan->src_transfer_type != DW_GDMA_BLOCK_TRANSFER_LIST &&
+                            chan->dst_transfer_type != DW_GDMA_BLOCK_TRANSFER_LIST,
+                            ESP_ERR_INVALID_STATE, TAG, "invalid transfer type");
     dw_gdma_hal_context_t *hal = &chan->group->hal;
     int chan_id = chan->chan_id;
 
