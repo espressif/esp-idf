@@ -2831,13 +2831,25 @@ esp_err_t esp_nan_app_end_peer_datapaths(uint8_t publish_id)
     return  esp_wifi_nan_datapath_end(&ndp_end);
 }
 #endif /* CONFIG_ESP_WIFI_NAN_PAIRING */
+#endif /* CONFIG_ESP_WIFI_NAN_SYNC_ENABLE */
 
 esp_err_t esp_wifi_nan_get_own_svc_info(uint8_t *own_svc_id, char *svc_name, int *num_peer_records)
 {
+#ifdef CONFIG_ESP_WIFI_NAN_USD_ENABLE
+    if (s_usd_in_progress) {
+        return esp_nan_usd_get_own_svc_info(own_svc_id, svc_name, num_peer_records);
+    }
+#endif /* CONFIG_ESP_WIFI_NAN_USD_ENABLE */
+#ifdef CONFIG_ESP_WIFI_NAN_SYNC_ENABLE
     struct own_svc_info *own_svc = NULL;
 
     if (!own_svc_id || !num_peer_records || !svc_name) {
         ESP_LOGE(TAG, "NULL memory address for input parameters");
+        return ESP_FAIL;
+    }
+
+    if (!s_nan_data_lock) {
+        ESP_LOGE(TAG, "NAN not initialised");
         return ESP_FAIL;
     }
 
@@ -2865,10 +2877,18 @@ esp_err_t esp_wifi_nan_get_own_svc_info(uint8_t *own_svc_id, char *svc_name, int
 fail:
     NAN_DATA_UNLOCK();
     return ESP_FAIL;
+#endif /* CONFIG_ESP_WIFI_NAN_SYNC_ENABLE */
+    return ESP_FAIL;
 }
 
 esp_err_t esp_wifi_nan_get_peer_records(int *num_peer_records, uint8_t own_svc_id, struct nan_peer_record *peer_record)
 {
+#ifdef CONFIG_ESP_WIFI_NAN_USD_ENABLE
+    if (s_usd_in_progress) {
+        return esp_nan_usd_get_peer_records(num_peer_records, own_svc_id, peer_record);
+    }
+#endif /* CONFIG_ESP_WIFI_NAN_USD_ENABLE */
+#ifdef CONFIG_ESP_WIFI_NAN_SYNC_ENABLE
     struct own_svc_info *own_record = NULL;
     struct peer_svc_info *temp = NULL;
     int peer_num = 0;
@@ -2883,6 +2903,11 @@ esp_err_t esp_wifi_nan_get_peer_records(int *num_peer_records, uint8_t own_svc_i
     }
     if (*num_peer_records == 0) {
         ESP_LOGE(TAG, "Number of peer records provided is 0");
+        return ESP_FAIL;
+    }
+
+    if (!s_nan_data_lock) {
+        ESP_LOGE(TAG, "NAN not initialised");
         return ESP_FAIL;
     }
 
@@ -2931,15 +2956,28 @@ esp_err_t esp_wifi_nan_get_peer_records(int *num_peer_records, uint8_t own_svc_i
         NAN_DATA_UNLOCK();
         return ESP_FAIL;
     }
+#endif /* CONFIG_ESP_WIFI_NAN_SYNC_ENABLE */
+    return ESP_FAIL;
 }
 
 esp_err_t esp_wifi_nan_get_peer_info(char *svc_name, uint8_t *peer_mac, struct nan_peer_record *peer_info)
 {
+#ifdef CONFIG_ESP_WIFI_NAN_USD_ENABLE
+    if (s_usd_in_progress) {
+        return esp_nan_usd_get_peer_info(svc_name, peer_mac, peer_info);
+    }
+#endif /* CONFIG_ESP_WIFI_NAN_USD_ENABLE */
+#ifdef CONFIG_ESP_WIFI_NAN_SYNC_ENABLE
     struct peer_svc_info *peer_svc = NULL;
     uint8_t own_svc_id = 0;
 
     if (!peer_mac || !peer_info) {
         ESP_LOGE(TAG, "Invalid memory address for input parameters");
+        return ESP_FAIL;
+    }
+
+    if (!s_nan_data_lock) {
+        ESP_LOGE(TAG, "NAN not initialised");
         return ESP_FAIL;
     }
 
@@ -2976,8 +3014,9 @@ esp_err_t esp_wifi_nan_get_peer_info(char *svc_name, uint8_t *peer_mac, struct n
         NAN_DATA_UNLOCK();
         return ESP_FAIL;
     }
-}
 #endif /* CONFIG_ESP_WIFI_NAN_SYNC_ENABLE */
+    return ESP_FAIL;
+}
 
 #ifdef CONFIG_ESP_WIFI_NAN_USD_ENABLE
 esp_err_t esp_wifi_nan_usd_start(void)
@@ -2994,12 +3033,17 @@ esp_err_t esp_wifi_nan_usd_start(void)
 
 esp_err_t esp_wifi_nan_usd_stop(void)
 {
-    if (s_usd_in_progress) {
-        s_usd_in_progress = false;
-        esp_nan_usd_deinit();
-        ESP_LOGI(TAG, "NaN-USD Stopped");
+    if (!s_usd_in_progress) {
         return ESP_OK;
     }
+
+    if (esp_nan_usd_deinit() != ESP_OK) {
+        ESP_LOGE(TAG, "Failed to deinitialise NAN USD engine");
+        return ESP_FAIL;
+    }
+
+    s_usd_in_progress = false;
+    ESP_LOGI(TAG, "NaN-USD Stopped");
     return ESP_OK;
 }
 

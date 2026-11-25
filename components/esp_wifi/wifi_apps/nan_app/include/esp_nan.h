@@ -30,9 +30,6 @@ extern "C" {
 #define NDP_STATUS_ACCEPTED     1
 #define NDP_STATUS_REJECTED     2
 
-#define NAN_MAX_PEERS_RECORD    15
-#define ESP_NAN_PUBLISH         2
-#define ESP_NAN_SUBSCRIBE       1
 #ifndef NAN_IPV6_IDENTIFIER_LEN
 #define NAN_IPV6_IDENTIFIER_LEN    8
 #endif
@@ -49,16 +46,6 @@ extern "C" {
                (_identifier),                                                   \
                NAN_IPV6_IDENTIFIER_LEN);                                       \
     } while (0)
-
-/** Parameters of a peer service record */
-struct nan_peer_record {
-    uint8_t peer_svc_id;   /**< Identifier of Peer's service */
-    uint8_t own_svc_id;    /**< Identifier of own service associated with Peer */
-    uint8_t peer_nmi[6];   /**< Peer's NAN Management Interface address */
-    uint8_t peer_svc_type; /**< Peer's service type (Publish/Subscribe) */
-    uint8_t ndp_id;        /**< Specifies if the peer has any active datapath */
-    uint8_t peer_ndi[6];   /**< Peer's NAN Data Interface address, only valid when ndp_id is non-zero */
-};
 
 /**
   * @brief      Start NAN Synchronization using the provided parameters.
@@ -131,11 +118,32 @@ esp_err_t esp_wifi_nan_datapath_end(wifi_nan_datapath_end_req_t *req);
   */
 void esp_wifi_nan_get_ipv6_linklocal_from_mac(ip6_addr_t *ip6, uint8_t *mac_addr);
 
+#endif /* CONFIG_ESP_WIFI_NAN_SYNC_ENABLE */
+
+#if defined(CONFIG_ESP_WIFI_NAN_SYNC_ENABLE) ||  defined(CONFIG_ESP_WIFI_NAN_USD_ENABLE)
+
+#define NAN_MAX_PEERS_RECORD    15
+#define ESP_NAN_PUBLISH         2
+#define ESP_NAN_SUBSCRIBE       1
+
+/** Parameters of a peer service record */
+struct nan_peer_record {
+    uint8_t peer_svc_id;   /**< Identifier of Peer's service */
+    uint8_t own_svc_id;    /**< Identifier of own service associated with Peer */
+    uint8_t peer_nmi[6];   /**< Peer's NAN Management Interface address */
+    uint8_t peer_svc_type; /**< Peer's service type (Publish/Subscribe) */
+    uint8_t ndp_id;        /**< Specifies if the peer has any active datapath (0 for USD) */
+    uint8_t peer_ndi[6];   /**< Peer's NAN Data Interface address, only valid when ndp_id is non-zero */
+};
+
 /**
  * brief         Get own Service information from Service ID OR Name.
  *
  * @attention    If service information is to be fetched from service name, set own_svc_id as zero.
  * @note         Returns records discovered while participating in a synchronized NAN cluster.
+ * @note         For NAN-USD, at most one peer is tracked per service (the most recent
+ *               WIFI_EVENT_NAN_SVC_MATCH / WIFI_EVENT_NAN_REPLIED / WIFI_EVENT_NAN_RECEIVE),
+ *               so num_peer_records is 0 or 1.
  *
  * @param[inout] own_svc_id As input, it indicates Service ID to search for.
  *                          As output, it indicates Service ID of the service found using Service Name.
@@ -146,13 +154,14 @@ void esp_wifi_nan_get_ipv6_linklocal_from_mac(ip6_addr_t *ip6, uint8_t *mac_addr
  *   - ESP_OK: succeed
  *   - ESP_FAIL: failed
  */
-
 esp_err_t esp_wifi_nan_get_own_svc_info(uint8_t *own_svc_id, char *svc_name, int *num_peer_records);
 
 /**
  * brief         Get a list of Peers discovered by the given Service.
  *
  * @note         Reports peers discovered via synchronized NAN operations.
+ * @note         For NAN-USD, only the most recent match, reply, or follow-up peer is
+ *               returned (at most one record). NAN-Sync can return multiple peers.
  *
  * @param[inout] num_peer_records As input param, it stores max peers peer_record can hold.
  *               As output param, it specifies the actual number of peers this API returns.
@@ -162,13 +171,16 @@ esp_err_t esp_wifi_nan_get_own_svc_info(uint8_t *own_svc_id, char *svc_name, int
  *   - ESP_OK: succeed
  *   - ESP_FAIL: failed
  */
-
 esp_err_t esp_wifi_nan_get_peer_records(int *num_peer_records, uint8_t own_svc_id, struct nan_peer_record *peer_record);
 
 /**
  * brief         Find Peer's Service information using Peer MAC and optionally Service Name.
  *
  * @note         Provides peer information available from synchronized NAN discovery.
+ * @note         For NAN-USD, only the most recent match, reply, or follow-up peer is cached;
+ *               earlier peers are overwritten when a new WIFI_EVENT_NAN_SVC_MATCH,
+ *               WIFI_EVENT_NAN_REPLIED, or WIFI_EVENT_NAN_RECEIVE occurs.
+ *               Query succeeds only if peer_mac matches that cached peer.
  *
  * @param       svc_name    Service Name of the published/subscribed service.
  * @param       peer_mac    Peer's NAN Management Interface MAC address.
@@ -177,12 +189,8 @@ esp_err_t esp_wifi_nan_get_peer_records(int *num_peer_records, uint8_t own_svc_i
  *   - ESP_OK: succeed
  *   - ESP_FAIL: failed
  */
-
 esp_err_t esp_wifi_nan_get_peer_info(char *svc_name, uint8_t *peer_mac, struct nan_peer_record *peer_info);
 
-#endif /* CONFIG_ESP_WIFI_NAN_SYNC_ENABLE */
-
-#if defined(CONFIG_ESP_WIFI_NAN_SYNC_ENABLE) ||  defined(CONFIG_ESP_WIFI_NAN_USD_ENABLE)
 /**
   * @brief      Start publishing a service to NAN peers within a synchronized cluster or to NAN-USD peers
   *

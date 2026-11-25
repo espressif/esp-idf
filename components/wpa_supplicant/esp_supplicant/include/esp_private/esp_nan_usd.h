@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2025-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -12,6 +12,8 @@ extern "C" {
 
 #include "esp_err.h"
 #include "esp_wifi_types.h"
+
+struct nan_peer_record;
 
 #define GLOBAL_OPERATING_CLASS_81 81
 
@@ -51,6 +53,13 @@ esp_err_t esp_nan_usd_transmit(int handle, const uint8_t *ssi, uint16_t ssi_len,
                                const uint8_t *peer_addr, uint8_t req_instance_id);
 
 esp_err_t esp_nan_usd_cancel_service(int service_id);
+
+esp_err_t esp_nan_usd_get_own_svc_info(uint8_t *own_svc_id, char *svc_name, int *num_peer_records);
+
+esp_err_t esp_nan_usd_get_peer_records(int *num_peer_records, uint8_t own_svc_id, struct nan_peer_record *peer_record);
+
+esp_err_t esp_nan_usd_get_peer_info(char *svc_name, uint8_t *peer_mac, struct nan_peer_record *peer_info);
+
 #ifdef __cplusplus
 }
 #endif
