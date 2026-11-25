@@ -200,7 +200,7 @@ esp_err_t adc_continuous_monitor_register_event_callbacks(adc_monitor_handle_t m
         ESP_RETURN_ON_FALSE(esp_ptr_in_iram(cbs->on_below_low_thresh), ESP_ERR_INVALID_ARG, MNTOR_TAG, "on_below_low_thresh func not in iram");
     }
     if (user_data) {
-        ESP_RETURN_ON_FALSE(esp_ptr_in_dram(user_data) || esp_ptr_in_diram_dram(user_data), ESP_ERR_INVALID_ARG, MNTOR_TAG, "user_data not in iram");
+        ESP_RETURN_ON_FALSE(esp_ptr_internal(user_data), ESP_ERR_INVALID_ARG, MNTOR_TAG, "user_data not in internal RAM");
     }
 #endif
 
