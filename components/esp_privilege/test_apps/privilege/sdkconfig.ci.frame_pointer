@@ -1,0 +1,2 @@
+# Frame-pointer backtraces, for the M-mode backtrace of the U-mode panic tests
+CONFIG_ESP_SYSTEM_USE_FRAME_POINTER=y

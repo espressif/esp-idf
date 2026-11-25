@@ -17,6 +17,9 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "riscv/rvruntime-frames.h"
+#if CONFIG_RISCV_USER_MODE_TRAPS
+#include "esp_private/privilege_trap.h"
+#endif /* CONFIG_RISCV_USER_MODE_TRAPS */
 #include "esp_rom_sys.h"
 #include "esp_core_dump_common.h"
 #include "esp_core_dump_port.h"
@@ -437,6 +440,16 @@ void esp_core_dump_summary_parse_backtrace_info(esp_core_dump_bt_info_t *bt_info
      * extract the value of stack pointer (SP) at the time of crash
      */
     RvExcFrame *stack = (RvExcFrame *) paddr;
+
+#if CONFIG_RISCV_USER_MODE_TRAPS
+    /* Leave the backtrace of a trap from U-mode empty. Its stack pointer is a virtual address of the U-mode code,
+     * outside the dumped stack. */
+    if (rv_user_frame_from_user(stack)) {
+        bt_info->dump_size = 0;
+        return;
+    }
+#endif /* CONFIG_RISCV_USER_MODE_TRAPS */
+
     uint32_t *sp = (uint32_t *)stack->sp;
 
     /* vaddr is actual stack address when crash occurred. However that stack is now saved
