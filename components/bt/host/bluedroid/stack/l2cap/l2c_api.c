@@ -2423,18 +2423,22 @@ UINT16 L2CA_FlushChannel (UINT16 lcid, UINT16 num_to_flush)
 
         // Iterate though list and flush the amount requested from
         // the transmit data queue that satisfy the layer and event conditions.
-        for (const list_node_t *node = list_begin(p_lcb->link_xmit_data_q);
-                (num_to_flush > 0) && node != list_end(p_lcb->link_xmit_data_q);) {
-            BT_HDR *p_buf = (BT_HDR *)list_node(node);
-            node = list_next(node);
-            if ((p_buf->layer_specific == 0) && (p_buf->event == lcid)) {
-                num_to_flush--;
-                num_flushed1++;
+        l2c_link_xmit_lock();
+        if (p_lcb->link_xmit_data_q != NULL) {
+            for (const list_node_t *node = list_begin(p_lcb->link_xmit_data_q);
+                    (num_to_flush > 0) && node != list_end(p_lcb->link_xmit_data_q);) {
+                BT_HDR *p_buf = (BT_HDR *)list_node(node);
+                node = list_next(node);
+                if ((p_buf->layer_specific == 0) && (p_buf->event == lcid)) {
+                    num_to_flush--;
+                    num_flushed1++;
 
-                list_remove(p_lcb->link_xmit_data_q, p_buf);
-                osi_free(p_buf);
+                    list_remove(p_lcb->link_xmit_data_q, p_buf);
+                    osi_free(p_buf);
+                }
             }
         }
+        l2c_link_xmit_unlock();
     }
 
     /* If needed, flush buffers in the CCB xmit hold queue */
@@ -2453,15 +2457,19 @@ UINT16 L2CA_FlushChannel (UINT16 lcid, UINT16 num_to_flush)
     }
 
     /* Now count how many are left */
-    for (const list_node_t *node = list_begin(p_lcb->link_xmit_data_q);
-            node != list_end(p_lcb->link_xmit_data_q);
-            node = list_next(node)) {
+    l2c_link_xmit_lock();
+    if (p_lcb->link_xmit_data_q != NULL) {
+        for (const list_node_t *node = list_begin(p_lcb->link_xmit_data_q);
+                node != list_end(p_lcb->link_xmit_data_q);
+                node = list_next(node)) {
 
-        BT_HDR *p_buf = (BT_HDR *)list_node(node);
-        if (p_buf->event == lcid) {
-            num_left++;
+            BT_HDR *p_buf = (BT_HDR *)list_node(node);
+            if (p_buf->event == lcid) {
+                num_left++;
+            }
         }
     }
+    l2c_link_xmit_unlock();
 
     /* Add in the number in the CCB xmit queue */
     num_left += fixed_queue_length(p_ccb->xmit_hold_q);

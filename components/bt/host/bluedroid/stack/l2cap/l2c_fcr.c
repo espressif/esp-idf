@@ -1519,17 +1519,21 @@ static BOOLEAN retransmit_i_frames (tL2C_CCB *p_ccb, UINT8 tx_seq)
     } else {
         // Iterate though list and flush the amount requested from
         // the transmit data queue that satisfy the layer and event conditions.
-        for (const list_node_t *node = list_begin(p_ccb->p_lcb->link_xmit_data_q);
-                node != list_end(p_ccb->p_lcb->link_xmit_data_q);) {
-            BT_HDR *p_node_buf = (BT_HDR *)list_node(node);
-            node = list_next(node);
+        l2c_link_xmit_lock();
+        if (p_ccb->p_lcb->link_xmit_data_q != NULL) {
+            for (const list_node_t *node = list_begin(p_ccb->p_lcb->link_xmit_data_q);
+                    node != list_end(p_ccb->p_lcb->link_xmit_data_q);) {
+                BT_HDR *p_node_buf = (BT_HDR *)list_node(node);
+                node = list_next(node);
 
-            /* Do not flush other CIDs or partial segments */
-            if ((p_node_buf->layer_specific == 0) && (p_node_buf->event == p_ccb->local_cid)) {
-                list_remove(p_ccb->p_lcb->link_xmit_data_q, p_node_buf);
-                osi_free(p_node_buf);
+                /* Do not flush other CIDs or partial segments */
+                if ((p_node_buf->layer_specific == 0) && (p_node_buf->event == p_ccb->local_cid)) {
+                    list_remove(p_ccb->p_lcb->link_xmit_data_q, p_node_buf);
+                    osi_free(p_node_buf);
+                }
             }
         }
+        l2c_link_xmit_unlock();
 
         /* Also flush our retransmission queue */
         while (!fixed_queue_is_empty(p_ccb->fcrb.retrans_q)) {

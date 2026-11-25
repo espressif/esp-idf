@@ -789,6 +789,11 @@ extern void     l2c_link_timeout (tL2C_LCB *p_lcb);
 extern void     l2c_link_create_conn_retry (tL2C_LCB *p_lcb);
 #endif
 extern void     l2c_info_timeout (tL2C_LCB *p_lcb);
+extern void     l2c_link_xmit_lock_init(void);
+extern void     l2c_link_xmit_lock_free(void);
+extern void     l2c_link_xmit_lock(void);
+extern void     l2c_link_xmit_unlock(void);
+extern BOOLEAN  l2c_link_xmit_q_is_empty(tL2C_LCB *p_lcb);
 extern void     l2c_link_check_send_pkts (tL2C_LCB *p_lcb, tL2C_CCB *p_ccb, BT_HDR *p_buf);
 extern void     l2c_link_adjust_allocation (void);
 extern void     l2c_link_process_num_completed_pkts (UINT8 *p, UINT8 evt_len);

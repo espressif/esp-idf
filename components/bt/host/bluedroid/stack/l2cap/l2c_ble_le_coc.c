@@ -54,7 +54,9 @@ static void l2c_ble_le_coc_try_xmit_locked(tL2C_CCB *p_ccb);
  * BTU (credit indication) and from BTC (L2CA_LECocDataWrite). A plain busy flag
  * cannot close that window: both tasks observe it clear, one dequeue wins, and
  * the other stores NULL and faults on p_sdu->len. The lock is not held across
- * CongestionStatus_Cb, so a non-recursive mutex is enough. */
+ * CongestionStatus_Cb, so a non-recursive mutex is enough.
+ * It does not cover p_lcb->link_xmit_data_q. That list is also updated on BTU
+ * (NOCP, segment complete, disconnect flush); l2c_link_xmit_lock serializes it. */
 static osi_mutex_t s_le_coc_tx_lock;
 
 static void l2c_ble_le_coc_tx_lock(void)

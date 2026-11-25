@@ -1217,6 +1217,7 @@ void l2c_init (void)
     l2c_cb_ptr = (tL2C_CB *)osi_malloc(sizeof(tL2C_CB));
 #endif /* #if L2C_DYNAMIC_MEMORY */
     memset (&l2cb, 0, sizeof (tL2C_CB));
+    l2c_link_xmit_lock_init();
 #if (CLASSIC_BT_INCLUDED == TRUE)
     /* the psm is increased by 2 before being used */
     l2cb.dyn_psm = 0xFFF;
@@ -1326,6 +1327,7 @@ void l2c_free(void)
 #if BLE_INCLUDED == TRUE
     l2ble_update_att_acl_pkt_num(L2CA_BUFF_DEINIT, NULL);
 #endif
+    l2c_link_xmit_lock_free();
 }
 
 /*******************************************************************************
