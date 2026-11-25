@@ -12,6 +12,7 @@
 #include "soc/lp_clkrst_struct.h"
 #include "soc/hp_sys_clkrst_struct.h"
 #include "soc/usb_serial_jtag_struct.h"
+#include "hal/config.h"
 #include "hal/usb_serial_jtag_types.h"
 #include "hal/misc.h"
 
@@ -83,6 +84,23 @@ static inline uint32_t usb_serial_jtag_ll_get_intsts_mask(void)
 static inline __attribute__((always_inline)) uint32_t usb_serial_jtag_ll_get_intraw_mask(void)
 {
     return USB_SERIAL_JTAG.int_raw.val;
+}
+
+/**
+ * @brief  Get the frame number of the most recently received USB SOF packet
+ *
+ * The 11-bit frame number advances with every SOF received from the host, so unlike the SOF raw
+ * interrupt bit it cannot be lost between reading and clearing.
+ *
+ * @return Frame number (0 to 2047)
+ */
+static inline __attribute__((always_inline)) uint32_t usb_serial_jtag_ll_get_frame_num(void)
+{
+#if HAL_CONFIG(CHIP_SUPPORT_MIN_REV) >= 300
+    return USB_SERIAL_JTAG.fram_num.serial_jtag_sof_frame_index;
+#else
+    return USB_SERIAL_JTAG.fram_num.sof_frame_index;
+#endif
 }
 
 /**

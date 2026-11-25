@@ -46,9 +46,13 @@ static inline ble_log_usb_tx_action_t ble_log_usb_tx_action(
     return BLE_LOG_USB_TX_WRITE;
 }
 
+/* Both drop reasons lose a sealed frame: a FIFO that cannot take a whole
+ * transport, and a transport produced while the host is not connected. They
+ * share the one per-window counter and the one warning. */
 static inline bool ble_log_usb_tx_should_warn(ble_log_usb_tx_action_t action)
 {
-    return action == BLE_LOG_USB_TX_DROP_FIFO_FULL;
+    return action == BLE_LOG_USB_TX_DROP_FIFO_FULL ||
+           action == BLE_LOG_USB_TX_DROP_NOT_CONNECTED;
 }
 
 #endif /* __BLE_LOG_USB_TX_H__ */

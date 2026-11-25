@@ -82,6 +82,19 @@ static inline __attribute__((always_inline)) uint32_t usb_serial_jtag_ll_get_int
 }
 
 /**
+ * @brief  Get the frame number of the most recently received USB SOF packet
+ *
+ * The 11-bit frame number advances with every SOF received from the host, so unlike the SOF raw
+ * interrupt bit it cannot be lost between reading and clearing.
+ *
+ * @return Frame number (0 to 2047)
+ */
+static inline __attribute__((always_inline)) uint32_t usb_serial_jtag_ll_get_frame_num(void)
+{
+    return USB_SERIAL_JTAG.serial_jtag_fram_num.serial_jtag_sof_frame_index;
+}
+
+/**
 * @brief  Clear the USB_SERIAL_JTAG interrupt status based on the given mask.
 *
 * @param  mask The bitmap of the interrupts need to be cleared.
