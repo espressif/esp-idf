@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -19,7 +19,8 @@
 
 #if CONFIG_EXAMPLE_CONNECT_PPP_DEVICE_USB
 #include "tinyusb.h"
-#include "tusb_cdc_acm.h"
+#include "tinyusb_cdc_acm.h"
+#include "tinyusb_default_config.h"
 
 static int s_itf;
 static uint8_t buf[CONFIG_TINYUSB_CDC_RX_BUFSIZE];
@@ -179,17 +180,10 @@ esp_err_t example_ppp_connect(void)
 
 #if CONFIG_EXAMPLE_CONNECT_PPP_DEVICE_USB
     ESP_LOGI(TAG, "USB initialization");
-    const tinyusb_config_t tusb_cfg = {
-            .device_descriptor = NULL,
-            .string_descriptor = NULL,
-            .external_phy = false,
-            .configuration_descriptor = NULL,
-    };
-
+    const tinyusb_config_t tusb_cfg = TINYUSB_DEFAULT_CONFIG();
     ESP_ERROR_CHECK(tinyusb_driver_install(&tusb_cfg));
 
     tinyusb_config_cdcacm_t acm_cfg = {
-            .usb_dev = TINYUSB_USBDEV_0,
             .cdc_port = TINYUSB_CDC_ACM_0,
             .callback_rx = &cdc_rx_callback,
             .callback_rx_wanted_char = NULL,
@@ -197,7 +191,7 @@ esp_err_t example_ppp_connect(void)
             .callback_line_coding_changed = NULL
     };
 
-    ESP_ERROR_CHECK(tusb_cdc_acm_init(&acm_cfg));
+    ESP_ERROR_CHECK(tinyusb_cdcacm_init(&acm_cfg));
     /* the second way to register a callback */
     ESP_ERROR_CHECK(tinyusb_cdcacm_register_callback(
             TINYUSB_CDC_ACM_0,
