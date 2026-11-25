@@ -85,6 +85,7 @@ entries:
         dw_gdma: dw_gdma_channel_enable_ctrl (noflash)
 
     if DW_GDMA_SETTER_FUNC_IN_IRAM = y:
+        dw_gdma: dw_gdma_channel_config_transfer (noflash)
         dw_gdma: dw_gdma_channel_set_block_markers (noflash)
         dw_gdma: dw_gdma_lli_set_block_markers (noflash)
         dw_gdma: dw_gdma_channel_use_link_list (noflash)

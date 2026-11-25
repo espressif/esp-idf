@@ -7,6 +7,27 @@ set(COMPONENTS main)
 include($ENV{IDF_PATH}/tools/cmake/project.cmake)
 project(test_csi)
 
+idf_build_get_property(elf EXECUTABLE)
+if(CONFIG_COMPILER_DUMP_RTL_FILES)
+    # Check that the cache-safe ISR code paths don't call into flash
+    set(CAM_RTL_DIRS
+        ${CMAKE_BINARY_DIR}/esp-idf/esp_driver_cam
+        ${CMAKE_BINARY_DIR}/esp-idf/esp_driver_dma
+    )
+    string(JOIN "," CAM_RTL_DIRS_JOINED ${CAM_RTL_DIRS})
+
+    add_custom_target(check_test_app_sections ALL
+                      COMMAND ${PYTHON} $ENV{IDF_PATH}/tools/ci/check_callgraph.py
+                      --rtl-dirs ${CAM_RTL_DIRS_JOINED}
+                      --elf-file ${CMAKE_BINARY_DIR}/test_csi.elf
+                      find-refs
+                      --from-sections=.iram0.text
+                      --to-sections=.flash.text
+                      --exit-code
+                      DEPENDS ${elf}
+                      )
+endif()
+
 # TODO IDF-15784: remove
 # esp_cam_sensor upstream sets locals without reading them; silence -Wunused-but-set-variable
 idf_component_get_property(esp_cam_sensor_lib espressif__esp_cam_sensor COMPONENT_LIB)
