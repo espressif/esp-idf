@@ -2026,6 +2026,10 @@ static bt_status_t btc_av_init(int service_id)
                             btc_av_cb_idx(i));
         }
 
+        /* Init co CB before BTA_AvRegister: Register can run on BTA first, and a
+         * zeroed pref cfg (id 0) is mistaken for SBC → "unsupported pref cfg". */
+        btc_a2dp_on_init();
+
         if (service_id == BTA_A2DP_SINK_SERVICE_ID) {
             btc_dm_enable_service(BTA_A2DP_SINK_SERVICE_ID);
         } else {
@@ -2033,7 +2037,6 @@ static bt_status_t btc_av_init(int service_id)
         }
 
         btc_a2dp_audio_stats_init();
-        btc_a2dp_on_init();
         g_a2dp_on_init = true;
         g_a2dp_on_deinit = false;
         g_a2dp_source_ongoing_deinit = false;
