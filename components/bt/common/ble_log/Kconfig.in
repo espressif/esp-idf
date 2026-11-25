@@ -160,6 +160,23 @@ if BLE_LOG_ENABLED
             TX ring (or drop it) and drain the runtime queue from a
             dedicated dispatch task.
 
+    if SOC_USB_SERIAL_JTAG_SUPPORTED
+        comment "USB Serial/JTAG unavailable: change primary console in ESP-STDIO"
+            depends on ESP_CONSOLE_USB_SERIAL_JTAG
+
+        comment "USB Serial/JTAG unavailable: select No secondary console in ESP-STDIO"
+            depends on ESP_CONSOLE_SECONDARY_USB_SERIAL_JTAG
+
+        comment "USB Serial/JTAG unavailable: change the ESP Trace transport"
+            depends on ESP_TRACE_TRANSPORT_USB_SERIAL_JTAG
+
+        comment "USB Serial/JTAG unavailable: change the OpenThread RCP transport"
+            depends on OPENTHREAD_RCP_USB_SERIAL_JTAG
+
+        comment "USB Serial/JTAG unavailable: enable the USB-Serial-JTAG Module"
+            depends on !USJ_ENABLE_USB_SERIAL_JTAG
+    endif
+
     choice BLE_LOG_PRPH_CHOICE
         prompt "BLE Log peripheral choice"
         default BLE_LOG_PRPH_UART_DMA if SOC_UHCI_SUPPORTED
@@ -230,23 +247,6 @@ if BLE_LOG_ENABLED
                 ROM USB Serial/JTAG identity (VID 0x303A PID 0x1001).
                 The host opens that ACM port. It does not match PID
                 0x10B1.
-
-        if SOC_USB_SERIAL_JTAG_SUPPORTED
-            comment "USB Serial/JTAG unavailable: change primary console in ESP-STDIO"
-            depends on ESP_CONSOLE_USB_SERIAL_JTAG
-
-            comment "USB Serial/JTAG unavailable: select No secondary console in ESP-STDIO"
-            depends on ESP_CONSOLE_SECONDARY_USB_SERIAL_JTAG
-
-            comment "USB Serial/JTAG unavailable: change the ESP Trace transport"
-            depends on ESP_TRACE_TRANSPORT_USB_SERIAL_JTAG
-
-            comment "USB Serial/JTAG unavailable: change the OpenThread RCP transport"
-            depends on OPENTHREAD_RCP_USB_SERIAL_JTAG
-
-            comment "USB Serial/JTAG unavailable: enable the USB-Serial-JTAG Module"
-            depends on !USJ_ENABLE_USB_SERIAL_JTAG
-        endif
     endchoice
 
     if BLE_LOG_PRPH_COPY_FIFO
