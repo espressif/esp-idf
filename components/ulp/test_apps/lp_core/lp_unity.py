@@ -9,6 +9,10 @@ below. The classes themselves know nothing about a particular peripheral.
 ``UnityBoard`` drives one DUT: reset, start a menu case, select a multi-stage
 index, match a line, and complete a ``unity_wait_for_signal`` handshake.
 
+``OneBoardSleep`` runs a deep-sleep scenario that needs no peer. It supports
+one sleep cycle followed by a check, or two cycles where the second must reuse
+the peripheral configuration.
+
 ``TwoBoardSleep`` runs one deep-sleep scenario on two boards. DUT 0 is the
 sleeper (one ``multi_stage`` case) and DUT 1 is the peer (one ``normal``
 case). Both cases belong to the same Unity group.
@@ -102,6 +106,50 @@ class UnityBoard:
         """Wait for ``signal``, then press Enter."""
         self.wait_signal(signal)
         self.proceed(delay_s)
+
+
+class OneBoardSleep:
+    """One sleeper for a Unity group that does not need a peer."""
+
+    def __init__(
+        self,
+        case_tester: 'CaseTester',
+        group: str,
+        *,
+        timeout: float = 120.0,
+        sleep_marker: str = 'SLEEPER_SLEEP',
+        sleeper_index: int = 0,
+    ) -> None:
+        self.group = group
+        self.sleep_marker = sleep_marker
+        self.sleeper_case = find_menu_case(case_tester, 'multi_stage', group)
+        self.sleeper = UnityBoard(case_tester.dut[sleeper_index], timeout)
+
+    def run_retained(self) -> None:
+        """Run two sleep cycles, then the final check stage."""
+        assert len(self.sleeper_case.subcases) == 3, f'{self.group} expected 3 sleeper stages'
+        stage0, stage1, stage2 = self.sleeper_case.subcases
+        self.sleeper.reset()
+        self._enter_sleep(stage0)
+        self._enter_sleep(stage1)
+        self._finish_stage(stage2)
+
+    def run_once(self) -> None:
+        """Run one sleep cycle followed by its check stage."""
+        assert len(self.sleeper_case.subcases) == 2, f'{self.group} expected 2 sleeper stages'
+        stage0, stage1 = self.sleeper_case.subcases
+        self.sleeper.reset()
+        self._enter_sleep(stage0)
+        self._finish_stage(stage1)
+
+    def _enter_sleep(self, stage: Any) -> None:
+        self.sleeper.select_stage(self.sleeper_case, int(stage['index']))
+        self.sleeper.expect(self.sleep_marker)
+
+    def _finish_stage(self, stage: Any) -> None:
+        self.sleeper.ready()
+        self.sleeper.select_stage(self.sleeper_case, int(stage['index']), wait_ready=False)
+        self.sleeper.unity_output()
 
 
 class TwoBoardSleep:

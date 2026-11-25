@@ -1,6 +1,7 @@
 # SPDX-FileCopyrightText: 2026 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: CC0-1.0
 import pytest
+from lp_unity import OneBoardSleep
 from lp_unity import TwoBoardSleep
 from pytest_embedded_idf import CaseTester
 from pytest_embedded_idf.utils import idf_parametrize
@@ -14,6 +15,35 @@ GPIO_EDGE_DELAY_S = 2.0
 LP_RUNNING_DELAY_S = 0.8
 # LP SPI slave arms inside main(), after the timer and the settle delay.
 SPI_SLAVE_CLOCK_DELAY_S = 1.2
+
+
+@pytest.mark.generic
+@pytest.mark.parametrize('config', ['defaults'], indirect=True)
+@idf_parametrize(
+    'target',
+    soc_filtered_targets(
+        '(SOC_LP_CORE_SUPPORTED == 1) and (SOC_LP_ADC_SUPPORTED == 1) and '
+        '(SOC_DEEP_SLEEP_SUPPORTED == 1) and (SOC_RTC_TIMER_SUPPORTED == 1)'
+    ),
+    indirect=['target'],
+)
+def test_lp_adc_during_deep_sleep(case_tester: CaseTester) -> None:
+    OneBoardSleep(case_tester, 'lp_adc_sleep').run_retained()
+
+
+@pytest.mark.generic
+@pytest.mark.parametrize('config', ['defaults'], indirect=True)
+@idf_parametrize(
+    'target',
+    soc_filtered_targets(
+        '(SOC_LP_CORE_SUPPORTED == 1) and (SOC_LP_ADC_SUPPORTED == 1) and '
+        '(SOC_TEMP_SENSOR_SUPPORTED == 1) and (SOC_DEEP_SLEEP_SUPPORTED == 1) and '
+        '(SOC_RTC_TIMER_SUPPORTED == 1)'
+    ),
+    indirect=['target'],
+)
+def test_lp_adc_temperature_sensor_during_deep_sleep(case_tester: CaseTester) -> None:
+    OneBoardSleep(case_tester, 'lp_adc_temperature_sleep').run_retained()
 
 
 @pytest.mark.generic_multi_device
