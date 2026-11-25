@@ -4,7 +4,9 @@ config BLE_LOG_ENABLED
     select ESP_TIMER_IN_IRAM
     default n
     help
-        Enable BT Log Async Output
+        Enable asynchronous Bluetooth log output. In a configured Bluetooth
+        project, use idf.py ble-log-config-assistant to configure BLE Log
+        or idf.py ble-log-console to start the recording tool.
 
 if BLE_LOG_ENABLED
     config BLE_LOG_POOL_TRANS_CNT

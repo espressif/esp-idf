@@ -216,6 +216,10 @@ list(APPEND bt_common_priv_include_dirs
     "${CMAKE_CURRENT_LIST_DIR}/include"
 )
 
+if(CONFIG_BT_ENABLED)
+    include("${CMAKE_CURRENT_LIST_DIR}/ble_log/tools/targets.cmake")
+endif()
+
 if(CONFIG_BLE_LOG_ENABLED)
     list(APPEND bt_common_srcs
         "${CMAKE_CURRENT_LIST_DIR}/ble_log/src/ble_log.c"
