@@ -552,8 +552,8 @@ menu "OpenThread"
 
             config OPENTHREAD_MLE_MAX_CHILDREN
                 int "The size of max MLE children entries"
-                default 100 if OPENTHREAD_PLATFORM_MALLOC_CAP_SPIRAM
-                default 30 if !OPENTHREAD_PLATFORM_MALLOC_CAP_SPIRAM
+                default 100 if SPIRAM_ALLOW_BSS_SEG_EXTERNAL_MEMORY
+                default 30 if !SPIRAM_ALLOW_BSS_SEG_EXTERNAL_MEMORY
 
             config OPENTHREAD_TMF_ADDR_CACHE_ENTRIES
                 int "The size of max TMF address cache entries"
@@ -700,7 +700,6 @@ menu "OpenThread"
         config OPENTHREAD_SPINEL_RX_FRAME_BUFFER_SIZE
             int "The size of openthread spinel rx frame buffer"
             depends on OPENTHREAD_ENABLED || OPENTHREAD_SPINEL_ONLY
-            default 8192 if SPIRAM
             default 1024 if OPENTHREAD_MTD || OPENTHREAD_RADIO
             default 2048 if OPENTHREAD_FTD || OPENTHREAD_SPINEL_ONLY
 
@@ -715,7 +714,6 @@ menu "OpenThread"
         config OPENTHREAD_SPINEL_UART_DRIVER_BUFFER_SIZE
             int "UART driver buffer size for radio spinel interface"
             depends on OPENTHREAD_SPINEL_ONLY || OPENTHREAD_RADIO_SPINEL_UART
-            default 8192 if SPIRAM
             default 1024
             help
                 RX buffer size passed to uart_driver_install() for the radio spinel UART interface.
