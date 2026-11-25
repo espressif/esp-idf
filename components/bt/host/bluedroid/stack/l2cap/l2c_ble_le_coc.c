@@ -667,6 +667,78 @@ void l2c_ble_le_coc_on_link_up(tL2C_LCB *p_lcb)
 #endif
 }
 
+void l2c_ble_le_coc_on_acl_down(tL2C_LCB *p_lcb)
+{
+    tL2C_CCB *snap[MAX_L2CAP_CHANNELS];
+    UINT16 snap_lcid[MAX_L2CAP_CHANNELS];
+    tL2C_CCB *p_ccb;
+    int n = 0;
+    int i;
+
+    if (p_lcb == NULL) {
+        return;
+    }
+
+    /* Snapshot first. Client-txn abort releases a whole batch, and a callback
+     * can allocate a new CCB into a freed slot while this loop is running. */
+    for (p_ccb = p_lcb->ccb_queue.p_first_ccb;
+            p_ccb != NULL && n < MAX_L2CAP_CHANNELS; p_ccb = p_ccb->p_next_ccb) {
+        if (p_ccb->in_use && p_ccb->le_coc_active) {
+            snap[n] = p_ccb;
+            snap_lcid[n] = p_ccb->local_cid;
+            n++;
+        }
+    }
+
+#if (BLE_L2CAP_ENHANCED_COC_INCLUDED == TRUE)
+    /* Free server/reconfig transactions without sending, then fail client
+     * transactions. Those CCBs are released inside the abort. */
+    l2c_ble_ecfc_on_acl_down(p_lcb);
+#endif
+
+    for (i = 0; i < n; i++) {
+        tL2C_CCB *p_now = l2cu_find_ccb_by_cid(p_lcb, snap_lcid[i]);
+
+        if (p_now == NULL || p_now != snap[i] || !p_now->in_use || !p_now->le_coc_active) {
+            /* Client abort already released this CCB. Drop a stale pending
+             * pointer, but not a slot the callback has reused. */
+            if (p_lcb->p_pending_ccb == snap[i] && !snap[i]->in_use) {
+                p_lcb->p_pending_ccb = NULL;
+            }
+            continue;
+        }
+
+        /* This CCB is going away. Do not leave p_pending_ccb pointing at it,
+         * or disc_comp will reuse the LCB for a channel that no longer exists.
+         * A connect started from the callback below sets a different CCB. */
+        if (p_lcb->p_pending_ccb == p_now) {
+            p_lcb->p_pending_ccb = NULL;
+        }
+
+        if (p_now->chnl_state == CST_OPEN ||
+                p_now->chnl_state == CST_W4_L2CAP_DISCONNECT_RSP ||
+                p_now->chnl_state == CST_W4_L2CA_DISCONNECT_RSP) {
+            UINT16 saved_lcid = p_now->local_cid;
+
+            L2C_BLE_COC_TRACE_DEBUG("acl down disconnect lcid=0x%04x state=%d",
+                                    saved_lcid, p_now->chnl_state);
+            l2c_ble_le_coc_notify_disconnect(p_now, FALSE);
+            p_now = l2cu_find_ccb_by_cid(p_lcb, saved_lcid);
+            if (p_now == snap[i] && p_now->in_use && p_now->le_coc_active) {
+                l2cu_release_ccb(p_now);
+            }
+        } else {
+            L2C_BLE_COC_TRACE_DEBUG("acl down connect fail lcid=0x%04x state=%d",
+                                    p_now->local_cid, p_now->chnl_state);
+            l2c_ble_le_coc_open_channel(p_now, L2CAP_CONN_NO_LINK);
+        }
+
+        if (p_lcb->p_pending_ccb == snap[i] && !snap[i]->in_use) {
+            p_lcb->p_pending_ccb = NULL;
+        }
+    }
+}
+
 #if (BLE_L2CAP_COC_SERVER_INCLUDED == TRUE)
 void l2c_ble_le_coc_handle_credit_conn_req(tL2C_LCB *p_lcb, UINT8 *p, UINT8 id, UINT16 cmd_len)
 {

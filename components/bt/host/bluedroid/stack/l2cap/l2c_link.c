@@ -472,6 +472,58 @@ void l2c_link_sec_comp (BD_ADDR p_bda, tBT_TRANSPORT transport, void *p_ref_data
 
 /*******************************************************************************
 **
+** Function         l2c_link_acl_disconnected
+**
+** Description      Notify and remove dynamic channels after the ACL is gone.
+**                  LE CoC is reported here (DisconnectInd / ConnectCfm) so the
+**                  same path works with Classic off. Classic channels still go
+**                  through their FSM. p_pending_ccb is left for the caller to
+**                  restart, except a pending LE CoC, which is torn down with
+**                  the rest of that link's CoC channels.
+**
+*******************************************************************************/
+static void l2c_link_acl_disconnected(tL2C_LCB *p_lcb, void *p_data)
+{
+    tL2C_CCB *p_ccb;
+
+    if (p_lcb == NULL) {
+        return;
+    }
+
+#if (CLASSIC_BT_INCLUDED != TRUE)
+    UNUSED(p_data);
+#endif
+
+#if (BLE_L2CAP_COC_INCLUDED == TRUE)
+    if (p_lcb->transport == BT_TRANSPORT_LE) {
+        l2c_ble_le_coc_on_acl_down(p_lcb);
+    }
+#endif
+
+    for (p_ccb = p_lcb->ccb_queue.p_first_ccb; p_ccb != NULL; ) {
+        tL2C_CCB *p_next = p_ccb->p_next_ccb;
+
+#if (BLE_L2CAP_COC_INCLUDED == TRUE)
+        /* Still here only if the app started a new CoC from the callback above. */
+        if (p_ccb->le_coc_active) {
+            p_ccb = p_next;
+            continue;
+        }
+#endif
+        /* Keep a classic connect that arrived while the link was going down. */
+        if (p_ccb != p_lcb->p_pending_ccb) {
+#if (CLASSIC_BT_INCLUDED == TRUE)
+            l2c_csm_execute(p_ccb, L2CEVT_LP_DISCONNECT_IND, p_data);
+#else
+            l2cu_release_ccb(p_ccb);
+#endif
+        }
+        p_ccb = p_next;
+    }
+}
+
+/*******************************************************************************
+**
 ** Function         l2c_link_hci_disc_comp
 **
 ** Description      This function is called when an HCI Disconnect Complete
@@ -483,9 +535,6 @@ void l2c_link_sec_comp (BD_ADDR p_bda, tBT_TRANSPORT transport, void *p_ref_data
 BOOLEAN l2c_link_hci_disc_comp (UINT16 handle, UINT8 reason)
 {
     tL2C_LCB    *p_lcb;
-#if (CLASSIC_BT_INCLUDED == TRUE)
-    tL2C_CCB    *p_ccb;
-#endif  ///CLASSIC_BT_INCLUDED == TRUE
     BOOLEAN     status = TRUE;
     BOOLEAN     lcb_is_free = TRUE;
     tBT_TRANSPORT   transport = BT_TRANSPORT_BR_EDR;
@@ -534,24 +583,10 @@ BOOLEAN l2c_link_hci_disc_comp (UINT16 handle, UINT8 reason)
         }
 #endif // (BLE_TOPOLOGY_CHECK == TRUE)
 #endif
-#if (CLASSIC_BT_INCLUDED == TRUE)
-        /* Link is disconnected. For all channels, send the event through */
-        /* their FSMs. The CCBs should remove themselves from the LCB     */
-        for (p_ccb = p_lcb->ccb_queue.p_first_ccb; p_ccb; ) {
-            tL2C_CCB *pn = p_ccb->p_next_ccb;
-
-            /* Keep connect pending control block (if exists)
-             * Possible Race condition when a reconnect occurs
-             * on the channel during a disconnect of link. This
-             * ccb will be automatically retried after link disconnect
-             * arrives
-             */
-            if (p_ccb != p_lcb->p_pending_ccb) {
-                l2c_csm_execute (p_ccb, L2CEVT_LP_DISCONNECT_IND, &reason);
-            }
-            p_ccb = pn;
-        }
-#endif  ///CLASSIC_BT_INCLUDED == TRUE
+        /* Empty dynamic channels before the reuse check below. Otherwise an
+         * established LE link keeps its CoC CCBs, l2cu_create_conn() reuses this
+         * LCB, and the application never sees the CoC go down. */
+        l2c_link_acl_disconnected(p_lcb, &reason);
 #if (BTM_SCO_INCLUDED == TRUE)
 #if (BLE_INCLUDED == TRUE)
         if (p_lcb->transport == BT_TRANSPORT_BR_EDR)
@@ -817,17 +852,7 @@ void l2c_link_timeout (tL2C_LCB *p_lcb)
             (p_lcb->link_state == LST_CONNECT_HOLDING) ||
             (p_lcb->link_state == LST_DISCONNECTING)) {
         p_lcb->p_pending_ccb = NULL;
-#if (CLASSIC_BT_INCLUDED == TRUE)
-        /* For all channels, send a disconnect indication event through */
-        /* their FSMs. The CCBs should remove themselves from the LCB   */
-        for (p_ccb = p_lcb->ccb_queue.p_first_ccb; p_ccb; ) {
-            tL2C_CCB *pn = p_ccb->p_next_ccb;
-
-            l2c_csm_execute (p_ccb, L2CEVT_LP_DISCONNECT_IND, NULL);
-
-            p_ccb = pn;
-        }
-#endif  ///CLASSIC_BT_INCLUDED == TRUE
+        l2c_link_acl_disconnected(p_lcb, NULL);
 #if (BLE_INCLUDED == TRUE)
         if (p_lcb->link_state == LST_CONNECTING &&
                 l2cb.is_ble_connecting == TRUE) {

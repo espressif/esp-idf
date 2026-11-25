@@ -905,6 +905,9 @@ extern void l2c_ble_le_coc_connect_rsp(tL2C_CCB *p_ccb, UINT16 result);
 extern void l2c_ble_le_coc_handle_credit_conn_req(tL2C_LCB *p_lcb, UINT8 *p, UINT8 id, UINT16 cmd_len);
 #endif
 extern void l2c_ble_le_coc_on_link_up(tL2C_LCB *p_lcb);
+/* ACL is already gone. Report and release every LE CoC on this link.
+ * Does not send DISC_REQ or an ECFC credit-connection response. */
+extern void l2c_ble_le_coc_on_acl_down(tL2C_LCB *p_lcb);
 extern void l2c_ble_le_coc_open_channel(tL2C_CCB *p_ccb, UINT16 result);
 extern void l2c_ble_le_coc_cleanup_ccb(tL2C_CCB *p_ccb);
 extern void l2c_ble_le_coc_apply_reconfig(tL2C_CCB *p_ccb, UINT16 new_mtu, UINT16 new_mps);
@@ -946,6 +949,9 @@ extern BOOLEAN l2c_ble_ecfc_on_reconfig_timeout(tL2C_CCB *p_ccb);
 extern void l2c_ble_ecfc_handle_reconfig_req(tL2C_LCB *p_lcb, UINT8 *p, UINT8 id, UINT16 cmd_len);
 extern void l2c_ble_ecfc_handle_reconfig_res(tL2C_LCB *p_lcb, UINT8 *p, UINT8 id, UINT16 cmd_len);
 extern void l2c_ble_ecfc_on_ccb_release(tL2C_CCB *p_ccb);
+/* Drop ECFC transactions for a dead ACL. Server and reconfig transactions are
+ * freed without sending; client transactions fail with ConnectCfm. */
+extern void l2c_ble_ecfc_on_acl_down(tL2C_LCB *p_lcb);
 #if (BLE_L2CAP_COC_CLIENT_INCLUDED == TRUE)
 extern void l2c_ble_ecfc_on_link_up(tL2C_LCB *p_lcb);
 #endif

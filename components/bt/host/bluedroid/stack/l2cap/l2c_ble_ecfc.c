@@ -1534,6 +1534,48 @@ BOOLEAN l2c_ble_ecfc_on_reconfig_timeout(tL2C_CCB *p_ccb)
     return FALSE;
 }
 
+void l2c_ble_ecfc_on_acl_down(tL2C_LCB *p_lcb)
+{
+    int i;
+
+    if (p_lcb == NULL) {
+        return;
+    }
+
+#if (BLE_L2CAP_COC_SERVER_INCLUDED == TRUE)
+    /* Free the transaction only. try_complete() would send 0x18 on the dead ACL.
+     * The CCBs stay on the link for l2c_ble_le_coc_on_acl_down() to report. */
+    for (i = 0; i < MAX_L2CAP_LINKS; i++) {
+        if (s_ecfc_srv_txn[i].in_use && s_ecfc_srv_txn[i].p_lcb == p_lcb) {
+            l2c_ble_ecfc_srv_txn_free(&s_ecfc_srv_txn[i]);
+        }
+    }
+#endif
+
+    for (i = 0; i < MAX_L2CAP_LINKS; i++) {
+        if (s_ecfc_reconfig_txn[i].in_use && s_ecfc_reconfig_txn[i].p_lcb == p_lcb) {
+            memset(&s_ecfc_reconfig_txn[i], 0, sizeof(s_ecfc_reconfig_txn[i]));
+        }
+    }
+
+#if (BLE_L2CAP_COC_CLIENT_INCLUDED == TRUE)
+    {
+        UINT8 sig_ids[MAX_L2CAP_LINKS];
+        int n = 0;
+
+        for (i = 0; i < MAX_L2CAP_LINKS; i++) {
+            if (s_ecfc_cl_txn[i].in_use && s_ecfc_cl_txn[i].p_lcb == p_lcb) {
+                sig_ids[n++] = s_ecfc_cl_txn[i].sig_id;
+            }
+        }
+        /* abort releases every CCB in the transaction, including pending_link. */
+        for (i = 0; i < n; i++) {
+            l2c_ble_ecfc_abort_cl_txn(p_lcb, sig_ids[i], L2CAP_CONN_NO_LINK);
+        }
+    }
+#endif
+}
+
 #if (BLE_L2CAP_COC_CLIENT_INCLUDED != TRUE)
 UINT8 L2CA_ConnectLEEcocReq(UINT16 psm, BD_ADDR p_bd_addr, tL2CAP_LE_CFG_INFO *p_cfg,
                             UINT8 num_chan, UINT16 *p_lcids)
