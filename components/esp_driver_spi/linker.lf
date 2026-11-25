@@ -5,6 +5,8 @@ entries:
         spi_hal_iram (noflash)
     if SPI_SLAVE_ISR_IN_IRAM = y:
         spi_slave_hal_iram (noflash)
+        if SOC_SPI_SUPPORT_SLAVE_HD_VER2 = y:
+            spi_slave_hd_hal_iram (noflash)
 
 [mapping:gpspi_driver_gdma_link]
 archive: libesp_driver_dma.a
