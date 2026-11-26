@@ -186,6 +186,7 @@ int clock_adjtime(clockid_t clk_id, struct timex *buf)
 
 WEAK_UNLESS_TIMEFUNC_IMPL int adjtime(const struct timeval *delta, struct timeval *outdelta)
 {
+#if IMPL_NEWLIB_TIME_FUNCS
     struct timex tx = {0};
 
     if (delta != NULL) {
@@ -210,6 +211,12 @@ WEAK_UNLESS_TIMEFUNC_IMPL int adjtime(const struct timeval *delta, struct timeva
     }
 
     return ret;
+#else
+    (void) delta;
+    (void) outdelta;
+    errno = ENOSYS;
+    return -1;
+#endif
 }
 
 WEAK_UNLESS_TIMEFUNC_IMPL int settimeofday(const struct timeval *tv, const struct timezone *tz)
@@ -321,6 +328,16 @@ WEAK_UNLESS_TIMEFUNC_IMPL int clock_getres(clockid_t clock_id, struct timespec *
 #endif
 }
 
+/* Monotonic clock for usleep(), also available without newlib time functions */
+static uint64_t usleep_get_time(void)
+{
+#if IMPL_NEWLIB_TIME_FUNCS
+    return esp_time_impl_get_time();
+#else
+    return esp_system_get_time();
+#endif
+}
+
 int usleep(useconds_t us)
 {
     /* Even at max tick rate, vTaskDelay can still delay for the max of the us argument,
@@ -337,11 +354,11 @@ int usleep(useconds_t us)
            actually slept. Adding `us_per_tick - 1` prevents ever passing 0 to
            vTaskDelay().
         */
-        uint64_t now_us = esp_time_impl_get_time();
+        uint64_t now_us = usleep_get_time();
         uint64_t target_us = now_us + us;
         do {
             vTaskDelay((((target_us - now_us) + us_per_tick - 1) / us_per_tick));
-            now_us = esp_time_impl_get_time();
+            now_us = usleep_get_time();
             /* It is possible that the time left until the target time is less
              * than a tick period. However, we let usleep() to sleep for an
              * entire tick period. This, could result in usleep() sleeping for
