@@ -65,12 +65,8 @@ echo CONFIG_BLE_LOG_USB_TEST_PERF_MODE=y > sdkconfig.perf
 idf.py -D SDKCONFIG_DEFAULTS="sdkconfig.defaults;sdkconfig.perf" set-target esp32s3 build flash monitor
 ```
 
-The CDC buffer options must satisfy the component's configuration checks:
-`CONFIG_TINYUSB_CDC_TX_BUFSIZE` and `CONFIG_TINYUSB_CDC_EP_BUFSIZE` must each
-**equal** the matching `CONFIG_BLE_LOG_USB_CDC_*` value, and
-`CONFIG_TINYUSB_CDC_RX_BUFSIZE` must be at least
-`CONFIG_TINYUSB_CDC_EP_BUFSIZE`. See the component README for the measured
-per-speed buffer guidance.
+The default smoke build exercises the CDC configuration selected by BLE Log.
+For custom TinyUSB FIFO sizes, see the component README.
 
 ## Supported Targets
 

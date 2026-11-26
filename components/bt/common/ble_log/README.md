@@ -3,6 +3,21 @@
 BLE Log is an asynchronous binary logging transport for Bluetooth controller,
 Host HCI, application, and compressed logs.
 
+## Configure and record
+
+In an ESP-IDF terminal, run the command for the task from the Bluetooth project directory:
+
+- `idf.py ble-log-config-assistant` opens the Configuration Assistant for the current project.
+- `idf.py ble-log-console` opens BLE Log Console to record from a device.
+
+Each command checks the tool's stable release, downloads it into the project root if needed,
+and starts the verified executable. The terminal shows download progress, version and file path.
+Supported hosts are Windows x64 and Ubuntu x86-64.
+
+Stable releases: [Configuration Assistant](https://github.com/espressif/esp-ble-tools/releases/tag/ble_log_config_assistant_stable)
+and [BLE Log Console](https://github.com/espressif/esp-ble-tools/releases/tag/ble_log_console_stable).
+For manual configuration, see [USB OTG](#usb-transport) or [USB Serial/JTAG](#console-and-other-fifo-owners).
+
 ## Architecture
 
 ```mermaid
@@ -433,8 +448,8 @@ still emitted.
 | `CONFIG_BLE_LOG_TS_ENABLED` | n | Deprecated compatibility entry selecting sync label output |
 | `CONFIG_BLE_LOG_PRPH_USB` | n | Use the USB OTG device as transport (see below) |
 | `CONFIG_BLE_LOG_PRPH_USB_SERIAL_JTAG` | n | Use USB Serial/JTAG as transport (see USB Serial/JTAG transport) |
-| `CONFIG_BLE_LOG_USB_CDC_TX_BUFSIZE` | 2048 | CDC TX FIFO size; must equal `CONFIG_TINYUSB_CDC_TX_BUFSIZE` |
-| `CONFIG_BLE_LOG_USB_CDC_EP_BUFSIZE` | 512 | CDC endpoint packet buffer. Keep 512 (the High-Speed bulk MPS) on High-Speed; on Full-Speed raise it to 1024, where the 64-byte MPS costs roughly half the achievable rate (see Buffer sizing) |
+| `CONFIG_TINYUSB_CDC_TX_BUFSIZE` | 2048 with BLE Log USB OTG | CDC TX FIFO size, at least one transport |
+| `CONFIG_TINYUSB_CDC_EP_BUFSIZE` | 512 | CDC endpoint packet buffer. Keep 512 (the High-Speed bulk MPS) on High-Speed; on Full-Speed raise it to 1024, where the 64-byte MPS costs roughly half the achievable rate (see Buffer sizing) |
 | `CONFIG_BLE_LOG_USJ_TX_BUFSIZE` | 2048 | USB Serial/JTAG driver TX ring; must be >= `CONFIG_BLE_LOG_POOL_TRANS_SIZE` |
 
 Old multi-LBM sizing options remain hidden only so existing sdkconfig files can
@@ -448,25 +463,19 @@ drops it and prints a warning once per periodic window (transport and byte
 counts, separate from pool loss). It works on any target with a USB OTG
 peripheral, Full-Speed or High-Speed.
 
-BLE Log is a component inside the IDF tree, so it cannot declare the managed
-dependency itself. Copy the template manifest `idf_component_usb.template.yml`
-from the BLE Log component directory into the application's `main/`
-(merge it into an existing `idf_component.yml` if one is present), otherwise
-enabling `CONFIG_BLE_LOG_PRPH_USB` fails the CMake configure with a fatal
-error. Its content is simply:
+If the application does not already declare the USB device component, add it once from the project directory:
 
-```yaml
-dependencies:
-  espressif/esp_tinyusb: "^2.0.0"
+```bash
+idf.py add-dependency "espressif/esp_tinyusb^2.0.0"
 ```
 
-Run `idf.py reconfigure` once after copying or editing the file so the
-component manager fetches the component; `CONFIG_TINYUSB_CDC_ENABLED` must
-then be set. Finally, keep the TinyUSB CDC buffer options equal to their
-BLE Log counterparts: `CONFIG_TINYUSB_CDC_TX_BUFSIZE ==
-CONFIG_BLE_LOG_USB_CDC_TX_BUFSIZE` and `CONFIG_TINYUSB_CDC_EP_BUFSIZE ==
-CONFIG_BLE_LOG_USB_CDC_EP_BUFSIZE`; `CONFIG_TINYUSB_CDC_RX_BUFSIZE` at
-least the endpoint size; mismatches are fatal build errors. The device
+The command creates or updates `main/idf_component.yml`. The IDF Component
+Manager fetches the dependency during project configuration.
+
+Enable BLE Log and select USB OTG in the peripheral choice. This enables
+TinyUSB CDC and defaults its TX FIFO to 2048 bytes. For custom buffer sizes,
+set the TinyUSB options directly. TX must fit one BLE Log transport, EP
+must be at least 64 bytes, and RX must be at least EP. The device
 enumerates as VID 0x303A PID 0x10B1, product/interface string
 `BLE-Log-Port (<target>)` (the base name is a literal prefix; the target
 is the `IDF_TARGET` the image was built for), distinct from the TinyUSB/blbm
@@ -538,42 +547,22 @@ they are two ports with two host identities.
 
 ### Console and other FIFO owners
 
-The 64-byte USJ FIFO has one software owner. BLE Log will not steal it.
+The default console sends output to both UART0 and USB Serial/JTAG.
+With BLE Log enabled, configure two settings to use USJ for BLE Log and keep
+application console output on UART0:
 
-A default sdkconfig on a USJ chip turns on
-`CONFIG_ESP_CONSOLE_SECONDARY_USB_SERIAL_JTAG`, which sets
-`CONFIG_ESP_CONSOLE_USB_SERIAL_JTAG_ENABLED`. That secondary console already
-owns the FIFO. Hidden `CONFIG_BLE_LOG_USJ_BUS_BUSY` is then y, and the BLE
-Log USJ choice is not in the menu. The same hide applies when
-`CONFIG_ESP_TRACE_TRANSPORT_USB_SERIAL_JTAG` or
-`CONFIG_OPENTHREAD_RCP_USB_SERIAL_JTAG` is on, or when
-`CONFIG_USJ_ENABLE_USB_SERIAL_JTAG` is off.
+1. In `Component config → ESP-STDIO → Channel for console secondary output`,
+   choose `No secondary console` to release the USJ port.
+2. In `Component config → Bluetooth → Common Options → BT Logs → BLE Log peripheral choice`,
+   choose `Utilize USB Serial/JTAG as transport`.
 
-The hide is one-way. BLE Log does not `select` the console off. A reverse
-`depends` from the console onto BLE Log caused a Kconfig loop, so the
-operator has to release the port:
+If USJ is unavailable, a message above the transport selector shows the current owner or asks
+you to enable the USB-Serial-JTAG module. Release the port or enable the module
+as indicated, then select USJ.
 
-1. Console: primary `ESP_CONSOLE_UART_DEFAULT` (or `ESP_CONSOLE_NONE`),
-   secondary `ESP_CONSOLE_SECONDARY_NONE`. Keep UART as the console if you
-   still want `ESP_LOG` / REPL; `idf.py monitor` then uses the UART-bridge
-   COM port, not the USJ ACM node.
-2. esp_trace: transport not "USB Serial JTAG".
-3. OpenThread RCP: transport not "USB RCP".
-4. Leave `CONFIG_USJ_ENABLE_USB_SERIAL_JTAG` on.
-5. `Component config -> Bluetooth -> Common Options -> Enable BT Log Async
-   Output` -> peripheral `Utilize USB Serial/JTAG as transport`.
-6. Leave `CONFIG_BLE_LOG_USJ_TX_BUFSIZE` at 2048 unless
-   `CONFIG_BLE_LOG_POOL_TRANS_SIZE` is larger than 2048.
-7. No `esp_tinyusb` manifest entry. That requirement belongs only to
-   `CONFIG_BLE_LOG_PRPH_USB`.
-
-If another caller already ran `usb_serial_jtag_driver_install`,
-`ble_log_init` returns false. That is a failed install, not a stolen
-console. `BLE_LOG_PRPH_USB_SERIAL_JTAG` depends on `!BLE_LOG_USJ_BUS_BUSY`,
-so menuconfig cannot enable both. If `sdkconfig.defaults` sets the USJ
-transport while the console still owns the FIFO, Kconfig turns the
-choice off. CMake still `FATAL_ERROR`s if both symbols are y. That only
-happens from a hand-edited sdkconfig that bypasses Kconfig.
+If another caller installed the USJ driver at runtime, `ble_log_init`
+returns false. The default TX ring is 2048 bytes and must hold at least one
+`CONFIG_BLE_LOG_POOL_TRANS_SIZE` block.
 
 ### ROM dual-write on C3 and S3
 
