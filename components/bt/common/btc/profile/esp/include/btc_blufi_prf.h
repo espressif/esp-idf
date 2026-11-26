@@ -61,6 +61,7 @@ typedef enum {
     BTC_BLUFI_ACT_SEND_WIFI_LIST,
     BTC_BLUFI_ACT_SEND_ERR_INFO,
     BTC_BLUFI_ACT_SEND_CUSTOM_DATA,
+    BTC_BLUFI_ACT_SEND_ENCAP,
 } btc_blufi_act_t;
 
 typedef union {
@@ -91,6 +92,16 @@ typedef union {
          uint8_t *data;
          uint32_t data_len;
     } custom_data;
+    /*
+        BTC_BLUFI_ACT_SEND_ENCAP: a frame built on the BTU task, which must not
+        wait for the BluFi TX lock, is handed to the BTC task instead.
+    */
+    struct blufi_encap {
+        uint8_t type;
+        uint8_t *data;
+        uint32_t data_len;
+        uint32_t session_id;
+    } encap;
 } btc_blufi_args_t;
 
 void btc_blufi_cb_to_app(esp_blufi_cb_event_t event, esp_blufi_cb_param_t *param);
@@ -100,6 +111,7 @@ void btc_blufi_set_callbacks(esp_blufi_callbacks_t *callbacks);
 
 void btc_blufi_report_error(esp_blufi_error_state_t state);
 void btc_blufi_recv_handler(uint8_t *data, int len);
+void btc_blufi_recv_handler_with_session(uint8_t *data, int len, uint32_t session_id);
 void btc_blufi_send_notify(uint8_t *pkt, int pkt_len);
 void btc_blufi_call_deep_copy(btc_msg_t *msg, void *p_dest, void *p_src);
 void btc_blufi_call_deep_free(btc_msg_t *msg);
