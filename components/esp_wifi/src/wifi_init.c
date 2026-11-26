@@ -46,6 +46,17 @@
 #include "esp_private/esp_modem_clock.h"
 #endif
 
+#if SOC_PM_MODEM_IMMEDIATE_RF_ON_WORKAROUND
+#include "soc/pmu_reg.h"
+#include "soc/chip_revision.h"
+#include "hal/efuse_hal.h"
+
+#define PMU_DATE_IMMEDIATE_RF_ON    BIT(0)
+#if CONFIG_IDF_TARGET_ESP32C61
+#define ENABLE_IMM_RF               ESP_CHIP_REV_ABOVE(efuse_hal_chip_revision(), 102)
+#endif
+#endif
+
 static bool s_wifi_inited = false;
 
 #if (CONFIG_ESP_WIFI_RX_BA_WIN > CONFIG_ESP_WIFI_DYNAMIC_RX_BUFFER_NUM)
@@ -486,6 +497,15 @@ esp_err_t esp_wifi_init(const wifi_init_config_t *config)
         if (sleep_modem_wifi_modem_state_is_enabled()) {
             esp_pm_register_skip_light_sleep_callback(sleep_modem_wifi_modem_state_skip_light_sleep);
             esp_wifi_internal_modem_state_configure(true); /* require WiFi to enable automatically receives the beacon */
+#if SOC_PM_MODEM_IMMEDIATE_RF_ON_WORKAROUND
+            /* Workaround: set PMU_DATE_REG bit0 to enable immediate RF-on when a SOC wakeup
+             * arrives during PMU MODEM state before RF is turned on, instead of waiting until
+             * the next TBTT. PM-680 */
+            if (ENABLE_IMM_RF) {
+                REG_SET_BIT(PMU_DATE_REG, PMU_DATE_IMMEDIATE_RF_ON);
+                ESP_LOGI(TAG, "Immediate RF-on enabled for modem state");
+            }
+#endif
 #if ESP_MODEM_RF_FLAG_UPDATE_CB_REQUIRED
             if (esp_register_mac_bb_pd_callback(esp_phy_modem_rf_flag_update) != ESP_OK) {
                 ESP_LOGE(TAG, "Failed to register modem RF flag update callback");
