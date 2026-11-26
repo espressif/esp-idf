@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: CC0-1.0
  *
@@ -53,6 +53,8 @@
                     .mosi_io_num = 11,             \
                     .sclk_io_num = 12,             \
                     .miso_io_num = 13,             \
+                    /* One Spinel frame plus the 5-byte SPI header. 0 caps DMA at 4092 bytes. */ \
+                    .max_transfer_sz = CONFIG_OPENTHREAD_SPINEL_RX_FRAME_BUFFER_SIZE + 5, \
                 },                                 \
             .spi_device =                          \
                 {                                  \
