@@ -887,6 +887,9 @@ static modem_clock_lpclk_src_t ble_rtc_clk_init(esp_bt_controller_config_t *cfg)
             ESP_LOGW(NIMBLE_PORT_LOG_TAG, "32.768kHz XTAL not detected, fall back to main XTAL as Bluetooth sleep clock");
             s_bt_lpclk_src = MODEM_CLOCK_LPCLK_SRC_MAIN_XTAL;
         }
+#else
+        ESP_LOGE(NIMBLE_PORT_LOG_TAG, "Unsupported slow clock, use main XTAL as clock source");
+        s_bt_lpclk_src = MODEM_CLOCK_LPCLK_SRC_MAIN_XTAL;
 #endif  // CONFIG_RTC_CLK_SRC_INT_RC
 #endif // CONFIG_BT_LE_LP_CLK_SRC_MAIN_XTAL
     }
@@ -899,6 +902,7 @@ static modem_clock_lpclk_src_t ble_rtc_clk_init(esp_bt_controller_config_t *cfg)
         cfg->rtc_freq = esp_bt_get_int_rc_freq();
         cfg->ble_ll_sca = 3000;
     }
+
     esp_bt_rtc_slow_clk_select(s_bt_lpclk_src);
     return s_bt_lpclk_src;
 }
