@@ -40,7 +40,9 @@ set(spinel_srcs
     openthread/src/core/api/error_api.cpp
     openthread/src/core/api/logging_api.cpp
     openthread/src/core/common/error.cpp
+    openthread/src/core/common/frame_data.cpp
     openthread/src/core/common/log.cpp
     openthread/src/core/common/string.cpp
     openthread/src/core/mac/mac_frame.cpp
+    openthread/src/core/mac/mac_types.cpp
 )
