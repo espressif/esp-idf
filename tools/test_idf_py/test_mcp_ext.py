@@ -10,6 +10,7 @@ calls are mocked.
 import importlib
 import importlib.util
 import json
+import locale
 import os
 import subprocess
 import sys
@@ -661,6 +662,19 @@ class TestMonitorDevice:
         assert expected_snippet in result
         mock_run.assert_not_called()
 
+    def test_unencodable_script_is_rejected_without_running(
+        self, monitor_tools: dict[str, Callable[..., Any]], monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """A character replaced on the way to the monitor would silently change
+        what the script expects or sends, e.g. 'expect ok ?' matches any 'ok'."""
+        # Windows before Python 3.15 encodes pipes with the ANSI code page.
+        monkeypatch.setattr(locale, 'getpreferredencoding', lambda do_setlocale=True: 'cp1252')
+        with mock.patch('subprocess.run') as mock_run:
+            result = monitor_tools['monitor_device'](commands='expect ok ✓')
+
+        assert 'cannot be sent to the monitor' in result
+        mock_run.assert_not_called()
+
     @pytest.mark.parametrize(
         'returncode, output, expected_status',
         [
@@ -877,6 +891,67 @@ class TestMonitorDevice:
         cmd = mock_run.call_args[0][0]
         assert cmd[cmd.index('-b') + 1] == '9600'
         assert '115200' not in cmd
+
+
+# ---------------------------------------------------------------------------
+# Test: output that is not valid UTF-8
+# ---------------------------------------------------------------------------
+
+# Writes 0xff, which is invalid UTF-8, to both streams and exits with argv[1].
+_NON_UTF8_CHILD = (
+    'import sys\n'
+    "sys.stdout.buffer.write(b'tool said \\xff done\\n')\n"
+    "sys.stderr.buffer.write(b'tool said \\xff done\\n')\n"
+    'sys.exit(int(sys.argv[1]))\n'
+)
+
+
+class TestNonUtf8Output:
+    """Build tools and serial devices can print bytes that are not UTF-8. One such
+    byte must not hide the exit code or the rest of the output."""
+
+    @pytest.mark.parametrize('returncode', [0, 1], ids=['success', 'failure'])
+    @pytest.mark.parametrize(
+        'tool, kwargs, success_snippet',
+        [
+            ('build_project', {}, 'Successfully built project'),
+            ('set_target', {'target': 'esp32'}, 'Target set to: esp32'),
+            ('flash_project', {}, 'Successfully flashed project'),
+            ('monitor_device', {'commands': 'expect ready'}, 'completed successfully (exit code 0)'),
+            ('create_project', {'name': 'my_app'}, 'Project "my_app" created'),
+            ('clean_project', {}, 'Project cleaned successfully'),
+        ],
+        ids=['build', 'set_target', 'flash', 'monitor', 'create_project', 'clean'],
+    )
+    def test_undecodable_byte_keeps_exit_code_and_output(
+        self,
+        mcp_ext: tuple[types.ModuleType, _MockMCPServer],
+        tmp_path: Path,
+        monkeypatch: pytest.MonkeyPatch,
+        tool: str,
+        kwargs: dict[str, Any],
+        success_snippet: str,
+        returncode: int,
+    ) -> None:
+        _, mock_mcp = mcp_ext
+        monkeypatch.setattr(tempfile, 'tempdir', str(tmp_path))
+        monkeypatch.setenv('IDF_MCP_WORKSPACE_FOLDER', '')
+        monkeypatch.setenv('IDF_PATH', str(tmp_path))
+        proj = _make_valid_project(tmp_path / 'proj')
+        tools, _ = _start_server(mcp_ext, mock_mcp, str(proj))
+
+        child = [sys.executable, '-c', _NON_UTF8_CHILD, str(returncode)]
+        real_run = subprocess.run
+        with mock.patch('subprocess.run', side_effect=lambda cmd, **kw: real_run(child, **kw)):
+            result = tools[tool](**kwargs)
+
+        if returncode == 0:
+            assert success_snippet in result
+        else:
+            # Only the text around the byte is checked: before Python 3.15, Windows
+            # decodes pipes with the locale code page, where 0xff is a valid character.
+            assert 'tool said' in result
+            assert 'done' in result
 
 
 # ---------------------------------------------------------------------------
