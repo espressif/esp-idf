@@ -7,6 +7,8 @@
 #ifndef __ESP_BLUFI_H__
 #define __ESP_BLUFI_H__
 
+#include <stdbool.h>
+
 #include "esp_blufi_api.h"
 #include "esp_err.h"
 
@@ -101,7 +103,8 @@ void esp_blufi_adv_start(void);
 /* Start advertisement with specified name. if the name is NULL just start advertisement */
 void esp_blufi_adv_start_with_name(const char *name);
 
-void esp_blufi_send_encap(void *arg);
+bool esp_blufi_can_send(void);
+bool esp_blufi_send_encap(void *arg);
 
 /*
  * @brief Initiate BLE security request with the connected peer device.

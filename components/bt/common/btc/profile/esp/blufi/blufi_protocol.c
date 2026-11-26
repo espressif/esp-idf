@@ -44,7 +44,9 @@ void btc_blufi_protocol_handler(uint8_t type, uint8_t *data, int len)
             break;
         case BLUFI_TYPE_CTRL_SUBTYPE_SET_SEC_MODE:
             BLUFI_REQUIRE_LEN_AT_LEAST(1);
+            btc_blufi_env_lock();
             blufi_env.sec_mode = data[0];
+            btc_blufi_env_unlock();
             break;
         case BLUFI_TYPE_CTRL_SUBTYPE_SET_WIFI_OPMODE:
             BLUFI_REQUIRE_LEN_AT_LEAST(1);
@@ -111,9 +113,13 @@ void btc_blufi_protocol_handler(uint8_t type, uint8_t *data, int len)
         break;
     case BLUFI_TYPE_DATA:
         switch (BLUFI_GET_SUBTYPE(type)) {
-        case BLUFI_TYPE_DATA_SUBTYPE_NEG:
-            if (blufi_env.cbs && blufi_env.cbs->negotiate_data_handler) {
-                blufi_env.cbs->negotiate_data_handler(data, len, &output_data, &output_len, &need_free);
+        case BLUFI_TYPE_DATA_SUBTYPE_NEG: {
+            esp_blufi_callbacks_t *cbs;
+            btc_blufi_env_lock();
+            cbs = blufi_env.cbs;
+            btc_blufi_env_unlock();
+            if (cbs && cbs->negotiate_data_handler) {
+                cbs->negotiate_data_handler(data, len, &output_data, &output_len, &need_free);
             }
 
             if (output_data && output_len > 0) {
@@ -125,6 +131,7 @@ void btc_blufi_protocol_handler(uint8_t type, uint8_t *data, int len)
                 output_data = NULL;
             }
             break;
+        }
         case BLUFI_TYPE_DATA_SUBTYPE_STA_BSSID:
             if (len < 6) {
                 BTC_TRACE_ERROR("%s STA_BSSID data too short: %d\n", __func__, len);
