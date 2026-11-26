@@ -12,6 +12,7 @@ from pytest_embedded_idf.utils import soc_filtered_targets
     [
         'default',
         'xip_psram',
+        'psram_slp_iram',
     ],
     indirect=True,
 )
