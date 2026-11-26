@@ -436,15 +436,19 @@ esp_err_t spi_flash_chip_generic_wait_idle(esp_flash_t *chip, uint32_t timeout_u
     const int interval = CHIP_WAIT_IDLE_INTERVAL_US;
     bool suspend_state = false;
     while (timeout_us > 0) {
-        while (!chip->host->driver->host_status(chip->host) && timeout_us > 0) {
-
+        while (!chip->host->driver->host_status(chip->host)) {
+            if (timeout_en) {
+                if (timeout_us <= 1) {
+                    return ESP_ERR_TIMEOUT;
+                }
 #if HOST_DELAY_INTERVAL_US > 0
-            if (timeout_us > 1) {
-                int delay = MIN(HOST_DELAY_INTERVAL_US, timeout_us);
+                uint32_t delay = MIN((uint32_t)HOST_DELAY_INTERVAL_US, timeout_us - 1);
                 chip->os_func->delay_us(chip->os_func_data, delay);
                 timeout_us -= delay;
-            }
+#else
+                timeout_us--;
 #endif
+            }
         }
 
 #if CONFIG_SPI_FLASH_SOFTWARE_RESUME
