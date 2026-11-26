@@ -1,4 +1,10 @@
 menu "Sleep Config"
+
+    # Hidden symbol, indicates that the esp_sleep component is part of the build.
+    config ESP_SLEEP_ENABLE
+        bool
+        default y
+
     # This is here since this option affect behavior of esp_light_sleep_start
     # regardless of power management configuration.
     config ESP_SLEEP_POWER_DOWN_FLASH

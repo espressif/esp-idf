@@ -601,6 +601,7 @@ menu "FreeRTOS"
         config FREERTOS_PORT_THREAD_SAFE_CLAIM
             bool "Enable xPortThreadSafeClaim/xPortThreadSafeDisclaim APIs"
             default y if SOC_BRANCH_PREDICTOR_SUPPORTED
+            default y if ESP_SLEEP_ENABLE && !FREERTOS_UNICORE
             default n
             help
                 Enables the xPortThreadSafeClaim() and xPortThreadSafeDisclaim() APIs, which allow a caller to
@@ -611,7 +612,13 @@ menu "FreeRTOS"
                 This feature adds a branch check to every port-layer critical-section enter/exit path. On chips
                 with a hardware branch predictor (SOC_BRANCH_PREDICTOR_SUPPORTED) the branch is predicted-not-taken
                 and has negligible overhead. On older chips without a branch predictor the branch has a measurable
-                per-critical-section cost, so this option defaults to disabled.
+                per-critical-section cost.
+
+                On multicore targets this option is enabled by default, because the sleep implementation
+                (esp_sleep) relies on it to stall the other CPU before entering sleep. If it is disabled,
+                light sleep requests may be rejected when the other CPU is in an ISR or critical section.
+                It can be disabled to save the per-critical-section overhead if the application does not use
+                sleep, or tolerates rejected light sleep requests.
 
     endmenu # Port
 

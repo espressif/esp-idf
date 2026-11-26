@@ -1479,9 +1479,10 @@ static SLEEP_FN_ATTR esp_err_t sleep_smp_cpu_sleep_prepare(void)
     esp_err_t ipc_isr_err = ESP_OK;
     esp_ipc_isr_stall_other_cpu();
 #else
-    /* Dual-core PM_ENABLE selects THREAD_SAFE_CLAIM, so auto light sleep always takes
-     * the blocking path above. This safe-stall fallback is for non-PM callers of
-     * esp_light_sleep_start(): reject and let the upper layer decide whether to retry.
+    /* FREERTOS_PORT_THREAD_SAFE_CLAIM is enabled by default on multicore targets, so this
+     * path is only compiled in when the user explicitly disables it. The other CPU may be
+     * in an ISR or critical section, so use the safe stall: reject the sleep request on
+     * contention and let the upper layer decide whether to retry.
      */
     esp_err_t ipc_isr_err = esp_ipc_isr_stall_other_cpu_safe();
 #endif
