@@ -363,3 +363,65 @@ TEST_CASE("spi_lcd_safe_with_another_device_polling_on_same_bus", "[lcd]")
     TEST_ESP_OK(gpio_reset_pin(TEST_LCD_BK_LIGHT_GPIO));
     free(color_data);
 }
+
+#if CONFIG_SPI_MASTER_ISR_IN_IRAM
+#include "unity_test_utils_cache.h"
+#include "esp_rom_sys.h"
+
+#define TEST_SPI_LCD_CACHE_SAFE_COLOR_LEN (16 * 1024) // ~6.5 ms at 20 MHz, so the transfer ends inside the cache-off window
+
+static IRAM_ATTR bool test_color_trans_done_iram(esp_lcd_panel_io_handle_t io, esp_lcd_panel_io_event_data_t *edata, void *user_ctx)
+{
+    *(volatile bool *)user_ctx = true;
+    return false;
+}
+
+static IRAM_ATTR void wait_color_trans_done(void *arg)
+{
+    volatile bool *done = (volatile bool *)arg;
+    for (int i = 0; i < 100 && !*done; i++) {
+        esp_rom_delay_us(1000);
+    }
+}
+
+TEST_CASE("spi_lcd_color_trans_done_with_cache_disabled", "[lcd]")
+{
+    // With ESP_INTR_FLAG_IRAM, the SPI master ISR keeps running during flash operations and calls the
+    // esp_lcd pre/post transaction callbacks from there, so both must be IRAM-safe.
+    spi_bus_config_t buscfg = {
+        .sclk_io_num = TEST_LCD_PCLK_GPIO,
+        .mosi_io_num = TEST_LCD_DATA0_GPIO,
+        .miso_io_num = -1,
+        .quadwp_io_num = -1,
+        .quadhd_io_num = -1,
+        .max_transfer_sz = TEST_SPI_LCD_CACHE_SAFE_COLOR_LEN,
+        .intr_flags = ESP_INTR_FLAG_IRAM,
+    };
+    TEST_ESP_OK(spi_bus_initialize(TEST_SPI_HOST_ID, &buscfg, SPI_DMA_CH_AUTO));
+
+    volatile bool done = false;
+    esp_lcd_panel_io_handle_t io_handle = NULL;
+    esp_lcd_panel_io_spi_config_t io_config = {
+        .dc_gpio_num = TEST_LCD_DC_GPIO,
+        .cs_gpio_num = TEST_LCD_CS_GPIO,
+        .pclk_hz = TEST_LCD_PIXEL_CLOCK_HZ,
+        .trans_queue_depth = 1,
+        .lcd_cmd_bits = 8,
+        .lcd_param_bits = 8,
+        .on_color_trans_done = test_color_trans_done_iram,
+        .user_ctx = (void *) &done,
+    };
+    TEST_ESP_OK(esp_lcd_new_panel_io_spi((esp_lcd_spi_bus_handle_t)TEST_SPI_HOST_ID, &io_config, &io_handle));
+
+    uint8_t *color_data = heap_caps_calloc(1, TEST_SPI_LCD_CACHE_SAFE_COLOR_LEN, MALLOC_CAP_DMA | MALLOC_CAP_INTERNAL);
+    TEST_ASSERT_NOT_NULL(color_data);
+
+    TEST_ESP_OK(esp_lcd_panel_io_tx_color(io_handle, -1, color_data, TEST_SPI_LCD_CACHE_SAFE_COLOR_LEN));
+    unity_utils_run_cache_disable_stub(wait_color_trans_done, (void *)&done);
+    TEST_ASSERT_TRUE(done);
+
+    TEST_ESP_OK(esp_lcd_panel_io_del(io_handle));
+    TEST_ESP_OK(spi_bus_free(TEST_SPI_HOST_ID));
+    free(color_data);
+}
+#endif // CONFIG_SPI_MASTER_ISR_IN_IRAM
