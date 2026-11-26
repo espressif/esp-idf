@@ -2780,7 +2780,19 @@ esp_err_t esp_netif_dhcpc_option_api(esp_netif_api_msg_t *msg)
     struct dhcp_params *opt = msg->data;
 
     struct dhcp *dhcp = netif_dhcp_data(esp_netif->lwip_netif);
-    if (dhcp == NULL || opt->val == NULL) {
+    if (opt->val == NULL) {
+        return ESP_ERR_ESP_NETIF_INVALID_PARAMS;
+    }
+#if ESP_DHCP && !ESP_DHCP_DISABLE_VENDOR_CLASS_IDENTIFIER
+    // The vendor class is kept by lwip_default_hooks.c, not in struct dhcp, so it can be set
+    // before the client has started for the first time, when lwIP hasn't allocated that yet.
+    // The first DISCOVER then carries it.
+    if (opt->op == ESP_NETIF_OP_SET && opt->id == ESP_NETIF_VENDOR_CLASS_IDENTIFIER &&
+        esp_netif->dhcpc_status != ESP_NETIF_DHCP_STARTED) {
+        return dhcp_set_vendor_class_identifier(opt->len, opt->val);
+    }
+#endif
+    if (dhcp == NULL) {
         return ESP_ERR_ESP_NETIF_INVALID_PARAMS;
     }
     if (opt->op == ESP_NETIF_OP_GET) {
