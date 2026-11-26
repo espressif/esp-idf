@@ -1116,18 +1116,6 @@ usb_dwc_hal_port_event_t usb_dwc_hal_decode_intr(usb_dwc_hal_context_t *hal);
 usb_dwc_hal_chan_t *usb_dwc_hal_get_chan_pending_intr(usb_dwc_hal_context_t *hal);
 
 /**
- * @brief Decode a particular channel's interrupt for Scatter-Gather DMA Mode
- * - Reads and clears the interrupt register of the channel
- * - Returns the corresponding event for that channel
- *
- * @param chan_obj Channel object
- * @note If the host port has an error (e.g., a sudden disconnect or an port error), any active channels will not
- *       receive an interrupt. Each active channel must be manually halted.
- * @return usb_dwc_hal_chan_event_t Channel event
- */
-usb_dwc_hal_chan_event_t usb_dwc_hal_chan_decode_intr_desc_dma(usb_dwc_hal_chan_t *chan_obj);
-
-/**
  * @brief Decode a particular channel's interrupt for Buffer DMA Mode
  * - Reads and clears the interrupt register of the channel
  * - Returns the corresponding event for that channel
@@ -1140,23 +1128,16 @@ usb_dwc_hal_chan_event_t usb_dwc_hal_chan_decode_intr_desc_dma(usb_dwc_hal_chan_
 usb_dwc_hal_chan_event_t usb_dwc_hal_chan_decode_intr_buffer_dma(usb_dwc_hal_chan_t *chan_obj);
 
 /**
- * @brief Decode a particular channel's interrupt
- * @attention This function is kept for bacwkard compatibility
- *   for USB Host components supporting only Scatter-Gather DMA mode
- *
+ * @brief Decode a particular channel's interrupt for Scatter-Gather DMA Mode
  * - Reads and clears the interrupt register of the channel
  * - Returns the corresponding event for that channel
  *
- * @param hal Context of the HAL layer
  * @param chan_obj Channel object
  * @note If the host port has an error (e.g., a sudden disconnect or an port error), any active channels will not
  *       receive an interrupt. Each active channel must be manually halted.
  * @return usb_dwc_hal_chan_event_t Channel event
  */
-static inline usb_dwc_hal_chan_event_t usb_dwc_hal_chan_decode_intr(usb_dwc_hal_chan_t *chan_obj)
-{
-    return usb_dwc_hal_chan_decode_intr_desc_dma(chan_obj);
-}
+usb_dwc_hal_chan_event_t usb_dwc_hal_chan_decode_intr(usb_dwc_hal_chan_t *chan_obj);
 
 #endif // SOC_USB_OTG_SUPPORTED
 
