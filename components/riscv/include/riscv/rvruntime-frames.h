@@ -233,7 +233,8 @@ STRUCT_AFIELD (long, 4,  RV_PIE_QACC_H_L,  qacc_h_l,   4)
 STRUCT_AFIELD (long, 4,  RV_PIE_QACC_H_H,  qacc_h_h,   4)
 STRUCT_AFIELD (long, 4,  RV_PIE_UA_STATE,  ua_state,   4)
 STRUCT_FIELD  (long, 4,  RV_PIE_XACC,      xacc)
-/* misc field contains registers: XACC (upper byte) [7:0], FFT_BIT_WIDTH [11:8], SAR_BYTES [15:12], and SAR [21:16] */
+/* misc field contains registers: XACC (upper byte) [7:0], FFT_BIT_WIDTH [11:8], SAR_BYTES [15:12], SAR [21:16],
+ * and the writable CFG fields [30:24]: MIS_ST [24], MIS_LD [25], VXRM [29:26], VXSAT_EN [30] */
 STRUCT_FIELD  (long, 4,  RV_PIE_MISC,      misc)
 STRUCT_END(RvPIESaveArea)
 
