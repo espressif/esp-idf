@@ -498,13 +498,17 @@ static BOOLEAN btc_av_state_idle_handler(btc_sm_event_t event, void *p_data)
          * TODO: We may need to do this only on an AVRCP Play. FixMe
          */
 #if BTC_AV_SRC_INCLUDED
-        BTC_TRACE_DEBUG("BTA_AV_RC_OPEN_EVT received w/o AV");
-        if (btc_av_cb.tle_av_open_on_rc) {
-            osi_alarm_free(btc_av_cb.tle_av_open_on_rc);
-            btc_av_cb.tle_av_open_on_rc = NULL;
+        /* Source-only IOP. Sink init leaves service_id as sink; starting this
+         * timer there opens AVDTP as Audio Source and rejects a phone's SEPs. */
+        if (btc_av_cb.service_id == BTA_A2DP_SOURCE_SERVICE_ID) {
+            BTC_TRACE_DEBUG("BTA_AV_RC_OPEN_EVT received w/o AV");
+            if (btc_av_cb.tle_av_open_on_rc) {
+                osi_alarm_free(btc_av_cb.tle_av_open_on_rc);
+                btc_av_cb.tle_av_open_on_rc = NULL;
+            }
+            btc_av_cb.tle_av_open_on_rc = osi_alarm_new("AVconn", btc_initiate_av_open_tmr_hdlr, NULL, NULL);
+            osi_alarm_set(btc_av_cb.tle_av_open_on_rc, BTC_TIMEOUT_AV_OPEN_ON_RC_SECS * 1000);
         }
-        btc_av_cb.tle_av_open_on_rc = osi_alarm_new("AVconn", btc_initiate_av_open_tmr_hdlr, NULL, NULL);
-        osi_alarm_set(btc_av_cb.tle_av_open_on_rc, BTC_TIMEOUT_AV_OPEN_ON_RC_SECS * 1000);
 #endif /* BTC_AV_SRC_INCLUDED */
         btc_rc_handler(event, p_data);
         break;
