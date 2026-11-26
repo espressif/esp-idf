@@ -14,7 +14,7 @@
 
 /* Clock dependency definitions */
 #define BLE_CLOCK_DEPS                      ( MODEM_CLOCKS( BT_MAC, BT_I154_COMMON_BB, ETM, COEXIST, BT_APB, BT_PERIPHERAL ) )
-#define BT_APB_CLOCK_DEPS                   ( MODEM_CLOCKS( BT_APB, ETM ) )
+#define BT_APB_CLOCK_DEPS                   ( MODEM_CLOCKS( BT_I154_COMMON_BB, BT_APB, ETM ) )
 #define IEEE802154_CLOCK_DEPS               ( MODEM_CLOCKS( 802154_MAC, BT_I154_COMMON_BB, ETM, COEXIST,BT_APB ) )
 #define COEXIST_CLOCK_DEPS                  ( MODEM_CLOCKS( COEXIST ) )
 #define I2C_ANA_MST_CLOCK_DEPS              ( MODEM_CLOCKS( I2C_MASTER ) )
