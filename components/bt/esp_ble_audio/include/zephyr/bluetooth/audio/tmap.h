@@ -8,8 +8,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef ZEPHYR_INCLUDE_BLUETOOTH_AUDIO_TMAP_
-#define ZEPHYR_INCLUDE_BLUETOOTH_AUDIO_TMAP_
+#ifndef ZEPHYR_INCLUDE_BLUETOOTH_AUDIO_TMAP_H_
+#define ZEPHYR_INCLUDE_BLUETOOTH_AUDIO_TMAP_H_
 
 /**
  * @brief Telephone and Media Audio Profile (TMAP)
@@ -40,7 +40,7 @@ enum bt_tmap_role {
      * to control calls on a remote TMAP Call Terminal.
      * Audio streams in this role are typically bi-directional.
      */
-    BT_TMAP_ROLE_CG = BIT(0),
+    BT_TMAP_ROLE_CG = BIT(0U),
     /**
      * @brief TMAP Call Terminal role
      *
@@ -48,35 +48,35 @@ enum bt_tmap_role {
      * to expose calls to remote TMAP Call Gateways.
      * Audio streams in this role are typically bi-directional.
      */
-    BT_TMAP_ROLE_CT = BIT(1),
+    BT_TMAP_ROLE_CT = BIT(1U),
     /**
      * @brief TMAP Unicast Media Sender role
      *
      * This role is defined send media audio to TMAP Unicast Media Receivers.
      * Audio streams in this role are typically uni-directional.
      */
-    BT_TMAP_ROLE_UMS = BIT(2),
+    BT_TMAP_ROLE_UMS = BIT(2U),
     /**
      * @brief TMAP Unicast Media Receiver role
      *
      * This role is defined receive media audio to TMAP Unicast Media Senders.
      * Audio streams in this role are typically uni-directional.
      */
-    BT_TMAP_ROLE_UMR = BIT(3),
+    BT_TMAP_ROLE_UMR = BIT(3U),
     /**
      * @brief TMAP Broadcast Media Sender role
      *
      * This role is defined send media audio to TMAP Broadcast Media Receivers.
      * Audio streams in this role are always uni-directional.
      */
-    BT_TMAP_ROLE_BMS = BIT(4),
+    BT_TMAP_ROLE_BMS = BIT(4U),
     /**
      * @brief TMAP Broadcast Media Receiver role
      *
-     * This role is defined send media audio to TMAP Broadcast Media Senders.
+     * This role is defined to receive media audio from TMAP Broadcast Media Senders.
      * Audio streams in this role are always uni-directional.
      */
-    BT_TMAP_ROLE_BMR = BIT(5),
+    BT_TMAP_ROLE_BMR = BIT(5U),
 };
 
 /** @brief TMAP callback structure. */
@@ -126,4 +126,4 @@ void bt_tmap_set_role(enum bt_tmap_role role);
  * @}
  */
 
-#endif /* ZEPHYR_INCLUDE_BLUETOOTH_AUDIO_TMAP_ */
+#endif /* ZEPHYR_INCLUDE_BLUETOOTH_AUDIO_TMAP_H_ */

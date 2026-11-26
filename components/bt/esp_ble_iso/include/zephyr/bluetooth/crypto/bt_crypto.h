@@ -25,7 +25,12 @@
  * @retval 0 Computation was successful. @p res contains the result.
  * @retval -EIO Computation failed.
  */
+/* The lib build redirects this name to idf_ext_funcs with a macro, which would rewrite
+ * the prototype; the same applies to the guards below.
+ */
+#ifndef BLE_AUDIO_LIB_BUILD
 int bt_crypto_aes_cmac(const uint8_t *key, const uint8_t *in, size_t len, uint8_t *out);
+#endif /* BLE_AUDIO_LIB_BUILD */
 
 /**
  * @brief Cryptographic Toolbox f4

@@ -9,8 +9,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef ZEPHYR_INCLUDE_BLUETOOTH_SERVICES_VOCS_H_
-#define ZEPHYR_INCLUDE_BLUETOOTH_SERVICES_VOCS_H_
+#ifndef ZEPHYR_INCLUDE_BLUETOOTH_AUDIO_VOCS_H_
+#define ZEPHYR_INCLUDE_BLUETOOTH_AUDIO_VOCS_H_
 
 /**
  * @brief Volume Offset Control Service (VOCS)
@@ -49,11 +49,11 @@ extern "C" {
  * The Change_Counter operand value does not match the Change_Counter field value of the Volume
  * Offset State characteristic.
  */
-#define BT_VOCS_ERR_INVALID_COUNTER                0x80
+#define BT_VOCS_ERR_INVALID_COUNTER                0x80U
 /** An invalid opcode has been used in a control point procedure. */
-#define BT_VOCS_ERR_OP_NOT_SUPPORTED               0x81
+#define BT_VOCS_ERR_OP_NOT_SUPPORTED               0x81U
 /** An operand value used in a control point procedure is outside the permissible range. */
-#define BT_VOCS_ERR_OUT_OF_RANGE                   0x82
+#define BT_VOCS_ERR_OUT_OF_RANGE                   0x82U
 /** @} */
 
 /**
@@ -130,10 +130,10 @@ void *bt_vocs_svc_decl_get(struct bt_vocs *vocs);
 /**
  * @brief Get the connection pointer of a client instance
  *
- * Get the Bluetooth connection pointer of a Audio Input Control Service
+ * Get the Bluetooth connection pointer of a Volume Offset Control Service
  * client instance.
  *
- * @param vocs    Audio Input Control Service client instance pointer.
+ * @param vocs    Volume Offset Control Service client instance pointer.
  * @param conn    Connection pointer.
  *
  * @return 0 if success, errno on failure.
@@ -322,6 +322,18 @@ void bt_vocs_client_cb_register(struct bt_vocs *inst, struct bt_vocs_cb *cb);
 struct bt_vocs *bt_vocs_client_free_instance_get(void);
 
 /**
+ * @brief Free an instance received from bt_vocs_client_free_instance_get()
+ *
+ * @param inst The instance to free
+ *
+ * @retval 0 Success.
+ * @retval -EINVAL @p inst is NULL or not a client instance.
+ * @retval -EALREADY @p inst is already free
+ * @retval -EBUSY @p inst is busy.
+ */
+int bt_vocs_client_free_instance(struct bt_vocs *inst);
+
+/**
  * @brief Discover a Volume Offset Control Service.
  *
  * Attempts to discover a Volume Offset Control Service on a server given the @p param.
@@ -343,4 +355,4 @@ int bt_vocs_discover(struct bt_conn *conn, struct bt_vocs *inst,
  * @}
  */
 
-#endif /* ZEPHYR_INCLUDE_BLUETOOTH_SERVICES_VOCS_H_ */
+#endif /* ZEPHYR_INCLUDE_BLUETOOTH_AUDIO_VOCS_H_ */

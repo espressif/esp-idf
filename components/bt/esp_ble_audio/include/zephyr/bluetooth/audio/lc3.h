@@ -36,9 +36,9 @@ extern "C" {
  *
  * @p _max_frames_per_sdu is optional and will be included only if != 1
  *
- * @ref COND_CODE_1 is used to omit an LTV entry in case the @p _frames_per_sdu is 1.
+ * @ref COND_CODE_1 is used to omit an LTV entry in case the @p _max_frames_per_sdu is 1.
  * @ref COND_CODE_1 will evaluate to second argument if the flag parameter(first argument) is 1
- * - removing one layer of paranteses.
+ * - removing one layer of parentheses.
  * If the flags argument is != 1 it will evaluate to the third argument which inserts a LTV
  * entry for the max_frames_per_sdu value.
 

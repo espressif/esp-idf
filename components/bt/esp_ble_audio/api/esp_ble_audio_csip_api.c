@@ -34,15 +34,19 @@ esp_err_t esp_ble_audio_csip_set_member_register(const esp_ble_audio_csip_set_me
         return ESP_ERR_INVALID_ARG;
     }
 
+#if CONFIG_BT_CSIP_SET_MEMBER_LOCK_SUPPORT
     if (param->lockable && param->rank == 0) {
         /* Rank cannot be 0 if service is lockable */
         return ESP_ERR_INVALID_ARG;
     }
+#endif /* CONFIG_BT_CSIP_SET_MEMBER_LOCK_SUPPORT */
 
-    if (param->rank > param->set_size) {
+#if CONFIG_BT_CSIP_SET_MEMBER_SIZE_SUPPORT && CONFIG_BT_CSIP_SET_MEMBER_RANK_SUPPORT
+    if (param->rank > 0 && param->set_size > 0 && param->rank > param->set_size) {
         /* Invalid rank (shall be less than or equal to set_size */
         return ESP_ERR_INVALID_ARG;
     }
+#endif /* CONFIG_BT_CSIP_SET_MEMBER_SIZE_SUPPORT && CONFIG_BT_CSIP_SET_MEMBER_RANK_SUPPORT */
 
 #if CONFIG_BT_CSIP_SET_MEMBER_MAX_INSTANCE_COUNT > 1
     if (param->parent == NULL) {
@@ -72,13 +76,15 @@ esp_err_t esp_ble_audio_csip_set_member_unregister(esp_ble_audio_csip_set_member
         return ESP_ERR_INVALID_ARG;
     }
 
-    if (bt_le_csis_deinit(svc_inst)) {
-        return ESP_FAIL;
-    }
-
     BT_LE_HOST_LOCK_OR_RETURN(ESP_ERR_TIMEOUT);
 
-    err = bt_csip_set_member_unregister(svc_inst);
+    /* Before the lib, unlike the other services: unregister clears the attrs the host
+     * service is found by
+     */
+    err = bt_le_csis_deinit(svc_inst);
+    if (err == 0) {
+        err = bt_csip_set_member_unregister(svc_inst);
+    }
 
     bt_le_host_unlock();
 

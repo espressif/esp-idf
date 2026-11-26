@@ -24,10 +24,12 @@ static void csip_lock_changed_cb(esp_ble_conn_t *conn,
     /* No conn means the server released it itself, on the lock timeout or from
      * bt_csip_set_member_lock(), rather than a client asking for it. */
     if (conn == NULL) {
+        /* Needed by internal regression tests: do not change this log. */
         ESP_LOGI(TAG, "Lock %s locally", locked ? "taken" : "released");
         return;
     }
 
+    /* Needed by internal regression tests: do not change this log. */
     ESP_LOGI(TAG, "Client on handle %u %s the lock", conn->handle,
              locked ? "locked" : "released");
 }

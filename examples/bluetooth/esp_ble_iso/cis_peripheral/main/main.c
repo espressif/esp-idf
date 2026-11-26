@@ -54,6 +54,7 @@ static void iso_connected_cb(esp_ble_iso_chan_t *chan)
     struct cis_ctx *ctx = ctx_by_chan(chan);
     esp_err_t err;
 
+    /* Needed by internal regression tests: do not change this log. */
     ESP_LOGI(TAG, "[%s] Connected", ctx->name);
 
     err = esp_ble_iso_setup_data_path(chan, ESP_BLE_ISO_DATA_PATH_DIR_OUTPUT, &data_path);
@@ -101,6 +102,7 @@ static esp_ble_iso_chan_qos_t iso_qos = {
 static int iso_accept(const esp_ble_iso_accept_info_t *info,
                       esp_ble_iso_chan_t **chan)
 {
+    /* Needed by internal regression tests: do not change this log. */
     ESP_LOGI(TAG, "Incoming CIS request from handle %u", info->acl->handle);
 
     /* The central establishes the CIS one at a time, so hand out the next
@@ -128,6 +130,7 @@ static void acl_connect(esp_ble_iso_gap_app_event_t *event)
         return;
     }
 
+    /* Needed by internal regression tests: do not change this log. */
     ESP_LOGI(TAG, "Connected: handle %u role %u peer %02x:%02x:%02x:%02x:%02x:%02x",
              event->acl_connect.conn_handle, event->acl_connect.role,
              EXAMPLE_BT_ADDR_PRINT_ARGS(event->acl_connect.dst.val));
@@ -148,6 +151,7 @@ static void security_change(esp_ble_iso_gap_app_event_t *event)
         return;
     }
 
+    /* Needed by internal regression tests: do not change this log. */
     ESP_LOGI(TAG, "Security: handle %u level %u bonded %u",
              event->security_change.conn_handle,
              event->security_change.sec_level,

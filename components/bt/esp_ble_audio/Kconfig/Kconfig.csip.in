@@ -50,10 +50,30 @@ if BT_CSIP_SET_MEMBER
         help
             This option enables support for clients to be notified on SIRK changes.
 
+    config BT_CSIP_SET_MEMBER_SIZE_SUPPORT
+        bool "Support for Coordinated Set Size"
+        default y
+        help
+            Enables support for Coordinated Set Sizes.
+
     config BT_CSIP_SET_MEMBER_SIZE_NOTIFIABLE
         bool "Set Size notifiable support"
+        depends on BT_CSIP_SET_MEMBER_SIZE_SUPPORT
         help
             This option enables support for clients to be notified on Set Size changes.
+
+    config BT_CSIP_SET_MEMBER_LOCK_SUPPORT
+        bool "Support for Set Member Lock"
+        default y
+        select BT_CSIP_SET_MEMBER_RANK_SUPPORT
+        help
+            This option enables support for Set Member Locks.
+
+    config BT_CSIP_SET_MEMBER_RANK_SUPPORT
+        bool "Support for Set Member Rank"
+        default y
+        help
+            This option enables support for Set Member Ranks.
 
     config BT_CSIP_SET_MEMBER_SET_NAME_NOTIFIABLE
         bool "Coordinated Set Name notifiable support"

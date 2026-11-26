@@ -6,7 +6,12 @@
 
 /**
  * @file
+ * @brief Header file for the doubly-linked list API.
+ * @ingroup doubly-linked-list_apis
+ *
  * @defgroup doubly-linked-list_apis Doubly-linked list
+ * @since 1.0
+ * @version 1.0.0
  * @ingroup datastructure_apis
  *
  * @brief Doubly-linked list implementation

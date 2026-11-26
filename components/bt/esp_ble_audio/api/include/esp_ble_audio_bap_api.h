@@ -410,7 +410,7 @@ esp_err_t esp_ble_audio_bap_unicast_server_unregister_cb(const esp_ble_audio_bap
  */
 esp_err_t esp_ble_audio_bap_unicast_server_config_ase(uint16_t conn_handle,
                                                       esp_ble_audio_bap_stream_t *stream,
-                                                      esp_ble_audio_codec_cfg_t *codec_cfg,
+                                                      const esp_ble_audio_codec_cfg_t *codec_cfg,
                                                       const esp_ble_audio_bap_qos_cfg_pref_t *qos_pref);
 
 /**
@@ -430,7 +430,7 @@ esp_err_t esp_ble_audio_bap_unicast_server_config_ase(uint16_t conn_handle,
  */
 esp_err_t esp_ble_audio_bap_unicast_server_config_ase_with_dir(uint16_t conn_handle,
                                                                esp_ble_audio_bap_stream_t *stream,
-                                                               esp_ble_audio_codec_cfg_t *codec_cfg,
+                                                               const esp_ble_audio_codec_cfg_t *codec_cfg,
                                                                const esp_ble_audio_bap_qos_cfg_pref_t *qos_pref,
                                                                esp_ble_audio_dir_t dir);
 
@@ -527,7 +527,8 @@ esp_err_t esp_ble_audio_bap_unicast_client_unregister_cb(esp_ble_audio_bap_unica
  * This procedure is used by a client to discover remote capabilities and
  * endpoints and notifies via params callback.
  *
- * @param   conn_handle Connection handle.
+ * @param   conn_handle Connection handle. The connection must already conform to the
+ *                      security requirements of the Basic Audio Profile.
  * @param   dir         The type of remote endpoints and capabilities to discover.
  *
  * @return  ESP_OK on success, or an error code on failure.
@@ -550,7 +551,7 @@ esp_err_t esp_ble_audio_bap_unicast_client_discover(uint16_t conn_handle, esp_bl
 esp_err_t esp_ble_audio_bap_stream_config(uint16_t conn_handle,
                                           esp_ble_audio_bap_stream_t *stream,
                                           esp_ble_audio_bap_ep_t *ep,
-                                          esp_ble_audio_codec_cfg_t *codec_cfg);
+                                          const esp_ble_audio_codec_cfg_t *codec_cfg);
 
 /**
  * @brief Configure Audio Stream QoS
@@ -626,7 +627,7 @@ esp_err_t esp_ble_audio_bap_stream_stop(esp_ble_audio_bap_stream_t *stream);
  * @return  ESP_OK on success, or an error code on failure.
  */
 esp_err_t esp_ble_audio_bap_stream_reconfig(esp_ble_audio_bap_stream_t *stream,
-                                            esp_ble_audio_codec_cfg_t *codec_cfg);
+                                            const esp_ble_audio_codec_cfg_t *codec_cfg);
 
 /**
  * @brief   Change Audio Stream Metadata.
@@ -1021,7 +1022,8 @@ esp_err_t esp_ble_audio_bap_scan_delegator_rem_src(uint8_t src_id);
  * Warning: Only one connection can be active at any time; discovering for
  * a new connection, will delete all previous data.
  *
- * @param   conn_handle Connection handle.
+ * @param   conn_handle Connection handle. The connection must already conform to the
+ *                      security requirements of the Basic Audio Profile.
  *
  * @return  ESP_OK on success, or an error code on failure.
  */

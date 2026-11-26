@@ -137,26 +137,26 @@
     _61, _62, N, ...) N
 
 /* Used by MACRO_MAP_CAT */
-#define MACRO_MAP_CAT_(...)                     \
+#define Z_MACRO_MAP_CAT_(...)                     \
     /* To make sure it works also for 2 arguments in total */   \
     MACRO_MAP_CAT_N(NUM_VA_ARGS_LESS_1(__VA_ARGS__), __VA_ARGS__)
-#define MACRO_MAP_CAT_N_(N, ...) UTIL_CAT(MACRO_MC_, N)(__VA_ARGS__,)
-#define MACRO_MC_0(...)
-#define MACRO_MC_1(m, a, ...)  m(a)
-#define MACRO_MC_2(m, a, ...)  UTIL_CAT(m(a), MACRO_MC_1(m, __VA_ARGS__,))
-#define MACRO_MC_3(m, a, ...)  UTIL_CAT(m(a), MACRO_MC_2(m, __VA_ARGS__,))
-#define MACRO_MC_4(m, a, ...)  UTIL_CAT(m(a), MACRO_MC_3(m, __VA_ARGS__,))
-#define MACRO_MC_5(m, a, ...)  UTIL_CAT(m(a), MACRO_MC_4(m, __VA_ARGS__,))
-#define MACRO_MC_6(m, a, ...)  UTIL_CAT(m(a), MACRO_MC_5(m, __VA_ARGS__,))
-#define MACRO_MC_7(m, a, ...)  UTIL_CAT(m(a), MACRO_MC_6(m, __VA_ARGS__,))
-#define MACRO_MC_8(m, a, ...)  UTIL_CAT(m(a), MACRO_MC_7(m, __VA_ARGS__,))
-#define MACRO_MC_9(m, a, ...)  UTIL_CAT(m(a), MACRO_MC_8(m, __VA_ARGS__,))
-#define MACRO_MC_10(m, a, ...) UTIL_CAT(m(a), MACRO_MC_9(m, __VA_ARGS__,))
-#define MACRO_MC_11(m, a, ...) UTIL_CAT(m(a), MACRO_MC_10(m, __VA_ARGS__,))
-#define MACRO_MC_12(m, a, ...) UTIL_CAT(m(a), MACRO_MC_11(m, __VA_ARGS__,))
-#define MACRO_MC_13(m, a, ...) UTIL_CAT(m(a), MACRO_MC_12(m, __VA_ARGS__,))
-#define MACRO_MC_14(m, a, ...) UTIL_CAT(m(a), MACRO_MC_13(m, __VA_ARGS__,))
-#define MACRO_MC_15(m, a, ...) UTIL_CAT(m(a), MACRO_MC_14(m, __VA_ARGS__,))
+#define Z_MACRO_MAP_CAT_N_(N, ...) UTIL_CAT(Z_MACRO_MC_, N)(__VA_ARGS__,)
+#define Z_MACRO_MC_0(...)
+#define Z_MACRO_MC_1(m, a, ...)  m(a)
+#define Z_MACRO_MC_2(m, a, ...)  UTIL_CAT(m(a), Z_MACRO_MC_1(m, __VA_ARGS__,))
+#define Z_MACRO_MC_3(m, a, ...)  UTIL_CAT(m(a), Z_MACRO_MC_2(m, __VA_ARGS__,))
+#define Z_MACRO_MC_4(m, a, ...)  UTIL_CAT(m(a), Z_MACRO_MC_3(m, __VA_ARGS__,))
+#define Z_MACRO_MC_5(m, a, ...)  UTIL_CAT(m(a), Z_MACRO_MC_4(m, __VA_ARGS__,))
+#define Z_MACRO_MC_6(m, a, ...)  UTIL_CAT(m(a), Z_MACRO_MC_5(m, __VA_ARGS__,))
+#define Z_MACRO_MC_7(m, a, ...)  UTIL_CAT(m(a), Z_MACRO_MC_6(m, __VA_ARGS__,))
+#define Z_MACRO_MC_8(m, a, ...)  UTIL_CAT(m(a), Z_MACRO_MC_7(m, __VA_ARGS__,))
+#define Z_MACRO_MC_9(m, a, ...)  UTIL_CAT(m(a), Z_MACRO_MC_8(m, __VA_ARGS__,))
+#define Z_MACRO_MC_10(m, a, ...) UTIL_CAT(m(a), Z_MACRO_MC_9(m, __VA_ARGS__,))
+#define Z_MACRO_MC_11(m, a, ...) UTIL_CAT(m(a), Z_MACRO_MC_10(m, __VA_ARGS__,))
+#define Z_MACRO_MC_12(m, a, ...) UTIL_CAT(m(a), Z_MACRO_MC_11(m, __VA_ARGS__,))
+#define Z_MACRO_MC_13(m, a, ...) UTIL_CAT(m(a), Z_MACRO_MC_12(m, __VA_ARGS__,))
+#define Z_MACRO_MC_14(m, a, ...) UTIL_CAT(m(a), Z_MACRO_MC_13(m, __VA_ARGS__,))
+#define Z_MACRO_MC_15(m, a, ...) UTIL_CAT(m(a), Z_MACRO_MC_14(m, __VA_ARGS__,))
 
 /* Used by Z_IS_EQ */
 #include "util_internal_is_eq.h"

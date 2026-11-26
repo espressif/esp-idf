@@ -94,9 +94,10 @@ so that the SDUs of one frame (e.g. the left and right audio) go in one event:
   below 200 us the scheduler adds one frame, above two SDU intervals more it
   skips one. A stall lowers only some SDUs and changes nothing; a best lead
   below minus one SDU interval is a stall or a backlog, and no frame is added.
-- A handover unregisters every stream before the other group starts, so the
-  timestamps and sequence numbers start again on the new group's anchors, as at
-  the first start. Keeping the frames continuous across a handover is not done.
+- A handover pauses TX when it starts; the old group's streams unregister when
+  they stop and the new group's register when they start, so the timestamps and
+  sequence numbers start again on the new group's anchors, as at the first
+  start. Keeping the frames continuous across a handover is not done.
 
 In this mode the first 4 bytes of each SDU carry its timestamp (0 without one),
 and unframed data is required. With the option disabled, the same scheduler sends

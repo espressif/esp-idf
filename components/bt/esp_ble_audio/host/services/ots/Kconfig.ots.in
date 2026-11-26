@@ -70,7 +70,7 @@ endif # BT_OTS
 #### Object Transfer Service Client ################################
 
 config BT_OTS_CLIENT
-    bool "Object Transfer Service Client [Experimental]"
+    bool "Object Transfer Service Client [EXPERIMENTAL]"
     # BT_GATTC_ENABLE over BT_BLUEDROID_ENABLED: it implies the full dependency chain.
     select BT_BLE_L2CAP_COC_ENABLED if BT_GATTC_ENABLE
     help
@@ -85,8 +85,8 @@ if BT_OTS || BT_OTS_CLIENT
         # object using the net_buf implementation is 2^16-1, the maximum number of objects is given
         # by 2^16-1 / 172 = 381 == 0x17D)
         range 0x02 0x17D if BT_OTS_DIR_LIST_OBJ
-        # Max obj count is otherwise the non-RFU IDs available
-        range 0x01 0xFFFFFFFFFFFFFEFF
+        # Max obj count is otherwise the non-RFU IDs available: 2^48 - 1 - 256
+        range 0x01 0xFFFFFFFFFEFF
 
     config BT_OTS_L2CAP_CHAN_TX_MTU
         int "Size of TX MTU for Object Transfer Channel"

@@ -20,6 +20,29 @@
 #include "nimble/gatt.h"
 #endif
 
+/* Send the notifications of VCS, VOCS, AICS, MICS, MCS, the TBS Signal Strength and the
+ * ASCS Control Point to every connected client, whether or not the client has enabled them
+ * in the CCC descriptor. This is how these services behaved before the Zephyr v4.5.0
+ * update, so it is enabled.
+ *
+ * It also covers bonded clients after a restart: the CCC values of the LE Audio services
+ * are lost on restart with Bluedroid, which keeps them in RAM only, and with NimBLE when
+ * BT_NIMBLE_NVS_PERSIST is disabled. A bonded client that does not write the CCC
+ * descriptors again would then receive no notifications.
+ *
+ * Sending notifications to a client that has not enabled them does not conform to the
+ * Bluetooth Core Specification. To notify only the clients that enabled notifications
+ * (e.g. for qualification), define it to 0 for the whole build, e.g. in the project
+ * CMakeLists.txt before project():
+ *     idf_build_set_property(COMPILE_DEFINITIONS "BT_LE_GATT_NOTIFY_IGNORE_CCC=0" APPEND)
+ * The other services (PACS, ASCS ASE, BASS, CSIP, HAS and the other TBS characteristics)
+ * always check the CCC and are not affected. The lib's MCS follows this value through
+ * config_audio_notify_ignore_ccc in idf_ext_cfgs.
+ */
+#ifndef BT_LE_GATT_NOTIFY_IGNORE_CCC
+#define BT_LE_GATT_NOTIFY_IGNORE_CCC    1
+#endif
+
 #ifdef __cplusplus
 extern "C" {
 #endif

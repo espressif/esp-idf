@@ -55,11 +55,13 @@ static void csip_discover_cb(esp_ble_conn_t *conn,
         return;
     }
 
+    /* Needed by internal regression tests: do not change this log. */
     ESP_LOGI(TAG, "CSIP discovered: handle %u set_size %u rank %u lockable %u",
              conn_handle, member->insts[0].info.set_size,
              member->insts[0].info.rank, member->insts[0].info.lockable);
 
     if (member->insts[0].info.set_size != TMAP_CEN_PEER_COUNT) {
+        /* Needed by internal regression tests: do not change this log. */
         ESP_LOGW(TAG, "Peer reports set size %u, this build drives %u member(s)",
                  member->insts[0].info.set_size, TMAP_CEN_PEER_COUNT);
     }
@@ -72,6 +74,7 @@ static void csip_lock_set_cb(int err)
     /* A failure is reported by set_lock_complete(), which also says what it
      * does about it. */
     if (!err) {
+        /* Needed by internal regression tests: do not change this log. */
         ESP_LOGI(TAG, "Set locked");
     }
 
@@ -83,6 +86,7 @@ static void csip_release_set_cb(int err)
     if (err) {
         ESP_LOGE(TAG, "Failed to release set, err %d", err);
     } else {
+        /* Needed by internal regression tests: do not change this log. */
         ESP_LOGI(TAG, "Set released");
     }
 }

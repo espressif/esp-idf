@@ -20,9 +20,10 @@ config BT_MCS_INSTANCE_COUNT
     default 0
     range 0 255
     help
-        Number of discrete Media Control Service instances (0x1848), each bound
-        to its own media player. GMCS (0x1849) is always present in addition to
-        these. Leave at 0 for a GMCS-only device.
+        Number of discrete Media Control Service instances (0x1848). GMCS (0x1849)
+        is always present in addition to these. All instances expose the same
+        local media player as GMCS (there is a single player behind the media
+        proxy); each instance has its own CCCs. Leave at 0 for a GMCS-only device.
 
 #### Media Control Client ################################
 

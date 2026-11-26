@@ -560,9 +560,11 @@ void example_audio_tx_scheduler_on_sent(example_audio_tx_scheduler_t *scheduler,
     /* The count can step by more than one. */
     if (prev / LOG_INTERVAL_PACKETS != count->sdus / LOG_INTERVAL_PACKETS) {
         if (count->late) {
+            /* Needed by internal regression tests: do not change this log. */
             ESP_LOGI(tag, "[%s] TX: %u packets, %u late", name, count->sdus, count->late);
             count->late = 0;
         } else {
+            /* Needed by internal regression tests: do not change this log. */
             ESP_LOGI(tag, "[%s] TX: %u packets", name, count->sdus);
         }
     }
@@ -819,6 +821,7 @@ void example_audio_rx_metrics_on_recv(const esp_ble_iso_recv_info_t *info,
     metrics->recv_count++;
 
     if (metrics->recv_count % LOG_INTERVAL_PACKETS == 0) {
+        /* Needed by internal regression tests: do not change this log. */
         ESP_LOGI(tag, "[%s] RX: %u packets, valid %u (empty %u), error %u, lost %u",
                  obj_name ? obj_name : "ISO", metrics->recv_count, metrics->valid_count,
                  metrics->null_sdu_count, metrics->error_count, metrics->lost_count);

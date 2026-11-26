@@ -20,6 +20,13 @@ function(register_ble_audio_libs)
         else()
             set(ble_audio_lib "${ble_audio_lib_dir}/libble_audio.a")
         endif()
+        include("${CMAKE_CURRENT_FUNCTION_LIST_DIR}/lib/headers_check.cmake")
+        ble_audio_lib_headers_check("${ble_audio_lib}")
+        # Compile-time only: fails if a type or macro the lib uses from the IDF headers changed
+        get_filename_component(ble_audio_lib_dir "${ble_audio_lib}" DIRECTORY)
+        target_sources(${COMPONENT_LIB} PRIVATE "${ble_audio_lib_dir}/abi_check.c")
+        set_source_files_properties("${ble_audio_lib_dir}/abi_check.c" PROPERTIES INCLUDE_DIRECTORIES
+            "${CMAKE_CURRENT_FUNCTION_LIST_DIR}/host/services;${CMAKE_CURRENT_FUNCTION_LIST_DIR}/lib/include")
         add_prebuilt_library(ble_audio "${ble_audio_lib}")
         target_link_libraries(${COMPONENT_LIB} PRIVATE ble_audio)
     endif()

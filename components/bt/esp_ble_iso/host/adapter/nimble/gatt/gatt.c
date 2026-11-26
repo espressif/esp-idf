@@ -191,7 +191,7 @@ static void handle_gatts_subscribe_event_safe(struct bt_le_gatts_subscribe_event
 
 static void handle_gattc_notify_rx_event_safe(struct bt_le_gattc_notify_rx_event *event)
 {
-    struct bt_gatt_subscribe_params *params;
+    struct bt_gatt_subscribe_params *params, *tmp;
     struct gattc_sub *sub;
     struct bt_conn *conn;
 
@@ -211,7 +211,9 @@ static void handle_gattc_notify_rx_event_safe(struct bt_le_gattc_notify_rx_event
         goto end;
     }
 
-    SYS_SLIST_FOR_EACH_CONTAINER(&sub->list, params, node) {
+    /* _SAFE as on Bluedroid: the notify cb may unsubscribe inline (Zephyr contract),
+     * which NULLs the current node's next pointer. */
+    SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&sub->list, params, tmp, node) {
         if (params->ccc_handle != BT_GATT_AUTO_DISCOVER_CCC_HANDLE &&
                 params->value_handle == event->attr_handle) {
             if (params->notify) {
@@ -536,6 +538,11 @@ int bt_le_nimble_gattc_write_without_rsp(struct bt_conn *conn, uint16_t handle,
 int bt_le_nimble_gattc_write_ccc(struct bt_conn *conn, struct bt_gatt_subscribe_params *params)
 {
     /* LOG_DBG("[N]GattcWrCcc[%u]", conn->handle); */
+
+    if (params->value == 0) {
+        /* Unsubscribe: a later subscribe has to write the CCC again */
+        bt_le_nimble_gattc_db_ccc_disabled(conn->handle, params->ccc_handle);
+    }
 
     return bt_le_nimble_gatt_nrp_insert(conn, GATTC_NRP_SUBSCRIBE, params);
 }

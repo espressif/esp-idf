@@ -199,6 +199,17 @@ int bt_le_per_adv_sync_get_info(struct bt_le_per_adv_sync *per_adv_sync,
         return -EINVAL;
     }
 
+    if (!IS_ARRAY_ELEMENT(per_adv_sync_pool, per_adv_sync)) {
+        LOG_ERR("PaSyncNotInPool[%p]", per_adv_sync);
+        return -EINVAL;
+    }
+
+    /* Deleted syncs are zeroed in place, so a stale pointer still lands in the pool */
+    if (!atomic_test_bit(per_adv_sync->flags, BT_PER_ADV_SYNC_SYNCED)) {
+        LOG_ERR("PaSyncNotSynced[%p]", per_adv_sync);
+        return -EINVAL;
+    }
+
     bt_addr_le_copy(&info->addr, &per_adv_sync->addr);
     info->sid = per_adv_sync->sid;
     info->phy = per_adv_sync->phy;

@@ -49,4 +49,16 @@ if BT_CCP_CALL_CONTROL_SERVER
         help
             Sets the maximum length of the bearer provider name.
 
+    config BT_CCP_CALL_CONTROL_SERVER_URI_SCHEMES_MAX_LEN
+        # The original BT_CCP_CALL_CONTROL_SERVER_URI_SCHEMES_MAX_LENGTH is reported
+        # as too long while running pre-commit check.
+        int "The maximum length of the bearer URI schemes support list excluding null terminator"
+        default BT_TBS_MAX_SCHEME_LIST_LENGTH
+        range 1 BT_TBS_MAX_SCHEME_LIST_LENGTH
+        help
+            Sets the maximum length of the bearer URI schemes support list.
+            The effective limit is also capped at BT_TBS_MAX_SCHEME_LIST_LENGTH - 1,
+            as the TBS buffer holds the null terminator; longer lists are rejected
+            with -ENOMEM.
+
 endif # BT_CCP_CALL_CONTROL_SERVER

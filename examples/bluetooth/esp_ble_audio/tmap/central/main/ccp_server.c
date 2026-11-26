@@ -41,8 +41,8 @@ int ccp_server_init(void)
         .uri_schemes_supported = "tel,wechat",
         .gtbs = true,
         .authorization_required = false,
-        .technology = ESP_BLE_AUDIO_TBS_TECHNOLOGY_5G,
-        .supported_features = CONFIG_BT_TBS_SUPPORTED_FEATURES,
+        .technology = ESP_BLE_AUDIO_BEARER_TECH_5G,
+        .optional_opcodes = CONFIG_BT_TBS_SUPPORTED_FEATURES,
     };
     uint8_t bearer_index;
     int err;

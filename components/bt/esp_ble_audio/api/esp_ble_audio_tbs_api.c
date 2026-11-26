@@ -299,8 +299,8 @@ esp_err_t esp_ble_audio_tbs_set_bearer_technology(uint8_t bearer_index, uint8_t 
 {
     int err;
 
-    if (new_technology < ESP_BLE_AUDIO_TBS_TECHNOLOGY_3G ||
-            new_technology > ESP_BLE_AUDIO_TBS_TECHNOLOGY_WCDMA) {
+    if (new_technology < ESP_BLE_AUDIO_BEARER_TECH_3G ||
+            new_technology > ESP_BLE_AUDIO_BEARER_TECH_WCDMA) {
         return ESP_ERR_INVALID_ARG;
     }
 
@@ -419,12 +419,12 @@ static bool valid_register_param(const esp_ble_audio_tbs_register_param_t *param
     }
 
     if (IN_RANGE(param->technology,
-                 ESP_BLE_AUDIO_TBS_TECHNOLOGY_3G,
-                 ESP_BLE_AUDIO_TBS_TECHNOLOGY_WCDMA) == false) {
+                 ESP_BLE_AUDIO_BEARER_TECH_3G,
+                 ESP_BLE_AUDIO_BEARER_TECH_WCDMA) == false) {
         return false;
     }
 
-    if (param->supported_features > ESP_BLE_AUDIO_TBS_FEATURE_ALL) {
+    if (param->optional_opcodes > ESP_BLE_AUDIO_TBS_OPTIONAL_OPCODE_ALL) {
         return false;
     }
 
@@ -438,16 +438,28 @@ static bool valid_register_param(const esp_ble_audio_tbs_register_param_t *param
 esp_err_t esp_ble_audio_tbs_register_bearer(const esp_ble_audio_tbs_register_param_t *param,
                                             uint8_t *bearer_index)
 {
+    esp_ble_audio_tbs_register_param_t reg_param;
     esp_err_t ret = ESP_OK;
     int err;
 
-    if (param == NULL || valid_register_param(param) == false || bearer_index == NULL) {
+    if (param == NULL || bearer_index == NULL) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    /* The lib only reads optional_opcodes; keep apps that still set the old field working */
+    reg_param = *param;
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
+    reg_param.optional_opcodes |= param->supported_features;
+#pragma GCC diagnostic pop
+
+    if (valid_register_param(&reg_param) == false) {
         return ESP_ERR_INVALID_ARG;
     }
 
     BT_LE_HOST_LOCK_OR_RETURN(ESP_ERR_TIMEOUT);
 
-    err = bt_tbs_register_bearer(param);
+    err = bt_tbs_register_bearer(&reg_param);
     if (err < 0) {
         ret = ESP_FAIL;
         goto end;

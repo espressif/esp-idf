@@ -59,4 +59,6 @@ void security_failed_recover(uint16_t conn_handle, uint8_t status);
 int pa_sync_create(uint8_t addr_type, const uint8_t addr[6], uint8_t sid);
 int pa_sync_terminate(uint16_t sync_handle);
 
+#if CONFIG_EXAMPLE_PAST
 int pa_past_transfer(uint16_t conn_handle, uint16_t sync_handle, uint8_t src_id);
+#endif /* CONFIG_EXAMPLE_PAST */

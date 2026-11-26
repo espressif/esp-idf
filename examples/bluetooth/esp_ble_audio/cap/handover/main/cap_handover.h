@@ -68,6 +68,8 @@ int exchange_mtu(uint16_t conn_handle);
 
 void security_failed_recover(uint16_t conn_handle, uint8_t status);
 
+int conn_disconnect(uint16_t conn_handle);
+
 int ext_adv_start_without_base(const uint8_t *ext_data, uint8_t ext_len);
 
 int per_adv_data_start(const uint8_t *per_data, uint8_t per_len);
@@ -143,6 +145,10 @@ void cap_handover_diag_sample(const char *phase, bool has_sent);
 void cap_handover_proc_reset(void);
 
 void cap_handover_tx_stream_sent(esp_ble_audio_bap_stream_t *stream, void *user_data);
+
+void cap_handover_tx_pause(void);
+
+void cap_handover_tx_resume(void);
 
 int cap_handover_tx_register_stream(esp_ble_audio_cap_stream_t *cap_stream, bool is_broadcast);
 

@@ -44,7 +44,7 @@ if BT_TBS
     config BT_TBS_MAX_SCHEME_LIST_LENGTH
         int "The maximum length of the URI scheme list"
         default 30
-        range 0 512
+        range 1 512
         help
             Sets the maximum length of the URI scheme list.
 

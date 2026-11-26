@@ -12,7 +12,7 @@
 
 #include "sdkconfig.h"
 
-#include "../../../lib/include/audio.h"
+#include "../../../lib/include/lib_exports.h"
 
 #ifdef __cplusplus
 extern "C" {
