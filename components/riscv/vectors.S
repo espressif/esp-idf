@@ -270,6 +270,10 @@ _panic_handler:
     li    t1, VECTORS_MCAUSE_INTBIT_MASK | VECTORS_MCAUSE_REASON_MASK
     and   s0, s0, t1
 
+#if CONFIG_RISCV_USER_MODE_TRAPS
+    rv_user_branch_if_user t1, .Lprivilege_exception_not_handled
+#endif /* CONFIG_RISCV_USER_MODE_TRAPS */
+
 #if ( SOC_CPU_COPROC_NUM > 0 )
     /* Check if the exception was cause by a coprocessor instruction. If this is the case, we have
      * to lazily save the registers inside the current owner's save area */
@@ -369,6 +373,10 @@ _panic_handler_not_coproc:
 
 #endif /* ( SOC_CPU_COPROC_NUM > 0 ) */
 
+#if CONFIG_RISCV_USER_MODE_TRAPS
+    /* An exception from U-mode continues here */
+.Lprivilege_exception_not_handled:
+#endif /* CONFIG_RISCV_USER_MODE_TRAPS */
     /* Call panic_from_exception(sp) or panic_from_isr(sp)
      * depending on whether we have a pseudo excause or not.
      * If mcause's highest bit is 1, then an interrupt called this routine,

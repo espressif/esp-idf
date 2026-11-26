@@ -13,6 +13,10 @@
 #include "esp_err.h"
 #include "esp_privilege_umode_domain.h"
 
+/* Priority of the test task. The test task preempts the tasks that the tests create one level below, and those tasks
+ * run above the idle task. */
+#define TEST_MAIN_TASK_PRIO 6
+
 #ifdef __cplusplus
 extern "C" {
 #endif

@@ -45,6 +45,8 @@ STRUCT_FIELD (uint32_t, 4, RV_UCTX_SATP, satp)                    /* satp value 
 STRUCT_FIELD (uint32_t, 4, RV_UCTX_FAULT, fault)                  /* zero, the high word of the result of esp_privilege_call_user_code() */
 STRUCT_FIELD (uint32_t, 4, RV_UCTX_USER_GP, user_gp)
 STRUCT_FIELD (uint32_t, 4, RV_UCTX_USER_TP, user_tp)
+STRUCT_FIELD (uint32_t, 4, RV_UCTX_MACHINE_HWLP_STATE, machine_hwlp_state)
+STRUCT_FIELD (uint32_t, 4, RV_UCTX_USER_JVT, user_jvt)
 STRUCT_END(RvUserCallCtx)
 
 #if defined(_ASMLANGUAGE) || defined(__ASSEMBLER__)
@@ -143,13 +145,39 @@ void rv_user_trap_set_handlers(rv_user_ecall_handler_t ecall);
 #if (defined(_ASMLANGUAGE) || defined(__ASSEMBLER__)) && CONFIG_RISCV_USER_MODE_TRAPS
 
 #include "riscv/sv32_asm.h"
-#if CONFIG_ESP_SYSTEM_HW_STACK_GUARD
-/* The guard macros pick the core from SOC_CPU_CORES_NUM */
 #include "soc/soc_caps.h"
+#if CONFIG_ESP_SYSTEM_HW_STACK_GUARD
 #include "esp_private/hw_stack_guard.h"
 #endif /* CONFIG_ESP_SYSTEM_HW_STACK_GUARD */
 #include "riscv/encoding.h"
 #include "riscv/csr_clic.h"
+#if SOC_CPU_HAS_HWLOOP
+#include "riscv/csr_hwlp.h"
+#endif /* SOC_CPU_HAS_HWLOOP */
+#if SOC_CPU_HAS_DSP
+#include "riscv/csr_dsp.h"
+#endif /* SOC_CPU_HAS_DSP */
+#if SOC_ASYNCHRONOUS_BUS_ERROR_MODE
+/* MHINT of riscv/csr.h, which assembly cannot include, and its SBE bit, which makes load and store
+ * bus errors synchronous */
+#define MHINT_CSR 0x7C5
+#define MHINT_SBE (1 << 20)
+#endif /* SOC_ASYNCHRONOUS_BUS_ERROR_MODE */
+#if SOC_CPU_HAS_ZC_EXTENSIONS
+/* CSR number of jvt, the jump table base of the Zcmt extension */
+#define JVT_CSR 0x017
+#endif /* SOC_CPU_HAS_ZC_EXTENSIONS */
+
+/*
+ * A trap from U-mode switches the CPU to the state of the task's M-mode code, and a return to U-mode switches the CPU
+ * to the state of the task's U-mode code. See rv_user_trap_from_user and rv_user_trap_resume.
+ *
+ * U-mode code must not use the user-level trap CSRs ustatus, utvec, uscratch, uepc, ucause, utvt and uintthresh,
+ * because ESP-IDF does not save their context when it preempts the U-mode code.
+ *
+ * U-mode code must not use the dedicated GPIO CSRs CSR_GPIO_OEN_USER (0x803) and CSR_GPIO_OUT_USER (0x805), because
+ * ESP-IDF does not save their context.
+ */
 
 /**
  * @brief Switch to the M-mode stack if the trap came from U-mode.
@@ -176,11 +204,44 @@ void rv_user_trap_set_handlers(rv_user_ecall_handler_t ecall);
 .endm
 
 /**
- * @brief Get the interrupted sp and, if the trap came from U-mode, restore the M-mode state of the
- *        task, such as its gp and tp and the hardware stack guard.
+ * @brief Get the interrupted user sp and restore the M-mode state of the task after a trap from U-mode
  *
  * Must be used after the interrupted gp and tp have been saved in a frame of frame_size bytes
  * pointed to by sp.
+ *
+ * @param reg Register receiving the user sp
+ * @param frame_size Size of the frame allocated on the stack by the trap handler
+ */
+.macro rv_user_trap_from_user reg, frame_size
+    csrr    \reg, mscratch
+    /* Use gp and tp, which are saved in the frame, as scratch registers */
+#if SOC_CPU_HAS_ZC_EXTENSIONS
+    /* Save jvt of the U-mode code and clear jvt for M-mode code */
+    csrrw   gp, JVT_CSR, zero
+    sw      gp, (\frame_size + RV_UCTX_USER_JVT)(sp)
+#endif /* SOC_CPU_HAS_ZC_EXTENSIONS */
+#if SOC_CPU_HAS_HWLOOP
+    /* Write back the hardware-loop state of M-mode code, recorded by rv_user_trap_resume */
+    lw      gp, (\frame_size + RV_UCTX_MACHINE_HWLP_STATE)(sp)
+    csrw    CSR_HWLP_STATE_REG, gp
+#endif /* SOC_CPU_HAS_HWLOOP */
+#if SOC_ASYNCHRONOUS_BUS_ERROR_MODE
+    /* Make bus errors asynchronous again for M-mode code */
+    li      gp, MHINT_SBE
+    csrc    MHINT_CSR, gp
+#endif /* SOC_ASYNCHRONOUS_BUS_ERROR_MODE */
+#if CONFIG_ESP_SYSTEM_HW_STACK_GUARD
+    /* The stack guard is paused while U-mode code runs on its own stack. The task's bounds are
+     * still set, and sp is on the task's M-mode stack again. */
+    ESP_HW_STACK_GUARD_MONITOR_START_CUR_CORE gp tp
+#endif /* CONFIG_ESP_SYSTEM_HW_STACK_GUARD */
+    lw      gp, (\frame_size + RV_UCTX_GP)(sp)
+    lw      tp, (\frame_size + RV_UCTX_TP)(sp)
+.endm
+
+/**
+ * @brief Get the interrupted sp and, if the trap came from U-mode, restore the M-mode state of the
+ *        task, see rv_user_trap_from_user.
  *
  * @param reg Register receiving the sp value at the time of the trap
  * @param frame_size Size of the frame allocated on the stack by the trap handler
@@ -191,14 +252,7 @@ void rv_user_trap_set_handlers(rv_user_ecall_handler_t ecall);
     addi    \reg, sp, \frame_size
     j       .Lrv_user_trap_restore_m_context_end\@
 .Lrv_user_trap_restore_m_context_user\@:
-    csrr    \reg, mscratch
-#if CONFIG_ESP_SYSTEM_HW_STACK_GUARD
-    /* The stack guard is paused while U-mode code runs on its own stack. The task's bounds are
-     * still set, and sp is on the task's M-mode stack again. */
-    ESP_HW_STACK_GUARD_MONITOR_START_CUR_CORE gp tp
-#endif /* CONFIG_ESP_SYSTEM_HW_STACK_GUARD */
-    lw      gp, (\frame_size + RV_UCTX_GP)(sp)
-    lw      tp, (\frame_size + RV_UCTX_TP)(sp)
+    rv_user_trap_from_user \reg, \frame_size
 .Lrv_user_trap_restore_m_context_end\@:
 .endm
 
@@ -219,19 +273,16 @@ void rv_user_trap_set_handlers(rv_user_ecall_handler_t ecall);
 .endm
 
 /**
- * @brief Prepare the return to U-mode. user_sp is stored in mscratch and the task's address space
- *        (satp) is activated. After the registers have been restored, rv_user_trap_exit_to_user must be used.
+ * @brief Prepare the return to U-mode. Stores the user sp in mscratch and calls rv_user_trap_resume.
+ *        After the registers have been restored, rv_user_trap_exit_to_user must be used.
  *
- * @param reg Register holding the user sp, clobbered. t1 is clobbered as well.
+ * @param reg Register holding the user sp. t0, t1, t2 and ra are clobbered.
  * @param frame_size Size of the frame pointed to by sp, which ends at the top of the task's M-mode stack
  */
 .macro rv_user_trap_set_user_sp reg, frame_size
     csrw    mscratch, \reg
-#if CONFIG_ESP_SYSTEM_HW_STACK_GUARD
-    ESP_HW_STACK_GUARD_MONITOR_STOP_CUR_CORE \reg t1
-#endif /* CONFIG_ESP_SYSTEM_HW_STACK_GUARD */
-    lw      \reg, (\frame_size + RV_UCTX_SATP)(sp)
-    rv_user_activate_satp \reg, t1
+    addi    t0, sp, \frame_size
+    jal     rv_user_trap_resume
 .endm
 
 /**

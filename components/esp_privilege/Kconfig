@@ -15,17 +15,20 @@ menu "Privilege Execution"
             bool "ESP-IDF in M-mode, runs U-mode code"
             select RISCV_USER_MODE_TRAPS
             depends on SOC_RISCV_SV32_SUPPORTED && SOC_INT_CLIC_SUPPORTED
-            depends on !SECURE_ENABLE_TEE && !ESP_SYSTEM_MEMPROT
+            depends on !SECURE_ENABLE_TEE && !ESP_SYSTEM_MEMPROT && !FREERTOS_SMP
             help
                 A task can call a function that runs in RISC-V user mode (U-mode). When the function
                 returns, the task continues in machine mode (M-mode). The task, ESP-IDF and FreeRTOS
                 run in M-mode, and the task is scheduled normally while the function runs.
 
+                The floating-point unit and the other CPU extensions that hold task state are disabled
+                while U-mode code runs.
+
                 Not available together with the following.
 
                 - ESP-TEE, because ESP-TEE runs ESP-IDF in U-mode and this option needs ESP-IDF
                   in M-mode.
-                - System memory protection (ESP_SYSTEM_MEMPROT), because it leaves no memory
+                - System memory protection (CONFIG_ESP_SYSTEM_MEMPROT), because it leaves no memory
                   that is both writable, to load U-mode code, and executable.
     endchoice
 
