@@ -1066,7 +1066,7 @@ esp_err_t i2c_new_master_bus(const i2c_master_bus_config_t *bus_config, i2c_mast
 #endif // SOC_I2C_SUPPORT_SLEEP_RETENTION
 
     // always allocate memory from internal memory because the driver object contains atomic variables
-    i2c_master = heap_caps_calloc(1, sizeof(i2c_master_bus_t) + 20 * sizeof(i2c_transaction_t), MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT);
+    i2c_master = heap_caps_calloc(1, sizeof(i2c_master_bus_t), MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT);
 
     ESP_GOTO_ON_FALSE(i2c_master, ESP_ERR_NO_MEM, err, TAG, "no memory for i2c master bus");
 
@@ -1146,9 +1146,10 @@ esp_err_t i2c_new_master_bus(const i2c_master_bus_config_t *bus_config, i2c_mast
             // sanity check
             assert(i2c_master->trans_queues[i]);
         }
+        // Fill the ready queue with empty transactions. The content doesn't matter,
+        // a transaction is always filled in before it's moved to the progress queue.
         i2c_transaction_t trans_pre = {};
         for (int i = 0; i < bus_config->trans_queue_depth ; i++) {
-            trans_pre = i2c_master->i2c_trans_pool[i];
             ESP_GOTO_ON_FALSE(xQueueSend(i2c_master->trans_queues[I2C_TRANS_QUEUE_READY], &trans_pre, 0) == pdTRUE,
                               ESP_ERR_INVALID_STATE, err, TAG, "ready queue full");
         }
