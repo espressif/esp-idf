@@ -6,7 +6,7 @@ Overview
 
 Bluetooth device reference APIs.
 
-.. only:: esp32
+.. only:: SOC_BT_CLASSIC_SUPPORTED
 
     Application Examples
     --------------------
