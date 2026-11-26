@@ -43,7 +43,7 @@ Each line of a CSV file should contain 4 parameters, separated by a comma. The t
       -
     * - 3
       - Encoding
-      - Supported values are: ``u8``, ``i8``, ``u16``, ``i16``, ``u32``, ``i32``, ``u64``, ``i64``, ``string``, ``hex2bin``, ``base64``, and ``binary``. This specifies how actual data values are encoded in the resulting binary file. The difference between the ``string`` and ``binary`` encoding is that ``string`` data is terminated with a NULL character, whereas ``binary`` data is not.
+      - Supported values are: ``u8``, ``i8``, ``u16``, ``i16``, ``u32``, ``i32``, ``u64``, ``i64``, ``float``, ``double``, ``string``, ``hex2bin``, ``base64``, and ``binary``. This specifies how actual data values are encoded in the resulting binary file. The difference between the ``string`` and ``binary`` encoding is that ``string`` data is terminated with a NULL character, whereas ``binary`` data is not. ``float`` and ``double`` store IEEE 754 values and reject NaN.
       - As of now, for the ``file`` type, only ``hex2bin``, ``base64``, ``string``, and ``binary`` encoding is supported.
     * - 4
       - Value
