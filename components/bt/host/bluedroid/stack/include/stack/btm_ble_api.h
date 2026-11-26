@@ -1183,6 +1183,7 @@ typedef struct {
 
 typedef struct {
     UINT8 status;
+    UINT16 sync_handle;
 } tBTM_BLE_PERIOD_ADV_SYNC_TEMINAT_CMPL;
 
 typedef struct {
