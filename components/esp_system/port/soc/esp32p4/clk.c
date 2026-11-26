@@ -27,7 +27,7 @@
 #include "esp_private/esp_sleep_internal.h"
 #include "esp_private/esp_clk.h"
 #include "esp_private/esp_pmu.h"
-#include "esp_private/esp_cache_private.h"
+#include "esp_private/mspi_timing_tuning.h"
 #include "esp_rom_serial_output.h"
 #include "esp_rom_sys.h"
 
@@ -51,22 +51,6 @@ void IRAM_ATTR esp_rtc_init(void)
 #if SOC_PMU_SUPPORTED
     pmu_init();
 #endif  //SOC_PMU_SUPPORTED
-}
-
-/*
- * Perform the CPU frequency switch with the external memory (PSRAM) cache
- * suspended. The frequency switch stalls the HP_ROOT clock and toggles PLL /
- * clock gating; when the switch code runs from PSRAM-XIP, a cache-coherency
- * transient during the switch can corrupt the external .bss region. Suspending
- * the external-memory cache for the duration of the switch keeps the CPU off
- * the XIP path, isolating the two.
- * Must be IRAM-resident because it runs while the external cache is suspended.
- */
-static void IRAM_ATTR esp_clk_cpu_freq_set_config_isolated(const rtc_cpu_freq_config_t *config)
-{
-    esp_cache_suspend_ext_mem_cache();
-    rtc_clk_cpu_freq_set_config(config);
-    esp_cache_resume_ext_mem_cache();
 }
 
 __attribute__((weak)) void esp_clk_init(void)
@@ -130,7 +114,22 @@ __attribute__((weak)) void esp_clk_init(void)
     }
 
     if (res)  {
-        esp_clk_cpu_freq_set_config_isolated(&new_config);
+#if CONFIG_SPIRAM
+        /*
+         * Calibrating CPLL temporarily switches CPU/AXI to the 40 MHz XTAL clock.
+         * Preventatively lower PSRAM MSPI speed across the switch to avoid TX FIFO
+         * underflow if any PSRAM write or dirty L2 writeback occurs during the
+         * low-frequency window, while keeping external-memory XIP accessible.
+         * mspi_timing_enter_low_speed_early() switches PSRAM to a fixed 20 MHz
+         * clock, which satisfies f_cpu >= f_psram and supports CPU frequencies
+         * down to 20 MHz.
+         */
+        mspi_timing_enter_low_speed_early();
+#endif
+        rtc_clk_cpu_freq_set_config(&new_config);
+#if CONFIG_SPIRAM
+        mspi_timing_enter_high_speed_early();
+#endif
     }
 
     // Re calculate the ccount to make time calculation correct.
