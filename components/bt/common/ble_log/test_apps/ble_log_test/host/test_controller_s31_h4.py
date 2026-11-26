@@ -77,7 +77,7 @@ int main(void) {
     assert(deleted == 1 && unregisters == 1 && !lbm_enabled);
     /* A task still switching out must not re-enter logging after disable. */
     check_entry = true;
-    assert(!ble_log_writer_acquire() && !lbm_ref_count && !lock_depth);
+    assert(!BLE_LOG_WRITER_ACQUIRE() && !lbm_ref_count && !lock_depth);
     check_entry = false;
     ble_log_flush();
     assert(!lbm_enabled && !lbm_ref_count);
@@ -120,7 +120,7 @@ int main(void) {
         assert(!lbm_enabled && !lbm_ref_count && !g_pool.waiting_task_count && ticks > 0);
         assert(queued_frames == (log_first ? 0U : 3U));
         check_entry = true;
-        assert(!ble_log_writer_acquire() && !lbm_ref_count && !lock_depth);
+        assert(!BLE_LOG_WRITER_ACQUIRE() && !lbm_ref_count && !lock_depth);
         check_entry = false;
         if (log_first) bt_shutdown(); else ble_log_shutdown_handler();
         assert(shutdowns == 1 && !queued_frames && flushed_frames == 3);

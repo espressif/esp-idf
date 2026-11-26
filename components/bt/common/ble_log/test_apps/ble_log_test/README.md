@@ -50,7 +50,7 @@ idf.py -D SDKCONFIG_DEFAULTS="sdkconfig.defaults;sdkconfig.ci.bounded_tick_1000"
 Run `python3 host/test_log_stop.py` from this app directory for the shared BLE Log
 tests. They extract production log functions without reading controller or BTDM
 sources. Coverage includes blocking/recycle, cancellation, ref/waiter handoff,
-admission locking, pause/deinit draining, and shutdown flushing of queued frames.
+lock-free writer admission, pause/deinit draining, and shutdown flushing of queued frames.
 The production timeout is checked at 100 Hz and 1000 Hz, including continued
 waiting when assertions are disabled and flush timeout/state restoration.
 

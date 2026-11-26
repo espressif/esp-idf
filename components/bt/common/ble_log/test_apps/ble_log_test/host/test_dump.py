@@ -3,11 +3,14 @@
 """Exercise the production console dump with retained transport contents."""
 
 import pathlib
+import re
 import subprocess
 import tempfile
 
 source = (pathlib.Path(__file__).resolve().parents[3] / 'src/ble_log_lbm_v2.c').read_text()
 dump = source[source.index('void ble_log_dump_to_console(void)') :]
+lifetime_acquire = re.search(r'^#define BLE_LOG_LIFETIME_ACQUIRE\(\) .+$', source, re.M)
+assert lifetime_acquire, 'Missing production lifetime reference macro'
 harness = r"""
 #include <assert.h>
 #include <stdbool.h>
@@ -52,7 +55,7 @@ int main(int argc, char **argv)
 with tempfile.TemporaryDirectory(prefix='ble-log-dump-test-') as directory:
     c_file = pathlib.Path(directory) / 'dump.c'
     binary = pathlib.Path(directory) / 'dump'
-    c_file.write_text(harness + dump + main)
+    c_file.write_text(harness + lifetime_acquire[0] + '\n' + dump + main)
     subprocess.run(
         [
             'cc',

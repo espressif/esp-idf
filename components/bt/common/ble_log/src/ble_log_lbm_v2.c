@@ -651,17 +651,21 @@ void ble_log_pool_finish_frame(ble_log_prph_trans_t *trans, uint16_t payload_len
     }
 }
 
-BLE_LOG_IRAM_ATTR BLE_LOG_STATIC bool ble_log_writer_acquire(void)
-{
-    /* Rejected calls must leave no reference if their task is deleted. */
-    BLE_LOG_ENTER_CRITICAL();
-    bool enabled = BLE_LOG_ATOMIC_LOAD_ACQUIRE(lbm_enabled);
-    if (enabled) {
-        BLE_LOG_REF_COUNT_ACQUIRE_SEQ_CST(&lbm_ref_count);
-    }
-    BLE_LOG_EXIT_CRITICAL();
-    return enabled;
-}
+/* Writer admission takes no lock: a controller writer may already hold its
+ * own critical section, which ble_log_sync_sample() enters under
+ * ble_log_spin_lock to read the link-layer clock. The seq_cst
+ * increment/recheck pairs with the seq_cst gate close in
+ * ble_log_lbm_disable() before the closer waits for writers. The relaxed
+ * pre-check keeps writers that meet an already closed gate off the count:
+ * teardown deletes the controller task after the drain, and a deletion
+ * between the increment and the release would leak a reference that the
+ * next drain waits on. */
+#define BLE_LOG_WRITER_ACQUIRE() \
+    (BLE_LOG_ATOMIC_LOAD_RELAXED(lbm_enabled) && \
+     ble_log_ref_count_try_acquire(&lbm_ref_count, &lbm_enabled))
+/* Lifetime reference for calls that must also run while writers are paused
+ * (enable, flush, snapshots, dump): gated by init state, not by enable. */
+#define BLE_LOG_LIFETIME_ACQUIRE() ble_log_ref_count_try_acquire(&lbm_ref_count, &lbm_inited)
 
 /* ---------------------------------------------- */
 /*     CLAIM / COMMIT INTERFACE (holds lock)      */
@@ -680,7 +684,7 @@ uint8_t *ble_log_claim(ble_log_src_t src_code, size_t max_len,
     }
     *handle = UINT32_MAX;
 
-    if (!ble_log_writer_acquire()) {
+    if (!BLE_LOG_WRITER_ACQUIRE()) {
         return NULL;
     }
 
@@ -881,7 +885,7 @@ bool ble_log_lbm_wait_writers(uint32_t caller_refs)
 
 void ble_log_lbm_begin_deinit(void)
 {
-    /* Serialize gate closure with writer admission and enable. */
+    /* Serialize gate closure with enable and flush restore. */
     BLE_LOG_ENTER_CRITICAL();
     ble_log_lbm_disable();
     BLE_LOG_ATOMIC_STORE_SEQ_CST(lbm_inited, false);
@@ -1015,7 +1019,7 @@ bool ble_log_internal_snapshot(uint16_t reason_flags,
 #endif
     /* Internal Snapshots are system output and outlive the public producer
      * gate. Only LBM teardown stops new snapshots. */
-    if (!ble_log_ref_count_try_acquire(&lbm_ref_count, &lbm_inited)) {
+    if (!BLE_LOG_LIFETIME_ACQUIRE()) {
         return false;
     }
     if (!internal_trans) {
@@ -1121,7 +1125,7 @@ void ble_log_lbm_flush_open_trans(void)
 {
     /* Periodic OPEN flush is system output, independent from the public
      * producer gate. LBM teardown remains the lifetime boundary. */
-    if (!ble_log_ref_count_try_acquire(&lbm_ref_count, &lbm_inited)) {
+    if (!BLE_LOG_LIFETIME_ACQUIRE()) {
         return;
     }
 
@@ -1185,7 +1189,7 @@ bool ble_log_enable(bool enable)
         ble_log_test_enable_before_lifecycle_lock_hook();
     }
 #endif
-    if (!ble_log_ref_count_try_acquire(&lbm_ref_count, &lbm_inited)) {
+    if (!BLE_LOG_LIFETIME_ACQUIRE()) {
         return false;
     }
 
@@ -1219,7 +1223,7 @@ bool ble_log_enable(bool enable)
 
 void ble_log_pause(void)
 {
-    /* Lifecycle calls are serialized; share the lock with writer admission. */
+    /* Lifecycle calls are serialized by ble_log_spin_lock. */
     BLE_LOG_ENTER_CRITICAL();
     if (!BLE_LOG_ATOMIC_LOAD_ACQUIRE(lbm_inited)) {
         BLE_LOG_EXIT_CRITICAL();
@@ -1244,7 +1248,7 @@ void ble_log_flush(void)
     flush_in_progress = true;
     BLE_LOG_EXIT_CRITICAL();
 
-    if (!ble_log_ref_count_try_acquire(&lbm_ref_count, &lbm_inited)) {
+    if (!BLE_LOG_LIFETIME_ACQUIRE()) {
         goto done;
     }
 
@@ -1320,7 +1324,7 @@ bool ble_log_write_hex(ble_log_src_t src_code, const uint8_t *addr, size_t len)
         return false;
     }
 
-    if (!ble_log_writer_acquire()) {
+    if (!BLE_LOG_WRITER_ACQUIRE()) {
         return false;
     }
     /* One Global SN per attempt, consumed before the length and pool checks
@@ -1374,7 +1378,7 @@ void ble_log_write_hex_ll(uint32_t len, const uint8_t *addr,
         return;
     }
 
-    if (!ble_log_writer_acquire()) {
+    if (!BLE_LOG_WRITER_ACQUIRE()) {
         return;
     }
 
@@ -1433,7 +1437,7 @@ failed:
 
 void ble_log_dump_to_console(void)
 {
-    if (!ble_log_ref_count_try_acquire(&lbm_ref_count, &lbm_inited)) {
+    if (!BLE_LOG_LIFETIME_ACQUIRE()) {
         return;
     }
 

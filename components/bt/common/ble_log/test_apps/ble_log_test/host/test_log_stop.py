@@ -20,7 +20,6 @@ production = extract(
     lbm,
     [
         ('ble_log_lbm_disable', 'void'),
-        ('ble_log_writer_acquire', 'bool'),
         ('ble_log_pool_wake_all', 'void'),
         ('ble_log_pool_waiter_adjust', 'void'),
         ('ble_log_pool_acquire', 'ble_log_prph_trans_t *'),
@@ -36,7 +35,15 @@ production += extract(
     BT / 'common/ble_log/src/ble_log.c',
     [('ble_log_shutdown_handler', 'void')],
 )
-production = extract(BT / 'common/ble_log/src/ble_log_util.c', [('ble_log_ref_count_try_acquire', 'bool')]) + production
+ref_macros = re.findall(r'^#define BLE_LOG_(?:WRITER|LIFETIME)_ACQUIRE\(\)(?:.*\\\n)*.*$', lbm.read_text(), re.M)
+assert len(ref_macros) == 2, 'Missing production reference macros'
+production = (
+    extract(BT / 'common/ble_log/src/ble_log_util.c', [('ble_log_ref_count_try_acquire', 'bool')])
+    + '\n'
+    + '\n'.join(ref_macros)
+    + '\n'
+    + production
+)
 
 PRELUDE = r"""
 #include <assert.h>
@@ -77,6 +84,7 @@ static void (*ble_log_test_enable_before_lifecycle_lock_hook)(void);
 static void (*ble_log_test_disable_before_wake_hook)(void);
 static void (*ble_log_test_flush_drain_between_loads_hook)(void);
 static void (*ble_log_test_acquire_after_unregister_hook)(void);
+static void (*on_ref_acquire)(void);
 static jmp_buf pause_assert_env;
 static bool expect_pause_assert, ignore_pause_assert;
 static unsigned pause_asserts;
@@ -121,16 +129,22 @@ static void ble_log_task_registry_begin_deinit(void) {
 }
 """
 macros += r"""
-/* Model deletion at an entry reference increment: rejected writers must never
- * reach this point, and accepted writers must still hold the admission lock. */
+/* Model deletion at an entry reference increment: writers that meet a closed
+ * gate must never reach this point, and admission must not hold
+ * ble_log_spin_lock. A hook models a gate close between the increment and the
+ * recheck. */
 #undef BLE_LOG_REF_COUNT_ACQUIRE_SEQ_CST
 #define BLE_LOG_REF_COUNT_ACQUIRE_SEQ_CST(p) do { \
-    if (check_entry) assert(lock_depth && lbm_enabled); \
+    if (check_entry) assert(!lock_depth && lbm_enabled); \
     __atomic_fetch_add((p), 1, __ATOMIC_SEQ_CST); \
+    if (on_ref_acquire) { \
+        void (*hook)(void) = on_ref_acquire; \
+        on_ref_acquire = NULL; hook(); \
+    } \
 } while (0)
 """
 macros += r"""
-/* Gate closure must serialize with writer admission, including flush. */
+/* Gate closure stays serialized with the other lifecycle calls, including flush. */
 #undef BLE_LOG_ATOMIC_STORE_SEQ_CST
 #define BLE_LOG_ATOMIC_STORE_SEQ_CST(var, value) do { \
     if (&(var) == &lbm_enabled) assert(lock_depth); \
@@ -157,6 +171,7 @@ static void finish_shutdown_waiter(void) {
 }
 static void close_while_parked(void) { assert(ble_log_enable(false)); }
 static void recycle_while_parked(void) { available = true; }
+static void close_gate_in_window(void) { ++lock_depth; ble_log_lbm_disable(); --lock_depth; }
 static void straddle(void) {
     lbm_ref_count = 2; g_pool.waiting_task_count = 0;
     ble_log_test_flush_drain_between_loads_hook = NULL;
@@ -165,7 +180,7 @@ static void release_straddle(void) { lbm_ref_count = 1; on_delay = NULL; }
 static void reset(void) {
     expect_pause_assert = ignore_pause_assert = false; pause_asserts = 0;
     lbm_enabled = lbm_inited = 1; lbm_ref_count = 0; g_pool.waiting_task_count = 0;
-    ticks = wakes = 0; on_delay = on_take = NULL;
+    ticks = wakes = 0; on_delay = on_take = NULL; on_ref_acquire = NULL;
     queued_frames = flushed_frames = 0;
     available = check_entry = flush_in_progress = false; flush_success = true;
 }
@@ -228,20 +243,27 @@ int main(void) {
 
     reset();
     check_entry = true;
-    assert(ble_log_writer_acquire() && lbm_ref_count == 1 && !lock_depth);
+    assert(BLE_LOG_WRITER_ACQUIRE() && lbm_ref_count == 1 && !lock_depth);
     BLE_LOG_REF_COUNT_RELEASE(&lbm_ref_count);
     check_entry = false;
     assert(ble_log_enable(false));
     check_entry = true;
-    assert(!ble_log_writer_acquire() && !lbm_ref_count && !lock_depth);
+    assert(!BLE_LOG_WRITER_ACQUIRE() && !lbm_ref_count && !lock_depth);
 
-    reset(); assert(ble_log_writer_acquire());
+    /* A gate close between the increment and the recheck rejects the writer
+     * and leaves no reference, so the closer's drain completes at once. */
+    reset(); check_entry = true; on_ref_acquire = close_gate_in_window;
+    assert(!BLE_LOG_WRITER_ACQUIRE() && !lbm_ref_count && !lock_depth && !lbm_enabled);
+    check_entry = false;
+    assert(ble_log_lbm_wait_writers(0) && !ticks);
+
+    reset(); assert(BLE_LOG_WRITER_ACQUIRE());
     on_take = recycle_while_parked;
     assert(ble_log_pool_acquire(1, false, true) != NULL);
     assert(lbm_enabled && lbm_ref_count == 1 && !g_pool.waiting_task_count);
 
     reset();
-    assert(ble_log_writer_acquire());
+    assert(BLE_LOG_WRITER_ACQUIRE());
     on_take = close_while_parked;
     assert(ble_log_pool_acquire(1, false, true) == NULL);
     assert(lbm_ref_count == 1 && !g_pool.waiting_task_count);
@@ -275,7 +297,7 @@ int main(void) {
     assert(!queued_frames && flushed_frames == 3);
 
     puts("PASS: blocking/recycle, cancellation, counter straddle, pause timeout assertion, "
-         "closed admission, deinit, flush");
+         "lock-free admission, close during admission, deinit, flush");
 }
 """
 
