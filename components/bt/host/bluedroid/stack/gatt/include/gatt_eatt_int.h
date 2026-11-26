@@ -18,6 +18,18 @@
 
 #define GATT_EATT_PSM                   0x0027
 
+/* EATT-bearer TX queue slots kept free for PDUs that must not be refused by
+ * the L2CAP CoC cap: one in-progress server response (one per bearer), one
+ * unconfirmed server indication (serialized by p_tcb->indicate_handle), one
+ * local client command (gatt_eatt_get_available_bearer picks by client_op
+ * only), and one client indication confirmation (GATT_HANDLE_VALUE_CONF sent
+ * back on the bearer the indication arrived on). Server notifications are
+ * refused before reaching this reserve so apps can resend on GATT_BUSY. */
+#define GATT_EATT_CTRL_RESERVE          4
+
+_Static_assert(L2CAP_LE_COC_MAX_XMIT_SDU > GATT_EATT_CTRL_RESERVE,
+               "L2CAP_LE_COC_MAX_XMIT_SDU must exceed GATT_EATT_CTRL_RESERVE");
+
 typedef void (tGATT_EATT_EVT_CBACK)(UINT16 conn_id, UINT8 status, UINT16 cid);
 
 void gatt_eatt_init(void);
@@ -33,6 +45,14 @@ UINT16 gatt_eatt_get_available_bearer(BD_ADDR bd_addr, UINT8 op);
  * round-robin across the connection's bearers. Returns L2CAP_ATT_CID when no
  * EATT bearer is available so the caller falls back to the legacy ATT channel. */
 UINT16 gatt_eatt_get_server_tx_bearer(BD_ADDR bd_addr);
+/* How many more server PDUs the peer's EATT bearers can take right now.
+ * Returns FALSE when the peer has no EATT bearer, so the caller keeps using the
+ * ATT fixed channel accounting. */
+BOOLEAN gatt_eatt_get_sendable_num(BD_ADDR bd_addr, UINT16 *p_num);
+/* Re-read bearer headroom and raise or clear the connection congestion latch.
+ * L2CAP only callbacks when credits hit zero or the queue drains, which misses
+ * the notify-reserve threshold. */
+void gatt_eatt_recheck_congestion(BD_ADDR bd_addr);
 #endif
 BOOLEAN gatt_eatt_set_default_bearer(UINT16 conn_id, UINT16 lcid);
 BOOLEAN gatt_eatt_mark_busy(BD_ADDR bd_addr, UINT16 lcid, UINT8 op, UINT16 clcb_idx);

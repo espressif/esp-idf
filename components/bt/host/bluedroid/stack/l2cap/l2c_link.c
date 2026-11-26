@@ -39,8 +39,107 @@
 #include "stack/btu.h"
 #include "stack/btm_api.h"
 #include "btm_int.h"
+#include "osi/mutex.h"
 
 static BOOLEAN l2c_link_send_to_lower (tL2C_LCB *p_lcb, BT_HDR *p_buf);
+
+/* link_xmit_data_q is updated from BTC (LE CoC try_xmit -> l2c_link_check_send_pkts)
+ * and from BTU (NOCP, segment-complete, disconnect flush). The list head/length
+ * update is not atomic; a torn update leaves length != 0 and head == NULL, and
+ * list_front then loads address 0x4. Hold this lock across every mutation and
+ * across any head walk. Do not call back into L2CAP or take s_le_coc_tx_lock
+ * while it is held. */
+static osi_mutex_t s_link_xmit_lock;
+
+void l2c_link_xmit_lock_init(void)
+{
+    if (s_link_xmit_lock != NULL) {
+        return;
+    }
+    if (osi_mutex_new(&s_link_xmit_lock) != 0) {
+        s_link_xmit_lock = NULL;
+        L2CAP_TRACE_ERROR("link xmit lock create failed");
+    }
+}
+
+void l2c_link_xmit_lock_free(void)
+{
+    osi_mutex_free(&s_link_xmit_lock);
+}
+
+void l2c_link_xmit_lock(void)
+{
+    if (s_link_xmit_lock != NULL) {
+        osi_mutex_lock(&s_link_xmit_lock, OSI_MUTEX_MAX_TIMEOUT);
+    }
+}
+
+void l2c_link_xmit_unlock(void)
+{
+    if (s_link_xmit_lock != NULL) {
+        osi_mutex_unlock(&s_link_xmit_lock);
+    }
+}
+
+BOOLEAN l2c_link_xmit_q_is_empty(tL2C_LCB *p_lcb)
+{
+    BOOLEAN empty = TRUE;
+
+    if (p_lcb == NULL) {
+        return TRUE;
+    }
+    l2c_link_xmit_lock();
+    empty = (p_lcb->link_xmit_data_q == NULL) || list_is_empty(p_lcb->link_xmit_data_q);
+    l2c_link_xmit_unlock();
+    return empty;
+}
+
+static BOOLEAN l2c_link_xmit_enqueue(tL2C_LCB *p_lcb, BT_HDR *p_buf, BOOLEAN prepend)
+{
+    BOOLEAN ok = FALSE;
+
+    if (p_lcb == NULL || p_buf == NULL) {
+        return FALSE;
+    }
+    l2c_link_xmit_lock();
+    if (p_lcb->link_xmit_data_q != NULL) {
+        ok = prepend ? list_prepend(p_lcb->link_xmit_data_q, p_buf)
+                     : list_append(p_lcb->link_xmit_data_q, p_buf);
+    }
+    l2c_link_xmit_unlock();
+    return ok;
+}
+
+static BT_HDR *l2c_link_xmit_dequeue(tL2C_LCB *p_lcb)
+{
+    list_t *q;
+    BT_HDR *p_buf;
+
+    if (p_lcb == NULL) {
+        return NULL;
+    }
+    l2c_link_xmit_lock();
+    q = p_lcb->link_xmit_data_q;
+    if (q == NULL || list_is_empty(q)) {
+        l2c_link_xmit_unlock();
+        return NULL;
+    }
+    /* length != 0 but the chain is gone. list_front would load head->data at
+     * offset 4 (MTVAL 0x4). Drop the stale count instead. */
+    if (list_begin(q) == NULL) {
+        L2CAP_TRACE_ERROR("link xmit queue corrupt len=%u, reset", (unsigned)list_length(q));
+        list_clear(q);
+        l2c_link_xmit_unlock();
+        return NULL;
+    }
+    p_buf = (BT_HDR *)list_front(q);
+    if (!list_remove(q, p_buf)) {
+        l2c_link_xmit_unlock();
+        return NULL;
+    }
+    l2c_link_xmit_unlock();
+    return p_buf;
+}
 
 #if (BLE_50_FEATURE_SUPPORT == TRUE)
 extern tBTM_STATUS BTM_BleStartExtAdvRestart(uint16_t handle);
@@ -373,6 +472,58 @@ void l2c_link_sec_comp (BD_ADDR p_bda, tBT_TRANSPORT transport, void *p_ref_data
 
 /*******************************************************************************
 **
+** Function         l2c_link_acl_disconnected
+**
+** Description      Notify and remove dynamic channels after the ACL is gone.
+**                  LE CoC is reported here (DisconnectInd / ConnectCfm) so the
+**                  same path works with Classic off. Classic channels still go
+**                  through their FSM. p_pending_ccb is left for the caller to
+**                  restart, except a pending LE CoC, which is torn down with
+**                  the rest of that link's CoC channels.
+**
+*******************************************************************************/
+static void l2c_link_acl_disconnected(tL2C_LCB *p_lcb, void *p_data)
+{
+    tL2C_CCB *p_ccb;
+
+    if (p_lcb == NULL) {
+        return;
+    }
+
+#if (CLASSIC_BT_INCLUDED != TRUE)
+    UNUSED(p_data);
+#endif
+
+#if (BLE_L2CAP_COC_INCLUDED == TRUE)
+    if (p_lcb->transport == BT_TRANSPORT_LE) {
+        l2c_ble_le_coc_on_acl_down(p_lcb);
+    }
+#endif
+
+    for (p_ccb = p_lcb->ccb_queue.p_first_ccb; p_ccb != NULL; ) {
+        tL2C_CCB *p_next = p_ccb->p_next_ccb;
+
+#if (BLE_L2CAP_COC_INCLUDED == TRUE)
+        /* Still here only if the app started a new CoC from the callback above. */
+        if (p_ccb->le_coc_active) {
+            p_ccb = p_next;
+            continue;
+        }
+#endif
+        /* Keep a classic connect that arrived while the link was going down. */
+        if (p_ccb != p_lcb->p_pending_ccb) {
+#if (CLASSIC_BT_INCLUDED == TRUE)
+            l2c_csm_execute(p_ccb, L2CEVT_LP_DISCONNECT_IND, p_data);
+#else
+            l2cu_release_ccb(p_ccb);
+#endif
+        }
+        p_ccb = p_next;
+    }
+}
+
+/*******************************************************************************
+**
 ** Function         l2c_link_hci_disc_comp
 **
 ** Description      This function is called when an HCI Disconnect Complete
@@ -384,9 +535,6 @@ void l2c_link_sec_comp (BD_ADDR p_bda, tBT_TRANSPORT transport, void *p_ref_data
 BOOLEAN l2c_link_hci_disc_comp (UINT16 handle, UINT8 reason)
 {
     tL2C_LCB    *p_lcb;
-#if (CLASSIC_BT_INCLUDED == TRUE)
-    tL2C_CCB    *p_ccb;
-#endif  ///CLASSIC_BT_INCLUDED == TRUE
     BOOLEAN     status = TRUE;
     BOOLEAN     lcb_is_free = TRUE;
     tBT_TRANSPORT   transport = BT_TRANSPORT_BR_EDR;
@@ -435,24 +583,10 @@ BOOLEAN l2c_link_hci_disc_comp (UINT16 handle, UINT8 reason)
         }
 #endif // (BLE_TOPOLOGY_CHECK == TRUE)
 #endif
-#if (CLASSIC_BT_INCLUDED == TRUE)
-        /* Link is disconnected. For all channels, send the event through */
-        /* their FSMs. The CCBs should remove themselves from the LCB     */
-        for (p_ccb = p_lcb->ccb_queue.p_first_ccb; p_ccb; ) {
-            tL2C_CCB *pn = p_ccb->p_next_ccb;
-
-            /* Keep connect pending control block (if exists)
-             * Possible Race condition when a reconnect occurs
-             * on the channel during a disconnect of link. This
-             * ccb will be automatically retried after link disconnect
-             * arrives
-             */
-            if (p_ccb != p_lcb->p_pending_ccb) {
-                l2c_csm_execute (p_ccb, L2CEVT_LP_DISCONNECT_IND, &reason);
-            }
-            p_ccb = pn;
-        }
-#endif  ///CLASSIC_BT_INCLUDED == TRUE
+        /* Empty dynamic channels before the reuse check below. Otherwise an
+         * established LE link keeps its CoC CCBs, l2cu_create_conn() reuses this
+         * LCB, and the application never sees the CoC go down. */
+        l2c_link_acl_disconnected(p_lcb, &reason);
 #if (BTM_SCO_INCLUDED == TRUE)
 #if (BLE_INCLUDED == TRUE)
         if (p_lcb->transport == BT_TRANSPORT_BR_EDR)
@@ -718,17 +852,7 @@ void l2c_link_timeout (tL2C_LCB *p_lcb)
             (p_lcb->link_state == LST_CONNECT_HOLDING) ||
             (p_lcb->link_state == LST_DISCONNECTING)) {
         p_lcb->p_pending_ccb = NULL;
-#if (CLASSIC_BT_INCLUDED == TRUE)
-        /* For all channels, send a disconnect indication event through */
-        /* their FSMs. The CCBs should remove themselves from the LCB   */
-        for (p_ccb = p_lcb->ccb_queue.p_first_ccb; p_ccb; ) {
-            tL2C_CCB *pn = p_ccb->p_next_ccb;
-
-            l2c_csm_execute (p_ccb, L2CEVT_LP_DISCONNECT_IND, NULL);
-
-            p_ccb = pn;
-        }
-#endif  ///CLASSIC_BT_INCLUDED == TRUE
+        l2c_link_acl_disconnected(p_lcb, NULL);
 #if (BLE_INCLUDED == TRUE)
         if (p_lcb->link_state == LST_CONNECTING &&
                 l2cb.is_ble_connecting == TRUE) {
@@ -968,7 +1092,7 @@ void l2c_link_adjust_allocation (void)
             /* this link may have sent anything but some other link sent packets so  */
             /* so we may need a timer to kick off this link's transmissions.         */
             if ( (p_lcb->link_state == LST_CONNECTED)
-                    && (!list_is_empty(p_lcb->link_xmit_data_q))
+                    && (!l2c_link_xmit_q_is_empty(p_lcb))
                     && (p_lcb->sent_not_acked < p_lcb->link_xmit_quota) ) {
                 btu_start_timer (&p_lcb->timer_entry, BTU_TTYPE_L2CAP_LINK, L2CAP_LINK_FLOW_CONTROL_TOUT);
             }
@@ -1135,7 +1259,7 @@ BOOLEAN l2c_link_check_power_mode (tL2C_LCB *p_lcb)
     /*
      * We only switch park to active only if we have unsent packets
      */
-    if (list_is_empty(p_lcb->link_xmit_data_q)) {
+    if (l2c_link_xmit_q_is_empty(p_lcb)) {
         for (p_ccb = p_lcb->ccb_queue.p_first_ccb; p_ccb; p_ccb = p_ccb->p_next_ccb) {
             if (!fixed_queue_is_empty(p_ccb->xmit_hold_q)) {
                 need_to_active = TRUE;
@@ -1188,9 +1312,11 @@ void l2c_link_check_send_pkts (tL2C_LCB *p_lcb, tL2C_CCB *p_ccb, BT_HDR *p_buf)
         }
 
         p_buf->layer_specific = 0;
-        list_append(p_lcb->link_xmit_data_q, p_buf);
-
-        if (p_lcb->link_xmit_quota == 0) {
+        if (!l2c_link_xmit_enqueue(p_lcb, p_buf, FALSE)) {
+            L2CAP_TRACE_ERROR("link xmit enqueue failed");
+            osi_free(p_buf);
+            p_buf = NULL;
+        } else if (p_lcb->link_xmit_quota == 0) {
 #if BLE_INCLUDED == TRUE
             if (p_lcb->transport == BT_TRANSPORT_LE) {
                 l2cb.ble_check_round_robin = TRUE;
@@ -1272,9 +1398,8 @@ void l2c_link_check_send_pkts (tL2C_LCB *p_lcb, tL2C_CCB *p_ccb, BT_HDR *p_buf)
             }
 
             /* See if we can send anything from the Link Queue */
-            if (!list_is_empty(p_lcb->link_xmit_data_q)) {
-                p_buf = (BT_HDR *)list_front(p_lcb->link_xmit_data_q);
-                list_remove(p_lcb->link_xmit_data_q, p_buf);
+            p_buf = l2c_link_xmit_dequeue(p_lcb);
+            if (p_buf != NULL) {
                 l2c_link_send_to_lower (p_lcb, p_buf);
             } else if (single_write) {
                 /* If only doing one write, break out */
@@ -1323,12 +1448,11 @@ void l2c_link_check_send_pkts (tL2C_LCB *p_lcb, tL2C_CCB *p_ccb, BT_HDR *p_buf)
                 && (p_lcb->sent_not_acked < p_lcb->link_xmit_quota))
 #endif
         {
-            if (list_is_empty(p_lcb->link_xmit_data_q)) {
+            p_buf = l2c_link_xmit_dequeue(p_lcb);
+            if (p_buf == NULL) {
                 break;
             }
 
-            p_buf = (BT_HDR *)list_front(p_lcb->link_xmit_data_q);
-            list_remove(p_lcb->link_xmit_data_q, p_buf);
             if (!l2c_link_send_to_lower (p_lcb, p_buf)) {
                 break;
             }
@@ -1364,7 +1488,7 @@ void l2c_link_check_send_pkts (tL2C_LCB *p_lcb, tL2C_CCB *p_ccb, BT_HDR *p_buf)
         /* There is a special case where we have readjusted the link quotas and  */
         /* this link may have sent anything but some other link sent packets so  */
         /* so we may need a timer to kick off this link's transmissions.         */
-        if ( (!list_is_empty(p_lcb->link_xmit_data_q)) && (p_lcb->sent_not_acked < p_lcb->link_xmit_quota) ) {
+        if ( (!l2c_link_xmit_q_is_empty(p_lcb)) && (p_lcb->sent_not_acked < p_lcb->link_xmit_quota) ) {
             btu_start_timer (&p_lcb->timer_entry, BTU_TTYPE_L2CAP_LINK, L2CAP_LINK_FLOW_CONTROL_TOUT);
         }
     }
@@ -1689,7 +1813,7 @@ void l2c_link_segments_xmitted (BT_HDR *p_msg)
     if (p_lcb->link_state == LST_CONNECTED) {
         /* Enqueue the buffer to the head of the transmit queue, and see */
         /* if we can transmit anything more.                             */
-        if (!list_prepend(p_lcb->link_xmit_data_q, p_msg)) {
+        if (!l2c_link_xmit_enqueue(p_lcb, p_msg, TRUE)) {
             osi_free(p_msg);
         }
 

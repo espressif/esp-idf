@@ -170,6 +170,7 @@ typedef struct {
     UINT16                  offset;
     UINT16                  len;
     UINT8                   *p_value;
+    BOOLEAN                 btu_pending;
 } tBTA_GATTC_API_WRITE;
 
 typedef struct {
@@ -523,6 +524,7 @@ extern tBTA_GATTC_CLCB *bta_gattc_find_int_conn_clcb(tBTA_GATTC_DATA *p_msg);
 extern tBTA_GATTC_CLCB *bta_gattc_find_int_disconn_clcb(tBTA_GATTC_DATA *p_msg);
 
 extern BOOLEAN bta_gattc_enqueue(tBTA_GATTC_CLCB *p_clcb, tBTA_GATTC_DATA *p_data);
+extern void bta_gattc_release_btu_pending(tBTA_GATTC_DATA *p_data);
 
 extern BOOLEAN bta_gattc_uuid_compare (const tBT_UUID *p_src, const tBT_UUID *p_tar, BOOLEAN is_precise);
 extern BOOLEAN bta_gattc_check_notif_registry(tBTA_GATTC_RCB  *p_clreg, tBTA_GATTC_SERV *p_srcb, tBTA_GATTC_NOTIFY  *p_notify);

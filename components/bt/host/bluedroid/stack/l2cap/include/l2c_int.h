@@ -789,6 +789,11 @@ extern void     l2c_link_timeout (tL2C_LCB *p_lcb);
 extern void     l2c_link_create_conn_retry (tL2C_LCB *p_lcb);
 #endif
 extern void     l2c_info_timeout (tL2C_LCB *p_lcb);
+extern void     l2c_link_xmit_lock_init(void);
+extern void     l2c_link_xmit_lock_free(void);
+extern void     l2c_link_xmit_lock(void);
+extern void     l2c_link_xmit_unlock(void);
+extern BOOLEAN  l2c_link_xmit_q_is_empty(tL2C_LCB *p_lcb);
 extern void     l2c_link_check_send_pkts (tL2C_LCB *p_lcb, tL2C_CCB *p_ccb, BT_HDR *p_buf);
 extern void     l2c_link_adjust_allocation (void);
 extern void     l2c_link_process_num_completed_pkts (UINT8 *p, UINT8 evt_len);
@@ -881,6 +886,8 @@ extern BOOLEAN l2ble_sec_access_req(BD_ADDR bd_addr, UINT16 psm, BOOLEAN is_orig
 extern void l2ble_sec_flush_pending_req(tL2C_LCB *p_lcb, void *p_ref_data);
 #endif
 
+extern void l2c_ble_le_coc_init(void);
+extern void l2c_ble_le_coc_free(void);
 extern BOOLEAN l2c_ble_le_coc_is_chan(tL2C_CCB *p_ccb);
 /* Map a BTM security failure (tBTM_STATUS) to the matching LE CoC/ECFC L2CAP
  * result code (0x0005-0x0008) so the peer learns the real reason (authorization
@@ -898,6 +905,9 @@ extern void l2c_ble_le_coc_connect_rsp(tL2C_CCB *p_ccb, UINT16 result);
 extern void l2c_ble_le_coc_handle_credit_conn_req(tL2C_LCB *p_lcb, UINT8 *p, UINT8 id, UINT16 cmd_len);
 #endif
 extern void l2c_ble_le_coc_on_link_up(tL2C_LCB *p_lcb);
+/* ACL is already gone. Report and release every LE CoC on this link.
+ * Does not send DISC_REQ or an ECFC credit-connection response. */
+extern void l2c_ble_le_coc_on_acl_down(tL2C_LCB *p_lcb);
 extern void l2c_ble_le_coc_open_channel(tL2C_CCB *p_ccb, UINT16 result);
 extern void l2c_ble_le_coc_cleanup_ccb(tL2C_CCB *p_ccb);
 extern void l2c_ble_le_coc_apply_reconfig(tL2C_CCB *p_ccb, UINT16 new_mtu, UINT16 new_mps);
@@ -907,6 +917,8 @@ extern void l2c_ble_le_coc_handle_disc_rsp(tL2C_LCB *p_lcb, UINT8 *p, UINT8 id, 
 extern void l2c_ble_le_coc_data_ind(tL2C_CCB *p_ccb, BT_HDR *p_msg);
 extern UINT8 l2c_ble_le_coc_data_write(UINT16 lcid, BT_HDR *p_data);
 extern BOOLEAN l2c_ble_le_coc_is_congested(UINT16 lcid);
+extern UINT16 l2c_ble_le_coc_get_sendable_num(UINT16 lcid);
+extern UINT16 l2c_ble_le_coc_tx_slots(UINT16 lcid);
 extern BOOLEAN l2c_ble_le_coc_give_credits(UINT16 lcid, UINT16 credits);
 extern BOOLEAN l2c_ble_le_coc_set_auto_credit(UINT16 lcid, BOOLEAN enable);
 #if (BLE_L2CAP_ENHANCED_COC_INCLUDED == TRUE)
@@ -937,6 +949,9 @@ extern BOOLEAN l2c_ble_ecfc_on_reconfig_timeout(tL2C_CCB *p_ccb);
 extern void l2c_ble_ecfc_handle_reconfig_req(tL2C_LCB *p_lcb, UINT8 *p, UINT8 id, UINT16 cmd_len);
 extern void l2c_ble_ecfc_handle_reconfig_res(tL2C_LCB *p_lcb, UINT8 *p, UINT8 id, UINT16 cmd_len);
 extern void l2c_ble_ecfc_on_ccb_release(tL2C_CCB *p_ccb);
+/* Drop ECFC transactions for a dead ACL. Server and reconfig transactions are
+ * freed without sending; client transactions fail with ConnectCfm. */
+extern void l2c_ble_ecfc_on_acl_down(tL2C_LCB *p_lcb);
 #if (BLE_L2CAP_COC_CLIENT_INCLUDED == TRUE)
 extern void l2c_ble_ecfc_on_link_up(tL2C_LCB *p_lcb);
 #endif

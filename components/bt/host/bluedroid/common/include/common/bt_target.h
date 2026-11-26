@@ -1681,6 +1681,12 @@
 #define L2CAP_LE_COC_MPS                UC_BT_BLE_L2CAP_COC_MPS
 #endif
 
+/* Maximum number of SDUs held for transmission on one LE CoC channel from
+ * CONFIG_BT_BLE_L2CAP_COC_MAX_XMIT_SDU. */
+#ifndef L2CAP_LE_COC_MAX_XMIT_SDU
+#define L2CAP_LE_COC_MAX_XMIT_SDU       UC_BT_BLE_L2CAP_COC_MAX_XMIT_SDU
+#endif
+
 #ifndef BLE_L2CAP_COC_CLIENT_INCLUDED
 #if (BLE_L2CAP_COC_INCLUDED == TRUE) && (GATTC_INCLUDED == TRUE)
 #define BLE_L2CAP_COC_CLIENT_INCLUDED     TRUE

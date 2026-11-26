@@ -487,6 +487,7 @@ BOOLEAN gatt_security_check_start(tGATT_CLCB *p_clcb)
     tGATT_SEC_ACTION    gatt_sec_act;
     tBTM_BLE_SEC_ACT    btm_ble_sec_act;
     BOOLEAN             status = TRUE;
+    BOOLEAN             enc_accepted = FALSE;
 #if (SMP_INCLUDED == TRUE)
     tBTM_STATUS         btm_status;
 #endif  ///SMP_INCLUDED == TRUE
@@ -514,7 +515,10 @@ BOOLEAN gatt_security_check_start(tGATT_CLCB *p_clcb)
 #if (SMP_INCLUDED == TRUE)
             btm_status = BTM_SetEncryption(p_tcb->peer_bda, p_tcb->transport , gatt_enc_cmpl_cback, &btm_ble_sec_act);
             if (btm_status == BTM_SUCCESS || btm_status == BTM_CMD_STARTED) {
-                gatt_add_pending_enc_channel_clcb (p_tcb, p_clcb);
+                enc_accepted = TRUE;
+                if (gatt_add_pending_enc_channel_clcb(p_tcb, p_clcb) == NULL) {
+                    status = FALSE;
+                }
             } else {
                 GATT_TRACE_ERROR("gatt_security_check_start BTM_SetEncryption failed btm_status=%d", btm_status);
                 status = FALSE;
@@ -522,13 +526,21 @@ BOOLEAN gatt_security_check_start(tGATT_CLCB *p_clcb)
 #endif  ///SMP_INCLUDED == TRUE
         } else {
 #if (SMP_INCLUDED == TRUE)
-            gatt_add_pending_enc_channel_clcb (p_tcb, p_clcb);
+            if (gatt_add_pending_enc_channel_clcb(p_tcb, p_clcb) == NULL) {
+                status = FALSE;
+            }
 #endif  ///SMP_INCLUDED == TRUE
         }
         break;
     case GATT_SEC_ENC_PENDING:
 #if (SMP_INCLUDED == TRUE)
-        gatt_add_pending_enc_channel_clcb (p_tcb, p_clcb);
+        if (gatt_add_pending_enc_channel_clcb(p_tcb, p_clcb) == NULL) {
+            /* Undo the sec_act stored above. An in-progress encryption keeps its own. */
+            if (sec_act_old == GATT_SEC_NONE) {
+                gatt_set_sec_act(p_tcb, GATT_SEC_NONE);
+            }
+            return FALSE;
+        }
         /* wait for link encrypotion to finish */
 #else
         /* gatt_sec_check_complete(FALSE) ends the op and frees p_clcb.
@@ -545,7 +557,13 @@ BOOLEAN gatt_security_check_start(tGATT_CLCB *p_clcb)
         break;
     }
 
-    if (status == FALSE) {
+    /* Keep sec_act when encryption was accepted and another operation is still
+     * queued: gatt_enc_cmpl_cback uses it for the MITM check. With nobody left
+     * waiting, roll it back so the next operation does not wait for a callback
+     * that will find an empty queue. */
+    if (status == FALSE && sec_act_old < GATT_SEC_ENCRYPT &&
+        (!enc_accepted || p_tcb->pending_enc_clcb == NULL ||
+         fixed_queue_is_empty(p_tcb->pending_enc_clcb))) {
         gatt_set_sec_act(p_tcb, GATT_SEC_NONE);
         gatt_set_ch_state(p_tcb, GATT_CH_OPEN);
     }

@@ -208,19 +208,40 @@ void l2cu_return_tx_credits (tL2C_LCB *p_lcb)
 ** Returns          void
 **
 *******************************************************************************/
-void l2cu_flush_link_xmit_data_q (tL2C_LCB *p_lcb)
+static void l2cu_flush_link_xmit_data_q_locked (tL2C_LCB *p_lcb)
 {
     BT_HDR *p_buf;
+    list_t *q = p_lcb->link_xmit_data_q;
 
-    if (p_lcb->link_xmit_data_q == NULL) {
+    if (q == NULL) {
         return;
     }
-    while (!list_is_empty(p_lcb->link_xmit_data_q)) {
-        p_buf = list_front(p_lcb->link_xmit_data_q);
-        list_remove(p_lcb->link_xmit_data_q, p_buf);
+    while (!list_is_empty(q)) {
+        /* BTC and BTU both edit this list. A torn update leaves length != 0
+         * and head == NULL; list_front would then load address 0x4. */
+        if (list_begin(q) == NULL) {
+            L2CAP_TRACE_ERROR("link xmit queue corrupt len=%u, reset", (unsigned)list_length(q));
+            list_clear(q);
+            break;
+        }
+        p_buf = (BT_HDR *)list_front(q);
+        if (!list_remove(q, p_buf)) {
+            list_clear(q);
+            break;
+        }
         p_buf->event = 0;
         osi_free(p_buf);
     }
+}
+
+void l2cu_flush_link_xmit_data_q (tL2C_LCB *p_lcb)
+{
+    if (p_lcb == NULL) {
+        return;
+    }
+    l2c_link_xmit_lock();
+    l2cu_flush_link_xmit_data_q_locked(p_lcb);
+    l2c_link_xmit_unlock();
 }
 
 /*******************************************************************************
@@ -327,12 +348,15 @@ void l2cu_release_lcb (tL2C_LCB *p_lcb)
 #endif
     }
 
+    /* Flush and free under the same lock so a BTC enqueue cannot land on
+     * the list between list_free and the NULL store. */
+    l2c_link_xmit_lock();
     if (p_lcb->link_xmit_data_q) {
-        /* Release any held buffers */
-        l2cu_flush_link_xmit_data_q(p_lcb);
+        l2cu_flush_link_xmit_data_q_locked(p_lcb);
         list_free(p_lcb->link_xmit_data_q);
         p_lcb->link_xmit_data_q = NULL;
     }
+    l2c_link_xmit_unlock();
 
 #if (L2CAP_UCD_INCLUDED == TRUE)
     /* clean up any security pending UCD */
@@ -1119,7 +1143,13 @@ void l2cu_send_peer_disc_req (tL2C_CCB *p_ccb)
 
     /* Move all queued data packets to the LCB. In FCR mode, assume the higher
        layer checks that all buffers are sent before disconnecting.
+       LE CoC SDUs in this queue are fragmented by l2c_ble_le_coc_try_xmit.
+       Draining them here races with that sender and would put an unfragmented
+       SDU on the ACL. Leave them for CCB cleanup to free.
     */
+#if (BLE_L2CAP_COC_INCLUDED == TRUE)
+    if (!p_ccb->le_coc_active)
+#endif
     if (p_ccb->xmit_hold_q && (p_ccb->peer_cfg.fcr.mode == L2CAP_FCR_BASIC_MODE)) {
         while ((p_buf2 = (BT_HDR *)fixed_queue_dequeue(p_ccb->xmit_hold_q, 0)) != NULL) {
             l2cu_set_acl_hci_header (p_buf2, p_ccb);
@@ -3923,6 +3953,14 @@ BT_HDR *l2cu_get_next_buffer_to_send (tL2C_LCB *p_lcb)
         return (NULL);
     }
 
+#if (BLE_L2CAP_COC_INCLUDED == TRUE)
+    /* LE CoC owns xmit_hold_q. The basic-mode dequeue below would steal an SDU
+     * out from under l2c_ble_le_coc_try_xmit. */
+    if (p_ccb->le_coc_active) {
+        return (NULL);
+    }
+#endif
+
     if (p_ccb->peer_cfg.fcr.mode != L2CAP_FCR_BASIC_MODE) {
 
         if ((p_buf = l2c_fcr_get_next_xmit_sdu_seg(p_ccb, 0)) == NULL) {
@@ -4073,8 +4111,17 @@ void l2cu_check_channel_congestion (tL2C_CCB *p_ccb)
             }
         } else {
             tL2C_LCB *p_lcb = p_ccb->p_lcb;
+            size_t link_q_len = 0;
+            if (p_lcb != NULL) {
+                l2c_link_xmit_lock();
+                if (p_lcb->link_xmit_data_q != NULL) {
+                    link_q_len = list_length(p_lcb->link_xmit_data_q);
+                }
+                l2c_link_xmit_unlock();
+            }
             /* If this channel was not congested but it is congested now, tell the app */
-            if (q_count > p_ccb->buff_quota || (p_lcb && (p_lcb->link_xmit_data_q) && (list_length(p_lcb->link_xmit_data_q) + q_count) > p_ccb->buff_quota)
+            if (q_count > p_ccb->buff_quota ||
+                    (p_lcb != NULL && ((link_q_len + q_count) > p_ccb->buff_quota))
 #if (CLASSIC_BT_INCLUDED == TRUE)
                     || (p_ccb->peer_cfg.fcr.mode != L2CAP_FCR_BASIC_MODE && q_waiting_ack_count >= p_ccb->our_cfg.fcr.tx_win_sz)
 #endif

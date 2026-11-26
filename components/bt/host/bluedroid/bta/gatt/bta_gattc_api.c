@@ -693,10 +693,15 @@ void BTA_GATTC_WriteCharValue ( UINT16 conn_id,
             memcpy(p_buf->p_value, p_value, len);
         }
         if(write_type == BTA_GATTC_TYPE_WRITE_NO_RSP){
-            l2ble_update_att_acl_pkt_num(L2CA_DECREASE_BTC_NUM, NULL);
-            l2ble_update_att_acl_pkt_num(L2CA_ADD_BTU_NUM, NULL);
+            /* conn_id is the stack id: tcb index in the high byte. */
+            tl2c_buff_param_t pending = { .conn_id = (UINT8)(conn_id >> 8), .get_num = NULL };
+            l2ble_update_att_acl_pkt_num(L2CA_ADD_BTU_NUM, &pending);
+            p_buf->btu_pending = TRUE;
         }
-        bta_sys_sendmsg(p_buf);
+        if (!bta_sys_sendmsg_status(p_buf)) {
+            bta_gattc_release_btu_pending((tBTA_GATTC_DATA *)p_buf);
+            osi_free(p_buf);
+        }
     }
     return;
 }
@@ -743,10 +748,15 @@ void BTA_GATTC_WriteCharDescr (UINT16 conn_id,
             memcpy(p_buf->p_value, p_data->p_value, p_data->len);
         }
         if(write_type == BTA_GATTC_TYPE_WRITE_NO_RSP){
-            l2ble_update_att_acl_pkt_num(L2CA_DECREASE_BTC_NUM, NULL);
-            l2ble_update_att_acl_pkt_num(L2CA_ADD_BTU_NUM, NULL);
+            /* conn_id is the stack id: tcb index in the high byte. */
+            tl2c_buff_param_t pending = { .conn_id = (UINT8)(conn_id >> 8), .get_num = NULL };
+            l2ble_update_att_acl_pkt_num(L2CA_ADD_BTU_NUM, &pending);
+            p_buf->btu_pending = TRUE;
         }
-        bta_sys_sendmsg(p_buf);
+        if (!bta_sys_sendmsg_status(p_buf)) {
+            bta_gattc_release_btu_pending((tBTA_GATTC_DATA *)p_buf);
+            osi_free(p_buf);
+        }
     }
     return;
 

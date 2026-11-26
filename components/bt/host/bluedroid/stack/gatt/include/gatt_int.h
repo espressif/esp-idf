@@ -418,6 +418,10 @@ typedef struct {
 
     tGATT_CH_STATE  ch_state;
     UINT8           ch_flags;
+    BOOLEAN         fixed_congested;    /* ATT fixed/legacy bearer congestion state */
+#if (BLE_EATT_SERVER_INCLUDED == TRUE)
+    BOOLEAN         eatt_congested;     /* aggregate EATT bearer congestion state */
+#endif
 
     tGATT_IF        app_hold_link[GATT_MAX_APPS];
 
@@ -483,6 +487,7 @@ typedef struct {
     BOOLEAN                 in_use;
     TIMER_LIST_ENT          rsp_timer_ent;  /* peer response timer */
     UINT8                   retry_count;
+    BOOLEAN                 btu_pending_released;
 
 } tGATT_CLCB;
 
@@ -712,6 +717,10 @@ extern void gatt_delete_dev_from_srv_chg_clt_list(BD_ADDR bd_addr);
 extern tGATTS_PENDING_NEW_SRV_START *gatt_add_pending_new_srv_start( tGATTS_HNDL_RANGE *p_new_srv_start);
 extern void gatt_free_srvc_db_buffer_app_id(tBT_UUID *p_app_id);
 extern BOOLEAN gatt_cl_send_next_cmd_inq(tGATT_TCB *p_tcb);
+/* Fan a congestion state out to the registered applications only, without the
+ * client-queue kick that gatt_channel_congestion does for the ATT fixed
+ * channel. Used by bearers that own their own flow control (EATT). */
+extern void gatt_notify_app_congestion(tGATT_TCB *p_tcb, BOOLEAN congested);
 
 /* reserved handle list */
 extern tGATT_HDL_LIST_ELEM *gatt_find_hdl_buffer_by_app_id (tBT_UUID *p_app_uuid128, tBT_UUID *p_svc_uuid, UINT16 svc_inst);

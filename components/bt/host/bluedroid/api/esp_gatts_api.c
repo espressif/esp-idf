@@ -323,11 +323,18 @@ esp_err_t esp_ble_gatts_send_indicate(esp_gatt_if_t gatts_if, uint16_t conn_id, 
     arg.send_ind.need_confirm = need_confirm;
     arg.send_ind.value_len = value_len;
     arg.send_ind.value = value;
+    tl2c_buff_param_t pending = { .conn_id = conn_id, .get_num = NULL };
     if(need_confirm == false){
-        l2ble_update_att_acl_pkt_num(L2CA_ADD_BTC_NUM, NULL);
+        l2ble_update_att_acl_pkt_num(L2CA_ADD_BTC_NUM, &pending);
     }
-    return (btc_transfer_context(&msg, &arg, sizeof(btc_ble_gatts_args_t), btc_gatts_arg_deep_copy,
-                btc_gatts_arg_deep_free) == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
+    if (btc_transfer_context(&msg, &arg, sizeof(btc_ble_gatts_args_t), btc_gatts_arg_deep_copy,
+                btc_gatts_arg_deep_free) != BT_STATUS_SUCCESS) {
+        if (need_confirm == false) {
+            l2ble_update_att_acl_pkt_num(L2CA_DECREASE_BTC_NUM, &pending);
+        }
+        return ESP_FAIL;
+    }
+    return ESP_OK;
 }
 
 esp_err_t esp_ble_gatts_send_response(esp_gatt_if_t gatts_if, uint16_t conn_id, uint32_t trans_id,

@@ -237,6 +237,20 @@ tBTA_GATTC_CLCB *bta_gattc_find_alloc_clcb(tBTA_GATTC_IF client_if, BD_ADDR remo
     return p_clcb;
 }
 
+void bta_gattc_release_btu_pending(tBTA_GATTC_DATA *p_data)
+{
+    if (p_data != NULL &&
+        p_data->hdr.event == BTA_GATTC_API_WRITE_EVT &&
+        p_data->api_write.btu_pending) {
+        tl2c_buff_param_t pending = {
+            .conn_id = (UINT8)(p_data->hdr.layer_specific >> 8),
+            .get_num = NULL,
+        };
+        p_data->api_write.btu_pending = FALSE;
+        l2ble_update_att_acl_pkt_num(L2CA_DECREASE_BTU_NUM, &pending);
+    }
+}
+
 /*******************************************************************************
 **
 ** Function         bta_gattc_clcb_dealloc
@@ -278,12 +292,19 @@ void bta_gattc_clcb_dealloc(tBTA_GATTC_CLCB *p_clcb)
 
         if (p_clcb->p_q_cmd != NULL &&
             (p_clcb->p_cmd_list == NULL || !list_contains(p_clcb->p_cmd_list, p_clcb->p_q_cmd))) {
+            bta_gattc_release_btu_pending(p_clcb->p_q_cmd);
             osi_free(p_clcb->p_q_cmd);
             p_clcb->p_q_cmd = NULL;
         }
         // don't forget to clear the command queue before dealloc the clcb.
-        list_free(p_clcb->p_cmd_list);
-        p_clcb->p_cmd_list = NULL;
+        if (p_clcb->p_cmd_list != NULL) {
+            for (list_node_t *node = list_begin(p_clcb->p_cmd_list);
+                 node != list_end(p_clcb->p_cmd_list); node = list_next(node)) {
+                bta_gattc_release_btu_pending((tBTA_GATTC_DATA *)list_node(node));
+            }
+            list_free(p_clcb->p_cmd_list);
+            p_clcb->p_cmd_list = NULL;
+        }
         //osi_free_and_reset((void **)&p_clcb->p_q_cmd);
         memset(p_clcb, 0, sizeof(tBTA_GATTC_CLCB));
     } else {
@@ -515,6 +536,7 @@ BOOLEAN bta_gattc_enqueue(tBTA_GATTC_CLCB *p_clcb, tBTA_GATTC_DATA *p_data)
             if (p_clcb->p_rcb->p_cback != NULL) {
                 ( *p_clcb->p_rcb->p_cback)(BTA_GATTC_QUEUE_FULL_EVT, (tBTA_GATTC *)&cb_data);
             }
+            bta_gattc_release_btu_pending(p_data);
             return FALSE;
         }
 
@@ -523,6 +545,7 @@ BOOLEAN bta_gattc_enqueue(tBTA_GATTC_CLCB *p_clcb, tBTA_GATTC_DATA *p_data)
             if (len > 0) {
                 if (p_data->api_write.p_value == NULL) {
                     APPL_TRACE_ERROR("%s(), write len=%u but p_value is NULL", __func__, len);
+                    bta_gattc_release_btu_pending(p_data);
                     return FALSE;
                 }
                 if ((cmd_data = (tBTA_GATTC_DATA *)osi_malloc(sizeof(tBTA_GATTC_DATA) + len)) != NULL) {
@@ -530,8 +553,10 @@ BOOLEAN bta_gattc_enqueue(tBTA_GATTC_CLCB *p_clcb, tBTA_GATTC_DATA *p_data)
                     memcpy(cmd_data, p_data, sizeof(tBTA_GATTC_API_WRITE));
                     cmd_data->api_write.p_value = (UINT8 *)(cmd_data + 1);
                     memcpy(cmd_data->api_write.p_value, p_data->api_write.p_value, len);
+                    p_data->api_write.btu_pending = FALSE;
                 } else {
                     APPL_TRACE_ERROR("%s(), line = %d, alloc fail, no memory.", __func__, __LINE__);
+                    bta_gattc_release_btu_pending(p_data);
                     return FALSE;
                 }
             } else {
@@ -539,8 +564,10 @@ BOOLEAN bta_gattc_enqueue(tBTA_GATTC_CLCB *p_clcb, tBTA_GATTC_DATA *p_data)
                 if ((cmd_data = (tBTA_GATTC_DATA *)osi_malloc(sizeof(tBTA_GATTC_DATA))) != NULL) {
                     memset(cmd_data, 0, sizeof(tBTA_GATTC_DATA));
                     memcpy(cmd_data, p_data, sizeof(tBTA_GATTC_API_WRITE));
+                    p_data->api_write.btu_pending = FALSE;
                 } else {
                     APPL_TRACE_ERROR("%s(), line = %d, alloc fail, no memory.", __func__, __LINE__);
+                    bta_gattc_release_btu_pending(p_data);
                     return FALSE;
                 }
             }
@@ -638,6 +665,7 @@ BOOLEAN bta_gattc_enqueue(tBTA_GATTC_CLCB *p_clcb, tBTA_GATTC_DATA *p_data)
         return FALSE;
     }
 
+    bta_gattc_release_btu_pending(p_data);
     return FALSE;
 }
 

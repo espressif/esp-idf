@@ -16,6 +16,7 @@
 #include "stack/sdpdefs.h"
 #include "stack/btm_ble_api.h"
 #include "stack/btm_api.h"
+#include "stack/btu.h"
 #include "btm_int.h"
 #include "l2c_int.h"
 #include "gatt_int.h"
@@ -61,6 +62,8 @@ typedef struct {
     UINT16  peer_cl_feat_handle;
     UINT8   peer_cl_feat_val;   /* current Client Supported Features value read back */
     UINT8   tx_rr;              /* round-robin cursor for server-initiated PDUs */
+    BOOLEAN congested;          /* last congestion state reported to the applications */
+    UINT16  sendable_num;       /* BTU-owned TX headroom snapshot for cross-task query */
     tGATT_EATT_BEARER bearers[GATT_EATT_MAX_CHAN];
 } tGATT_EATT_CONN;
 
@@ -70,6 +73,9 @@ static UINT16 s_eatt_reg_psm;
 static UINT8 s_eatt_chan_num = GATT_EATT_MAX_CHAN;
 static tGATT_EATT_EVT_CBACK *s_eatt_evt_cback;
 static tGATT_IF s_eatt_gatt_if;
+#if (BLE_EATT_SERVER_INCLUDED == TRUE) && (BLE_EATT_CLIENT_INCLUDED == TRUE)
+static TIMER_LIST_ENT s_eatt_cong_recheck_tle;
+#endif
 
 static void gatt_eatt_connect_cfm(UINT16 lcid, UINT16 result);
 static void gatt_eatt_disconnect_ind(UINT16 lcid, BOOLEAN local_init);
@@ -168,7 +174,12 @@ static tGATT_EATT_BEARER *gatt_eatt_alloc_bearer(tGATT_EATT_CONN *ec, UINT16 lci
     return NULL;
 }
 
-static void gatt_eatt_free_bearer(tGATT_EATT_CONN *ec, tGATT_EATT_BEARER *b)
+#if (BLE_EATT_SERVER_INCLUDED == TRUE)
+static void gatt_eatt_update_congestion(tGATT_EATT_CONN *ec);
+static void gatt_eatt_relax_congestion(tGATT_EATT_CONN *ec, BOOLEAN tearing_down);
+#endif
+
+static void gatt_eatt_free_bearer_ex(tGATT_EATT_CONN *ec, tGATT_EATT_BEARER *b, BOOLEAN tearing_down)
 {
     BD_ADDR peer_bda;
     UINT16  freed_lcid;
@@ -224,6 +235,15 @@ static void gatt_eatt_free_bearer(tGATT_EATT_CONN *ec, tGATT_EATT_BEARER *b)
             p_tcb->eatt_att_mtu = 0;
         }
     }
+#if (BLE_EATT_SERVER_INCLUDED == TRUE)
+    /* Losing a bearer changes the connection's aggregate TX headroom. */
+    gatt_eatt_relax_congestion(ec, tearing_down);
+#endif
+}
+
+static void gatt_eatt_free_bearer(tGATT_EATT_CONN *ec, tGATT_EATT_BEARER *b)
+{
+    gatt_eatt_free_bearer_ex(ec, b, FALSE);
 }
 
 static void gatt_eatt_free_conn(tGATT_EATT_CONN *ec)
@@ -235,7 +255,7 @@ static void gatt_eatt_free_conn(tGATT_EATT_CONN *ec)
     GATT_EATT_TRACE_DEBUG("free_conn conn_id=%u bearer_count=%u", ec->conn_id, ec->bearer_count);
     for (int i = 0; i < GATT_EATT_MAX_CHAN; i++) {
         if (ec->bearers[i].in_use) {
-            gatt_eatt_free_bearer(ec, &ec->bearers[i]);
+            gatt_eatt_free_bearer_ex(ec, &ec->bearers[i], TRUE);
         }
     }
     memset(ec, 0, sizeof(*ec));
@@ -774,6 +794,12 @@ static void gatt_eatt_connect_cfm(UINT16 lcid, UINT16 result)
     gatt_eatt_update_tcb_mtu(p_ccb->p_lcb->remote_bd_addr, lcid);
     b->reported = TRUE;
     gatt_eatt_report_evt(ec->conn_id, 0, lcid);
+#if (BLE_EATT_SERVER_INCLUDED == TRUE)
+    /* The bearer is CST_OPEN here and carries the peer's initial credits, so
+     * re-evaluate: a connection latched congested must be reported decongested
+     * once usable headroom is added. */
+    gatt_eatt_update_congestion(ec);
+#endif
 
     gatt_eatt_setup_mark_done(ec);
 }
@@ -818,9 +844,150 @@ static void gatt_eatt_disconnect_ind(UINT16 lcid, BOOLEAN local_init)
     }
 }
 
+#if (BLE_EATT_SERVER_INCLUDED == TRUE)
+/* Notification headroom on one EATT bearer, excluding GATT_EATT_CTRL_RESERVE
+ * slots kept free for ATT responses, indications, client commands, and
+ * indication confirmations. */
+static UINT16 gatt_eatt_bearer_sendable_num(UINT16 lcid)
+{
+    UINT16 slots = l2c_ble_le_coc_get_sendable_num(lcid);
+
+    if (slots <= GATT_EATT_CTRL_RESERVE) {
+        return 0;
+    }
+    return (UINT16)(slots - GATT_EATT_CTRL_RESERVE);
+}
+
+/* Sum the TX headroom of the bearers a server-initiated PDU can actually reach.
+ * Mirrors gatt_eatt_get_server_tx_bearer's bearer choice without advancing its
+ * round-robin cursor, so this stays a pure query. */
+static UINT16 gatt_eatt_sendable_num(tGATT_EATT_CONN *ec)
+{
+    UINT32 num = 0;
+
+    if (ec->default_lcid != 0 && gatt_eatt_find_bearer(ec, ec->default_lcid) != NULL) {
+        return gatt_eatt_bearer_sendable_num(ec->default_lcid);
+    }
+
+    for (int i = 0; i < GATT_EATT_MAX_CHAN; i++) {
+        if (ec->bearers[i].in_use) {
+            num += gatt_eatt_bearer_sendable_num(ec->bearers[i].lcid);
+        }
+    }
+    return (num > 0xFFFF) ? 0xFFFF : (UINT16)num;
+}
+
+BOOLEAN gatt_eatt_get_sendable_num(BD_ADDR bd_addr, UINT16 *p_num)
+{
+    tGATT_EATT_CONN *ec = gatt_eatt_find_conn_by_bda(bd_addr);
+
+    if (ec == NULL || ec->bearer_count == 0) {
+        return FALSE;
+    }
+    if (p_num != NULL) {
+        /* Read the BTU-maintained snapshot rather than walking L2CAP CoC
+         * queues from the caller's task (l2cu_release_ccb frees xmit_hold_q
+         * on BTU without holding buff_semaphore). */
+        *p_num = ec->sendable_num;
+    }
+    return TRUE;
+}
+
+static void gatt_eatt_report_congestion(tGATT_EATT_CONN *ec, BOOLEAN congested)
+{
+    tGATT_TCB *p_tcb;
+
+    if (congested == ec->congested) {
+        return;
+    }
+
+    p_tcb = gatt_find_tcb_by_addr(ec->peer_bda, BT_TRANSPORT_LE);
+    if (p_tcb == NULL) {
+        return;
+    }
+
+    ec->congested = congested;
+    p_tcb->eatt_congested = congested;
+    GATT_EATT_TRACE_DEBUG("congestion conn_id=%u congested=%u", ec->conn_id, congested);
+    gatt_notify_app_congestion(p_tcb, congested || p_tcb->fixed_congested);
+}
+
+static void gatt_eatt_update_congestion(tGATT_EATT_CONN *ec)
+{
+    UINT16 num;
+
+    if (ec == NULL || !ec->in_use) {
+        return;
+    }
+
+    num = (ec->bearer_count != 0) ? gatt_eatt_sendable_num(ec) : 0;
+    ec->sendable_num = num;
+
+    /* The application-facing congestion event is per connection while credits
+     * are per bearer, and server PDUs round-robin over every bearer. Report the
+     * connection congested only once no bearer has room left; reporting on the
+     * first congested bearer would stall a server that still has usable ones. */
+    gatt_eatt_report_congestion(ec, (ec->bearer_count != 0) && (num == 0));
+}
+
+#if (BLE_EATT_CLIENT_INCLUDED == TRUE)
+static void gatt_eatt_cong_recheck_timeout(TIMER_LIST_ENT *p_tle)
+{
+    UNUSED(p_tle);
+    for (int i = 0; i < MAX_L2CAP_LINKS; i++) {
+        if (s_eatt_conn[i].in_use) {
+            gatt_eatt_update_congestion(&s_eatt_conn[i]);
+        }
+    }
+}
+#endif
+
+void gatt_eatt_recheck_congestion(BD_ADDR bd_addr)
+{
+    if (bd_addr == NULL) {
+        return;
+    }
+    gatt_eatt_update_congestion(gatt_eatt_find_conn_by_bda(bd_addr));
+}
+
+/* A bearer leaving changes the aggregate in both directions: it can free
+ * headroom (report FALSE), or it can take away the last bearer that still had
+ * room and leave the connection with none (report TRUE). Only the teardown
+ * cascade (gatt_eatt_free_conn) stays clear-only so intermediate loop steps
+ * do not report a closing connection as congested. */
+static void gatt_eatt_relax_congestion(tGATT_EATT_CONN *ec, BOOLEAN tearing_down)
+{
+    if (ec == NULL || !ec->in_use) {
+        return;
+    }
+
+    if (!tearing_down) {
+        gatt_eatt_update_congestion(ec);
+        return;
+    }
+
+    ec->sendable_num = 0;
+
+    if (!ec->congested) {
+        return;
+    }
+
+    /* No bearers left means EATT no longer carries this connection's server
+     * PDUs; they fall back to the ATT fixed channel, which drives congestion
+     * from its own path. */
+    if (ec->bearer_count == 0 || gatt_eatt_sendable_num(ec) != 0) {
+        gatt_eatt_report_congestion(ec, FALSE);
+    }
+}
+#endif /* BLE_EATT_SERVER_INCLUDED */
+
 static void gatt_eatt_congestion(UINT16 lcid, BOOLEAN congested)
 {
-    /* Deliberately a no-op on EATT decongestion. EATT client commands are never
+#if (BLE_EATT_SERVER_INCLUDED == TRUE)
+    tL2C_CCB *p_ccb;
+#endif
+
+    /* Deliberately not gatt_channel_congestion(): EATT client commands are never
      * queued in cl_cmd_q: attp_cl_send_cmd() sends them straight to L2CAP, which
      * owns their credit-based flow control. cl_cmd_q only holds legacy commands
      * bound to the ATT fixed channel, and its resend is driven solely by the ATT
@@ -828,9 +995,20 @@ static void gatt_eatt_congestion(UINT16 lcid, BOOLEAN congested)
      * handler (gatt_client_handle_server_rsp). Calling gatt_cl_send_next_cmd_inq
      * here would flush that legacy queue onto the ATT fixed channel with
      * eatt_tx/rx_bearer == 0; if that channel were still congested the commands
-     * would be dropped as GATT_BUSY (permanently dequeued + failed). */
-    UNUSED(lcid);
+     * would be dropped as GATT_BUSY (permanently dequeued + failed). Only the
+     * application fan-out is wanted, so that a GATT server sending notifications
+     * over EATT gets the same backpressure it gets on the legacy bearer. */
     UNUSED(congested);
+
+#if (BLE_EATT_SERVER_INCLUDED == TRUE)
+    p_ccb = l2cu_find_ccb_by_cid(NULL, lcid);
+    if (p_ccb == NULL || p_ccb->p_lcb == NULL) {
+        return;
+    }
+    gatt_eatt_update_congestion(gatt_eatt_find_conn_by_bda(p_ccb->p_lcb->remote_bd_addr));
+#else
+    UNUSED(lcid);
+#endif
 }
 
 static void gatt_eatt_data_ind_l2c(UINT16 lcid, BT_HDR *p_buf)
@@ -857,6 +1035,9 @@ void gatt_eatt_init(void)
 
     memset(s_eatt_conn, 0, sizeof(s_eatt_conn));
     memset(&s_eatt_l2cap_appl, 0, sizeof(s_eatt_l2cap_appl));
+#if (BLE_EATT_SERVER_INCLUDED == TRUE) && (BLE_EATT_CLIENT_INCLUDED == TRUE)
+    memset(&s_eatt_cong_recheck_tle, 0, sizeof(s_eatt_cong_recheck_tle));
+#endif
 
 #if (BLE_EATT_SERVER_INCLUDED == TRUE)
     s_eatt_l2cap_appl.pL2CA_ConnectInd_Cb = gatt_eatt_connect_ind;
@@ -916,6 +1097,10 @@ void gatt_eatt_deinit(void)
 
     /* Suppress app callbacks while tearing down bearers during stack disable. */
     s_eatt_evt_cback = NULL;
+
+#if (BLE_EATT_SERVER_INCLUDED == TRUE) && (BLE_EATT_CLIENT_INCLUDED == TRUE)
+    btu_free_timer(&s_eatt_cong_recheck_tle);
+#endif
 
     /* Explicitly disconnect every EATT L2CAP channel first. gatt_eatt_free_bearer
      * only clears internal state, and the L2CA_DeregisterLECoc call below walks
@@ -1064,6 +1249,18 @@ void gatt_eatt_on_encrypted(BD_ADDR bd_addr)
     }
 }
 
+#if (BLE_EATT_CLIENT_INCLUDED == TRUE)
+static BOOLEAN gatt_eatt_bearer_cmd_slot(UINT16 lcid)
+{
+#if (BLE_L2CAP_COC_INCLUDED == TRUE)
+    return l2c_ble_le_coc_tx_slots(lcid) >= GATT_EATT_CTRL_RESERVE;
+#else
+    UNUSED(lcid);
+    return TRUE;
+#endif
+}
+#endif
+
 BOOLEAN gatt_eatt_is_bearer(UINT16 lcid)
 {
     tL2C_CCB *p_ccb = l2cu_find_ccb_by_cid(NULL, lcid);
@@ -1085,16 +1282,22 @@ UINT16 gatt_eatt_get_available_bearer(BD_ADDR bd_addr, UINT8 op)
         return L2CAP_ATT_CID;
     }
 
+    /* Leave GATT_EATT_CTRL_RESERVE slots on the bearer. A command that would
+     * consume them (including a discovery retry whose first SDU is still
+     * queued) falls through to another bearer, or to the ATT fixed channel,
+     * instead of failing the procedure or displacing a response. */
     if (ec->default_lcid != 0) {
         b = gatt_eatt_find_bearer(ec, ec->default_lcid);
-        if (b != NULL && b->client_op == 0) {
+        if (b != NULL && b->client_op == 0 &&
+            gatt_eatt_bearer_cmd_slot(b->lcid)) {
             GATT_EATT_TRACE_DEBUG("get_available_bearer op=0x%02x -> default lcid=0x%04x", op, ec->default_lcid);
             return ec->default_lcid;
         }
     }
 
     for (int i = 0; i < GATT_EATT_MAX_CHAN; i++) {
-        if (ec->bearers[i].in_use && ec->bearers[i].client_op == 0) {
+        if (ec->bearers[i].in_use && ec->bearers[i].client_op == 0 &&
+            gatt_eatt_bearer_cmd_slot(ec->bearers[i].lcid)) {
             GATT_EATT_TRACE_DEBUG("get_available_bearer op=0x%02x -> lcid=0x%04x", op, ec->bearers[i].lcid);
             return ec->bearers[i].lcid;
         }
@@ -1124,12 +1327,20 @@ UINT16 gatt_eatt_get_server_tx_bearer(BD_ADDR bd_addr)
 
     /* Round-robin across in-use bearers so server-initiated notifications and
      * indications are spread over all EATT channels rather than serialized on
-     * a single one. */
-    for (int n = 0; n < GATT_EATT_MAX_CHAN; n++) {
-        int i = (ec->tx_rr + n) % GATT_EATT_MAX_CHAN;
-        if (ec->bearers[i].in_use) {
+     * a single one. Prefer a bearer that still has TX room (matching
+     * gatt_eatt_sendable_num / gatt_eatt_update_congestion), and fall back to
+     * regular round-robin when every bearer is full. */
+    for (int pass = 0; pass < 2; pass++) {
+        for (int n = 0; n < GATT_EATT_MAX_CHAN; n++) {
+            int i = (ec->tx_rr + n) % GATT_EATT_MAX_CHAN;
+            if (!ec->bearers[i].in_use) {
+                continue;
+            }
+            if (pass == 0 && gatt_eatt_bearer_sendable_num(ec->bearers[i].lcid) == 0) {
+                continue;
+            }
             ec->tx_rr = (UINT8)((i + 1) % GATT_EATT_MAX_CHAN);
-            GATT_EATT_TRACE_DEBUG("server_tx_bearer -> rr lcid=0x%04x", ec->bearers[i].lcid);
+            GATT_EATT_TRACE_DEBUG("server_tx_bearer -> lcid=0x%04x pass=%d", ec->bearers[i].lcid, pass);
             return ec->bearers[i].lcid;
         }
     }
@@ -1163,6 +1374,12 @@ BOOLEAN gatt_eatt_set_default_bearer(UINT16 conn_id, UINT16 lcid)
     if (lcid == 0 || lcid == L2CAP_ATT_CID) {
         GATT_EATT_TRACE_DEBUG("set_default_bearer: clear default for conn_id=%u", conn_id);
         ec->default_lcid = 0;
+#if (BLE_EATT_SERVER_INCLUDED == TRUE)
+        /* Re-evaluate congestion on the BTU task instead of racing with it from
+         * the caller's task. */
+        s_eatt_cong_recheck_tle.param = (TIMER_PARAM_TYPE)gatt_eatt_cong_recheck_timeout;
+        btu_start_timer(&s_eatt_cong_recheck_tle, BTU_TTYPE_USER_FUNC, 0);
+#endif
         return TRUE;
     }
 
@@ -1174,6 +1391,10 @@ BOOLEAN gatt_eatt_set_default_bearer(UINT16 conn_id, UINT16 lcid)
 
     GATT_EATT_TRACE_DEBUG("set_default_bearer conn_id=%u lcid=0x%04x", conn_id, lcid);
     ec->default_lcid = lcid;
+#if (BLE_EATT_SERVER_INCLUDED == TRUE)
+    s_eatt_cong_recheck_tle.param = (TIMER_PARAM_TYPE)gatt_eatt_cong_recheck_timeout;
+    btu_start_timer(&s_eatt_cong_recheck_tle, BTU_TTYPE_USER_FUNC, 0);
+#endif
     return TRUE;
 #else
     UNUSED(conn_id);
