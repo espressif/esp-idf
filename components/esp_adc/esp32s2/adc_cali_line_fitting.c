@@ -52,6 +52,7 @@ typedef struct {
 typedef struct {
     adc_unit_t unit_id;                     ///< ADC unit
     adc_atten_t atten;                      ///< ADC attenuation
+    adc_bitwidth_t bitwidth;                ///< ADC raw result bit width
     uint32_t coeff_a;                       ///< Gradient of ADC-Voltage curve
     uint32_t coeff_b;                       ///< Offset of ADC-Voltage curve
 } cali_chars_line_fitting_t;
@@ -108,6 +109,7 @@ esp_err_t adc_cali_create_scheme_line_fitting(const adc_cali_line_fitting_config
     ESP_LOGD(TAG, "adc%d (atten leven %d) calibration done: A:%" PRId32" B:%" PRId32, config->unit_id, config->atten, chars->coeff_a, chars->coeff_b);
     chars->unit_id = config->unit_id;
     chars->atten = config->atten;
+    chars->bitwidth = config->bitwidth == ADC_BITWIDTH_DEFAULT ? SOC_ADC_RTC_MAX_BITWIDTH : config->bitwidth;
 
     ret = adc_cali_new_scheme(cali_raw_to_voltage, NULL, delete_cali_ctx, chars, ret_handle);
     if (ret != ESP_OK) {
@@ -133,7 +135,11 @@ static esp_err_t cali_raw_to_voltage(void *arg, int raw, int *voltage)
     //pointers are checked in the upper layer
 
     cali_chars_line_fitting_t *ctx = arg;
-    *voltage = (raw * ctx->coeff_a / (coeff_a_scaling / coeff_b_scaling) + ctx->coeff_b) / coeff_b_scaling;
+    int normalized_raw = raw;
+    if (ctx->bitwidth < SOC_ADC_RTC_MAX_BITWIDTH) {
+        normalized_raw <<= SOC_ADC_RTC_MAX_BITWIDTH - ctx->bitwidth;
+    }
+    *voltage = (normalized_raw * ctx->coeff_a / (coeff_a_scaling / coeff_b_scaling) + ctx->coeff_b) / coeff_b_scaling;
 
     return ESP_OK;
 }
