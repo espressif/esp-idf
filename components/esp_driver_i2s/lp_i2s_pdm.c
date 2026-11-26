@@ -42,7 +42,7 @@ static void s_get_cut_off_coef(uint32_t freq, uint32_t *param0, uint32_t *param5
 esp_err_t lp_i2s_channel_init_pdm_rx_mode(lp_i2s_chan_handle_t handle, const lp_i2s_pdm_rx_config_t *pdm_cfg)
 {
     ESP_RETURN_ON_FALSE(handle && pdm_cfg, ESP_ERR_INVALID_ARG, TAG, "invalid argument: null pointer");
-    ESP_RETURN_ON_FALSE(handle->state < I2S_CHAN_STATE_RUNNING, ESP_ERR_INVALID_STATE, TAG, "the channel is in enabled state already");
+    ESP_RETURN_ON_FALSE(handle->state == I2S_CHAN_STATE_READY, ESP_ERR_INVALID_STATE, TAG, "the channel is in enabled state already");
 
     //Pin config
     ESP_RETURN_ON_ERROR(s_io_init(handle, &pdm_cfg->pin_cfg), TAG, "failed to init IOs");

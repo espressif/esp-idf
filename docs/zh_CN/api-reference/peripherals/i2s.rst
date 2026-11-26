@@ -66,14 +66,19 @@ I2S 时钟
 
 .. only:: SOC_I2S_SUPPORTS_APLL
 
+    .. _i2s-apll-access-mode:
+
     APLL 使用方式
     ^^^^^^^^^^^^^
 
-    选择 :cpp:enumerator:`i2s_clock_src_t::I2S_CLK_SRC_APLL` 后，可以通过位于 STD、TDM、PDM TX 和 PDM RX 时钟配置结构体中的 ``flags.clk_src_adjustable`` 选择 APLL 的使用方式：
+    选择 :cpp:enumerator:`i2s_clock_src_t::I2S_CLK_SRC_APLL` 后，可以通过位于 STD、TDM、PDM TX 和 PDM RX 时钟配置结构体中的 ``flags.clk_src_fixed`` 选择 APLL 的使用方式：
 
-    - ``false`` （默认）：以固定模式使用 APLL，允许多个外设共享。首次使用且 APLL 尚未配置时，I2S 会根据采样率设置合适的 APLL 频率；APLL 已配置时，I2S 沿用现有频率并调整自身分频器。如果现有频率无法产生有效的 I2S 时钟，配置将失败。
-    - ``true`` ：以可调模式独占 APLL。I2S 可以在重新配置时钟或调用 :cpp:func:`i2s_channel_tune_rate` 时调整 APLL 频率，以获得更精细的时钟分频；其他外设无法同时申请 APLL。由于双工通道分别申请 APLL，不能让两个通道同时使用可调模式。
+    - ``false`` （默认）：以可调模式独占 APLL。I2S 可以在重新配置时钟或调用 :cpp:func:`i2s_channel_tune_rate` 时调整 APLL 频率，以获得更精细的时钟分频；其他外设无法同时申请 APLL。全双工的两个通道可以共同使用可调 APLL，详情请参阅 :ref:`i2s-full-duplex-adjustable-apll`。
+    - ``true`` ：以固定模式使用 APLL，允许多个外设或互不相关的 I2S 通道共享。首次使用且 APLL 尚未配置时，I2S 会根据采样率设置合适的 APLL 频率；APLL 已配置时，I2S 沿用现有频率并调整自身分频器。如果现有频率无法产生有效的 I2S 时钟，配置将失败。
 
+    .. note::
+
+        两个互不相关的单工通道或独立的 I2S 控制器不能同时使用可调 APLL。PDM 通道采用逐通道独占的可调访问方式，不参与全双工 APLL 管理。如果需要与其他外设或互不相关的 I2S 通道共享 APLL，请将 ``flags.clk_src_fixed`` 设置为 ``true``\ 。
 
 时钟术语
 ^^^^^^^^
@@ -87,6 +92,28 @@ I2S 时钟
 .. note::
 
     通常，MCLK 应该同时是 ``采样率`` 和 BCLK 的倍数。字段 :cpp:member:`i2s_std_clk_config_t::mclk_multiple` 表示 MCLK 相对于 ``采样率`` 的倍数。在大多数情况下，将其设置为 ``I2S_MCLK_MULTIPLE_256`` 即可。但如果 ``slot_bit_width`` 被设置为 ``I2S_SLOT_BIT_WIDTH_24BIT``，为了保证 MCLK 是 BCLK 的整数倍，应该将 :cpp:member:`i2s_std_clk_config_t::mclk_multiple` 设置为能被 3 整除的倍数，如 ``I2S_MCLK_MULTIPLE_384``，否则 WS 会不精准。
+
+.. _i2s-clock-jitter:
+
+时钟精度与抖动
+^^^^^^^^^^^^^^
+
+I2S 通过对源时钟进行分频来产生 MCLK、BCLK 和 WS。当源时钟无法整数分频得到目标 MCLK 时，硬件会使用小数分频，使一段时间内的平均频率接近目标值。此时相邻时钟周期可能采用不同的分频值，导致输出边沿间隔发生周期性变化，即产生由分频引入的时钟抖动。即使测得的平均采样率准确，这种周期级变化仍可能影响对时钟质量要求较高的音频编解码器。
+
+可以通过以下方式减少由分频引入的抖动：
+
+- 选择能够让 MCLK、BCLK 和采样率保持整数倍关系的 ``mclk_multiple``。例如，24 位槽通常使用 :cpp:enumerator:`i2s_mclk_multiple_t::I2S_MCLK_MULTIPLE_384` 作为 MCLK 相对于采样率的倍频系数。
+- 选择更接近目标频率、且能够进行整数分频的源时钟。
+
+.. only:: SOC_I2S_SUPPORTS_APLL
+
+    选择 APLL 且保持默认 ``flags.clk_src_fixed = false`` 时，采用可调模式。驱动会在初始化和时钟重配置时调整 APLL 频率，优先选择整数分频以尽量减少分频抖动；但在该模式下，I2S 会独占 APLL，其他外设或互不相关的 I2S 通道无法同时使用。
+
+    如果为共享 APLL 而将 ``flags.clk_src_fixed`` 设置为 ``true``\ （固定模式），APLL 频率一旦确定，后续时钟重配置通常只会调整 I2S 分频器；如果现有 APLL 频率无法通过整数分频得到新的采样率，则可能使用小数分频并引入抖动。有关两种模式的详细规则，请参阅 :ref:`i2s-apll-access-mode`。
+
+.. note::
+
+    上述方法主要减少时钟分频产生的抖动，不能消除源时钟自身的相位噪声或外部电路引入的信号完整性问题。
 
 .. only:: esp32
 
@@ -1104,6 +1131,19 @@ STD RX 模式
     - 二者产生相同的帧时序，即 ``sample_rate_hz`` 相同且每帧总位数（``total_slot * slot_bit_width``）相同。
 
     时钟源、外部时钟频率（``ext_clk_freq_hz``）以及 MCLK 相关配置不作为组成全双工的判据，MCLK 相关配置包括 ``mclk`` 管脚、``mclk_multiple`` 和 MCLK 反相配置。槽（slot）布局本身也可以不同。例如，一个 STD 通道与一个 TDM 通道，或者 2 槽/32 位通道与 4 槽/16 位通道配对，只要每帧的位数相同，仍可组成全双工。一旦组成了一对全双工通道，便可通过 :cpp:func:`i2s_channel_get_info` 返回的 :cpp:type:`i2s_chan_info_t`::pair_chan 获取配对通道的句柄。
+
+.. only:: SOC_I2S_SUPPORTS_APLL
+
+    .. _i2s-full-duplex-adjustable-apll:
+
+    全双工下的可调 APLL
+    ~~~~~~~~~~~~~~~~~~~
+
+    如果全双工的两个 STD/TDM 通道都以可调模式使用 APLL，驱动会将它们作为一个整体管理，两个通道使用同一个 APLL 频率：
+
+    - APLL 频率由 master 决定。master 初始化、重配置时钟或调速时，驱动会调整 APLL 频率，使 master 使用整数分频以减小时钟抖动，并自动刷新 slave 的分频器，slave 无需额外操作。
+    - slave 初始化或重配置时钟时，驱动会尽量保持当前 APLL 频率。只有当前频率无法提供 slave 所需的 MCLK 时，驱动才会调整 APLL 频率，并且仍保证 master 使用整数分频。
+    - 如果不存在能同时满足两侧的 APLL 频率，初始化或时钟重配置会失败。
 
 .. only:: SOC_I2S_HW_VERSION_1
 

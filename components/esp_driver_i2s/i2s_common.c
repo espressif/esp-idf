@@ -31,10 +31,6 @@
 #if I2S_LL_GET(ADC_DAC_CAPABLE)
 #include "hal/adc_ll.h"
 #endif
-#if SOC_I2S_SUPPORTS_APLL
-#include "hal/clk_tree_ll.h"
-#endif
-
 #include "esp_private/i2s_platform.h"
 #include "esp_private/esp_clk.h"
 #if SOC_HAS(PAU)
@@ -49,6 +45,9 @@
 #include "driver/i2s_common.h"
 #include "driver/i2s_std.h"
 #include "driver/i2s_tdm.h"
+#if SOC_I2S_SUPPORTS_PDM_TX || SOC_I2S_SUPPORTS_PDM_RX
+#include "driver/i2s_pdm.h"
+#endif
 #include "i2s_private.h"
 
 #if CONFIG_IDF_TARGET_ESP32
@@ -126,6 +125,59 @@ static void i2s_dma_bufs_sync_for_start(i2s_chan_handle_t handle)
     }
 }
 
+/*
+ * Control-plane lock hierarchy:
+ * controller mutex -> clock-tree lock -> short peripheral spinlock.
+ * The controller mutex protects the controller and the control-plane state of both of its channels.
+ * HW v1 port migration is the only operation that also takes a target
+ * controller mutex. It keeps the source controller locked, so the handle
+ * remains valid until the binding update commits.
+ */
+i2s_controller_t *i2s_channel_lock(i2s_chan_handle_t handle)
+{
+    while (true) {
+        /* Port migration can change this pointer before the controller mutex is
+         * obtained. Snapshot it atomically, then validate it under the mutex. */
+        portENTER_CRITICAL(&g_i2s.spinlock);
+        i2s_controller_t *controller = handle->controller;
+        portEXIT_CRITICAL(&g_i2s.spinlock);
+
+        xSemaphoreTake(controller->mutex, portMAX_DELAY);
+        if (controller == handle->controller) {
+            return controller;
+        }
+        xSemaphoreGive(controller->mutex);
+    }
+}
+
+void i2s_channel_unlock(i2s_controller_t *locked_controller)
+{
+    xSemaphoreGive(locked_controller->mutex);
+}
+
+/* Keep peer initialization from changing shared hardware while disable waits for its data path. */
+esp_err_t i2s_channel_check_init_state(i2s_chan_handle_t handle)
+{
+    i2s_chan_handle_t peer = i2s_channel_get_peer(handle);
+    ESP_RETURN_ON_FALSE(!peer || peer->state != I2S_CHAN_STATE_STOPPING,
+                        ESP_ERR_INVALID_STATE, TAG, "the peer channel is still stopping");
+    return ESP_OK;
+}
+
+/* Enforce the READY-state boundary for reconfiguration. A running duplex peer is
+ * allowed; changes to clock resources shared with it are checked separately. */
+esp_err_t i2s_channel_check_reconfig_state(i2s_chan_handle_t handle)
+{
+    ESP_RETURN_ON_FALSE(handle->state == I2S_CHAN_STATE_READY, ESP_ERR_INVALID_STATE, TAG,
+                        "I2S channel must be disabled before reconfiguration");
+    if (handle->controller->full_duplex) {
+        i2s_chan_handle_t peer = i2s_channel_get_peer(handle);
+        ESP_RETURN_ON_FALSE(peer && peer->state != I2S_CHAN_STATE_STOPPING, ESP_ERR_INVALID_STATE, TAG,
+                            "the paired duplex channel is still stopping");
+    }
+    return ESP_OK;
+}
+
 /*---------------------------------------------------------------------------
                          Duplex Constitution Helpers
  ----------------------------------------------------------------------------
@@ -195,10 +247,12 @@ static bool s_i2s_duplex_candidate_match(const i2s_duplex_candidate_t *a, const 
 
 void i2s_channel_try_to_constitute_duplex(i2s_chan_handle_t handle, const i2s_duplex_candidate_t *candidate)
 {
-    i2s_chan_handle_t another_handle = handle->dir == I2S_DIR_RX ? handle->controller->tx_chan : handle->controller->rx_chan;
+    i2s_chan_handle_t another_handle = i2s_channel_get_peer(handle);
 
     /* The other direction channel must be registered and fully initialized to be compared with */
-    if (!another_handle || another_handle->state < I2S_CHAN_STATE_READY) {
+    if (!another_handle ||
+            (another_handle->state != I2S_CHAN_STATE_READY &&
+             another_handle->state != I2S_CHAN_STATE_RUNNING)) {
         return;
     }
 
@@ -261,7 +315,7 @@ static void s_i2s_create_retention_module(i2s_controller_t *i2s_obj)
 {
     sleep_retention_module_t module = i2s_obj->slp_retention_mod;
 
-    _lock_acquire(&i2s_obj->mutex);
+    xSemaphoreTake(i2s_obj->mutex, portMAX_DELAY);
     if (i2s_obj->retention_link_created == false) {
         if (sleep_retention_module_allocate(module) != ESP_OK) {
             // even though the sleep retention module create failed, I2S driver should still work, so just warning here
@@ -273,7 +327,7 @@ static void s_i2s_create_retention_module(i2s_controller_t *i2s_obj)
             }
         }
     }
-    _lock_release(&i2s_obj->mutex);
+    xSemaphoreGive(i2s_obj->mutex);
 }
 #endif // I2S_USE_RETENTION_LINK
 
@@ -395,6 +449,12 @@ static esp_err_t i2s_destroy_controller_obj(i2s_controller_t **i2s_obj)
         sleep_retention_module_deinit((*i2s_obj)->slp_retention_mod);
     }
 #endif  // I2S_USE_RETENTION_LINK
+#if SOC_I2S_SUPPORTS_APLL
+    if (i2s_apll_release_controller(*i2s_obj) != ESP_OK) {
+        ESP_LOGE(TAG, "failed to release APLL state while destroying I2S controller");
+    }
+#endif
+    vSemaphoreDeleteWithCaps((*i2s_obj)->mutex);
     free(*i2s_obj);
     *i2s_obj = NULL;
     return i2s_platform_release_occupation(I2S_CTLR_HP, id);
@@ -418,6 +478,11 @@ static i2s_controller_t *i2s_acquire_controller_obj(int id)
     /* pre-alloc controller object */
     i2s_controller_t *pre_alloc = (i2s_controller_t *)heap_caps_calloc(1, sizeof(i2s_controller_t), I2S_MEM_ALLOC_CAPS);
     if (pre_alloc == NULL) {
+        return NULL;
+    }
+    pre_alloc->mutex = xSemaphoreCreateMutexWithCaps(I2S_MEM_ALLOC_CAPS);
+    if (pre_alloc->mutex == NULL) {
+        free(pre_alloc);
         return NULL;
     }
     pre_alloc->id = id;
@@ -460,6 +525,7 @@ static i2s_controller_t *i2s_acquire_controller_obj(int id)
         }
 #endif  // I2S_USE_RETENTION_LINK
     } else {
+        vSemaphoreDeleteWithCaps(pre_alloc->mutex);
         free(pre_alloc);
         portENTER_CRITICAL(&g_i2s.spinlock);
         if (g_i2s.controller[id]) {
@@ -474,12 +540,12 @@ static i2s_controller_t *i2s_acquire_controller_obj(int id)
     return i2s_obj;
 }
 
-static inline bool i2s_take_available_channel(i2s_controller_t *i2s_obj, uint8_t chan_search_mask)
+static inline bool i2s_take_available_channel(i2s_controller_t *i2s_obj, int id, uint8_t chan_search_mask)
 {
     bool is_available = false;
 
     portENTER_CRITICAL(&g_i2s.spinlock);
-    if (!(chan_search_mask & i2s_obj->chan_occupancy)) {
+    if (g_i2s.controller[id] == i2s_obj && !(chan_search_mask & i2s_obj->chan_occupancy)) {
         i2s_obj->chan_occupancy |= chan_search_mask;
         is_available = true;
     }
@@ -513,8 +579,6 @@ static esp_err_t i2s_register_channel(i2s_controller_t *i2s_obj, i2s_dir_t dir, 
         new_chan->binary = xSemaphoreCreateBinaryWithCaps(I2S_MEM_ALLOC_CAPS);
         ESP_GOTO_ON_FALSE(new_chan->binary, ESP_ERR_NO_MEM, err, TAG, "No memory for binary semaphore");
     }
-    new_chan->mutex = xSemaphoreCreateMutexWithCaps(I2S_MEM_ALLOC_CAPS);
-    ESP_GOTO_ON_FALSE(new_chan->mutex, ESP_ERR_NO_MEM, err, TAG, "No memory for mutex semaphore");
 
     new_chan->callbacks.on_recv = NULL;
     new_chan->callbacks.on_recv_q_ovf = NULL;
@@ -528,24 +592,19 @@ static esp_err_t i2s_register_channel(i2s_controller_t *i2s_obj, i2s_dir_t dir, 
     new_chan->reserve_gpio_mask = 0;
 
     if (dir == I2S_DIR_TX) {
-        if (i2s_obj->tx_chan) {
-            i2s_del_channel(i2s_obj->tx_chan);
-        }
+        ESP_GOTO_ON_FALSE(!i2s_obj->tx_chan, ESP_ERR_INVALID_STATE, err, TAG,
+                          "TX channel is already registered");
         i2s_obj->tx_chan = new_chan;
 
     } else {
-        if (i2s_obj->rx_chan) {
-            i2s_del_channel(i2s_obj->rx_chan);
-        }
+        ESP_GOTO_ON_FALSE(!i2s_obj->rx_chan, ESP_ERR_INVALID_STATE, err, TAG,
+                          "RX channel is already registered");
         i2s_obj->rx_chan = new_chan;
     }
     return ret;
 err:
     if (new_chan->msg_queue) {
         vQueueDeleteWithCaps(new_chan->msg_queue);
-    }
-    if (new_chan->mutex) {
-        vSemaphoreDeleteWithCaps(new_chan->mutex);
     }
     if (new_chan->binary) {
         vSemaphoreDeleteWithCaps(new_chan->binary);
@@ -556,36 +615,70 @@ err:
 }
 
 #if SOC_I2S_HW_VERSION_1
-esp_err_t i2s_channel_change_port(i2s_chan_handle_t handle, int id)
+/* Move an uninitialized AUTO channel away from an incompatible HW v1 peer. */
+esp_err_t i2s_channel_change_port(i2s_chan_handle_t handle, int id, i2s_controller_t **locked_controller)
 {
     I2S_NULL_POINTER_CHECK(TAG, handle);
+    I2S_NULL_POINTER_CHECK(TAG, locked_controller);
     ESP_RETURN_ON_FALSE(id >= 0 && id < I2S_LL_GET(INST_NUM), ESP_ERR_INVALID_ARG, TAG, "invalid I2S port id");
     if (id == handle->controller->id) {
         return ESP_OK;
     }
+    i2s_controller_t *old_i2s_obj = handle->controller;
+    ESP_RETURN_ON_FALSE(*locked_controller == old_i2s_obj, ESP_ERR_INVALID_STATE, TAG,
+                        "source controller is not locked");
     i2s_controller_t *i2s_obj = i2s_acquire_controller_obj(id);
-    if (!i2s_obj || !i2s_take_available_channel(i2s_obj, handle->dir)) {
+    if (!i2s_obj || !i2s_take_available_channel(i2s_obj, id, handle->dir)) {
         return ESP_ERR_NOT_FOUND;
     }
-    i2s_controller_t *old_i2s_obj = handle->controller;
+
+    /* Keep the source controller locked while waiting for the target controller.
+     * This pins the handle and blocks deletion throughout the binding transaction.
+     * A migration target has the requested direction reserved, so it cannot
+     * simultaneously be the source of a reverse migration and form a
+     * controller-lock cycle. */
+    xSemaphoreTake(i2s_obj->mutex, portMAX_DELAY);
+
+    esp_err_t ret = ESP_OK;
+    bool destroy_target = false;
     portENTER_CRITICAL(&g_i2s.spinlock);
-    if (handle->dir == I2S_DIR_TX) {
+    bool old_binding_valid = handle->controller == old_i2s_obj &&
+                             ((handle->dir == I2S_DIR_TX && old_i2s_obj->tx_chan == handle) ||
+                              (handle->dir == I2S_DIR_RX && old_i2s_obj->rx_chan == handle));
+    bool target_available = (handle->dir == I2S_DIR_TX && !i2s_obj->tx_chan) ||
+                            (handle->dir == I2S_DIR_RX && !i2s_obj->rx_chan);
+    if (!old_binding_valid || !target_available || old_i2s_obj->full_duplex) {
+        i2s_obj->chan_occupancy &= ~(uint32_t)handle->dir;
+        ret = ESP_ERR_NOT_FOUND;
+    } else if (handle->dir == I2S_DIR_TX) {
         i2s_obj->tx_chan = handle;
         i2s_obj->chan_occupancy |= I2S_DIR_TX;
         old_i2s_obj->tx_chan = NULL;
-        old_i2s_obj->full_duplex = false;
         old_i2s_obj->chan_occupancy &= ~I2S_DIR_TX;
     } else {
         i2s_obj->rx_chan = handle;
         i2s_obj->chan_occupancy |= I2S_DIR_RX;
         old_i2s_obj->rx_chan = NULL;
-        old_i2s_obj->full_duplex = false;
         old_i2s_obj->chan_occupancy &= ~I2S_DIR_RX;
     }
-    handle->controller = i2s_obj;
+    if (ret == ESP_OK) {
+        handle->controller = i2s_obj;
+    } else if (i2s_obj->chan_occupancy == 0 && !i2s_obj->tx_chan && !i2s_obj->rx_chan) {
+        g_i2s.controller[id] = NULL;
+        destroy_target = true;
+    }
     portEXIT_CRITICAL(&g_i2s.spinlock);
+    if (ret == ESP_OK) {
+        xSemaphoreGive(old_i2s_obj->mutex);
+        *locked_controller = i2s_obj;
+    } else {
+        xSemaphoreGive(i2s_obj->mutex);
+    }
+    if (destroy_target) {
+        i2s_destroy_controller_obj(&i2s_obj);
+    }
 
-    return ESP_OK;
+    return ret;
 }
 #endif
 
@@ -648,11 +741,13 @@ esp_err_t i2s_channel_register_event_callback(i2s_chan_handle_t handle, const i2
         ESP_LOGW(TAG, "DMA buffers are in PSRAM; callbacks must not access them while the cache is disabled");
     }
 #endif
-    xSemaphoreTake(handle->mutex, portMAX_DELAY);
+    i2s_controller_t *locked_controller = i2s_channel_lock(handle);
     bool update_dma_cbs = dma_cb_supported && !(sync_only_update && handle->state == I2S_CHAN_STATE_RUNNING);
-    ESP_GOTO_ON_FALSE(!update_dma_cbs || handle->state < I2S_CHAN_STATE_RUNNING,
+    bool dma_cbs_can_update = handle->state == I2S_CHAN_STATE_REGISTER ||
+                              handle->state == I2S_CHAN_STATE_READY;
+    ESP_GOTO_ON_FALSE(!update_dma_cbs || dma_cbs_can_update,
                       ESP_ERR_INVALID_STATE, err, TAG,
-                      "DMA event callbacks can't be changed while the channel is running");
+                      "DMA event callbacks can't be changed while the channel is running or stopping");
     if (update_dma_cbs) {
         handle->callbacks.on_recv = callbacks->on_recv;
         handle->callbacks.on_recv_q_ovf = callbacks->on_recv_q_ovf;
@@ -666,7 +761,7 @@ esp_err_t i2s_channel_register_event_callback(i2s_chan_handle_t handle, const i2
     }
 #endif
 err:
-    xSemaphoreGive(handle->mutex);
+    i2s_channel_unlock(locked_controller);
     return ret;
 }
 
@@ -820,60 +915,43 @@ err:
     return ret;
 }
 
-#if SOC_I2S_SUPPORTS_APLL
-/**
- * @brief Resolve the usable APLL frequency, configuring it when the acquired access mode permits
- */
-static esp_err_t i2s_resolve_apll_freq(i2s_chan_handle_t handle, uint32_t mclk_freq_hz,
-                                       bool clk_src_adjustable, i2s_apll_operation_t *operation,
-                                       uint32_t *real_freq_hz)
+/* Acquire the target source before resolving its frequency and programming channel dividers. */
+esp_err_t i2s_clock_src_acquire(i2s_chan_handle_t handle, i2s_clock_src_t clk_src,
+                                bool clk_src_adjustable, i2s_clock_src_transaction_t *transaction)
 {
-    ESP_RETURN_ON_FALSE(mclk_freq_hz, ESP_ERR_INVALID_ARG, TAG, "invalid MCLK frequency");
-
-    uint32_t mclk_div = CLK_LL_APLL_MIN_HZ / mclk_freq_hz + 1;
-    /* apll_freq = mclk * div
-        * when div = 1, hardware will still divide 2
-        * when div = 0, the final mclk will be unpredictable
-        * So the div here should be at least 2 */
-    mclk_div = mclk_div < 2 ? 2 : mclk_div;
-    uint64_t expected_freq_hz = (uint64_t)mclk_freq_hz * mclk_div;
-    ESP_RETURN_ON_FALSE(expected_freq_hz <= CLK_LL_APLL_MAX_HZ, ESP_ERR_INVALID_ARG, TAG,
-                        "required APLL frequency exceeds its maximum value");
-    operation->active = true;
-    operation->adjustable = clk_src_adjustable;
-
-    bool apll_in_use = handle->state != I2S_CHAN_STATE_REGISTER &&
-                       handle->clk_src == I2S_CLK_SRC_APLL;
-    if (apll_in_use) {
-        ESP_RETURN_ON_FALSE(handle->apll_adjustable == clk_src_adjustable,
-                            ESP_ERR_INVALID_STATE, TAG, "can't change active APLL access mode");
-        if (!handle->apll_adjustable) {
-            *real_freq_hz = handle->sclk_hz;
-            operation->frequency_hz = *real_freq_hz;
-            return ESP_OK;
-        }
-    } else {
-        esp_clk_tree_apll_info_t apll_info = {};
-        ESP_RETURN_ON_ERROR(esp_clk_tree_apll_get_info(&apll_info), TAG, "failed to get APLL information");
-        if (apll_info.config_valid) {
-            *real_freq_hz = apll_info.frequency_hz;
-            operation->frequency_hz = *real_freq_hz;
-            return ESP_OK;
-        }
+    ESP_RETURN_ON_FALSE(handle && transaction, ESP_ERR_INVALID_ARG, TAG, "invalid argument");
+    *transaction = (i2s_clock_src_transaction_t) {};
+#ifdef I2S_LL_DEFAULT_CLK_SRC
+    if (clk_src == I2S_CLK_SRC_DEFAULT) {
+        clk_src = I2S_LL_DEFAULT_CLK_SRC;
     }
-
-    esp_err_t ret = esp_clk_tree_src_set_freq_hz(SOC_MOD_CLK_APLL, expected_freq_hz, real_freq_hz);
-    if (ret == ESP_OK && apll_in_use && *real_freq_hz != handle->sclk_hz) {
-        operation->frequency_changed = true;
-    }
-    if (ret == ESP_OK) {
-        operation->frequency_hz = *real_freq_hz;
-    }
-    ESP_LOGD(TAG, "APLL expected frequency is %"PRIu64" Hz, real frequency is %"PRIu32" Hz",
-             expected_freq_hz, *real_freq_hz);
-    return ret;
-}
 #endif
+    transaction->clk_src = clk_src;
+
+    bool reuse_source = false;
+    const esp_clk_tree_src_config_t *resource_config = NULL;
+#if SOC_I2S_SUPPORTS_APLL
+    esp_clk_tree_src_config_t apll_resource_config = {
+        .flags.adjustable = clk_src_adjustable,
+    };
+    if (clk_src == I2S_CLK_SRC_APLL) {
+        bool controller_managed = clk_src_adjustable && i2s_apll_is_controller_managed(handle);
+        if (controller_managed) {
+            return i2s_apll_controller_operation_begin(handle, &transaction->apll);
+        }
+        reuse_source = handle->state != I2S_CHAN_STATE_REGISTER &&
+                       handle->clk_src == I2S_CLK_SRC_APLL;
+        resource_config = &apll_resource_config;
+    }
+#endif
+
+    if (!reuse_source) {
+        ESP_RETURN_ON_ERROR(esp_clk_tree_acquire_src((soc_module_clk_t)clk_src, resource_config),
+                            TAG, "clock source acquire failed");
+        transaction->source_acquired = true;
+    }
+    return ESP_OK;
+}
 
 #if CONFIG_PM_ENABLE
 esp_pm_lock_type_t i2s_select_pm_lock_type(bool dma_buf_in_psram, i2s_clock_src_t clk_src)
@@ -900,20 +978,21 @@ esp_pm_lock_type_t i2s_select_pm_lock_type(bool dma_buf_in_psram, i2s_clock_src_
 }
 #endif
 
+/* Dispatch source-frequency resolution and APLL policy for a prepared clock transaction. */
 esp_err_t i2s_resolve_source_clk_freq(i2s_chan_handle_t handle, i2s_clock_src_t clk_src,
                                       bool clk_src_adjustable, uint32_t mclk_freq_hz,
-                                      i2s_apll_operation_t *operation, uint32_t *clk_freq_hz)
+                                      i2s_clock_src_transaction_t *transaction, uint32_t *clk_freq_hz)
 {
-    ESP_RETURN_ON_FALSE(handle && operation && clk_freq_hz,
+    ESP_RETURN_ON_FALSE(handle && transaction && clk_freq_hz,
                         ESP_ERR_INVALID_ARG, TAG, "invalid argument");
 #if SOC_I2S_SUPPORTS_APLL
     if (clk_src == I2S_CLK_SRC_APLL) {
-        return i2s_resolve_apll_freq(handle, mclk_freq_hz, clk_src_adjustable, operation, clk_freq_hz);
+        return i2s_apll_resolve_freq(handle, clk_src_adjustable, mclk_freq_hz,
+                                     &transaction->apll, clk_freq_hz);
     }
+#else
+    (void)clk_src_adjustable;
 #endif
-    if (clk_src_adjustable) {
-        ESP_LOGW(TAG, "adjustable clock source is only supported for APLL; ignoring");
-    }
 #ifdef I2S_LL_DEFAULT_CLK_SRC
     if (clk_src == I2S_CLK_SRC_DEFAULT) {
         clk_src = I2S_LL_DEFAULT_CLK_SRC;
@@ -924,23 +1003,65 @@ esp_err_t i2s_resolve_source_clk_freq(i2s_chan_handle_t handle, i2s_clock_src_t 
     return ESP_OK;
 }
 
-void i2s_apll_operation_finish(i2s_chan_handle_t handle, i2s_apll_operation_t *operation, bool success)
+/* Commit APLL metadata and retain the acquired source as channel ownership. */
+void i2s_clock_src_commit(i2s_chan_handle_t handle, i2s_clock_src_transaction_t *transaction)
 {
+    (void)handle;
 #if SOC_I2S_SUPPORTS_APLL
-    if (operation->active && (success || operation->frequency_changed)) {
-        handle->apll_adjustable = operation->adjustable;
-        handle->sclk_hz = operation->frequency_hz;
-        if (!success) {
-            ESP_LOGW(TAG, "APLL frequency changed to %"PRIu32" Hz, but I2S clock configuration failed; "
-                     "reconfigure the I2S clock",
-                     operation->frequency_hz);
-        }
+    i2s_apll_operation_commit(handle, &transaction->apll);
+#endif
+    *transaction = (i2s_clock_src_transaction_t) {};
+}
+
+/* Roll back APLL metadata and release the source acquired by a failed transaction. */
+esp_err_t i2s_clock_src_abort(i2s_chan_handle_t handle, i2s_clock_src_transaction_t *transaction)
+{
+    ESP_RETURN_ON_FALSE(handle && transaction, ESP_ERR_INVALID_ARG, TAG, "invalid argument");
+#if SOC_I2S_SUPPORTS_APLL
+    i2s_apll_operation_abort(handle, &transaction->apll);
+#endif
+    esp_err_t ret = ESP_OK;
+    if (transaction->source_acquired) {
+        ret = esp_clk_tree_release_src((soc_module_clk_t)transaction->clk_src);
+    }
+    *transaction = (i2s_clock_src_transaction_t) {};
+    return ret;
+}
+
+esp_err_t i2s_channel_release_clk_src(i2s_chan_handle_t handle, i2s_clock_src_t clk_src, bool apll_adjustable)
+{
+#ifdef I2S_LL_DEFAULT_CLK_SRC
+    if (clk_src == I2S_CLK_SRC_DEFAULT) {
+        clk_src = I2S_LL_DEFAULT_CLK_SRC;
+    }
+#endif
+#if SOC_I2S_SUPPORTS_APLL
+    if (clk_src == I2S_CLK_SRC_APLL && apll_adjustable && i2s_apll_is_controller_managed(handle)) {
+        return i2s_apll_remove_logical_user(handle);
     }
 #else
     (void)handle;
-    (void)success;
+    (void)apll_adjustable;
 #endif
-    *operation = (i2s_apll_operation_t) {};
+    return esp_clk_tree_release_src((soc_module_clk_t)clk_src);
+}
+
+/* Every clock configuration acquires a non-APLL source again, while APLL keeps its existing ownership. */
+esp_err_t i2s_channel_release_replaced_clk_src(i2s_chan_handle_t handle, i2s_clock_src_t old_clk_src, bool old_apll_adjustable)
+{
+#if SOC_I2S_SUPPORTS_APLL
+    if (old_clk_src == I2S_CLK_SRC_APLL) {
+        if (handle->clk_src == I2S_CLK_SRC_APLL) {
+            return ESP_OK;
+        }
+        esp_err_t ret = i2s_channel_release_clk_src(handle, old_clk_src, old_apll_adjustable);
+        if (ret == ESP_OK) {
+            handle->apll_adjustable = false;
+        }
+        return ret;
+    }
+#endif
+    return i2s_channel_release_clk_src(handle, old_clk_src, old_apll_adjustable);
 }
 
 #if SOC_GDMA_SUPPORTED
@@ -1287,10 +1408,8 @@ esp_err_t i2s_init_dma_intr(i2s_chan_handle_t handle, int intr_flag)
 
 static uint64_t s_i2s_get_pair_chan_gpio_mask(i2s_chan_handle_t handle)
 {
-    if (handle->dir == I2S_DIR_TX) {
-        return handle->controller->rx_chan ? handle->controller->rx_chan->reserve_gpio_mask : 0;
-    }
-    return handle->controller->tx_chan ? handle->controller->tx_chan->reserve_gpio_mask : 0;
+    i2s_chan_handle_t peer = i2s_channel_get_peer(handle);
+    return peer ? peer->reserve_gpio_mask : 0;
 }
 
 static bool s_i2s_gpio_used_by_pair_chan(i2s_chan_handle_t handle, int gpio_num)
@@ -1318,6 +1437,10 @@ static void s_i2c_input_gpio_reserve_check(i2s_chan_handle_t handle, int gpio_nu
 
 void i2s_output_gpio_reserve(i2s_chan_handle_t handle, int gpio_num)
 {
+    /* Replaying a channel's GPIO configuration must not reserve its outputs twice. */
+    if (handle->reserve_gpio_mask & BIT64(gpio_num)) {
+        return;
+    }
     /* If the gpio is used by the pair channel do not show warning for this case */
     if (s_i2s_gpio_used_by_pair_chan(handle, gpio_num)) {
         handle->reserve_gpio_mask |= BIT64(gpio_num);
@@ -1384,6 +1507,10 @@ esp_err_t i2s_check_set_mclk(i2s_chan_handle_t handle, int id, int gpio_num, i2s
         i2s_output_gpio_reserve(handle, gpio_num);
         soc_clkout_sig_id_t clkout_sig = is_apll ? CLKOUT_SIG_APLL : (is_i2s0 ? CLKOUT_SIG_I2S0 : CLKOUT_SIG_I2S1);
         ESP_RETURN_ON_ERROR(esp_clock_output_start(clkout_sig, gpio_num, &(g_i2s.controller[id]->mclk_out_hdl)), TAG, "mclk configure failed, note: only gpio 0/1/3 are supported on esp32");
+    } else {
+        /* Transfer logical ownership when a duplex survivor is restored. The
+         * controller-level clock output remains configured on the same pin. */
+        handle->reserve_gpio_mask |= BIT64(gpio_num);
     }
 #else
     ESP_RETURN_ON_FALSE(GPIO_IS_VALID_GPIO(gpio_num), ESP_ERR_INVALID_ARG, TAG, "mck_io_num invalid");
@@ -1481,6 +1608,9 @@ esp_err_t i2s_new_channel(const i2s_chan_config_t *chan_cfg, i2s_chan_handle_t *
     esp_err_t ret = ESP_OK;
     i2s_controller_t *i2s_obj = NULL;
     bool channel_found = false;
+    bool controller_locked = false;
+    bool tx_created = false;
+    bool rx_created = false;
     uint8_t chan_search_mask = 0;
     chan_search_mask |= tx_handle ? I2S_DIR_TX : 0;
     chan_search_mask |= rx_handle ? I2S_DIR_RX : 0;
@@ -1500,28 +1630,34 @@ esp_err_t i2s_new_channel(const i2s_chan_config_t *chan_cfg, i2s_chan_handle_t *
             if (!i2s_obj) {
                 continue;
             }
-            channel_found = i2s_take_available_channel(i2s_obj, chan_search_mask);
+            channel_found = i2s_take_available_channel(i2s_obj, i, chan_search_mask);
         }
         ESP_RETURN_ON_FALSE(has_supported_port, ESP_ERR_NOT_SUPPORTED, TAG, "requested destination is not supported");
         ESP_RETURN_ON_FALSE(i2s_obj, ESP_ERR_NOT_FOUND, TAG, "get i2s object failed");
     } else {
         i2s_obj = i2s_acquire_controller_obj(id);
         ESP_RETURN_ON_FALSE(i2s_obj, ESP_ERR_NOT_FOUND, TAG, "get i2s object failed");
-        channel_found = i2s_take_available_channel(i2s_obj, chan_search_mask);
+        channel_found = i2s_take_available_channel(i2s_obj, id, chan_search_mask);
     }
     ESP_GOTO_ON_FALSE(channel_found, ESP_ERR_NOT_FOUND, err, TAG, "no available channel found");
+    xSemaphoreTake(i2s_obj->mutex, portMAX_DELAY);
+    controller_locked = true;
     if (tx_handle) {
         ESP_GOTO_ON_ERROR(i2s_setup_channel(i2s_obj, I2S_DIR_TX, chan_cfg, dma_burst_size, tx_handle),
                           err, TAG, "register I2S tx channel failed");
+        tx_created = true;
     }
     if (rx_handle) {
         ESP_GOTO_ON_ERROR(i2s_setup_channel(i2s_obj, I2S_DIR_RX, chan_cfg, dma_burst_size, rx_handle),
                           err, TAG, "register I2S rx channel failed");
+        rx_created = true;
     }
-
     if ((tx_handle != NULL) && (rx_handle != NULL)) {
         i2s_obj->full_duplex = true;
     }
+    xSemaphoreGive(i2s_obj->mutex);
+    controller_locked = false;
+
 #if I2S_USE_RETENTION_LINK
     if (chan_cfg->allow_pd) {
         s_i2s_create_retention_module(i2s_obj);
@@ -1531,23 +1667,90 @@ esp_err_t i2s_new_channel(const i2s_chan_config_t *chan_cfg, i2s_chan_handle_t *
     return ESP_OK;
     /* i2s_obj allocated but register channel failed */
 err:
-    /* if the controller object has no channel, find the corresponding global object and destroy it */
-    if (i2s_obj != NULL && i2s_obj->rx_chan == NULL && i2s_obj->tx_chan == NULL) {
-        for (int i = 0; i < I2S_LL_GET(INST_NUM); i++) {
-            if (i2s_obj == g_i2s.controller[i]) {
-                i2s_destroy_controller_obj(&g_i2s.controller[i]);
-                break;
-            }
+    if (controller_locked) {
+        xSemaphoreGive(i2s_obj->mutex);
+    }
+    if (i2s_obj) {
+        portENTER_CRITICAL(&g_i2s.spinlock);
+        if (tx_handle && !i2s_obj->tx_chan) {
+            i2s_obj->chan_occupancy &= ~I2S_DIR_TX;
         }
+        if (rx_handle && !i2s_obj->rx_chan) {
+            i2s_obj->chan_occupancy &= ~I2S_DIR_RX;
+        }
+        portEXIT_CRITICAL(&g_i2s.spinlock);
+    }
+    if (rx_created) {
+        i2s_chan_handle_t created_handle = *rx_handle;
+        *rx_handle = NULL;
+        i2s_del_channel(created_handle);
+    }
+    if (tx_created) {
+        i2s_chan_handle_t created_handle = *tx_handle;
+        *tx_handle = NULL;
+        i2s_del_channel(created_handle);
+    }
+    if (tx_created || rx_created) {
+        return ret;
+    }
+    i2s_controller_t *controller_to_destroy = NULL;
+    if (i2s_obj) {
+        portENTER_CRITICAL(&g_i2s.spinlock);
+        if (g_i2s.controller[i2s_obj->id] == i2s_obj && i2s_obj->chan_occupancy == 0 &&
+                !i2s_obj->rx_chan && !i2s_obj->tx_chan) {
+            g_i2s.controller[i2s_obj->id] = NULL;
+            controller_to_destroy = i2s_obj;
+        }
+        portEXIT_CRITICAL(&g_i2s.spinlock);
+    }
+    if (controller_to_destroy) {
+        i2s_destroy_controller_obj(&controller_to_destroy);
     }
     return ret;
+}
+
+void i2s_channel_rollback_init(i2s_chan_handle_t handle, bool clock_configured, bool restore_simplex)
+{
+    i2s_controller_t *controller = handle->controller;
+    i2s_deinit_channel_intr(handle);
+    if (clock_configured) {
+        i2s_channel_release_clk_src(handle, handle->clk_src, i2s_channel_is_apll_adjustable(handle));
+    }
+    if (restore_simplex) {
+        controller->full_duplex = false;
+        i2s_ll_share_bck_ws(controller->hal.dev, false);
+    }
+    if (handle->full_duplex_slave) {
+        handle->role = I2S_ROLE_MASTER;
+        handle->full_duplex_slave = false;
+    }
+    handle->mode = I2S_COMM_MODE_NONE;
+    handle->clk_src = I2S_CLK_SRC_DEFAULT;
+    handle->target_mclk_hz = 0;
 }
 
 esp_err_t i2s_del_channel(i2s_chan_handle_t handle)
 {
     I2S_NULL_POINTER_CHECK(TAG, handle);
-    ESP_RETURN_ON_FALSE(handle->state < I2S_CHAN_STATE_RUNNING, ESP_ERR_INVALID_STATE, TAG, "the channel can't be deleted unless it is disabled");
-    i2s_controller_t *i2s_obj = handle->controller;
+    esp_err_t ret = ESP_OK;
+    i2s_controller_t *i2s_obj = i2s_channel_lock(handle);
+    ESP_GOTO_ON_FALSE(handle->state == I2S_CHAN_STATE_REGISTER ||
+                      handle->state == I2S_CHAN_STATE_READY,
+                      ESP_ERR_INVALID_STATE, err_unlock, TAG,
+                      "the channel can't be deleted unless it is disabled");
+
+    i2s_chan_handle_t survivor = i2s_channel_get_peer(handle);
+    if (i2s_obj->full_duplex) {
+        if (survivor) {
+            ESP_GOTO_ON_FALSE(survivor->state != I2S_CHAN_STATE_STOPPING,
+                              ESP_ERR_INVALID_STATE, err_unlock, TAG,
+                              "the paired duplex channel is still stopping");
+            survivor->full_duplex_slave = false;
+        }
+        i2s_obj->full_duplex = false;
+        i2s_ll_share_bck_ws(i2s_obj->hal.dev, false);
+    }
+
     int __attribute__((unused)) id = i2s_obj->id;
     i2s_dir_t __attribute__((unused)) dir = handle->dir;
     bool is_bound = true;
@@ -1570,12 +1773,19 @@ esp_err_t i2s_del_channel(i2s_chan_handle_t handle)
     /* Must switch back to D2CLK on ESP32-S2,
     * because the clock of some registers are bound to APLL,
     * otherwise, once APLL is disabled, the registers can't be updated anymore
-    * NOTE: even this limitation is only applicable to ESP32-S2, switch back to Default clock does not harm for other chips */
-    PERIPH_RCC_ATOMIC() {
-        if (handle->dir == I2S_DIR_TX) {
-            i2s_ll_tx_clk_set_src(handle->controller->hal.dev, I2S_CLK_SRC_DEFAULT);
-        } else {
-            i2s_ll_rx_clk_set_src(handle->controller->hal.dev, I2S_CLK_SRC_DEFAULT);
+    * NOTE: even this limitation is only applicable to ESP32-S2, switch back to Default clock does not harm for other chips.
+    * HW v1 shares the TX/RX clock source selector, so keep APLL selected while a surviving channel still uses it. */
+    bool reset_clk_src = true;
+#if SOC_I2S_HW_VERSION_1
+    reset_clk_src = !survivor || survivor->clk_src != I2S_CLK_SRC_APLL;
+#endif
+    if (reset_clk_src) {
+        PERIPH_RCC_ATOMIC() {
+            if (handle->dir == I2S_DIR_TX) {
+                i2s_ll_tx_clk_set_src(handle->controller->hal.dev, I2S_CLK_SRC_DEFAULT);
+            } else {
+                i2s_ll_rx_clk_set_src(handle->controller->hal.dev, I2S_CLK_SRC_DEFAULT);
+            }
         }
     }
 #endif
@@ -1590,16 +1800,13 @@ esp_err_t i2s_del_channel(i2s_chan_handle_t handle)
     }
 #endif
 
-    // disable clock source
-    i2s_clock_src_t clk_src = handle->clk_src;
-#ifdef I2S_LL_DEFAULT_CLK_SRC
-    if (clk_src == I2S_CLK_SRC_DEFAULT) {
-        clk_src = I2S_LL_DEFAULT_CLK_SRC;
-    }
-#endif
     // since the enum value of default clock on some chips may be 0, we use mode to check if the clock is enabled
     if (handle->mode != I2S_COMM_MODE_NONE) {
-        esp_clk_tree_release_src((soc_module_clk_t)clk_src);
+        esp_err_t release_ret = i2s_channel_release_clk_src(handle, handle->clk_src, i2s_channel_is_apll_adjustable(handle));
+        if (release_ret != ESP_OK) {
+            ESP_LOGE(TAG, "failed to release I2S clock source");
+            ret = release_ret;
+        }
     }
 
 #if CONFIG_PM_ENABLE
@@ -1608,7 +1815,12 @@ esp_err_t i2s_del_channel(i2s_chan_handle_t handle)
     }
 #endif
     if (handle->reserve_gpio_mask) {
-        i2s_output_gpio_revoke(handle, handle->reserve_gpio_mask);
+        uint64_t revoke_mask = handle->reserve_gpio_mask;
+        if (survivor) {
+            revoke_mask &= ~survivor->reserve_gpio_mask;
+        }
+        esp_gpio_revoke(revoke_mask);
+        handle->reserve_gpio_mask = 0;
     }
     if (handle->mode_info) {
         free(handle->mode_info);
@@ -1619,17 +1831,9 @@ esp_err_t i2s_del_channel(i2s_chan_handle_t handle)
     if (handle->msg_queue) {
         vQueueDeleteWithCaps(handle->msg_queue);
     }
-    if (handle->mutex) {
-        vSemaphoreDeleteWithCaps(handle->mutex);
-    }
     if (handle->binary) {
         vSemaphoreDeleteWithCaps(handle->binary);
     }
-#if SOC_I2S_HW_VERSION_1
-    i2s_obj->chan_occupancy = 0;
-#else
-    i2s_obj->chan_occupancy &= ~(uint32_t)dir;
-#endif
     if (handle->dma.dma_chan) {
 #if SOC_GDMA_SUPPORTED
         if (handle->dma.connected) {
@@ -1641,30 +1845,39 @@ esp_err_t i2s_del_channel(i2s_chan_handle_t handle)
         esp_intr_free(handle->dma.dma_chan);
 #endif
     }
+    bool destroy_controller = false;
+    portENTER_CRITICAL(&g_i2s.spinlock);
     if (handle == i2s_obj->tx_chan) {
-        free(i2s_obj->tx_chan);
         i2s_obj->tx_chan = NULL;
-        i2s_obj->full_duplex = false;
     } else if (handle == i2s_obj->rx_chan) {
-        free(i2s_obj->rx_chan);
         i2s_obj->rx_chan = NULL;
-        i2s_obj->full_duplex = false;
     } else {
-        /* Indicate the delete channel is an unbound free channel */
         is_bound = false;
-        free(handle);
     }
-
-    /* If the delete channel was bound to a controller before,
-       we need to destroy this controller object if there is no channel any more */
     if (is_bound) {
-        if (!(i2s_obj->tx_chan) && !(i2s_obj->rx_chan)) {
-            i2s_destroy_controller_obj(&g_i2s.controller[i2s_obj->id]);
+        i2s_obj->chan_occupancy &= ~(uint32_t)dir;
+        destroy_controller = i2s_obj->chan_occupancy == 0 && !i2s_obj->tx_chan && !i2s_obj->rx_chan;
+        if (destroy_controller) {
+            g_i2s.controller[i2s_obj->id] = NULL;
+        }
+    }
+    portEXIT_CRITICAL(&g_i2s.spinlock);
+    free(handle);
+    i2s_channel_unlock(i2s_obj);
+
+    if (is_bound) {
+        if (destroy_controller) {
+            i2s_controller_t *controller_to_destroy = i2s_obj;
+            i2s_destroy_controller_obj(&controller_to_destroy);
         }
         ESP_LOGD(TAG, "%s channel on I2S%d deleted", dir == I2S_DIR_TX ? "tx" : "rx", id);
     }
 
-    return ESP_OK;
+    return ret;
+
+err_unlock:
+    i2s_channel_unlock(i2s_obj);
+    return ret;
 }
 
 esp_err_t i2s_channel_get_info(i2s_chan_handle_t handle, i2s_chan_info_t *chan_info)
@@ -1672,40 +1885,47 @@ esp_err_t i2s_channel_get_info(i2s_chan_handle_t handle, i2s_chan_info_t *chan_i
     I2S_NULL_POINTER_CHECK(TAG, handle);
     I2S_NULL_POINTER_CHECK(TAG, chan_info);
 
-    /* Find whether the handle is a registered i2s handle or still available */
-    for (int i = 0; i < I2S_LL_GET(INST_NUM); i++) {
-        if (g_i2s.controller[i] != NULL) {
-            if (g_i2s.controller[i]->tx_chan == handle ||
-                    g_i2s.controller[i]->rx_chan == handle) {
-                goto found;
+    /* A deleted handle is accepted by this query and must return ESP_ERR_NOT_FOUND.
+     * Locate it by pointer value before dereferencing it. */
+    i2s_controller_t *locked_controller = NULL;
+    while (true) {
+        portENTER_CRITICAL(&g_i2s.spinlock);
+        for (int i = 0; i < I2S_LL_GET(INST_NUM); i++) {
+            i2s_controller_t *controller = g_i2s.controller[i];
+            if (controller && (controller->tx_chan == handle || controller->rx_chan == handle)) {
+                locked_controller = controller;
+                break;
             }
         }
+        portEXIT_CRITICAL(&g_i2s.spinlock);
+        if (!locked_controller) {
+            return ESP_ERR_NOT_FOUND;
+        }
+
+        xSemaphoreTake(locked_controller->mutex, portMAX_DELAY);
+        if (locked_controller->tx_chan == handle || locked_controller->rx_chan == handle) {
+            break;
+        }
+        i2s_channel_unlock(locked_controller);
+        locked_controller = NULL;
     }
-    return ESP_ERR_NOT_FOUND;
-found:
+
     /* Assign the handle information */
-    xSemaphoreTake(handle->mutex, portMAX_DELAY);
     chan_info->id = handle->controller->id;
     chan_info->dir = handle->dir;
     chan_info->role = handle->role;
     chan_info->mode = handle->mode;
-    chan_info->is_enabled = handle->state == I2S_CHAN_STATE_RUNNING;
+    chan_info->is_enabled = handle->state == I2S_CHAN_STATE_RUNNING ||
+                            handle->state == I2S_CHAN_STATE_STOPPING;
     chan_info->clk_src = handle->clk_src;
     chan_info->sclk_hz = handle->sclk_hz;
     chan_info->mclk_hz = handle->curr_mclk_hz;
     chan_info->bclk_hz = handle->bclk_hz;
     chan_info->mode_cfg = handle->mode_info;
-    chan_info->total_dma_buf_size = handle->state >= I2S_CHAN_STATE_READY ? handle->dma.desc_num * handle->dma.buf_size : 0;
-    if (handle->controller->full_duplex) {
-        if (handle->dir == I2S_DIR_TX) {
-            chan_info->pair_chan = handle->controller->rx_chan;
-        } else {
-            chan_info->pair_chan = handle->controller->tx_chan;
-        }
-    } else {
-        chan_info->pair_chan = NULL;
-    }
-    xSemaphoreGive(handle->mutex);
+    chan_info->total_dma_buf_size = handle->state != I2S_CHAN_STATE_REGISTER ?
+                                    handle->dma.desc_num * handle->dma.buf_size : 0;
+    chan_info->pair_chan = handle->controller->full_duplex ? i2s_channel_get_peer(handle) : NULL;
+    i2s_channel_unlock(locked_controller);
 
     return ESP_OK;
 }
@@ -1716,8 +1936,11 @@ esp_err_t i2s_channel_enable(i2s_chan_handle_t handle)
 
     esp_err_t ret = ESP_OK;
 
-    xSemaphoreTake(handle->mutex, portMAX_DELAY);
+    i2s_controller_t *locked_controller = i2s_channel_lock(handle);
     ESP_GOTO_ON_FALSE(handle->state == I2S_CHAN_STATE_READY, ESP_ERR_INVALID_STATE, err, TAG, "the channel has already enabled or not initialized");
+#if SOC_I2S_SUPPORTS_APLL
+    ESP_GOTO_ON_ERROR(i2s_apll_check_enable(handle), err, TAG, "APLL state is invalid");
+#endif
 #if CONFIG_PM_ENABLE
     esp_pm_lock_acquire(handle->pm_lock);
 #endif
@@ -1728,7 +1951,7 @@ esp_err_t i2s_channel_enable(i2s_chan_handle_t handle)
            In case legacy data received during disable process */
         xQueueReset(handle->msg_queue);
     }
-    xSemaphoreGive(handle->mutex);
+    i2s_channel_unlock(locked_controller);
     /* Give the binary semaphore to enable reading / writing task */
     if (handle->binary) {
         xSemaphoreGive(handle->binary);
@@ -1738,7 +1961,7 @@ esp_err_t i2s_channel_enable(i2s_chan_handle_t handle)
     return ret;
 
 err:
-    xSemaphoreGive(handle->mutex);
+    i2s_channel_unlock(locked_controller);
     return ret;
 }
 
@@ -1747,16 +1970,22 @@ esp_err_t i2s_channel_disable(i2s_chan_handle_t handle)
     I2S_NULL_POINTER_CHECK(TAG, handle);
     esp_err_t ret = ESP_OK;
 
-    xSemaphoreTake(handle->mutex, portMAX_DELAY);
-    ESP_GOTO_ON_FALSE(handle->state > I2S_CHAN_STATE_READY, ESP_ERR_INVALID_STATE, err, TAG, "the channel has not been enabled yet");
-    /* Update the state to force quit the current reading/writing operation */
-    handle->state = I2S_CHAN_STATE_READY;
-    /* Waiting for reading/wrinting operation quit
+    i2s_controller_t *locked_controller = i2s_channel_lock(handle);
+    ESP_GOTO_ON_FALSE(handle->state == I2S_CHAN_STATE_RUNNING, ESP_ERR_INVALID_STATE, err, TAG,
+                      "the channel has not been enabled yet");
+    /* Mark the transition before dropping the control-plane locks. This makes
+     * read/write leave their RUNNING loop and rejects conflicting control calls. */
+    handle->state = I2S_CHAN_STATE_STOPPING;
+    i2s_channel_unlock(locked_controller);
+
+    /* Waiting for reading/writing operation quit
      * It should be acquired before assigning the pointer to NULL,
      * otherwise may cause NULL pointer panic while reading/writing threads haven't release the lock */
     if (handle->binary) {
         xSemaphoreTake(handle->binary, portMAX_DELAY);
     }
+
+    locked_controller = i2s_channel_lock(handle);
     /* Reset the descriptor pointer */
     handle->dma.curr_ptr = NULL;
     handle->dma.rw_pos = 0;
@@ -1769,12 +1998,13 @@ esp_err_t i2s_channel_disable(i2s_chan_handle_t handle)
 #if CONFIG_PM_ENABLE
     esp_pm_lock_release(handle->pm_lock);
 #endif
-    xSemaphoreGive(handle->mutex);
+    handle->state = I2S_CHAN_STATE_READY;
+    i2s_channel_unlock(locked_controller);
     ESP_LOGD(TAG, "i2s %s channel disabled", handle->dir == I2S_DIR_TX ? "tx" : "rx");
     return ret;
 
 err:
-    xSemaphoreGive(handle->mutex);
+    i2s_channel_unlock(locked_controller);
     return ret;
 }
 
@@ -1784,14 +2014,15 @@ esp_err_t i2s_channel_preload_data(i2s_chan_handle_t tx_handle, const void *src,
     ESP_RETURN_ON_FALSE(tx_handle->dir == I2S_DIR_TX, ESP_ERR_INVALID_ARG, TAG, "this channel is not tx channel");
     ESP_RETURN_ON_FALSE(I2S_CHANNEL_USES_DMA(tx_handle), ESP_ERR_NOT_SUPPORTED, TAG,
                         "preload requires the DMA memory data path on this channel");
-    ESP_RETURN_ON_FALSE(tx_handle->state == I2S_CHAN_STATE_READY, ESP_ERR_INVALID_STATE, TAG, "data can only be preloaded when the channel is READY");
 
     uint8_t *data_ptr = (uint8_t *)src;
     size_t remain_bytes = size;
     size_t total_loaded_bytes = 0;
     esp_err_t ret = ESP_OK;
 
-    xSemaphoreTake(tx_handle->mutex, portMAX_DELAY);
+    i2s_controller_t *locked_controller = i2s_channel_lock(tx_handle);
+    ESP_GOTO_ON_FALSE(tx_handle->state == I2S_CHAN_STATE_READY, ESP_ERR_INVALID_STATE, err,
+                      TAG, "data can only be preloaded when the channel is READY");
 
     /* The pre-load data will be loaded from the first descriptor */
     if (tx_handle->dma.curr_ptr == NULL) {
@@ -1830,7 +2061,7 @@ esp_err_t i2s_channel_preload_data(i2s_chan_handle_t tx_handle, const void *src,
     *bytes_loaded = total_loaded_bytes;
 
 err:
-    xSemaphoreGive(tx_handle->mutex);
+    i2s_channel_unlock(locked_controller);
 
     return ret;
 }
@@ -1945,16 +2176,18 @@ esp_err_t i2s_channel_tune_rate(i2s_chan_handle_t handle, const i2s_tuning_confi
      */
 
     ESP_RETURN_ON_FALSE(handle, ESP_ERR_INVALID_ARG, TAG, "NULL pointer");
-    ESP_RETURN_ON_FALSE(!handle->is_external, ESP_ERR_NOT_SUPPORTED, TAG, "Not support to tune rate for external mclk");
+    i2s_controller_t *locked_controller = i2s_channel_lock(handle);
+    ESP_GOTO_ON_FALSE(!handle->is_external, ESP_ERR_NOT_SUPPORTED, err_unlock,
+                      TAG, "Not support to tune rate for external mclk");
 
     /* If no tuning configuration given, just return the current information */
     if (tune_cfg == NULL) {
-        xSemaphoreTake(handle->mutex, portMAX_DELAY);
         goto result;
     }
-    ESP_RETURN_ON_FALSE(handle->state == I2S_CHAN_STATE_READY, ESP_ERR_INVALID_STATE, TAG,
-                        "I2S channel must be disabled before tuning the rate");
-    ESP_RETURN_ON_FALSE(tune_cfg->max_delta_mclk >= tune_cfg->min_delta_mclk, ESP_ERR_INVALID_ARG, TAG, "invalid range");
+    ESP_GOTO_ON_ERROR(i2s_channel_check_reconfig_state(handle), err_unlock, TAG,
+                      "invalid state for rate tuning");
+    ESP_GOTO_ON_FALSE(tune_cfg->max_delta_mclk >= tune_cfg->min_delta_mclk,
+                      ESP_ERR_INVALID_ARG, err_unlock, TAG, "invalid range");
 
     uint32_t new_mclk = 0;
 
@@ -1970,7 +2203,8 @@ esp_err_t i2s_channel_tune_rate(i2s_chan_handle_t handle, const i2s_tuning_confi
         new_mclk = handle->origin_mclk_hz;
         break;
     default:
-        return ESP_ERR_INVALID_ARG;
+        ret = ESP_ERR_INVALID_ARG;
+        goto err_unlock;
     }
     /* Check if the tuned mclk is within the supposed range */
     if ((int32_t)new_mclk - (int32_t)handle->origin_mclk_hz > tune_cfg->max_delta_mclk) {
@@ -1978,14 +2212,30 @@ esp_err_t i2s_channel_tune_rate(i2s_chan_handle_t handle, const i2s_tuning_confi
     } else if ((int32_t)new_mclk - (int32_t)handle->origin_mclk_hz < tune_cfg->min_delta_mclk) {
         new_mclk = handle->origin_mclk_hz + tune_cfg->min_delta_mclk;
     }
-    xSemaphoreTake(handle->mutex, portMAX_DELAY);
     uint32_t new_sclk_hz = handle->sclk_hz;
+#if SOC_I2S_SUPPORTS_APLL
     i2s_apll_operation_t apll_operation = {};
+#endif
+    bool duplex_slave = handle->controller->full_duplex && handle->role == I2S_ROLE_SLAVE;
+    if (duplex_slave) {
+#if SOC_I2S_HW_VERSION_1
+        ESP_LOGW(TAG, "tuning a duplex slave also changes the MCLK of its master because HW v1 shares the MCLK divider");
+#else
+        ESP_LOGW(TAG, "tuning a duplex slave only changes its local divider and does not change shared BCLK/WS");
+#endif
+    }
 #if SOC_I2S_SUPPORTS_APLL
     if (handle->clk_src == I2S_CLK_SRC_APLL) {
-        ESP_GOTO_ON_ERROR(i2s_resolve_source_clk_freq(handle, I2S_CLK_SRC_APLL, handle->apll_adjustable, new_mclk,
-                                                      &apll_operation, &new_sclk_hz),
-                          err, TAG, "APLL frequency update failed");
+        if (!duplex_slave) {
+            if (handle->apll_adjustable && i2s_apll_is_controller_managed(handle)) {
+                ESP_GOTO_ON_ERROR(i2s_apll_controller_operation_begin(handle, &apll_operation),
+                                  err, TAG, "APLL operation prepare failed");
+                apll_operation.keep_divider = true;
+            }
+            ESP_GOTO_ON_ERROR(i2s_apll_resolve_freq(handle, handle->apll_adjustable, new_mclk,
+                                                    &apll_operation, &new_sclk_hz),
+                              err, TAG, "APLL frequency update failed");
+        }
     }
 #endif
     /* Calculate the new divider */
@@ -2014,11 +2264,17 @@ esp_err_t i2s_channel_tune_rate(i2s_chan_handle_t handle, const i2s_tuning_confi
     handle->sclk_hz = new_sclk_hz;
 #if SOC_I2S_SUPPORTS_APLL
     if (handle->clk_src == I2S_CLK_SRC_APLL) {
-        i2s_apll_operation_finish(handle, &apll_operation, true);
+        i2s_apll_operation_commit(handle, &apll_operation);
     }
 #endif
     handle->curr_mclk_hz = (uint32_t)(((uint64_t)new_sclk_hz * mclk_div.denominator) /
                                       (mclk_div.integer * mclk_div.denominator + mclk_div.numerator));
+#if SOC_I2S_HW_VERSION_1
+    /* TX and RX share the MCLK divider on HW v1 */
+    if (handle->controller->full_duplex) {
+        i2s_channel_get_peer(handle)->curr_mclk_hz = handle->curr_mclk_hz;
+    }
+#endif
 result:
     /* Assign the information if needed */
     if (tune_info) {
@@ -2038,13 +2294,40 @@ result:
             tune_info->water_mark = 0;
         }
     }
-    xSemaphoreGive(handle->mutex);
+    i2s_channel_unlock(locked_controller);
     return ret;
 
 err:
-    i2s_apll_operation_finish(handle, &apll_operation, false);
-    xSemaphoreGive(handle->mutex);
+#if SOC_I2S_SUPPORTS_APLL
+    i2s_apll_operation_abort(handle, &apll_operation);
+#endif
+err_unlock:
+    i2s_channel_unlock(locked_controller);
     return ret;
+}
+
+/* Undo interrupt connections made by an initialization attempt that did not commit. */
+void i2s_deinit_channel_intr(i2s_chan_handle_t handle)
+{
+#if SOC_I2S_SUPPORTS_TX_FIFO_SYNC
+    if (handle->i2s_intr) {
+        esp_intr_disable(handle->i2s_intr);
+        esp_intr_free(handle->i2s_intr);
+        handle->i2s_intr = NULL;
+        handle->tx_fifo_sync_enabled = false;
+    }
+#endif
+#if SOC_GDMA_SUPPORTED
+    if (handle->dma.dma_chan && handle->dma.connected) {
+        gdma_disconnect(handle->dma.dma_chan);
+        handle->dma.connected = false;
+    }
+#else
+    if (handle->dma.dma_chan) {
+        esp_intr_free(handle->dma.dma_chan);
+        handle->dma.dma_chan = NULL;
+    }
+#endif
 }
 
 #if SOC_I2S_SUPPORTS_TX_SYNC_CNT
@@ -2164,8 +2447,8 @@ esp_err_t i2s_channel_config_tx_fifo_sync(i2s_chan_handle_t tx_handle, const i2s
                         ESP_ERR_INVALID_ARG, TAG,
                         "auto_suppl_thresh must be smaller than manual_suppl_thresh");
 
-    i2s_dev_t *hw = tx_handle->controller->hal.dev;
-    xSemaphoreTake(tx_handle->mutex, portMAX_DELAY);
+    i2s_controller_t *locked_controller = i2s_channel_lock(tx_handle);
+    i2s_dev_t *hw = locked_controller->hal.dev;
     portENTER_CRITICAL(&g_i2s.spinlock);
     if (tx_handle->tx_fifo_sync_enabled) {
         portEXIT_CRITICAL(&g_i2s.spinlock);
@@ -2185,7 +2468,7 @@ esp_err_t i2s_channel_config_tx_fifo_sync(i2s_chan_handle_t tx_handle, const i2s
     tx_handle->tx_fifo_sync_configured = true;
     portEXIT_CRITICAL(&g_i2s.spinlock);
 err:
-    xSemaphoreGive(tx_handle->mutex);
+    i2s_channel_unlock(locked_controller);
     return ret;
 }
 

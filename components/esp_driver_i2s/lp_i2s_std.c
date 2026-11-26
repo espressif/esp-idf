@@ -26,7 +26,7 @@ esp_err_t lp_i2s_channel_init_std_mode(lp_i2s_chan_handle_t handle, const lp_i2s
 {
     ESP_RETURN_ON_FALSE(handle && std_cfg, ESP_ERR_INVALID_ARG, TAG, "invalid argument: null pointer");
     ESP_RETURN_ON_FALSE(std_cfg->slot_cfg.data_bit_width <= LP_I2S_LL_TDM_MAX_DATA_BIT_WIDTH && std_cfg->slot_cfg.slot_bit_width <= LP_I2S_LL_TDM_MAX_CHAN_BIT_WIDTH, ESP_ERR_INVALID_ARG, TAG, "invalid argument: wrong data bit width or slot bit width");
-    ESP_RETURN_ON_FALSE(handle->state < I2S_CHAN_STATE_RUNNING, ESP_ERR_INVALID_STATE, TAG, "the channel is in enabled state already");
+    ESP_RETURN_ON_FALSE(handle->state == I2S_CHAN_STATE_READY, ESP_ERR_INVALID_STATE, TAG, "the channel is in enabled state already");
 
     //Pin config
     ESP_RETURN_ON_ERROR(s_io_init(handle, &std_cfg->pin_cfg), TAG, "failed to init IOs");

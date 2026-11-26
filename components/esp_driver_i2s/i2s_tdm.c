@@ -27,23 +27,32 @@
 
 const static char *TAG = "i2s_tdm";
 
-// Same with standard mode except total slot number
-static esp_err_t i2s_tdm_calculate_clock(i2s_chan_handle_t handle, const i2s_tdm_clk_config_t *clk_cfg,
-                                         i2s_apll_operation_t *apll_operation, i2s_hal_clock_info_t *clk_info)
+/* Derive and validate the TDM BCLK/MCLK requirements without acquiring a clock source or writing hardware. */
+static esp_err_t i2s_tdm_prepare_clock(i2s_chan_handle_t handle, const i2s_tdm_clk_config_t *clk_cfg,
+                                       i2s_hal_clock_info_t *clk_info)
 {
     uint32_t rate = clk_cfg->sample_rate_hz;
     i2s_tdm_slot_config_t *slot_cfg = &((i2s_tdm_config_t *)(handle->mode_info))->slot_cfg;
     uint32_t slot_bits = slot_cfg->slot_bit_width;
+    uint64_t expected_bclk = (uint64_t)rate * handle->total_slot * slot_bits;
+    ESP_RETURN_ON_FALSE(expected_bclk && expected_bclk <= UINT32_MAX, ESP_ERR_INVALID_ARG, TAG,
+                        "BCLK frequency is out of range");
+    clk_info->bclk = (uint32_t)expected_bclk;
     /* Calculate multiple
      * Fmclk = bck_div*fbck = fsclk/(mclk_div+b/a) */
     if (handle->role == I2S_ROLE_MASTER || handle->full_duplex_slave) {
-        clk_info->bclk = rate * handle->total_slot * slot_bits;
-        clk_info->mclk = rate * clk_cfg->mclk_multiple;
+        uint64_t expected_mclk = (uint64_t)rate * clk_cfg->mclk_multiple;
+        ESP_RETURN_ON_FALSE(expected_mclk && expected_mclk <= UINT32_MAX, ESP_ERR_INVALID_ARG, TAG,
+                            "MCLK frequency is out of range");
+        clk_info->mclk = (uint32_t)expected_mclk;
         clk_info->bclk_div = clk_info->mclk / clk_info->bclk;
         /* While RECEIVING multiple slots, the data will go wrong if the bclk_div is equal or smaller than 2 */
         if (clk_info->bclk_div <= 2) {
             clk_info->bclk_div = 3;
-            clk_info->mclk = clk_info->bclk * clk_info->bclk_div;
+            expected_mclk = (uint64_t)clk_info->bclk * clk_info->bclk_div;
+            ESP_RETURN_ON_FALSE(expected_mclk <= UINT32_MAX, ESP_ERR_INVALID_ARG, TAG,
+                                "adjusted MCLK frequency is out of range");
+            clk_info->mclk = (uint32_t)expected_mclk;
             ESP_LOGW(TAG, "the current mclk multiple is too small, adjust the mclk multiple to %"PRIu32, clk_info->mclk / rate);
         }
         if (clk_info->mclk % clk_info->bclk != 0) {
@@ -66,66 +75,47 @@ static esp_err_t i2s_tdm_calculate_clock(i2s_chan_handle_t handle, const i2s_tdm
         } else {
             clk_info->bclk_div = clk_cfg->bclk_div;
         }
-        clk_info->bclk = rate * handle->total_slot * slot_bits;
-        clk_info->mclk = clk_info->bclk * clk_info->bclk_div;
+        uint64_t expected_mclk = (uint64_t)clk_info->bclk * clk_info->bclk_div;
+        ESP_RETURN_ON_FALSE(expected_mclk && expected_mclk <= UINT32_MAX, ESP_ERR_INVALID_ARG, TAG,
+                            "MCLK frequency is out of range");
+        clk_info->mclk = (uint32_t)expected_mclk;
     }
-    handle->is_external = clk_cfg->clk_src == I2S_CLK_SRC_EXTERNAL;
-    if (handle->is_external) {
-        if (clk_cfg->flags.clk_src_adjustable) {
-            ESP_LOGW(TAG, "adjustable clock source is only supported for APLL; ignoring");
-        }
-        clk_info->sclk = clk_cfg->ext_clk_freq_hz;
-    } else {
-        ESP_RETURN_ON_ERROR(i2s_resolve_source_clk_freq(handle, clk_cfg->clk_src, clk_cfg->flags.clk_src_adjustable,
-                                                        clk_info->mclk, apll_operation, &clk_info->sclk),
-                            TAG, "source clock frequency get failed");
-    }
-    float min_mclk_div = handle->is_external ? 0.99 : 1.99;
-    clk_info->mclk_div = clk_info->sclk / clk_info->mclk;
-
-    /* Check if the configuration is correct. Use float for check in case the mclk division might be carried up in the fine division calculation */
-    ESP_RETURN_ON_FALSE((float)clk_info->sclk > clk_info->mclk * min_mclk_div, ESP_ERR_INVALID_ARG, TAG, "sample rate is too large, sclk: %"PRIu32" Hz, mclk: %"PRIu32" Hz", clk_info->sclk, clk_info->mclk);
-    ESP_RETURN_ON_FALSE(clk_info->mclk_div < I2S_LL_CLK_FRAC_DIV_N_MAX, ESP_ERR_INVALID_ARG, TAG, "sample rate is too small");
-
     return ESP_OK;
 }
 
+/* Prepare the source-clock transaction, validate its dividers, then apply and commit the TDM clock configuration. */
 static esp_err_t i2s_tdm_set_clock(i2s_chan_handle_t handle, const i2s_tdm_clk_config_t *clk_cfg)
 {
     esp_err_t ret = ESP_OK;
     i2s_tdm_config_t *tdm_cfg = (i2s_tdm_config_t *)(handle->mode_info);
 
-    i2s_clock_src_t clk_src = clk_cfg->clk_src;
-#ifdef I2S_LL_DEFAULT_CLK_SRC
-    if (clk_src == I2S_CLK_SRC_DEFAULT) {
-        clk_src = I2S_LL_DEFAULT_CLK_SRC;
-    }
-#endif
+    i2s_hal_clock_info_t clk_info = {};
+    i2s_clock_src_transaction_t clock_transaction = {};
 
-    i2s_hal_clock_info_t clk_info;
-    i2s_apll_operation_t apll_operation = {};
-    bool reuse_apll = false;
-    bool target_acquired = false;
-    const esp_clk_tree_src_config_t *resource_config = NULL;
-#if SOC_I2S_SUPPORTS_APLL
-    esp_clk_tree_src_config_t apll_resource_config = {
-        .flags.adjustable = clk_cfg->flags.clk_src_adjustable,
-    };
-    if (clk_src == I2S_CLK_SRC_APLL) {
-        /* A channel in REGISTER state has not acquired its clock source yet. */
-        reuse_apll = handle->state != I2S_CHAN_STATE_REGISTER && handle->clk_src == I2S_CLK_SRC_APLL;
-        resource_config = &apll_resource_config;
+    // Calculate the requested clocks before acquiring or modifying the selected source
+    ESP_GOTO_ON_ERROR(i2s_tdm_prepare_clock(handle, clk_cfg, &clk_info),
+                      err, TAG, "clock request calculation failed");
+    bool clk_src_adjustable = !clk_cfg->flags.clk_src_fixed;
+    ESP_GOTO_ON_ERROR(i2s_clock_src_acquire(handle, clk_cfg->clk_src,
+                                            clk_src_adjustable, &clock_transaction),
+                      err, TAG, "clock source acquire failed");
+    handle->is_external = clk_cfg->clk_src == I2S_CLK_SRC_EXTERNAL;
+    if (handle->is_external) {
+        clk_info.sclk = clk_cfg->ext_clk_freq_hz;
+    } else {
+        ESP_GOTO_ON_ERROR(i2s_resolve_source_clk_freq(handle, clk_cfg->clk_src,
+                                                      clk_src_adjustable, clk_info.mclk,
+                                                      &clock_transaction, &clk_info.sclk),
+                          err, TAG, "source clock frequency get failed");
     }
-#endif
-    if (!reuse_apll) {
-        ESP_GOTO_ON_ERROR(esp_clk_tree_acquire_src((soc_module_clk_t)clk_src, resource_config),
-                          err, TAG, "clock source acquire failed");
-        target_acquired = true;
-    }
-
-    // Calculate clock parameters after reserving the selected clock source
-    ESP_GOTO_ON_ERROR(i2s_tdm_calculate_clock(handle, clk_cfg, &apll_operation, &clk_info),
-                      err, TAG, "clock calculation failed");
+    float min_mclk_div = handle->is_external ? 0.99 : 1.99;
+    clk_info.mclk_div = clk_info.sclk / clk_info.mclk;
+    ESP_GOTO_ON_FALSE((float)clk_info.sclk > clk_info.mclk * min_mclk_div,
+                      ESP_ERR_INVALID_ARG, err, TAG,
+                      "sample rate is too large, sclk: %"PRIu32" Hz, mclk: %"PRIu32" Hz",
+                      clk_info.sclk, clk_info.mclk);
+    ESP_GOTO_ON_FALSE(clk_info.mclk_div < I2S_LL_CLK_FRAC_DIV_N_MAX,
+                      ESP_ERR_INVALID_ARG, err, TAG, "sample rate is too small");
 
     hal_utils_clk_div_t ret_mclk_div = {};
     i2s_hal_calc_mclk_precise_division(clk_info.sclk, clk_info.mclk, &ret_mclk_div);
@@ -144,10 +134,11 @@ static esp_err_t i2s_tdm_set_clock(i2s_chan_handle_t handle, const i2s_tdm_clk_c
     portEXIT_CRITICAL(&g_i2s.spinlock);
 
     /* Update the mode info: clock configuration */
-    i2s_apll_operation_finish(handle, &apll_operation, true);
+    i2s_clock_src_commit(handle, &clock_transaction);
     memcpy(&(tdm_cfg->clk_cfg), clk_cfg, sizeof(i2s_tdm_clk_config_t));
     handle->clk_src = clk_cfg->clk_src;
     handle->sclk_hz = clk_info.sclk;
+    handle->target_mclk_hz = clk_info.mclk;
     handle->origin_mclk_hz = ((uint64_t)clk_info.sclk * ret_mclk_div.denominator) / tmp_div;
     handle->curr_mclk_hz = handle->origin_mclk_hz;
     handle->bclk_hz = clk_info.bclk;
@@ -157,15 +148,10 @@ static esp_err_t i2s_tdm_set_clock(i2s_chan_handle_t handle, const i2s_tdm_clk_c
 
     return ret;
 
-err:
-    i2s_apll_operation_finish(handle, &apll_operation, false);
-    if (target_acquired) {
-        esp_err_t release_ret = esp_clk_tree_release_src((soc_module_clk_t)clk_src);
-        if (release_ret != ESP_OK) {
-            return release_ret;
-        }
+err: {
+        esp_err_t abort_ret = i2s_clock_src_abort(handle, &clock_transaction);
+        return abort_ret == ESP_OK ? ret : abort_ret;
     }
-    return ret;
 }
 
 static esp_err_t s_i2s_tdm_normalize_slot_config(const i2s_tdm_slot_config_t *slot_cfg, i2s_tdm_slot_config_t *normalized_slot_cfg)
@@ -326,7 +312,6 @@ static esp_err_t s_i2s_channel_try_to_constitute_tdm_duplex(i2s_chan_handle_t ha
     candidate.clk_src = tdm_cfg->clk_cfg.clk_src;
     candidate.bclk_inv = tdm_cfg->gpio_cfg.invert_flags.bclk_inv;
     candidate.ws_inv = tdm_cfg->gpio_cfg.invert_flags.ws_inv;
-    /* Compute total frame bits for TDM mode */
     i2s_tdm_slot_config_t norm_slot = {};
     ESP_RETURN_ON_ERROR(s_i2s_tdm_normalize_slot_config(&tdm_cfg->slot_cfg, &norm_slot), TAG, "invalid slot configuration");
     candidate.total_frame_bits = norm_slot.total_slot * norm_slot.slot_bit_width;
@@ -343,8 +328,13 @@ esp_err_t i2s_channel_init_tdm_mode(i2s_chan_handle_t handle, const i2s_tdm_conf
     I2S_NULL_POINTER_CHECK(TAG, handle);
     esp_err_t ret = ESP_OK;
 
-    xSemaphoreTake(handle->mutex, portMAX_DELAY);
+    i2s_controller_t *locked_controller = i2s_channel_lock(handle);
+    bool clock_configured = false;
+    bool init_started = false;
+    bool was_full_duplex = handle->controller->full_duplex;
     ESP_GOTO_ON_FALSE(handle->state == I2S_CHAN_STATE_REGISTER, ESP_ERR_INVALID_STATE, err, TAG, "the channel has initialized already");
+    ESP_GOTO_ON_ERROR(i2s_channel_check_init_state(handle), err, TAG, "invalid peer state for initialization");
+    init_started = true;
     handle->mode = I2S_COMM_MODE_TDM;
     /* Allocate memory for storing the configurations of TDM mode */
     if (handle->mode_info) {
@@ -361,6 +351,7 @@ esp_err_t i2s_channel_init_tdm_mode(i2s_chan_handle_t handle, const i2s_tdm_conf
     /* i2s_set_tdm_slot should be called before i2s_set_tdm_clock while initializing, because clock is relay on the slot */
     ESP_GOTO_ON_ERROR(i2s_tdm_set_slot(handle, &tdm_cfg->slot_cfg), err, TAG, "initialize channel failed while setting slot");
     ESP_GOTO_ON_ERROR(i2s_tdm_set_clock(handle, &tdm_cfg->clk_cfg), err, TAG, "initialize channel failed while setting clock");
+    clock_configured = true;
     /* i2s_tdm_set_gpio should be called after i2s_tdm_set_clock as mclk relies on the clock source */
     ESP_GOTO_ON_ERROR(i2s_tdm_set_gpio(handle, &tdm_cfg->gpio_cfg), err, TAG, "initialize channel failed while setting gpio pins");
     if (I2S_CHANNEL_USES_DMA(handle)) {
@@ -389,13 +380,16 @@ esp_err_t i2s_channel_init_tdm_mode(i2s_chan_handle_t handle, const i2s_tdm_conf
 
     /* Initialization finished, mark state as ready */
     handle->state = I2S_CHAN_STATE_READY;
-    xSemaphoreGive(handle->mutex);
+    i2s_channel_unlock(locked_controller);
     ESP_LOGD(TAG, "The %s channel on I2S%d has been initialized to TDM mode successfully",
              handle->dir == I2S_DIR_TX ? "tx" : "rx", handle->controller->id);
     return ret;
 
 err:
-    xSemaphoreGive(handle->mutex);
+    if (init_started) {
+        i2s_channel_rollback_init(handle, clock_configured, !was_full_duplex);
+    }
+    i2s_channel_unlock(locked_controller);
     return ret;
 }
 
@@ -406,34 +400,17 @@ esp_err_t i2s_channel_reconfig_tdm_clock(i2s_chan_handle_t handle, const i2s_tdm
 
     esp_err_t ret = ESP_OK;
 
-    xSemaphoreTake(handle->mutex, portMAX_DELAY);
+    i2s_controller_t *locked_controller = i2s_channel_lock(handle);
     ESP_GOTO_ON_FALSE(handle->mode == I2S_COMM_MODE_TDM, ESP_ERR_INVALID_ARG, err, TAG, "this handle is not working in standard mode");
-    ESP_GOTO_ON_FALSE(handle->state == I2S_CHAN_STATE_READY, ESP_ERR_INVALID_STATE, err, TAG, "invalid state, I2S should be disabled before reconfiguring the clock");
+    ESP_GOTO_ON_ERROR(i2s_channel_check_reconfig_state(handle), err, TAG, "invalid state for clock reconfiguration");
     i2s_tdm_config_t *tdm_cfg = (i2s_tdm_config_t *)handle->mode_info;
     ESP_GOTO_ON_FALSE(tdm_cfg, ESP_ERR_INVALID_STATE, err, TAG, "initialization not complete");
 
     i2s_clock_src_t old_clk_src = tdm_cfg->clk_cfg.clk_src;
-#ifdef I2S_LL_DEFAULT_CLK_SRC
-    if (old_clk_src == I2S_CLK_SRC_DEFAULT) {
-        old_clk_src = I2S_LL_DEFAULT_CLK_SRC;
-    }
-#endif
-
+    bool old_apll_adjustable = i2s_channel_is_apll_adjustable(handle);
     ESP_GOTO_ON_ERROR(i2s_tdm_set_clock(handle, clk_cfg), err, TAG, "update clock failed");
-
-    bool reuse_apll = false;
-#if SOC_I2S_SUPPORTS_APLL
-    reuse_apll = old_clk_src == I2S_CLK_SRC_APLL && clk_cfg->clk_src == I2S_CLK_SRC_APLL;
-#endif
-    // APLL keeps its existing ownership, while other sources were acquired again during reconfiguration.
-    if (!reuse_apll) {
-        ESP_GOTO_ON_ERROR(esp_clk_tree_release_src((soc_module_clk_t)old_clk_src), err, TAG, "clock source disable failed");
-    }
-#if SOC_I2S_SUPPORTS_APLL
-    if (old_clk_src == I2S_CLK_SRC_APLL && clk_cfg->clk_src != I2S_CLK_SRC_APLL) {
-        handle->apll_adjustable = false;
-    }
-#endif
+    ESP_GOTO_ON_ERROR(i2s_channel_release_replaced_clk_src(handle, old_clk_src, old_apll_adjustable),
+                      err, TAG, "clock source disable failed");
 
 #ifdef CONFIG_PM_ENABLE
     // Create/Re-create power management lock
@@ -445,11 +422,11 @@ esp_err_t i2s_channel_reconfig_tdm_clock(i2s_chan_handle_t handle, const i2s_tdm
     }
 #endif //CONFIG_PM_ENABLE
 
-    xSemaphoreGive(handle->mutex);
+    i2s_channel_unlock(locked_controller);
 
     return ESP_OK;
 err:
-    xSemaphoreGive(handle->mutex);
+    i2s_channel_unlock(locked_controller);
     return ret;
 }
 
@@ -460,9 +437,9 @@ esp_err_t i2s_channel_reconfig_tdm_slot(i2s_chan_handle_t handle, const i2s_tdm_
 
     esp_err_t ret = ESP_OK;
 
-    xSemaphoreTake(handle->mutex, portMAX_DELAY);
+    i2s_controller_t *locked_controller = i2s_channel_lock(handle);
     ESP_GOTO_ON_FALSE(handle->mode == I2S_COMM_MODE_TDM, ESP_ERR_INVALID_ARG, err, TAG, "this handle is not working in standard mode");
-    ESP_GOTO_ON_FALSE(handle->state == I2S_CHAN_STATE_READY, ESP_ERR_INVALID_STATE, err, TAG, "invalid state, I2S should be disabled before reconfiguring the slot");
+    ESP_GOTO_ON_ERROR(i2s_channel_check_reconfig_state(handle), err, TAG, "invalid state for slot reconfiguration");
 
     i2s_tdm_config_t *tdm_cfg = (i2s_tdm_config_t *)handle->mode_info;
     ESP_GOTO_ON_FALSE(tdm_cfg, ESP_ERR_INVALID_STATE, err, TAG, "initialization not complete");
@@ -475,19 +452,10 @@ esp_err_t i2s_channel_reconfig_tdm_slot(i2s_chan_handle_t handle, const i2s_tdm_
     /* If the total frame bits changed, then need to update the clock */
     if (old_total_slot * old_slot_bit_width != handle->total_slot * tdm_cfg->slot_cfg.slot_bit_width) {
         i2s_clock_src_t old_clk_src = tdm_cfg->clk_cfg.clk_src;
-#ifdef I2S_LL_DEFAULT_CLK_SRC
-        if (old_clk_src == I2S_CLK_SRC_DEFAULT) {
-            old_clk_src = I2S_LL_DEFAULT_CLK_SRC;
-        }
-#endif
+        bool old_apll_adjustable = i2s_channel_is_apll_adjustable(handle);
         ESP_GOTO_ON_ERROR(i2s_tdm_set_clock(handle, &tdm_cfg->clk_cfg), err, TAG, "update clock failed");
-        // disable old clock source after new clock is successfully configured
-#if SOC_I2S_SUPPORTS_APLL
-        if (old_clk_src != I2S_CLK_SRC_APLL)
-#endif
-        {
-            ESP_GOTO_ON_ERROR(esp_clk_tree_release_src((soc_module_clk_t)old_clk_src), err, TAG, "clock source disable failed");
-        }
+        ESP_GOTO_ON_ERROR(i2s_channel_release_replaced_clk_src(handle, old_clk_src, old_apll_adjustable),
+                          err, TAG, "clock source disable failed");
     }
 
     /* Reset queue (skip when no GDMA path is in use) */
@@ -495,11 +463,11 @@ esp_err_t i2s_channel_reconfig_tdm_slot(i2s_chan_handle_t handle, const i2s_tdm_
         xQueueReset(handle->msg_queue);
     }
 
-    xSemaphoreGive(handle->mutex);
+    i2s_channel_unlock(locked_controller);
 
     return ESP_OK;
 err:
-    xSemaphoreGive(handle->mutex);
+    i2s_channel_unlock(locked_controller);
     return ret;
 }
 
@@ -510,18 +478,18 @@ esp_err_t i2s_channel_reconfig_tdm_gpio(i2s_chan_handle_t handle, const i2s_tdm_
 
     esp_err_t ret = ESP_OK;
 
-    xSemaphoreTake(handle->mutex, portMAX_DELAY);
+    i2s_controller_t *locked_controller = i2s_channel_lock(handle);
     ESP_GOTO_ON_FALSE(handle->mode == I2S_COMM_MODE_TDM, ESP_ERR_INVALID_ARG, err, TAG, "This handle is not working in standard mode");
-    ESP_GOTO_ON_FALSE(handle->state == I2S_CHAN_STATE_READY, ESP_ERR_INVALID_STATE, err, TAG, "Invalid state, I2S should be disabled before reconfiguring the gpio");
+    ESP_GOTO_ON_ERROR(i2s_channel_check_reconfig_state(handle), err, TAG, "invalid state for GPIO reconfiguration");
 
     if (handle->reserve_gpio_mask) {
         i2s_output_gpio_revoke(handle, handle->reserve_gpio_mask);
     }
     ESP_GOTO_ON_ERROR(i2s_tdm_set_gpio(handle, gpio_cfg), err, TAG, "set i2s standard slot failed");
-    xSemaphoreGive(handle->mutex);
+    i2s_channel_unlock(locked_controller);
 
     return ESP_OK;
 err:
-    xSemaphoreGive(handle->mutex);
+    i2s_channel_unlock(locked_controller);
     return ret;
 }
