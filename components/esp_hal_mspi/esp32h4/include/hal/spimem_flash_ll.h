@@ -456,6 +456,7 @@ static inline void spimem_flash_ll_user_start(spi_mem_dev_t *dev, bool pe_ops)
  *
  * @return true if the host is idle, otherwise false
  */
+__attribute__((always_inline))
 static inline bool spimem_flash_ll_host_idle(const spi_mem_dev_t *dev)
 {
     return dev->cmd.mst_st == 0;
@@ -765,6 +766,7 @@ static inline uint32_t spimem_flash_ll_get_ctrl_val(spi_mem_dev_t *dev)
 /**
  * @brief Reset whole memory spi
  */
+__attribute__((always_inline))
 static inline void spimem_flash_ll_sync_reset(void)
 {
     SPIMEM1.ctrl2.sync_reset = 0;

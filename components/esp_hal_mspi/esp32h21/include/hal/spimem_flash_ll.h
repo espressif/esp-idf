@@ -441,6 +441,7 @@ static inline void spimem_flash_ll_program_page(spi_mem_dev_t *dev, const void *
  * @param dev Beginning address of the peripheral registers.
  * @param pe_ops Is page program/erase operation or not.
  */
+__attribute__((always_inline))
 static inline void spimem_flash_ll_user_start(spi_mem_dev_t *dev, bool pe_ops)
 {
     uint32_t usr_pe = (pe_ops ? 0x60000 : 0x40000);
@@ -454,6 +455,7 @@ static inline void spimem_flash_ll_user_start(spi_mem_dev_t *dev, bool pe_ops)
  *
  * @return true if the host is idle, otherwise false
  */
+__attribute__((always_inline))
 static inline bool spimem_flash_ll_host_idle(const spi_mem_dev_t *dev)
 {
     return dev->cmd.mst_st == 0;
@@ -543,6 +545,7 @@ static inline void spimem_flash_ll_set_clock(spi_mem_dev_t *dev, spimem_flash_ll
  * @param dev Beginning address of the peripheral registers.
  * @param bitlen Length of input, in bits.
  */
+__attribute__((always_inline))
 static inline void spimem_flash_ll_set_miso_bitlen(spi_mem_dev_t *dev, uint32_t bitlen)
 {
     dev->user.usr_miso = bitlen > 0;
@@ -569,6 +572,7 @@ static inline void spimem_flash_ll_set_mosi_bitlen(spi_mem_dev_t *dev, uint32_t 
  * @param command Command to send
  * @param bitlen Length of the command
  */
+__attribute__((always_inline))
 static inline void spimem_flash_ll_set_command(spi_mem_dev_t *dev, uint32_t command, uint32_t bitlen)
 {
     dev->user.usr_command = 1;
@@ -642,6 +646,7 @@ static inline void spimem_flash_ll_set_usr_address(spi_mem_dev_t *dev, uint32_t 
  * @param dev Beginning address of the peripheral registers.
  * @param dummy_n Cycles of dummy phases
  */
+__attribute__((always_inline))
 static inline void spimem_flash_ll_set_dummy(spi_mem_dev_t *dev, uint32_t dummy_n)
 {
     dev->user.usr_dummy = dummy_n ? 1 : 0;
@@ -718,6 +723,7 @@ static inline uint32_t spimem_flash_ll_calculate_clock_reg(uint8_t clkdiv)
 
  * @param level 1: 1: output high, 0: output low
  */
+__attribute__((always_inline))
 static inline void spimem_flash_ll_set_wp_level(spi_mem_dev_t *dev, bool level)
 {
     dev->ctrl.wp_reg = level;
@@ -736,6 +742,7 @@ static inline uint32_t spimem_flash_ll_get_ctrl_val(spi_mem_dev_t *dev)
 /**
  * @brief Reset whole memory spi
  */
+__attribute__((always_inline))
 static inline void spimem_flash_ll_sync_reset(void)
 {
     SPIMEM1.ctrl2.sync_reset = 0;
@@ -754,6 +761,7 @@ static inline void spimem_flash_ll_sync_reset(void)
  * @param user1_reg user1_reg
  * @param user2_reg user2_reg
  */
+__attribute__((always_inline))
 static inline void spimem_flash_ll_get_common_command_register_info(spi_mem_dev_t *dev, uint32_t *ctrl_reg, uint32_t *user_reg, uint32_t *user1_reg, uint32_t *user2_reg)
 {
     *ctrl_reg = dev->ctrl.val;
@@ -770,6 +778,7 @@ static inline void spimem_flash_ll_get_common_command_register_info(spi_mem_dev_
  * @param user1_reg user1_reg
  * @param user2_reg user2_reg
  */
+__attribute__((always_inline))
 static inline void spimem_flash_ll_set_common_command_register_info(spi_mem_dev_t *dev, uint32_t ctrl_reg, uint32_t user_reg, uint32_t user1_reg, uint32_t user2_reg)
 {
     dev->ctrl.val = ctrl_reg;
