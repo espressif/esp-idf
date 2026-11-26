@@ -216,7 +216,7 @@ static void print_flash_info(const esp_image_header_t *bootloader_hdr)
 
 static void IRAM_ATTR bootloader_init_flash_configure(void)
 {
-    bootloader_configure_spi_pins(1);
+    bootloader_configure_spi_pins(2);
     bootloader_flash_cs_timing_config();
 }
 
@@ -308,7 +308,7 @@ void bootloader_flash_hardware_init(void)
         .spi_size = ESP_IMAGE_FLASH_SIZE_2MB,
     };
 
-    bootloader_configure_spi_pins(1);
+    bootloader_configure_spi_pins(2);
     bootloader_flash_set_spi_mode(&hdr);
     bootloader_flash_clock_config(&hdr);
     // TODO: set proper dummy output
