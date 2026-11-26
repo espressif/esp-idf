@@ -59,6 +59,11 @@ low_level_init(struct netif *netif)
 
     /* device capabilities */
     netif->flags = NETIF_FLAG_BROADCAST | NETIF_FLAG_ETHARP | NETIF_FLAG_IGMP;
+#if LWIP_IPV6 && LWIP_IPV6_MLD
+    /* As ethernetif.c does: without MLD lwIP joins no solicited-node groups, so it never
+     * answers a neighbor solicitation for a global address. */
+    netif->flags |= NETIF_FLAG_MLD6;
+#endif
 }
 
 err_t lwip_tapif_init(struct netif *netif)
@@ -80,7 +85,7 @@ err_t lwip_tapif_init(struct netif *netif)
     return ERR_OK;
 }
 
-void lwip_tapif_input(void *h, void *buffer, size_t len, void *l2_buff)
+esp_err_t lwip_tapif_input(void *h, void *buffer, size_t len, void *l2_buff)
 {
     struct netif *netif = h;
     struct pbuf *p;
@@ -88,7 +93,7 @@ void lwip_tapif_input(void *h, void *buffer, size_t len, void *l2_buff)
 
     p = pbuf_alloc(PBUF_RAW, len, PBUF_RAM);
     if (p == NULL) {
-        return;
+        return ESP_ERR_NO_MEM;
     }
     memcpy(p->payload, buffer, len);
 
@@ -96,5 +101,7 @@ void lwip_tapif_input(void *h, void *buffer, size_t len, void *l2_buff)
     if (unlikely(netif->input(p, netif) != ERR_OK)) {
         LWIP_DEBUGF(NETIF_DEBUG, ("tapif_input: IP input error\n"));
         pbuf_free(p);
+        return ESP_FAIL;
     }
+    return ESP_OK;
 }
