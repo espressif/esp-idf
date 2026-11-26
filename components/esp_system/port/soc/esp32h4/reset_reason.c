@@ -51,7 +51,8 @@ static esp_reset_reason_t get_reset_reason(soc_reset_reason_t rtc_reset_reason, 
     case RESET_REASON_SYS_BROWN_OUT:
         return ESP_RST_BROWNOUT;
 
-    case RESET_REASON_CORE_PWR_GLITCH:
+    case RESET_REASON_SYS_PWR_GLITCH:
+    case RESET_REASON_SYS_RTC_PWR_GLITCH:
         return ESP_RST_PWR_GLITCH;
 
     case RESET_REASON_CORE_EFUSE_CRC:

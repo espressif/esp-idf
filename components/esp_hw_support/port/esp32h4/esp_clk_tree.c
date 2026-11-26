@@ -186,10 +186,7 @@ void esp_clk_tree_initialize(void)
 {
     soc_reset_reason_t rst_reason = esp_rom_get_reset_reason(0);
     soc_cpu_clk_src_t cpu_src = clk_ll_cpu_get_src();
-    bool cpu_reset = (rst_reason == RESET_REASON_CPU0_MWDT0) || (rst_reason == RESET_REASON_CPU0_MWDT1) ||
-                     (rst_reason == RESET_REASON_CPU0_SW) || (rst_reason == RESET_REASON_CPU0_RTC_WDT) ||
-                     (rst_reason == RESET_REASON_CPU0_JTAG) || (rst_reason == RESET_REASON_CPU_LOCKUP);
-    if (!cpu_reset) {
+    if (soc_reset_get_level(rst_reason) >= SOC_RESET_LEVEL_CORE) {
         /* Cold boot only: gate / power-down clocks not in use.
          * Flash MSPI defaults to XTAL_X2_F64M — keep that root/gate alive. */
         _clk_gate_ll_ref_8m_clk_en(false);

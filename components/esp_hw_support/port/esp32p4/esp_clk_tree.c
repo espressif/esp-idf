@@ -180,23 +180,18 @@ static bool s_clk_tree_initialized = false;
 void esp_clk_tree_initialize(void)
 {
     soc_reset_reason_t rst_reason = esp_rom_get_reset_reason(0);
-    if ((rst_reason == RESET_REASON_CPU_SW) || (rst_reason == RESET_REASON_CPU_MWDT)          \
-            || (rst_reason == RESET_REASON_CPU_RWDT) || (rst_reason == RESET_REASON_CPU_JTAG) \
-            || (rst_reason == RESET_REASON_CPU_LOCKUP)) {
-        s_clk_tree_initialized = true;
-        return;
-    }
-
-    _clk_gate_ll_ref_20m_clk_en(false);
-    _clk_gate_ll_ref_25m_clk_en(false);
-    _clk_gate_ll_ref_50m_clk_en(false);
-    _clk_gate_ll_ref_80m_clk_en(false);
-    _clk_gate_ll_ref_120m_clk_en(false);
+    if (soc_reset_get_level(rst_reason) >= SOC_RESET_LEVEL_CORE) {
+        _clk_gate_ll_ref_20m_clk_en(false);
+        _clk_gate_ll_ref_25m_clk_en(false);
+        _clk_gate_ll_ref_50m_clk_en(false);
+        _clk_gate_ll_ref_80m_clk_en(false);
+        _clk_gate_ll_ref_120m_clk_en(false);
 #if !CONFIG_ESP_ENABLE_PVT
-    // PLL_F160M must always on if PVT is enabled.
-    _clk_gate_ll_ref_160m_clk_en(false);
+        // PLL_F160M must always on if PVT is enabled.
+        _clk_gate_ll_ref_160m_clk_en(false);
 #endif
-    _clk_gate_ll_ref_240m_clk_en(false);
+        _clk_gate_ll_ref_240m_clk_en(false);
+    }
     s_clk_tree_initialized = true;
 }
 

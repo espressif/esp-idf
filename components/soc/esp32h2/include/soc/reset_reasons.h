@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2025-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0 OR MIT
  */
@@ -44,9 +44,33 @@ typedef enum {
     RESET_REASON_CORE_EFUSE_CRC  = 0x14, // eFuse CRC error resets the digital core
     RESET_REASON_CORE_USB_UART   = 0x15, // USB UART resets the digital core
     RESET_REASON_CORE_USB_JTAG   = 0x16, // USB JTAG resets the digital core
-    RESET_REASON_CORE_PWR_GLITCH = 0x17, // Glitch on power resets the digital core
+    RESET_REASON_SYS_PWR_GLITCH  = 0x17, // Voltage glitch resets the digital core and rtc module
     RESET_REASON_CPU0_JTAG       = 0x18, // JTAG resets the CPU 0
 } soc_reset_reason_t;
+
+/** @deprecated Use RESET_REASON_SYS_PWR_GLITCH instead. */
+#define RESET_REASON_CORE_PWR_GLITCH _Pragma("GCC warning \"'RESET_REASON_CORE_PWR_GLITCH' is deprecated, use 'RESET_REASON_SYS_PWR_GLITCH' instead\"") RESET_REASON_SYS_PWR_GLITCH
+
+/** Bitmasks of hardware reset codes belonging to each reset level. */
+#define SOC_RESET_LEVEL_CPU_MASK     ((1U << RESET_REASON_CPU0_MWDT0) | \
+                                      (1U << RESET_REASON_CPU0_SW) | \
+                                      (1U << RESET_REASON_CPU0_RTC_WDT) | \
+                                      (1U << RESET_REASON_CPU0_MWDT1) | \
+                                      (1U << RESET_REASON_CPU0_JTAG))
+#define SOC_RESET_LEVEL_CORE_MASK    ((1U << RESET_REASON_CORE_SW) | \
+                                      (1U << RESET_REASON_CORE_DEEP_SLEEP) | \
+                                      (1U << RESET_REASON_CORE_MWDT0) | \
+                                      (1U << RESET_REASON_CORE_MWDT1) | \
+                                      (1U << RESET_REASON_CORE_RTC_WDT) | \
+                                      (1U << RESET_REASON_CORE_EFUSE_CRC) | \
+                                      (1U << RESET_REASON_CORE_USB_UART) | \
+                                      (1U << RESET_REASON_CORE_USB_JTAG))
+#define SOC_RESET_LEVEL_SYSTEM_MASK  ((1U << RESET_REASON_SYS_BROWN_OUT) | \
+                                      (1U << RESET_REASON_SYS_RTC_WDT) | \
+                                      (1U << RESET_REASON_SYS_SUPER_WDT) | \
+                                      (1U << RESET_REASON_SYS_PWR_GLITCH))
+
+#include "soc/reset_level.h"
 
 #ifdef __cplusplus
 }

@@ -232,8 +232,7 @@ __attribute__((weak)) void esp_perip_clk_init(void)
      */
     uint32_t hwcrypto_mask_in_perip1 = (SYSTEM_CRYPTO_HMAC_CLK_EN | SYSTEM_CRYPTO_DS_CLK_EN | SYSTEM_CRYPTO_RSA_CLK_EN | SYSTEM_CRYPTO_SHA_CLK_EN | SYSTEM_CRYPTO_AES_CLK_EN);
 
-    if (rst_reason == RESET_REASON_CPU0_MWDT0 || rst_reason == RESET_REASON_CPU0_SW ||
-            rst_reason == RESET_REASON_CPU0_RTC_WDT || rst_reason == RESET_REASON_CPU0_MWDT1) {
+    if (soc_reset_get_level(rst_reason) == SOC_RESET_LEVEL_CPU) {
         common_perip_clk = ~READ_PERI_REG(SYSTEM_PERIP_CLK_EN0_REG);
         common_perip_clk1 = (~READ_PERI_REG(SYSTEM_PERIP_CLK_EN1_REG)) & (~hwcrypto_mask_in_perip1);
         hwcrypto_perip_clk = (~READ_PERI_REG(SYSTEM_PERIP_CLK_EN1_REG)) & hwcrypto_mask_in_perip1;

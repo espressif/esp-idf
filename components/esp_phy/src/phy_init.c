@@ -13,6 +13,7 @@
 
 #include "soc/rtc.h"
 #include "esp_err.h"
+#include "esp_system.h"
 #include "esp_phy_init.h"
 #include "esp_mac.h"
 #include "esp_log.h"
@@ -932,7 +933,8 @@ void esp_phy_load_cal_and_init(void)
     }
 
     memcpy(init_data, phy_init_data, sizeof(esp_phy_init_data_t));
-    if (esp_reset_reason() == ESP_RST_BROWNOUT) {
+    esp_reset_reason_t rst = esp_reset_reason();
+    if (rst == ESP_RST_BROWNOUT || rst == ESP_RST_PWR_GLITCH) {
         esp_phy_reduce_tx_power(init_data);
     }
 #else

@@ -190,13 +190,7 @@ typedef struct {
  */
 static inline void periph_ll_clk_gate_set_default(soc_reset_reason_t rst_reason, const periph_ll_clk_gate_config_t *config)
 {
-    if ((rst_reason == RESET_REASON_CHIP_POWER_ON)   || (rst_reason == RESET_REASON_CORE_PMU_PWR_DOWN) ||
-            (rst_reason == RESET_REASON_SYS_BROWN_OUT)   || (rst_reason == RESET_REASON_SYS_RWDT) ||
-            (rst_reason == RESET_REASON_SYS_SUPER_WDT)   || (rst_reason == RESET_REASON_CORE_SW) ||
-            (rst_reason == RESET_REASON_CORE_MWDT)       || (rst_reason == RESET_REASON_CORE_RWDT) ||
-            (rst_reason == RESET_REASON_CORE_PWR_GLITCH) || (rst_reason == RESET_REASON_CORE_EFUSE_CRC) ||
-            (rst_reason == RESET_REASON_CORE_USB_JTAG)   || (rst_reason == RESET_REASON_CORE_USB_UART)
-       ) {
+    if (soc_reset_get_level(rst_reason) >= SOC_RESET_LEVEL_CORE) {
         // Not gate HP_SYS_CLKRST_REG_L2MEM_MEM_CLK_FORCE_ON since the hardware will not automatically ungate when DMA accesses L2 MEM.
         REG_CLR_BIT(HP_SYS_CLKRST_CLK_FORCE_ON_CTRL0_REG,
                     HP_SYS_CLKRST_REG_CPUICM_GATED_CLK_FORCE_ON
@@ -353,8 +347,7 @@ static inline void periph_ll_clk_gate_set_default(soc_reset_reason_t rst_reason,
     }
 
     // LP related clock control
-    if ((rst_reason == RESET_REASON_CHIP_POWER_ON) || (rst_reason == RESET_REASON_SYS_SUPER_WDT) \
-            || (rst_reason == RESET_REASON_SYS_RWDT) || (rst_reason == RESET_REASON_SYS_BROWN_OUT)) {
+    if (soc_reset_get_level(rst_reason) >= SOC_RESET_LEVEL_SYSTEM) {
         // lpperi,lp peripheral registers get reset for reset level equal or higher than system reset
         REG_CLR_BIT(LP_UART_CLK_CONF_REG, LP_UART_TX_SCLK_EN | LP_UART_RX_SCLK_EN);
         REG_CLR_BIT(LPPERI_CLK_EN_REG, LPPERI_CK_EN_LP_UART);
@@ -363,7 +356,7 @@ static inline void periph_ll_clk_gate_set_default(soc_reset_reason_t rst_reason,
             ;
         }
 
-        if (rst_reason == RESET_REASON_CHIP_POWER_ON) {
+        if (soc_reset_get_level(rst_reason) == SOC_RESET_LEVEL_CHIP) {
             // lp_aon_clkrst, lp_system registers get reset only if chip reset
             REG_CLR_BIT(LP_CLKRST_HP_CLK_CTRL_REG, LP_CLKRST_HP_PAD_UART0_SLP_CLK_EN |
                         LP_CLKRST_HP_PAD_UART1_SLP_CLK_EN |

@@ -376,10 +376,7 @@ void esp_clk_tree_initialize(void)
     soc_reset_reason_t rst_reason = esp_rom_get_reset_reason(0);
     soc_periph_flash_clk_src_t flash_clk_src = _mspi_timing_ll_get_flash_clk_src(MSPI_TIMING_LL_MSPI_ID_0);
     soc_cpu_clk_src_t cpu_src = clk_ll_cpu_get_src();
-    bool cpu_reset = (rst_reason == RESET_REASON_CPU_SW) || (rst_reason == RESET_REASON_CPU_MWDT) ||
-                     (rst_reason == RESET_REASON_CPU_RWDT) || (rst_reason == RESET_REASON_CPU_JTAG) ||
-                     (rst_reason == RESET_REASON_CPU_LOCKUP);
-    if (!cpu_reset) {
+    if (soc_reset_get_level(rst_reason) >= SOC_RESET_LEVEL_CORE) {
         /* Cold boot only: gate / power-down clocks not in use. */
         if (cpu_src != SOC_CPU_CLK_SRC_PLL_F240M) {
             _clk_gate_ll_ref_240m_clk_en(false);

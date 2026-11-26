@@ -225,29 +225,15 @@ __attribute__((weak)) void esp_perip_clk_init(void)
     uint32_t common_perip_clk, hwcrypto_perip_clk, wifi_bt_sdio_clk = 0;
     uint32_t common_perip_clk1 = 0;
 
-#if CONFIG_ESP_SYSTEM_SINGLE_CORE_MODE
-    soc_reset_reason_t rst_reas[1];
-#else
-    soc_reset_reason_t rst_reas[2];
-#endif
-
-    rst_reas[0] = esp_rom_get_reset_reason(0);
-#if !CONFIG_ESP_SYSTEM_SINGLE_CORE_MODE
-    rst_reas[1] = esp_rom_get_reset_reason(1);
-#endif
+    /* Shared peripherals follow CPU0; ignore CPU1 (may hold a stale CPU-only cause). */
+    const soc_reset_reason_t rst_reas0 = esp_rom_get_reset_reason(0);
 
     /* For reason that only reset CPU, do not disable the clocks
      * that have been enabled before reset.
      */
     uint32_t hwcrypto_mask_in_perip1 = (SYSTEM_CRYPTO_HMAC_CLK_EN | SYSTEM_CRYPTO_DS_CLK_EN | SYSTEM_CRYPTO_RSA_CLK_EN | SYSTEM_CRYPTO_SHA_CLK_EN | SYSTEM_CRYPTO_AES_CLK_EN);
 
-    if ((rst_reas[0] == RESET_REASON_CPU0_MWDT0 || rst_reas[0] == RESET_REASON_CPU0_SW ||
-            rst_reas[0] == RESET_REASON_CPU0_RTC_WDT || rst_reas[0] == RESET_REASON_CPU0_MWDT1)
-#if !CONFIG_ESP_SYSTEM_SINGLE_CORE_MODE
-            || (rst_reas[1] == RESET_REASON_CPU1_MWDT0 || rst_reas[1] == RESET_REASON_CPU1_SW ||
-                rst_reas[1] == RESET_REASON_CPU1_RTC_WDT || rst_reas[1] == RESET_REASON_CPU1_MWDT1)
-#endif
-       ) {
+    if (soc_reset_get_level(rst_reas0) == SOC_RESET_LEVEL_CPU) {
         common_perip_clk = ~READ_PERI_REG(SYSTEM_PERIP_CLK_EN0_REG);
         common_perip_clk1 = (~READ_PERI_REG(SYSTEM_PERIP_CLK_EN1_REG)) & (~hwcrypto_mask_in_perip1);
         hwcrypto_perip_clk = (~READ_PERI_REG(SYSTEM_PERIP_CLK_EN1_REG)) & hwcrypto_mask_in_perip1;

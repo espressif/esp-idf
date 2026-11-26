@@ -166,9 +166,7 @@ typedef struct {
  */
 static inline void periph_ll_clk_gate_set_default(soc_reset_reason_t rst_reason, const periph_ll_clk_gate_config_t *config)
 {
-    if ((rst_reason != RESET_REASON_CPU0_MWDT0) && (rst_reason != RESET_REASON_CPU0_MWDT1)          \
-            && (rst_reason != RESET_REASON_CPU0_SW) && (rst_reason != RESET_REASON_CPU0_RTC_WDT)    \
-            && (rst_reason != RESET_REASON_CPU0_JTAG) && (rst_reason != RESET_REASON_CPU0_LOCKUP)) {
+    if (soc_reset_get_level(rst_reason) >= SOC_RESET_LEVEL_CORE) {
         if (config->disable_uart0_clk) {
             PCR.uart0_conf.uart0_clk_en = 0;
             PCR.uart0_sclk_conf.uart0_sclk_en = 0;
@@ -217,9 +215,7 @@ static inline void periph_ll_clk_gate_set_default(soc_reset_reason_t rst_reason,
         }
     }
 
-    if ((rst_reason == RESET_REASON_CHIP_POWER_ON) || (rst_reason == RESET_REASON_CHIP_BROWN_OUT)       \
-            || (rst_reason == RESET_REASON_SYS_RTC_WDT) || (rst_reason == RESET_REASON_SYS_SUPER_WDT)   \
-            || (rst_reason == RESET_REASON_CORE_PWR_GLITCH)) {
+    if (soc_reset_get_level(rst_reason) >= SOC_RESET_LEVEL_SYSTEM) {
         LP_GPIO.clock_gate.clk_en = 0;
         LP_UART.clk_conf.val = 0;
         LPPERI.clk_en.val = 0;

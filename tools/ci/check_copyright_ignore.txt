@@ -464,7 +464,6 @@ components/sdmmc/sdmmc_sd.c
 components/soc/esp32/include/soc/fe_reg.h
 components/soc/esp32/include/soc/flash_encryption_reg.h
 components/soc/esp32/include/soc/gpio_sig_map.h
-components/soc/esp32/include/soc/reset_reasons.h
 components/soc/esp32/include/soc/soc_ulp.h
 components/soc/esp32s2/include/soc/fe_reg.h
 components/soc/esp32s2/include/soc/memprot_defs.h

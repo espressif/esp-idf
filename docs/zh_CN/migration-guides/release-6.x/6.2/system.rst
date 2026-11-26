@@ -3,6 +3,17 @@
 
 :link_to_translation:`en:[English]`
 
+复位原因
+--------
+
+``soc/reset_reasons.h`` 新增 ``soc_reset_level_t`` 与 ``soc_reset_get_level()``，可将 ``soc_reset_reason_t`` 分类为 CPU / Core / System / Chip。
+
+TRM 中归类为 System Reset 的电源毛刺复位码已重命名为 ``RESET_REASON_SYS_PWR_GLITCH``；ESP32-H4 的第二路 ``0x19`` 命名为 ``RESET_REASON_SYS_RTC_PWR_GLITCH``。旧名仍以弃用宏形式保留。
+
+在 ESP32-C61 上，复位码 ``0x19`` 现返回 ``ESP_RST_PWR_GLITCH``，不再返回 ``ESP_RST_BROWNOUT``；比较 ``ESP_RST_BROWNOUT`` 的代码需相应修改。
+
+启用 :ref:`CONFIG_ESP_PHY_REDUCE_TX_POWER <CONFIG_ESP_PHY_REDUCE_TX_POWER>` 时，ESP32-C5 与 ESP32-S31 在电源毛刺复位后也会降低 PHY TX 功率。如需保持原 TX 功率，请关闭该选项。
+
 FreeRTOS
 --------
 
