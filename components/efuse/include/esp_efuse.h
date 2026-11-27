@@ -367,7 +367,7 @@ esp_err_t esp_efuse_set_rom_log_scheme(esp_efuse_rom_log_scheme_t log_scheme);
  *  @brief Switch ROM Download Mode to Secure Download mode via eFuse
  *
  * Permanently enables Secure Download mode. This mode limits the use of ROM Download Mode functions
- * to simple flash read, write and erase operations, plus a command to return a summary of currently
+ * to simple flash write and erase operations, plus a command to return a summary of currently
  * enabled security features.
  *
  * @note If Secure Download mode is already enabled, this function does nothing and returns success.
