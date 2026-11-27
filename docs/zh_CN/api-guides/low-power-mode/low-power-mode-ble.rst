@@ -27,6 +27,12 @@
 
     :menuitem:`CONFIG_BT_LE_LP_CLK_SRC` = Use main XTAL as RTC clock source (`CONFIG_BT_LE_LP_CLK_SRC_MAIN_XTAL`)
 
+.. only:: esp32s31
+
+    :menuitem:`CONFIG_BT_CTRL_LP_CLK_SRC` = Use main XTAL as RTC clock source (`CONFIG_BT_CTRL_LP_CLK_SRC_MAIN_XTAL`)
+
+    :menuitem:`CONFIG_BT_CTRL_LP_CLK_SRC` 依赖 :menuitem:`CONFIG_BT_CTRL_SLEEP_ENABLE`。请先启用 Bluetooth Controller sleep，该选项才会出现。
+
 选择主晶振后，light-sleep 模式下主晶振电源不会关闭，因此电流消耗更高。有关使用主晶振与 32 kHz 外部晶振在 light-sleep 模式下的典型电流消耗，请参考 :example_file:`Power Save README <bluetooth/nimble/power_save/README.md>` 。
 
 选择 32 kHz 外部晶振
@@ -47,6 +53,12 @@
 .. only:: esp32c2 or esp32c6 or esp32h2 or esp32c5 or esp32c61
 
     :menuitem:`CONFIG_BT_LE_LP_CLK_SRC` = Use system RTC slow clock source (`CONFIG_BT_LE_LP_CLK_SRC_DEFAULT`)
+
+.. only:: esp32s31
+
+    :menuitem:`CONFIG_BT_CTRL_LP_CLK_SRC` = Use system RTC slow clock source (`CONFIG_BT_CTRL_LP_CLK_SRC_DEFAULT`)
+
+    :menuitem:`CONFIG_BT_CTRL_LP_CLK_SRC` 依赖 :menuitem:`CONFIG_BT_CTRL_SLEEP_ENABLE`。请先启用 Bluetooth Controller sleep，该选项才会出现。
 
 **配置路径 2：**
 
@@ -79,18 +91,32 @@
 
     :menuitem:`CONFIG_BT_LE_LP_CLK_SRC` = Use system RTC slow clock source (`CONFIG_BT_LE_LP_CLK_SRC_DEFAULT`)
 
+.. only:: esp32s31
+
+    要使用 136 kHz 内部 RC 振荡器作为低功耗蓝牙内部时钟源，请配置以下选项：
+
+    :menuitem:`CONFIG_BT_CTRL_LP_CLK_SRC` 依赖 :menuitem:`CONFIG_BT_CTRL_SLEEP_ENABLE`。请先启用 Bluetooth Controller sleep，该选项才会出现。
+
+    **配置路径 1：**
+
+    :menuitem:`CONFIG_BT_CTRL_LP_CLK_SRC` = Use system RTC slow clock source (`CONFIG_BT_CTRL_LP_CLK_SRC_DEFAULT`)
+
+    136 kHz 内部 RC 时钟配置仅适用于低功耗蓝牙模式。启用经典蓝牙时，该配置不可用。
+
 .. only:: not esp32
 
     **配置路径 2：**
 
     :menuitem:`CONFIG_RTC_CLK_SRC` = Internal 136 kHz RC oscillator (`CONFIG_RTC_CLK_SRC_INT_RC`)
 
-.. only:: esp32c2 or esp32c6 or esp32h2 or esp32c5 or esp32c61
+.. only:: esp32c2 or esp32c6 or esp32h2 or esp32c5 or esp32c61 or esp32s31
 
     对于需要低功耗且没有 32 kHz 外部晶振的场景，可以选择 136 kHz RC 振荡器。然而，该时钟无法满足低功耗蓝牙的 500 PPM 的休眠时钟精度需求。如果对端设备使用 ESP 芯片，低功耗蓝牙功能仍可正常工作；但如果对端设备不是 ESP 芯片，则以下低功耗蓝牙行为将无法支持：
 
       1. 作为连接的 Central 方
       2. 作为 Periodic Advertising 的广播方
+
+.. only:: esp32c2 or esp32c6 or esp32h2 or esp32c5 or esp32c61
 
     如果对端设备也用 136 kHz RC 作为时钟源，需要如下配置:
 
@@ -98,6 +124,8 @@
 
       - :menuitem:`CONFIG_BT_LE_LL_PEER_SCA_SET_ENABLE` = y
       - :menuitem:`CONFIG_BT_LE_LL_PEER_SCA` = 3000
+
+.. only:: esp32c2 or esp32c6 or esp32h2 or esp32c5 or esp32c61 or esp32s31
 
     **注意：** 使用 136 kHz RC 振荡器可能偶发连接断开或连接失败。
 

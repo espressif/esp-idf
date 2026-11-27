@@ -3,7 +3,7 @@
 
 :link_to_translation:`en:[English]`
 
-{IDF_TARGET_SOC_BOOT_PIN:default="Not updated", esp32="IO0", esp32s2="IO0", esp32s3="IO0", esp32c3="IO9", esp32c2="IO9", "esp32c6"="IO9", "esp32h2"="IO9", "esp32p4"="IO35", "esp32c5"="IO28", "esp32c61"="IO9"}
+{IDF_TARGET_SOC_BOOT_PIN:default="Not updated", esp32="IO0", esp32s2="IO0", esp32s3="IO0", esp32c3="IO9", esp32c2="IO9", "esp32c6"="IO9", "esp32h2"="IO9", "esp32p4"="IO35", "esp32c5"="IO28", "esp32c61"="IO9", "esp32s31"="IO61"}
 
 开发功耗敏感型应用时，需要了解 `模组 <https://www.espressif.com/en/products/modules>`__ 在 Deep-sleep 模式、:doc:`其他节能模式 </api-reference/system/sleep_modes>` 和 Active 模式下的功耗。本节介绍如何测量运行此类应用程序时模组的功耗。
 
@@ -34,7 +34,7 @@
 
     使用上述开发板，可以烧写 :example:`deep_sleep <system/deep_sleep>` 示例来测量模组在 Deep-sleep 模式下的功耗。也可以使用以下方法来测量配有 {IDF_TARGET_NAME} 芯片的裸模组的电流。
 
-.. only:: esp32 or esp32s2 or esp32s3 or esp32c2 or esp32c3 or esp32p4
+.. only:: esp32 or esp32s2 or esp32s3 or esp32c2 or esp32c3 or esp32p4 or esp32s31
 
     对于 {IDF_TARGET_NAME}，不建议直接使用开发板来测量相应模组的功耗，因为即使烧写 :example:`deep_sleep <system/deep_sleep>` 示例，板上的某些电路仍会产生功耗。因此，在测量模组的电流前需要先切断电源电路。这种方法非常不便，测量成本高。
 
@@ -43,6 +43,9 @@
 ^^^^^^^^^^^^^^^^^^^^^^
 
 在 :example:`deep_sleep <system/deep_sleep>` 示例中，模组每 20 秒被唤醒一次。在 Deep-sleep 模式下，模组中的电流仅为几微安 (μA)，而在 Active 模式下，电流的量级为毫安 (mA)。普通电流表无法快速动态切换测量范围，因此很难在如此大的动态范围内进行准确测量。
+
+.. note::
+    在支持的芯片上，:example:`deep_sleep <system/deep_sleep>` 示例默认会启用 GPIO/EXT0/EXT1 等唤醒源。用于这些唤醒源的管脚可能仍保持内部上拉或下拉，从而引入漏电，并使测得的 Deep-sleep 电流高于芯片技术规格书中给出的 Deep-sleep 功耗数据。若需使测量结果更接近规格书中的数值，请在示例配置中关闭这些唤醒源（例如通过 ``idf.py menuconfig``），仅保留定时器唤醒，或保留要实际使用的唤醒源。
 
 此外，普通电流表的内阻相对较高，压降较大，提供的电压可能会小于模组的最低电压，从而导致模组状态不稳定。
 

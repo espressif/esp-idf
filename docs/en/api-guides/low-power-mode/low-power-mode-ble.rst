@@ -27,6 +27,12 @@ To select the main XTAL as the Bluetooth LE internal clock source, configure the
 
     :menuitem:`CONFIG_BT_LE_LP_CLK_SRC` = Use main XTAL as RTC clock source (`CONFIG_BT_LE_LP_CLK_SRC_MAIN_XTAL`)
 
+.. only:: esp32s31
+
+    :menuitem:`CONFIG_BT_CTRL_LP_CLK_SRC` = Use main XTAL as RTC clock source (`CONFIG_BT_CTRL_LP_CLK_SRC_MAIN_XTAL`)
+
+    :menuitem:`CONFIG_BT_CTRL_LP_CLK_SRC` depends on :menuitem:`CONFIG_BT_CTRL_SLEEP_ENABLE`. Enable Bluetooth Controller sleep first to make this option available.
+
 When this is selected, the main XTAL remains powered on during light-sleep, resulting in higher current consumption. Please refer to :example_file:`Power Save README <bluetooth/nimble/power_save/README.md>` for the typical current consumption in light-sleep using XTAL versus a 32 kHz external crystal.
 
 Selecting 32 kHz External Crystal
@@ -47,6 +53,12 @@ To use a 32 kHz external crystal as the Bluetooth LE internal clock source, conf
 .. only:: esp32c2 or esp32c6 or esp32h2 or esp32c5 or esp32c61
 
     :menuitem:`CONFIG_BT_LE_LP_CLK_SRC` = Use system RTC slow clock source (`CONFIG_BT_LE_LP_CLK_SRC_DEFAULT`)
+
+.. only:: esp32s31
+
+    :menuitem:`CONFIG_BT_CTRL_LP_CLK_SRC` = Use system RTC slow clock source (`CONFIG_BT_CTRL_LP_CLK_SRC_DEFAULT`)
+
+    :menuitem:`CONFIG_BT_CTRL_LP_CLK_SRC` depends on :menuitem:`CONFIG_BT_CTRL_SLEEP_ENABLE`. Enable Bluetooth Controller sleep first to make this option available.
 
 **Configuration Path 2:**
 
@@ -79,18 +91,32 @@ Selecting 136 kHz RC Oscillator
 
     :menuitem:`CONFIG_BT_LE_LP_CLK_SRC` = Use system RTC slow clock source (`CONFIG_BT_LE_LP_CLK_SRC_DEFAULT`)
 
+.. only:: esp32s31
+
+    To use a 136 kHz internal RC oscillator as the Bluetooth LE internal clock source, configure the following options:
+
+    :menuitem:`CONFIG_BT_CTRL_LP_CLK_SRC` depends on :menuitem:`CONFIG_BT_CTRL_SLEEP_ENABLE`. Enable Bluetooth Controller sleep first to make this option available.
+
+    **Configuration Path 1:**
+
+    :menuitem:`CONFIG_BT_CTRL_LP_CLK_SRC` = Use system RTC slow clock source (`CONFIG_BT_CTRL_LP_CLK_SRC_DEFAULT`)
+
+    The 136 kHz internal RC clock configuration applies only to BLE-only mode. This configuration is not available when Classic Bluetooth is enabled.
+
 .. only:: not esp32
 
     **Configuration Path 2:**
 
     :menuitem:`CONFIG_RTC_CLK_SRC` = Internal 136 kHz RC oscillator (`CONFIG_RTC_CLK_SRC_INT_RC`)
 
-.. only:: esp32c2 or esp32c6 or esp32h2 or esp32c5 or esp32c61
+.. only:: esp32c2 or esp32c6 or esp32h2 or esp32c5 or esp32c61 or esp32s31
 
     If low current consumption is required but there is no access to the External 32 kHz Crystal, this clock source is recommended. However, this clock source has a sleep clock accuracy exceeding 500 PPM, which is only supported when pairing with another ESP chip. For non-ESP peer devices, the following Bluetooth LE features are not supported:
 
     1. Central role of Connection
     2. Advertiser of Periodic Advertising
+
+.. only:: esp32c2 or esp32c6 or esp32h2 or esp32c5 or esp32c61
 
     If the peer device also uses 136 kHz RC as the clock source, the following configuration should be set:
 
@@ -98,6 +124,8 @@ Selecting 136 kHz RC Oscillator
 
       - :menuitem:`CONFIG_BT_LE_LL_PEER_SCA_SET_ENABLE` = y
       - :menuitem:`CONFIG_BT_LE_LL_PEER_SCA` = 3000
+
+.. only:: esp32c2 or esp32c6 or esp32h2 or esp32c5 or esp32c61 or esp32s31
 
     **Note:** Using the 136 kHz RC oscillator may occasionally cause issues such as connection establishment failures or connection timeouts.
 

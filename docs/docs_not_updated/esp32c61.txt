@@ -1,7 +1,7 @@
 api-guides/phy.rst
-api-guides/low-power-mode.rst
 api-guides/RF_calibration.rst
-api-guides/deep-sleep-stub.rst
+api-guides/low-power-mode/index.rst
+api-guides/low-power-mode/low-power-mode-wifi.rst
 api-guides/lwip.rst
 api-guides/wifi.rst
 api-guides/esp-wifi-mesh.rst
@@ -18,8 +18,6 @@ api-reference/network/esp_nan.rst
 api-reference/network/esp_wifi.rst
 api-reference/network/index.rst
 api-reference/network/esp_netif.rst
-api-reference/system/sleep_modes.rst
-api-reference/system/inc/power_management_esp32c61.rst
 api-reference/index.rst
 api-reference/protocols/icmp_echo.rst
 api-reference/protocols/mqtt.rst

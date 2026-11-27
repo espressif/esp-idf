@@ -373,7 +373,7 @@ Light-sleep 模式配置
      - ON
 
    * - RTC 慢速时钟源 (:menuitem:`CONFIG_RTC_CLK_SRC`)
-     - 内部 150 kHz 振荡器
+     - 内部 136 kHz RC 振荡器
 
    * - 芯片休眠时禁用所有 GPIO (:menuitem:`CONFIG_PM_SLP_DISABLE_GPIO`)
      - ON
@@ -402,6 +402,69 @@ Light-sleep 模式配置
   .. note::
       上表中不涉及的配置均是默认。
 
+  .. note::
+      启用 :menuitem:`CONFIG_ESP_SLEEP_SET_FLASH_DPD` 取决于所用 SPI flash 是否支持使用 B9h 指令进入 Deep Power-Down 模式，并使用 ABh 指令退出该模式。
+
+.. only:: esp32s31
+
+  .. list-table::
+   :header-rows: 1
+   :widths: 30 15
+
+   * - 配置名称
+     - 设置情况
+
+   * - 启用电源管理组件 (:menuitem:`CONFIG_PM_ENABLE`)
+     - ON
+
+   * - 启用 Tickless IDLE 模式 (:menuitem:`CONFIG_FREERTOS_USE_TICKLESS_IDLE`)
+     - ON
+
+   * - RTOS Tick rate (Hz) (:menuitem:`CONFIG_FREERTOS_HZ`)
+     - 1000
+
+   * - 进入睡眠模式前最小 IDLE Tick 数 (:menuitem:`CONFIG_FREERTOS_IDLE_TIME_BEFORE_SLEEP`)
+     - 3
+
+   * - 将 light sleep 相关代码放置在片内 RAM 中 (:menuitem:`CONFIG_PM_SLP_IRAM_OPT`)
+     - ON
+
+   * - 将 RTOS IDLE 相关代码放置在片内 RAM 中 (:menuitem:`CONFIG_PM_RTOS_IDLE_OPT`)
+     - ON
+
+   * - RTC 慢速时钟源 (:menuitem:`CONFIG_RTC_CLK_SRC`)
+     - 内部 136 kHz RC 振荡器
+
+   * - 芯片休眠时禁用所有 GPIO (:menuitem:`CONFIG_PM_SLP_DISABLE_GPIO`)
+     - ON
+
+   * - 关闭 MAC 和基带 (:menuitem:`CONFIG_ESP_PHY_MAC_BB_PD`)
+     - ON
+
+   * - 关闭 CPU (:menuitem:`CONFIG_PM_POWER_DOWN_CPU_IN_LIGHT_SLEEP`)
+     - ON
+
+   * - 在 light sleep 状态关闭 flash 供电 (:menuitem:`CONFIG_ESP_SLEEP_POWER_DOWN_FLASH`)
+     - OFF
+
+   * - 在 light sleep 状态配置 flash 进入 deep power-down 模式 (:menuitem:`CONFIG_ESP_SLEEP_SET_FLASH_DPD`)
+     - ON
+
+   * - ``max_freq_mhz``
+     - {IDF_TARGET_NAME} 支持的最大 CPU 频率
+
+   * - ``min_freq_mhz``
+     - {CONFIG_XTAL_FREQ}
+
+   * - ``light_sleep_enable``
+     - true
+
+  .. note::
+      上表中不涉及的配置均是默认。
+
+  .. note::
+      启用 :menuitem:`CONFIG_ESP_SLEEP_SET_FLASH_DPD` 取决于所用 SPI flash 是否支持使用 B9h 指令进入 Deep Power-Down 模式，并使用 ABh 指令退出该模式。
+
 .. only:: esp32c5
 
   .. list-table::
@@ -427,10 +490,10 @@ Light-sleep 模式配置
      - ON
 
    * - 将 RTOS IDLE 相关代码放置在片内 RAM 中 (:menuitem:`CONFIG_PM_RTOS_IDLE_OPT`)
-     - OFF
+     - ON
 
    * - RTC 慢速时钟源 (:menuitem:`CONFIG_RTC_CLK_SRC`)
-     - 内部 150 kHz 振荡器
+     - 内部 136 kHz RC 振荡器
 
    * - 芯片休眠时禁用所有 GPIO (:menuitem:`CONFIG_PM_SLP_DISABLE_GPIO`)
      - ON
@@ -457,7 +520,70 @@ Light-sleep 模式配置
       上表中不涉及的配置均是默认。
 
   .. note::
-      在 {IDF_TARGET_NAME} 上，light sleep 期间 SPI flash 供电需保持开启，不提供 :menuitem:`CONFIG_ESP_SLEEP_POWER_DOWN_FLASH`。
+      在 {IDF_TARGET_NAME} 上，light sleep 期间 SPI flash 供电需保持开启，:menuitem:`CONFIG_ESP_SLEEP_POWER_DOWN_FLASH` 不可用。
+
+  .. note::
+      启用 :menuitem:`CONFIG_ESP_SLEEP_SET_FLASH_DPD` 取决于所用 SPI flash 是否支持使用 B9h 指令进入 Deep Power-Down 模式，并使用 ABh 指令退出该模式。
+
+.. only:: esp32c61
+
+  .. list-table::
+   :header-rows: 1
+   :widths: 30 15
+
+   * - 配置名称
+     - 设置情况
+
+   * - 启用电源管理组件 (:menuitem:`CONFIG_PM_ENABLE`)
+     - ON
+
+   * - 启用 Tickless IDLE 模式 (:menuitem:`CONFIG_FREERTOS_USE_TICKLESS_IDLE`)
+     - ON
+
+   * - RTOS Tick rate (Hz) (:menuitem:`CONFIG_FREERTOS_HZ`)
+     - 1000
+
+   * - 进入睡眠模式前最小 IDLE Tick 数 (:menuitem:`CONFIG_FREERTOS_IDLE_TIME_BEFORE_SLEEP`)
+     - 3
+
+   * - 将 light sleep 相关代码放置在片内 RAM 中 (:menuitem:`CONFIG_PM_SLP_IRAM_OPT`)
+     - ON
+
+   * - 将 RTOS IDLE 相关代码放置在片内 RAM 中 (:menuitem:`CONFIG_PM_RTOS_IDLE_OPT`)
+     - ON
+
+   * - RTC 慢速时钟源 (:menuitem:`CONFIG_RTC_CLK_SRC`)
+     - 内部 136 kHz RC 振荡器
+
+   * - 芯片休眠时禁用所有 GPIO (:menuitem:`CONFIG_PM_SLP_DISABLE_GPIO`)
+     - ON
+
+   * - 关闭 MAC 和基带 (:menuitem:`CONFIG_ESP_PHY_MAC_BB_PD`)
+     - ON
+
+   * - 关闭 CPU (:menuitem:`CONFIG_PM_POWER_DOWN_CPU_IN_LIGHT_SLEEP`)
+     - ON
+
+   * - 在 light sleep 状态配置 flash 进入 deep power-down 模式 (:menuitem:`CONFIG_ESP_SLEEP_SET_FLASH_DPD`)
+     - ON
+
+   * - ``max_freq_mhz``
+     - {IDF_TARGET_NAME} 支持的最大 CPU 频率
+
+   * - ``min_freq_mhz``
+     - {CONFIG_XTAL_FREQ}
+
+   * - ``light_sleep_enable``
+     - true
+
+  .. note::
+      上表中不涉及的配置均是默认。
+
+  .. note::
+      在 {IDF_TARGET_NAME} 上，light sleep 期间 SPI flash 供电需保持开启，:menuitem:`CONFIG_ESP_SLEEP_POWER_DOWN_FLASH` 不可用。
+
+  .. note::
+      启用 :menuitem:`CONFIG_ESP_SLEEP_SET_FLASH_DPD` 取决于所用 SPI flash 是否支持使用 B9h 指令进入 Deep Power-Down 模式，并使用 ABh 指令退出该模式。
 
 .. only:: esp32s3
 
@@ -519,6 +645,9 @@ Light-sleep 模式配置
   .. note::
       上表中不涉及的配置均是默认。
 
+  .. note::
+      启用 :menuitem:`CONFIG_ESP_SLEEP_SET_FLASH_DPD` 取决于所用 SPI flash 是否支持使用 B9h 指令进入 Deep Power-Down 模式，并使用 ABh 指令退出该模式。
+
 .. only:: esp32c3
 
   .. list-table::
@@ -575,6 +704,9 @@ Light-sleep 模式配置
 
   .. note::
       上表中不涉及的配置均是默认。
+
+  .. note::
+      启用 :menuitem:`CONFIG_ESP_SLEEP_SET_FLASH_DPD` 取决于所用 SPI flash 是否支持使用 B9h 指令进入 Deep Power-Down 模式，并使用 ABh 指令退出该模式。
 
 .. only:: esp32 or esp32s2
 
@@ -671,6 +803,9 @@ Light-sleep 模式配置
 
   .. note::
       上表中不涉及的配置均是默认。
+
+  .. note::
+      启用 :menuitem:`CONFIG_ESP_SLEEP_SET_FLASH_DPD` 取决于所用 SPI flash 是否支持使用 B9h 指令进入 Deep Power-Down 模式，并使用 ABh 指令退出该模式。
 
 Deep-sleep 模式配置
 ---------------------

@@ -379,7 +379,7 @@ Auto Light-sleep Mode + Wi-Fi Scenario Configuration
 
 Auto Light-sleep mode in Wi-Fi scenarios does not require wake-up source configuration compared with a pure system. But the remaining part of configuration is basically the same in the two operation scenarios. Therefore, detailed introduction of configurable options, configuration steps, and recommended configurations can be found in the previous section :ref:`Deep-sleep Mode`, with the Wi-Fi-related configurations set to default.
 
-.. todo - add eep-current/esp32c61_light_sleep.inc
+.. todo - add sleep-current/esp32c61_light_sleep.inc
 .. todo - add sleep-current/esp32s31_light_sleep.inc
 
 .. only:: not esp32c61 and not esp32s31
