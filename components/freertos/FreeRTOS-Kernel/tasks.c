@@ -6,7 +6,7 @@
  *
  * SPDX-License-Identifier: MIT
  *
- * SPDX-FileContributor: 2023-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileContributor: 2023-2026 Espressif Systems (Shanghai) CO LTD
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy of
  * this software and associated documentation files (the "Software"), to deal in
@@ -163,7 +163,8 @@
  * In SMP, this macro checks if the unblocked task can preempt either core:
  *   - If a yield is required on the current core, this macro return pdTRUE
  *   - if a yield is required on the other core, this macro will internally
- *     trigger it.
+ *     trigger it. If the other core has suspended its scheduler, the yield
+ *     is pended instead, and that core's xTaskResumeAll() performs it.
  *
  * - In SMP, these macros must be called from a critical section (where the
  *   kernel locks are taken).
@@ -855,6 +856,17 @@ static void prvAddNewTaskToReadyList( TCB_t * pxNewTCB ) PRIVILEGED_FUNCTION;
         {
             /* Signal the other core to yield */
             taskYIELD_CORE( !xCurCoreID );
+            xYieldRequiredCurrentCore = pdFALSE;
+        }
+
+        /* If the target task can run on the other core and has a higher
+         * priority than that core's current task, but that core has suspended
+         * scheduling, pend the yield so that core's xTaskResumeAll() performs
+         * it. Otherwise the wakeup is lost. */
+        else if( ( taskIS_AFFINITY_COMPATIBLE( !xCurCoreID, pxTCB ) == pdTRUE ) &&
+                 ( uxTaskPriority > pxCurrentTCBs[ !xCurCoreID ]->uxPriority ) )
+        {
+            xYieldPending[ !xCurCoreID ] = pdTRUE;
             xYieldRequiredCurrentCore = pdFALSE;
         }
         else
