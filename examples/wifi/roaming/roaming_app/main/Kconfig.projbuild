@@ -11,4 +11,12 @@ menu "Example Configuration"
         default "mypassword"
         help
             WiFi password (WPA or WPA2) for the example to use.
+
+    config ESP_EXAMPLE_RESTART_INTERVAL
+        int "Restart this long after each boot's IP address (s)"
+        range 0 3600
+        default 0
+        help
+            Restart this many seconds after the boot's first IP address, so that boot to IP can be
+            measured over many boots, with fast connect's remembered AP. 0 never restarts.
 endmenu

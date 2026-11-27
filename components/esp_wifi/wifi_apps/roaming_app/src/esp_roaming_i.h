@@ -122,6 +122,13 @@ extern "C" {
 /* Neighbor report list/event support for periodic RRM and/or 11k roam */
 #define RRM_NEIGHBOR_LIST_SUPPORT (PERIODIC_RRM_MONITORING || RRM_ASSISTED_ROAMING_ENABLED)
 
+/* Fast connect: remember the AP, connect to it directly, fall back to every channel */
+#ifdef CONFIG_ESP_WIFI_ROAMING_FAST_CONNECT
+#define FAST_CONNECT_ENABLED CONFIG_ESP_WIFI_ROAMING_FAST_CONNECT
+#else
+#define FAST_CONNECT_ENABLED 0
+#endif
+
 #define MAX_SCAN_CHAN_LIST_COUNT 14
 
 #define MAX_NEIGHBOR_LEN 512
@@ -148,6 +155,7 @@ struct roaming_app {
     bool scan_ongoing;
     bool sta_connected;
     bool connect_hint_active;
+    bool fast_connect_off_pending; /* fast connect asked off, its record not yet forgotten (Wi-Fi task) */
     int8_t current_rssi_threshold;
     char *btm_neighbor_list;
     struct timeval last_roam_attempt_time;
