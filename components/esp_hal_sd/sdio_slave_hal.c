@@ -618,6 +618,9 @@ void sdio_slave_hal_recv_init_desc(sdio_slave_context_t* hal, sdio_slave_ll_desc
 
 void sdio_slave_hal_recv_start(sdio_slave_context_t *hal)
 {
+    // tx_rst does not clear a txlink_restart still pending from sdio_slave_hal_load_buf(),
+    // and the start written after the reset is lost then. Stop the link to drop it.
+    sdio_slave_ll_recv_stop(hal->slc);
     sdio_slave_ll_recv_reset(hal->slc);
     sdio_slave_ll_desc_t *desc = recv_get_first_empty_buf(hal);
     if (!desc) {
