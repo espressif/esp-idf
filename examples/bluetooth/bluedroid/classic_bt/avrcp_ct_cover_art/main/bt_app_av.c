@@ -28,7 +28,7 @@
 #include "a2dp_utils_tags.h"
 #include "a2dp_sink_common_utils.h"
 #if CONFIG_EXAMPLE_A2DP_SINK_STREAM_ENABLE
-#if CONFIG_EXAMPLE_A2DP_SINK_USE_EXTERNAL_CODEC == FALSE
+#if !CONFIG_EXAMPLE_A2DP_SINK_USE_EXTERNAL_CODEC
 #include "a2dp_sink_int_codec_utils.h"
 #else
 #include "a2dp_sink_ext_codec_utils.h"
@@ -119,7 +119,7 @@ static void bt_app_a2d_evt_hdl(uint16_t event, void *param)
         if (ESP_A2D_INIT_SUCCESS == a2d->a2d_prof_stat.init_state) {
             ESP_LOGI(BT_AV_TAG, "A2DP PROF STATE: Init Complete");
 #if CONFIG_EXAMPLE_A2DP_SINK_STREAM_ENABLE
-#if CONFIG_EXAMPLE_A2DP_SINK_USE_EXTERNAL_CODEC == TRUE
+#if CONFIG_EXAMPLE_A2DP_SINK_USE_EXTERNAL_CODEC
             esp_a2d_mcc_t mcc = {0};
             mcc.type = ESP_A2D_MCT_SBC;
             mcc.cie.sbc_info.samp_freq = ESP_A2D_SBC_CIE_SF_16K |
@@ -173,7 +173,7 @@ void bt_app_a2d_cb(esp_a2d_cb_event_t event, esp_a2d_cb_param_t *param)
     case ESP_A2D_AUDIO_CFG_EVT:
     case ESP_A2D_SEP_REG_STATE_EVT: {
 #if CONFIG_EXAMPLE_A2DP_SINK_STREAM_ENABLE
-#if CONFIG_EXAMPLE_A2DP_SINK_USE_EXTERNAL_CODEC == FALSE
+#if !CONFIG_EXAMPLE_A2DP_SINK_USE_EXTERNAL_CODEC
         bt_app_work_dispatch(bt_a2d_evt_int_codec_hdl, event, param, sizeof(esp_a2d_cb_param_t), NULL, NULL);
 #else
         bt_app_work_dispatch(bt_a2d_evt_ext_codec_hdl, event, param, sizeof(esp_a2d_cb_param_t), NULL, NULL);
@@ -190,7 +190,7 @@ void bt_app_a2d_cb(esp_a2d_cb_event_t event, esp_a2d_cb_param_t *param)
 }
 
 #if CONFIG_EXAMPLE_A2DP_SINK_STREAM_ENABLE
-#if CONFIG_EXAMPLE_A2DP_SINK_USE_EXTERNAL_CODEC == FALSE
+#if !CONFIG_EXAMPLE_A2DP_SINK_USE_EXTERNAL_CODEC
 void bt_app_a2d_data_cb(const uint8_t *data, uint32_t len)
 {
     bt_a2d_data_hdl(data, len);
