@@ -48,6 +48,8 @@ typedef union {
         uint32_t form_err: 1;       /**< Form error detected (frame fixed-form bit violation) */
         uint32_t stuff_err: 1;      /**< Stuff error detected (e.g. dominant error frame received) */
         uint32_t ack_err: 1;        /**< ACK error (no ack), transmission without acknowledge received */
+        uint32_t crc_err: 1;        /**< CRC error, received frame's CRC does not match its content */
+        uint32_t other_err: 1;      /**< Bus error of a kind not covered by the flags above */
     };
     uint32_t val;                   /**< Integrated error flags */
 } twai_error_flags_t;

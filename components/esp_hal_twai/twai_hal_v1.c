@@ -309,6 +309,8 @@ uint32_t twai_hal_get_events(twai_hal_context_t *hal_ctx)
         hal_ctx->errors.form_err = (type == TWAI_LL_ERR_FORM);
         hal_ctx->errors.stuff_err = (type == TWAI_LL_ERR_STUFF);
         hal_ctx->errors.ack_err = (type == TWAI_LL_ERR_OTHER) && (seg == TWAI_LL_ERR_SEG_ACK_SLOT);
+        hal_ctx->errors.crc_err = (type == TWAI_LL_ERR_OTHER) && (seg == TWAI_LL_ERR_SEG_ACK_DELIM);    //Receivers signal a CRC error after the ACK delimiter
+        hal_ctx->errors.other_err = (type == TWAI_LL_ERR_OTHER) && !hal_ctx->errors.ack_err && !hal_ctx->errors.crc_err;
 #if TWAI_LL_HAS_RX_FRAME_ISSUE || TWAI_LL_HAS_TX_FRAME_ISSUE
         //Check for errata condition (TX/RX message has bus error at particular segments)
         if ((seg == TWAI_LL_ERR_SEG_DATA || seg == TWAI_LL_ERR_SEG_CRC_SEQ) || (seg == TWAI_LL_ERR_SEG_ACK_DELIM && type == TWAI_LL_ERR_OTHER)) {
