@@ -14,7 +14,9 @@ CONFIG_EXAMPLE_CONNECT_WIFI=y
 CONFIG_EXAMPLE_CONNECT_ETHERNET=n
 CONFIG_EXAMPLE_WIFI_SSID_PWD_FROM_STDIN=y
 # This is required for nvs encryption (which is enabled by default with flash encryption)
-CONFIG_PARTITION_TABLE_TWO_OTA_ENCRYPTED_NVS=y
+# Custom table mirrors the two-OTA encrypted-NVS layout with larger app partitions
+CONFIG_PARTITION_TABLE_CUSTOM=y
+CONFIG_PARTITION_TABLE_CUSTOM_FILENAME="partitions.csv"
 
 CONFIG_MBEDTLS_TLS_CLIENT_ONLY=y
 CONFIG_COMPILER_OPTIMIZATION_SIZE=y
