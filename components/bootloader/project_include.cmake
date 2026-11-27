@@ -162,7 +162,8 @@ externalproject_add(bootloader
     # Modiying the list separator for the arguments, as such, we won't need to manually
     # replace the new separator by the default ';' in the subproject
     LIST_SEPARATOR |
-    CMAKE_ARGS  -DSDKCONFIG=${sdkconfig} -DIDF_PATH=${idf_path} -DIDF_TARGET=${idf_target}
+    CMAKE_ARGS  -DCMAKE_INSTALL_PREFIX=<INSTALL_DIR>
+                -DSDKCONFIG=${sdkconfig} -DIDF_PATH=${idf_path} -DIDF_TARGET=${idf_target}
                 -DPYTHON_DEPS_CHECKED=1 -DPYTHON=${python}
                 -DEXTRA_COMPONENT_DIRS=${bootloader_extra_component_dirs}
                 -DPROJECT_SOURCE_DIR=${PROJECT_SOURCE_DIR}

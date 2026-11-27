@@ -188,7 +188,8 @@ function(__setup_ulp_project app_name project_path prefix prefix_append_bin_name
             SOURCE_DIR ${project_path}
             BINARY_DIR ${ulp_binary_dir}
             INSTALL_COMMAND ""
-            CMAKE_ARGS  -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
+            CMAKE_ARGS  -DCMAKE_INSTALL_PREFIX=<INSTALL_DIR>
+                        -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
                         -DCMAKE_GENERATOR=${CMAKE_GENERATOR}
                         -DCMAKE_TOOLCHAIN_FILE=${TOOLCHAIN_FLAG}
                         -DADD_PICOLIBC_SPECS=${CONFIG_LIBC_PICOLIBC}
