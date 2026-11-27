@@ -76,7 +76,7 @@
 #define OSI_COEX_VERSION              0x00010007
 #define OSI_COEX_MAGIC_VALUE          0xFADEBEAD
 
-#define EXT_FUNC_VERSION             0x20250825
+#define EXT_FUNC_VERSION             0x20261023
 #define EXT_FUNC_MAGIC_VALUE         0xA5A5A5A5
 
 #define BT_ASSERT_PRINT              ets_printf
@@ -112,6 +112,7 @@ struct ext_funcs_t {
 #if CONFIG_IDF_TARGET_ESP32C6
     void (* _esp_reset_modem)(uint8_t mdl_opts, uint8_t start);
 #endif // CONFIG_IDF_TARGET_ESP32C6
+    void (* _esp_bt_modem_clock_set)(bool enable);
     uint32_t magic;
 };
 
@@ -240,6 +241,7 @@ static bool esp_bt_check_wakeup_by_bt(void);
 #include "tinycrypt/ecc.h"
 static int ecc_rand_func(uint8_t *dst, unsigned int len);
 #endif // (CONFIG_BT_CONTROLLER_ONLY) && (CONFIG_BT_LE_SM_SC) && (!CONFIG_BT_SMP_CRYPTO_STACK_MBEDTLS)
+static void esp_bt_modem_clock_set(bool enable);
 /* Local variable definition
  ***************************************************************************
  */
@@ -505,6 +507,8 @@ static bool s_ble_active = false;
 #ifdef CONFIG_PM_ENABLE
 static DRAM_ATTR esp_pm_lock_handle_t s_pm_lock = NULL;
 #endif // CONFIG_PM_ENABLE
+static uint8_t s_bt_modem_clk_en = 0;
+static uint8_t s_bt_modem_apb_clk_en = 0;
 #define MAIN_XTAL_FREQ_HZ                 (40000000)
 #define MAIN_XTAL_FREQ_HZ_WORKROUND       (500000)
 static DRAM_ATTR modem_clock_lpclk_src_t s_bt_lpclk_src = MODEM_CLOCK_LPCLK_SRC_INVALID;
@@ -550,6 +554,7 @@ struct ext_funcs_t ext_funcs_ro = {
 #if CONFIG_IDF_TARGET_ESP32C6
     ._esp_reset_modem = esp_reset_modem,
 #endif // CONFIG_IDF_TARGET_ESP32C6
+    ._esp_bt_modem_clock_set = esp_bt_modem_clock_set,
     .magic = EXT_FUNC_MAGIC_VALUE,
 };
 
@@ -776,6 +781,49 @@ static IRAM_ATTR uint32_t esp_bt_get_int_rc_freq(void)
     return rtc_freq;
 }
 
+void
+esp_bt_modem_clock_enable(void)
+{
+    if (!s_bt_modem_clk_en) {
+        modem_clock_module_enable(PERIPH_BT_MODULE);
+        s_bt_modem_clk_en = 1;
+    }
+    if (!s_bt_modem_apb_clk_en) {
+        modem_clock_module_enable(PERIPH_BT_APB_MODULE);
+        modem_clock_module_mac_reset(PERIPH_BT_MODULE);
+        s_bt_modem_apb_clk_en = 1;
+    }
+}
+
+void
+esp_bt_modem_clock_disable(void)
+{
+    if (s_bt_modem_apb_clk_en) {
+        modem_clock_module_disable(PERIPH_BT_APB_MODULE);
+        s_bt_modem_apb_clk_en = 0;
+    }
+    if (s_bt_modem_clk_en) {
+        modem_clock_module_disable(PERIPH_BT_MODULE);
+        s_bt_modem_clk_en = 0;
+    }
+}
+
+static void IRAM_ATTR
+esp_bt_modem_clock_set(bool enable)
+{
+    if (enable) {
+        if (!s_bt_modem_clk_en) {
+            modem_clock_module_enable(PERIPH_BT_MODULE);
+            s_bt_modem_clk_en = 1;
+        }
+    } else {
+        if (!s_ble_active && s_bt_modem_clk_en) {
+            modem_clock_module_disable(PERIPH_BT_MODULE);
+            s_bt_modem_clk_en = 0;
+        }
+    }
+}
+
 IRAM_ATTR void controller_sleep_cb(uint32_t enable_tick, void *arg)
 {
     if (!s_ble_active) {
@@ -865,19 +913,16 @@ static void sleep_modem_ble_mac_modem_state_deinit(void)
     esp_err_t err = sleep_retention_module_detach(SLEEP_RETENTION_MODULE_BLE_MAC);
     if (err != ESP_OK) {
         ESP_LOGE(NIMBLE_PORT_LOG_TAG, "BT sleep retention detach error");
-        assert(err == ESP_OK);
     }
 
     err = sleep_retention_module_free(SLEEP_RETENTION_MODULE_BLE_MAC);
     if (err != ESP_OK) {
         ESP_LOGE(NIMBLE_PORT_LOG_TAG, "BT sleep retention free error");
-        assert(err == ESP_OK);
     }
 
     err = sleep_retention_module_deinit(SLEEP_RETENTION_MODULE_BLE_MAC);
     if (err != ESP_OK) {
         ESP_LOGE(NIMBLE_PORT_LOG_TAG, "BT sleep retention deinit error");
-        assert(err == ESP_OK);
     }
 }
 
@@ -1158,8 +1203,7 @@ esp_err_t esp_bt_controller_init(esp_bt_controller_config_t *cfg)
     }
 
     /* Enable BT-related clocks */
-    modem_clock_module_enable(PERIPH_BT_MODULE);
-    modem_clock_module_mac_reset(PERIPH_BT_MODULE);
+    esp_bt_modem_clock_enable();
     /* Select slow clock source for BT momdule */
     ble_rtc_clk_init(cfg);
     esp_phy_modem_init(SLEEP_MODEM_BT);
@@ -1262,7 +1306,7 @@ modem_deint:
 #endif // CONFIG_BT_LE_CONTROLLER_LOG_ENABLED
     esp_phy_modem_deinit(SLEEP_MODEM_BT);
     modem_clock_deselect_lp_clock_source(PERIPH_BT_MODULE);
-    modem_clock_module_disable(PERIPH_BT_MODULE);
+    esp_bt_modem_clock_disable();
 
 free_mem:
     npl_freertos_mempool_deinit();
@@ -1287,7 +1331,7 @@ esp_err_t esp_bt_controller_deinit(void)
 
     esp_phy_modem_deinit(SLEEP_MODEM_BT);
     modem_clock_deselect_lp_clock_source(PERIPH_BT_MODULE);
-    modem_clock_module_disable(PERIPH_BT_MODULE);
+    esp_bt_modem_clock_disable();
 
     ble_stack_deinitEnv();
     r_ble_controller_deinit();

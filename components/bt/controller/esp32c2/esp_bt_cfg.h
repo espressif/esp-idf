@@ -173,8 +173,8 @@ extern "C" {
         #define DEFAULT_BT_LE_PERIODIC_SYNC  (0)
     #endif
 
-    #if defined(BT_LE_PERIODIC_ADV_SYNC_TRANSFER)
-        #define DEFAULT_BT_LE_PAST          (BT_LE_PERIODIC_ADV_SYNC_TRANSFER)
+    #if defined(CONFIG_BT_LE_PERIODIC_ADV_SYNC_TRANSFER)
+        #define DEFAULT_BT_LE_PAST          (CONFIG_BT_LE_PERIODIC_ADV_SYNC_TRANSFER)
     #else
         #define DEFAULT_BT_LE_PAST          (0)
     #endif

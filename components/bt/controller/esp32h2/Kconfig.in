@@ -508,8 +508,31 @@ choice BT_LE_LP_CLK_SRC
             Use the same slow clock source as system RTC
             Using any clock source other than external 32.768 kHz XTAL supports only
             legacy ADV and SCAN due to low clock accuracy.
-
 endchoice
+
+config BT_LE_SLEEP_RELATED_CODE_IN_IRAM
+    bool "Put sleep related code into IRAM to optimize power consumption"
+    default n
+    depends on BT_LE_SLEEP_ENABLE
+    help
+        Put frequently-executed sleep functions into IRAM for faster execution
+        and lower power consumption. Occupies extra 3 KB RAM.
+
+config BT_LE_ADV_SLEEP_CODE_IN_IRAM
+    bool "Put BLE advertising sleep code into IRAM"
+    default y
+    depends on BT_LE_SLEEP_RELATED_CODE_IN_IRAM
+    help
+        Put frequently-executed advertising functions into IRAM.
+        Occupies extra 8 KB RAM.
+
+config BT_LE_CONN_SLEEP_CODE_IN_IRAM
+    bool "Put BLE connection sleep code into IRAM"
+    default y
+    depends on BT_LE_SLEEP_RELATED_CODE_IN_IRAM
+    help
+        Put frequently-executed connection functions into IRAM.
+        Occupies extra 8 KB RAM.
 
 config BT_LE_USE_ESP_TIMER
     bool "Enable Esp Timer for Callout"
