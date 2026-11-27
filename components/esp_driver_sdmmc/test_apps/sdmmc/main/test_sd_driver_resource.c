@@ -8,8 +8,10 @@
 #include "unity.h"
 #include "driver/sd_host_sdmmc.h"
 #include "driver/sd_host.h"
+#include "esp_heap_caps.h"
 #include "hal/sdmmc_ll.h"
 #include "soc/sdmmc_pins.h"
+#include "soc/sdmmc_struct.h"
 
 /*---------------------------------------------------------------
                       SDMMC
@@ -80,6 +82,30 @@ TEST_CASE("SDMMC controller exhausted allocation", "[sdmmc]")
 
     TEST_ESP_ERR(ESP_ERR_NOT_FOUND, sd_host_create_sdmmc_controller(&cfg, &ctlr[SDMMC_LL_HOST_CTLR_NUMS]));
 
+    for (int i = 0; i < SDMMC_LL_HOST_CTLR_NUMS; i++) {
+        TEST_ESP_OK(sd_host_del_controller(ctlr[i]));
+    }
+}
+
+TEST_CASE("SDMMC controller is released when creation fails", "[sdmmc]")
+{
+    // Ask for more DMA descriptors than internal DMA-capable memory can hold, so the
+    // descriptor allocation fails after the controller has been claimed.
+    const size_t largest = heap_caps_get_largest_free_block(MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT | MALLOC_CAP_DMA);
+    sd_host_sdmmc_cfg_t cfg = {
+        .event_queue_items = 4,
+        .dma_desc_num = largest / sizeof(sdmmc_desc_t) + 1,
+    };
+    sd_host_ctlr_handle_t ctlr[SDMMC_LL_HOST_CTLR_NUMS] = {};
+    for (int i = 0; i < 2; i++) {
+        TEST_ESP_ERR(ESP_ERR_NO_MEM, sd_host_create_sdmmc_controller(&cfg, &ctlr[0]));
+    }
+
+    // Every controller must still be available after the failed attempts.
+    cfg.dma_desc_num = 0;
+    for (int i = 0; i < SDMMC_LL_HOST_CTLR_NUMS; i++) {
+        TEST_ESP_OK(sd_host_create_sdmmc_controller(&cfg, &ctlr[i]));
+    }
     for (int i = 0; i < SDMMC_LL_HOST_CTLR_NUMS; i++) {
         TEST_ESP_OK(sd_host_del_controller(ctlr[i]));
     }
