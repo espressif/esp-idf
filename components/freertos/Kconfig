@@ -142,6 +142,8 @@ menu "FreeRTOS"
 
                 - The application must provide the hook function ``void vApplicationTickHook( void );``
                 - ``vApplicationTickHook()`` is called from FreeRTOS's tick handling function ``xTaskIncrementTick()``
+                - ``vApplicationTickHook()`` must be placed in IRAM (``IRAM_ATTR``), as it runs from the tick interrupt
+                  which keeps running while the flash cache is disabled.
                 - The FreeRTOS tick hook is NOT the same as the ESP-IDF Tick Interrupt Hook, but both can be enabled
                   simultaneously.
 
