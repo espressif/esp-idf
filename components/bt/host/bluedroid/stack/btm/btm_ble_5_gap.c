@@ -1132,6 +1132,7 @@ tBTM_STATUS BTM_BlePeriodicAdvSyncTerm(UINT16 sync_handle)
     }
 
     cb_params.status = status;
+    cb_params.per_adv_sync_term.sync_handle = sync_handle;
 
     BTM_ExtBleCallbackTrigger(BTM_BLE_5_GAP_PERIODIC_ADV_SYNC_TERMINATE_COMPLETE_EVT, &cb_params);
 
