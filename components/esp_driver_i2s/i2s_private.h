@@ -412,11 +412,20 @@ esp_err_t i2s_channel_change_port(i2s_chan_handle_t handle, int id);
 bool i2s_clk_src_requires_apb_lock(i2s_clock_src_t clk_src);
 
 /**
+ * @brief Check whether the clock source requires the CPU frequency to remain fixed
+ *
+ * @param clk_src I2S clock source
+ * @return True if a maximum CPU frequency lock is required while the clock source is in use
+ */
+bool i2s_clk_src_requires_cpu_lock(i2s_clock_src_t clk_src);
+
+/**
  * @brief Select the power-management lock held while an I2S channel is enabled.
  *
- * A DMA buffer in PSRAM requires the maximum CPU frequency. A clock source
- * which requires a fixed APB frequency uses an APB frequency lock.
- * Other clock sources only need to be kept active by blocking light sleep.
+ * A DMA buffer in PSRAM, or a clock source which requires a fixed CPU frequency,
+ * uses a maximum CPU frequency lock. A clock source which requires a fixed APB
+ * frequency uses an APB frequency lock. Other clock sources only need to be kept
+ * active by blocking light sleep.
  */
 esp_pm_lock_type_t i2s_select_pm_lock_type(bool dma_buf_in_psram, i2s_clock_src_t clk_src);
 #endif
