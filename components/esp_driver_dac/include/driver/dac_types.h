@@ -86,6 +86,11 @@ typedef soc_periph_dac_digi_clk_src_t       dac_continuous_digi_clk_src_t;
  */
 typedef soc_periph_dac_cosine_clk_src_t     dac_cosine_clk_src_t;
 
+/**
+ * @brief DAC oneshot clock source
+ */
+typedef soc_periph_dac_oneshot_clk_src_t    dac_oneshot_clk_src_t;
+
 #endif // SOC_DAC_SUPPORTED
 
 #ifdef __cplusplus

@@ -9,6 +9,7 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include "hal/assert.h"
+#include "hal/misc.h"
 #include "soc/dac_reg.h"
 #include "soc/dac_struct.h"
 #include "soc/lp_peri_clkrst_reg.h"
@@ -92,7 +93,7 @@ static inline void dac_ll_clk_enable(bool enable)
 static inline void dac_ll_clk_set_hs_div(uint32_t hs_div)
 {
     HAL_ASSERT(hs_div >= DAC_LL_CLK_HS_DIV_MIN && hs_div <= DAC_LL_CLK_HS_DIV_MAX);
-    LP_PERI_CLKRST.dac_ctrl.lp_dac_div_num = hs_div - 1;
+    HAL_FORCE_MODIFY_U32_REG_FIELD(LP_PERI_CLKRST.dac_ctrl, lp_dac_div_num, hs_div - 1);
 }
 
 /**
@@ -100,7 +101,7 @@ static inline void dac_ll_clk_set_hs_div(uint32_t hs_div)
  */
 static inline uint32_t dac_ll_clk_get_hs_div(void)
 {
-    return LP_PERI_CLKRST.dac_ctrl.lp_dac_div_num + 1;
+    return HAL_FORCE_READ_U32_REG_FIELD(LP_PERI_CLKRST.dac_ctrl, lp_dac_div_num) + 1;
 }
 
 /**
@@ -111,7 +112,7 @@ static inline uint32_t dac_ll_clk_get_hs_div(void)
 static inline void dac_ll_clk_set_ls_div(uint32_t ls_div)
 {
     HAL_ASSERT(ls_div >= DAC_LL_CLK_LS_DIV_MIN && ls_div <= DAC_LL_CLK_LS_DIV_MAX);
-    LP_DAC.pad_cfg.div_num = ls_div - 1;
+    HAL_FORCE_MODIFY_U32_REG_FIELD(LP_DAC.pad_cfg, div_num, ls_div - 1);
 }
 
 /**
@@ -119,7 +120,7 @@ static inline void dac_ll_clk_set_ls_div(uint32_t ls_div)
  */
 static inline uint32_t dac_ll_clk_get_ls_div(void)
 {
-    return LP_DAC.pad_cfg.div_num + 1;
+    return HAL_FORCE_READ_U32_REG_FIELD(LP_DAC.pad_cfg, div_num) + 1;
 }
 
 /*---------------------------------------------------------------
@@ -301,9 +302,9 @@ static inline void dac_ll_sh_enable(dac_channel_t channel, bool enable)
 static inline void dac_ll_sh_set_sample_cycle(dac_channel_t channel, uint16_t cycle)
 {
     if (channel == DAC_CHAN_0) {
-        LP_DAC.sample_wait_cfg.wait_target_sample_pad_0 = cycle;
+        HAL_FORCE_MODIFY_U32_REG_FIELD(LP_DAC.sample_wait_cfg, wait_target_sample_pad_0, cycle);
     } else if (channel == DAC_CHAN_1) {
-        LP_DAC.sample_wait_cfg.wait_target_sample_pad_1 = cycle;
+        HAL_FORCE_MODIFY_U32_REG_FIELD(LP_DAC.sample_wait_cfg, wait_target_sample_pad_1, cycle);
     }
 }
 
@@ -318,9 +319,9 @@ static inline void dac_ll_sh_set_sample_cycle(dac_channel_t channel, uint16_t cy
 static inline void dac_ll_sh_set_hold_cycle(dac_channel_t channel, uint16_t cycle)
 {
     if (channel == DAC_CHAN_0) {
-        LP_DAC.hold_wait_cfg.wait_target_hold_pad_0 = cycle;
+        HAL_FORCE_MODIFY_U32_REG_FIELD(LP_DAC.hold_wait_cfg, wait_target_hold_pad_0, cycle);
     } else if (channel == DAC_CHAN_1) {
-        LP_DAC.hold_wait_cfg.wait_target_hold_pad_1 = cycle;
+        HAL_FORCE_MODIFY_U32_REG_FIELD(LP_DAC.hold_wait_cfg, wait_target_hold_pad_1, cycle);
     }
 }
 
@@ -335,9 +336,9 @@ static inline void dac_ll_sh_set_hold_cycle(dac_channel_t channel, uint16_t cycl
 static inline void dac_ll_sh_set_refresh_cycle(dac_channel_t channel, uint16_t cycle)
 {
     if (channel == DAC_CHAN_0) {
-        LP_DAC.refresh_wait_cfg.wait_target_refresh_pad_0 = cycle;
+        HAL_FORCE_MODIFY_U32_REG_FIELD(LP_DAC.refresh_wait_cfg, wait_target_refresh_pad_0, cycle);
     } else if (channel == DAC_CHAN_1) {
-        LP_DAC.refresh_wait_cfg.wait_target_refresh_pad_1 = cycle;
+        HAL_FORCE_MODIFY_U32_REG_FIELD(LP_DAC.refresh_wait_cfg, wait_target_refresh_pad_1, cycle);
     }
 }
 
@@ -468,7 +469,7 @@ static inline void dac_ll_cw_set_timer_target(uint32_t timer_target)
  */
 static inline void dac_ll_cw_set_fstep(uint16_t fstep)
 {
-    LP_DAC.sintx_cfg.sw_fstep = fstep;
+    HAL_FORCE_MODIFY_U32_REG_FIELD(LP_DAC.sintx_cfg, sw_fstep, fstep);
 }
 
 /**
