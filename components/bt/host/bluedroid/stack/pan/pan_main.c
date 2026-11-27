@@ -38,6 +38,7 @@
 #include "pan_int.h"
 #include "stack/sdp_api.h"
 #include "stack/sdpdefs.h"
+#include "device/controller.h"
 
 #if PAN_DYNAMIC_MEMORY == FALSE
 tPAN_CB pan_cb;
@@ -49,6 +50,17 @@ tPAN_CB *pan_cb_ptr;
 UINT8 constant_pan_uuid[UUID_CONSTANT_PART] = {
     0, 0, 0x10, 0, 0x80, 0x00, 0x00, 0x80, 0x5f, 0x9b, 0x34, 0xfb
 };
+
+/* GN/NAP relay decision. PANU does not bridge. */
+#define PAN_BRIDGE_LOCAL  0 /* Deliver to the host, do not relay. */
+#define PAN_BRIDGE_FILTER 1 /* Destination is on the ingress port. */
+#define PAN_BRIDGE_PORT   2 /* Relay to one other port. */
+#define PAN_BRIDGE_FLOOD  3 /* Group or unknown unicast: other ports and host. */
+
+typedef struct {
+    UINT8 action;
+    UINT16 handle;
+} tPAN_BRIDGE;
 
 /*******************************************************************************
  *
@@ -315,6 +327,39 @@ void pan_conn_ind_cb(UINT16 handle, BD_ADDR p_bda,
     return;
 }
 
+/* active_role caches the role of a port that is up: PAN_WriteBuf routes every
+ * unicast write with it, and PAN_Connect plus pan_conn_ind_cb reject new
+ * connections with it. Recompute it from the live ports whenever one goes away
+ * (here and in PAN_Disconnect) so it never names a role no connection has. */
+void pan_active_role_from_live(void)
+{
+    UINT16 i;
+    UINT8 fallback = PAN_ROLE_INACTIVE;
+
+    for (i = 0; i < MAX_PAN_CONNS; i++) {
+        UINT8 role;
+
+        if (pan_cb.pcb[i].con_state == PAN_STATE_IDLE) {
+            continue;
+        }
+        if (pan_cb.pcb[i].src_uuid == UUID_SERVCLASS_PANU) {
+            role = PAN_ROLE_CLIENT;
+        } else if (pan_cb.pcb[i].src_uuid == UUID_SERVCLASS_GN) {
+            role = PAN_ROLE_GN_SERVER;
+        } else {
+            role = PAN_ROLE_NAP_SERVER;
+        }
+        if (role == pan_cb.prv_active_role) {
+            pan_cb.active_role = role;
+            return;
+        }
+        if (fallback == PAN_ROLE_INACTIVE) {
+            fallback = role;
+        }
+    }
+    pan_cb.active_role = fallback;
+}
+
 /*******************************************************************************
  *
  * Function         pan_connect_state_cb
@@ -356,8 +401,11 @@ void pan_connect_state_cb(UINT16 handle, BD_ADDR rem_bda,
                                         is_role_change, PAN_ROLE_INACTIVE,
                                         PAN_ROLE_INACTIVE);
 
-        /* Check if this failure is for role change only */
-        if (pcb->con_state != PAN_STATE_CONNECTED &&
+        /* Peer reject and security failure keep the BNEP link and set
+         * is_role_change. Timeout and link loss free the BCB and report a
+         * plain failure. */
+        if (is_role_change &&
+                pcb->con_state != PAN_STATE_CONNECTED &&
                 (pcb->con_flags & PAN_FLAGS_CONN_COMPLETED)) {
             /* restore the original values */
             PAN_TRACE_EVENT("restoring the connection state to active");
@@ -380,10 +428,19 @@ void pan_connect_state_cb(UINT16 handle, BD_ADDR rem_bda,
             if ((pcb->src_uuid == UUID_SERVCLASS_NAP) && pan_cb.pan_bridge_req_cb) {
                 (*pan_cb.pan_bridge_req_cb)(pcb->rem_bda, FALSE);
             }
+        } else if (pcb->con_flags & PAN_FLAGS_CONN_COMPLETED) {
+            /* The link died during renegotiation. src_uuid is already the
+             * requested role; the bridge belongs to the role that was up. */
+            PAN_TRACE_EVENT("PAN renegotiation failed with the link down");
+            if (pcb->prv_src_uuid == UUID_SERVCLASS_NAP && pan_cb.pan_bridge_req_cb) {
+                (*pan_cb.pan_bridge_req_cb)(pcb->rem_bda, FALSE);
+            }
         }
 
         pan_cb.num_conns--;
         pan_release_pcb(pcb);
+        /* The port that owned active_role is gone. */
+        pan_active_role_from_live();
         return;
     }
 
@@ -406,6 +463,14 @@ void pan_connect_state_cb(UINT16 handle, BD_ADDR rem_bda,
 
     pcb->con_state = PAN_STATE_CONNECTED;
 
+    /* This port no longer bridges. Entries learned while it was GN or NAP
+     * would still match the handle and be discarded only on a role mismatch. */
+    if (is_role_change && pcb->src_uuid == UUID_SERVCLASS_PANU &&
+            (pcb->prv_src_uuid == UUID_SERVCLASS_GN ||
+             pcb->prv_src_uuid == UUID_SERVCLASS_NAP)) {
+        pan_fdb_remove_by_handle(pcb->handle);
+    }
+
     /* Inform the application that connection is down */
     if (pan_cb.pan_conn_state_cb)
         (*pan_cb.pan_conn_state_cb)(pcb->handle, pcb->rem_bda, PAN_SUCCESS,
@@ -415,6 +480,89 @@ void pan_connect_state_cb(UINT16 handle, BD_ADDR rem_bda,
     if (pan_cb.pan_bridge_req_cb && pcb->src_uuid == UUID_SERVCLASS_NAP) {
         PAN_TRACE_EVENT("PAN requesting for bridge");
         (*pan_cb.pan_bridge_req_cb)(pcb->rem_bda, TRUE);
+    }
+}
+
+static BOOLEAN pan_eth_is_local(BD_ADDR addr)
+{
+    const controller_t *controller = controller_get_interface();
+    const UINT8 *local;
+
+    if (controller == NULL || controller->get_address == NULL) {
+        return FALSE;
+    }
+    local = (const UINT8 *)controller->get_address();
+    if (local == NULL) {
+        return FALSE;
+    }
+    return !bdcmp(addr, local);
+}
+
+static void pan_bridge_decide(tPAN_CONN *pcb, BD_ADDR src, BD_ADDR dst,
+                              tPAN_BRIDGE *out)
+{
+    tPAN_CONN *dst_pcb;
+
+    out->action = PAN_BRIDGE_LOCAL;
+    out->handle = 0;
+
+    /* 802.1D learning uses the Ethernet source, not the peer BD_ADDR. */
+    if (!pan_eth_is_local(src)) {
+        pan_fdb_learn(src, pcb->handle);
+    }
+
+    if (dst[0] & 0x01) {
+        out->action = PAN_BRIDGE_FLOOD;
+        return;
+    }
+    if (pan_eth_is_local(dst)) {
+        return;
+    }
+
+    dst_pcb = pan_fdb_lookup(dst);
+    if (dst_pcb != NULL && dst_pcb->src_uuid != pcb->src_uuid) {
+        dst_pcb = NULL;
+    }
+    if (dst_pcb == NULL) {
+        /* Peer BD_ADDR is still a valid egress when that address was never
+         * seen as an Ethernet source. A learned entry above takes priority. */
+        dst_pcb = pan_get_pcb_by_addr(dst);
+        if (dst_pcb != NULL &&
+                (dst_pcb->con_state != PAN_STATE_CONNECTED ||
+                 dst_pcb->src_uuid != pcb->src_uuid)) {
+            dst_pcb = NULL;
+        }
+    }
+
+    if (dst_pcb == NULL) {
+        out->action = PAN_BRIDGE_FLOOD;
+        return;
+    }
+    if (dst_pcb->handle == pcb->handle) {
+        out->action = PAN_BRIDGE_FILTER;
+        return;
+    }
+    out->action = PAN_BRIDGE_PORT;
+    out->handle = dst_pcb->handle;
+}
+
+static void pan_bridge_flood(tPAN_CONN *pcb, BD_ADDR src, BD_ADDR dst,
+                             UINT16 protocol, UINT8 *p_data, UINT16 len,
+                             BOOLEAN ext)
+{
+    UINT16 i;
+    tBNEP_RESULT result;
+
+    for (i = 0; i < MAX_PAN_CONNS; i++) {
+        if (pan_cb.pcb[i].con_state == PAN_STATE_CONNECTED &&
+                pan_cb.pcb[i].handle != pcb->handle &&
+                pcb->src_uuid == pan_cb.pcb[i].src_uuid) {
+            result = BNEP_Write(pan_cb.pcb[i].handle, dst, p_data, len, protocol, src, ext);
+            if (result != BNEP_SUCCESS && result != BNEP_IGNORE_CMD) {
+                PAN_TRACE_ERROR("Failed to write data for PAN connection handle %d",
+                                pan_cb.pcb[i].handle);
+            }
+        }
     }
 }
 
@@ -443,19 +591,9 @@ void pan_data_ind_cb(UINT16 handle, BD_ADDR src,
                      UINT16 len, BOOLEAN ext)
 {
     tPAN_CONN *pcb;
-    UINT16 i;
+    tPAN_BRIDGE bridge;
+    tBNEP_RESULT result;
     BOOLEAN forward;
-
-    /*
-    ** Check the connection status
-    ** If the destination address is MAC broadcast send on all links
-    ** except on the one received
-    ** If the destination uuid is for NAP send to host system also
-    ** If the destination address is one of the devices connected
-    ** send the packet to over that link
-    ** If the destination address is unknown and destination uuid is NAP
-    ** send it to the host system
-    */
 
     PAN_TRACE_EVENT("pan_data_ind_cb - for handle %d", handle);
     pcb = pan_get_pcb_by_handle(handle);
@@ -470,43 +608,25 @@ void pan_data_ind_cb(UINT16 handle, BD_ADDR src,
         return;
     }
 
-    /* Check if it is broadcast packet */
-    if (dst[0] & 0x01) {
-        PAN_TRACE_DEBUG("PAN received broadcast packet on handle %d, src uuid 0x%x",
-                        handle, pcb->src_uuid);
-        for (i = 0; i < MAX_PAN_CONNS; i++) {
-            if (pan_cb.pcb[i].con_state == PAN_STATE_CONNECTED &&
-                    pan_cb.pcb[i].handle != handle &&
-                    pcb->src_uuid == pan_cb.pcb[i].src_uuid) {
-                BNEP_Write(pan_cb.pcb[i].handle, dst, p_data, len, protocol, src, ext);
+    forward = (pcb->src_uuid == UUID_SERVCLASS_NAP) ? TRUE : FALSE;
+    if (pcb->src_uuid != UUID_SERVCLASS_PANU) {
+        pan_bridge_decide(pcb, src, dst, &bridge);
+        if (bridge.action == PAN_BRIDGE_PORT) {
+            result = BNEP_Write(bridge.handle, dst, p_data, len, protocol, src, ext);
+            if (result != BNEP_SUCCESS && result != BNEP_IGNORE_CMD) {
+                PAN_TRACE_ERROR("Failed to write data for PAN connection handle %d",
+                                bridge.handle);
             }
+            return;
         }
-
-        if (pan_cb.pan_data_ind_cb)
-            (*pan_cb.pan_data_ind_cb)(pcb->handle, src, dst, protocol, p_data, len,
-                                      ext, TRUE);
-
-        return;
-    }
-
-    /* Check if it is for any other PAN connection */
-    for (i = 0; i < MAX_PAN_CONNS; i++) {
-        if (pan_cb.pcb[i].con_state == PAN_STATE_CONNECTED &&
-                pcb->src_uuid == pan_cb.pcb[i].src_uuid) {
-            if (!bdcmp(pan_cb.pcb[i].rem_bda, dst)) {
-                BNEP_Write(pan_cb.pcb[i].handle, dst, p_data, len, protocol, src, ext);
-                return;
-            }
+        if (bridge.action == PAN_BRIDGE_FILTER) {
+            return;
+        }
+        if (bridge.action == PAN_BRIDGE_FLOOD) {
+            pan_bridge_flood(pcb, src, dst, protocol, p_data, len, ext);
         }
     }
 
-    if (pcb->src_uuid == UUID_SERVCLASS_NAP) {
-        forward = TRUE;
-    } else {
-        forward = FALSE;
-    }
-
-    /* Send it over the LAN or give it to host software */
     if (pan_cb.pan_data_ind_cb)
         (*pan_cb.pan_data_ind_cb)(pcb->handle, src, dst, protocol, p_data, len, ext,
                                   forward);
@@ -538,9 +658,10 @@ void pan_data_buf_ind_cb(UINT16 handle, BD_ADDR src,
                          BD_ADDR dst, UINT16 protocol,
                          BT_HDR *p_buf, BOOLEAN ext)
 {
-    tPAN_CONN *pcb, *dst_pcb;
+    tPAN_CONN *pcb;
+    tPAN_BRIDGE bridge;
     tBNEP_RESULT result;
-    UINT16 i, len;
+    UINT16 len;
     UINT8 *p_data;
     BOOLEAN forward = FALSE;
 
@@ -566,55 +687,30 @@ void pan_data_buf_ind_cb(UINT16 handle, BD_ADDR src,
         "pan_data_buf_ind_cb - for handle %d, protocol 0x%x, length %d, ext %d",
         handle, protocol, len, ext);
 
-    if (pcb->src_uuid == UUID_SERVCLASS_NAP) {
-        forward = TRUE;
-    } else {
-        forward = FALSE;
-    }
+    forward = (pcb->src_uuid == UUID_SERVCLASS_NAP) ? TRUE : FALSE;
 
-    /* Check if it is broadcast or multicast packet */
+    /* GN/NAP: learn the Ethernet source, then filter, direct, or flood. */
     if (pcb->src_uuid != UUID_SERVCLASS_PANU) {
-        if (dst[0] & 0x01) {
-            PAN_TRACE_DEBUG(
-                "PAN received broadcast packet on handle %d, src uuid 0x%x", handle,
-                pcb->src_uuid);
-            for (i = 0; i < MAX_PAN_CONNS; i++) {
-                if (pan_cb.pcb[i].con_state == PAN_STATE_CONNECTED &&
-                        pan_cb.pcb[i].handle != handle &&
-                        pcb->src_uuid == pan_cb.pcb[i].src_uuid) {
-                    BNEP_Write(pan_cb.pcb[i].handle, dst, p_data, len, protocol, src,
-                               ext);
-                }
-            }
-
-            if (pan_cb.pan_data_buf_ind_cb)
-                (*pan_cb.pan_data_buf_ind_cb)(pcb->handle, src, dst, protocol, p_buf,
-                                              ext, forward);
-            else if (pan_cb.pan_data_ind_cb) {
-                (*pan_cb.pan_data_ind_cb)(pcb->handle, src, dst, protocol, p_data, len,
-                                          ext, forward);
-                osi_free(p_buf);
-            } else {
-                osi_free(p_buf);
-            }
-
-            return;
-        }
-
-        /* Check if it is for any other PAN connection */
-        dst_pcb = pan_get_pcb_by_addr(dst);
-        if (dst_pcb) {
+        pan_bridge_decide(pcb, src, dst, &bridge);
+        if (bridge.action == PAN_BRIDGE_PORT) {
             PAN_TRACE_EVENT(
-                "%s - destination PANU found on handle %d and sending data, len: %d",
-                __func__, dst_pcb->handle, len);
-
-            result =
-                BNEP_Write(dst_pcb->handle, dst, p_data, len, protocol, src, ext);
-            if (result != BNEP_SUCCESS && result != BNEP_IGNORE_CMD)
+                "%s - relay len %d to handle %d", __func__, len, bridge.handle);
+            result = BNEP_Write(bridge.handle, dst, p_data, len, protocol, src, ext);
+            if (result != BNEP_SUCCESS && result != BNEP_IGNORE_CMD) {
                 PAN_TRACE_ERROR("Failed to write data for PAN connection handle %d",
-                                dst_pcb->handle);
+                                bridge.handle);
+            }
             osi_free(p_buf);
             return;
+        }
+        if (bridge.action == PAN_BRIDGE_FILTER) {
+            osi_free(p_buf);
+            return;
+        }
+        if (bridge.action == PAN_BRIDGE_FLOOD) {
+            PAN_TRACE_DEBUG(
+                "PAN flood on handle %d, src uuid 0x%x", handle, pcb->src_uuid);
+            pan_bridge_flood(pcb, src, dst, protocol, p_data, len, ext);
         }
     }
 

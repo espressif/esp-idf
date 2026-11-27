@@ -364,11 +364,33 @@ tPAN_RESULT PAN_Connect(BD_ADDR rem_bda, UINT8 src_role,
         }
         mx_chan_id = src_uuid.uu.uuid16;
     }
+    /* GN to GN. NAP to GN or NAP is not a PAN profile connection. */
+    else if (src_role == PAN_ROLE_GN_SERVER && dst_role == PAN_ROLE_GN_SERVER) {
+        if (pan_cb.num_conns && pan_cb.active_role == PAN_ROLE_CLIENT && !pcb) {
+            PAN_TRACE_ERROR("Device already have a connection in PANU role");
+            return PAN_INVALID_SRC_ROLE;
+        }
+
+        src_uuid.uu.uuid16 = UUID_SERVCLASS_GN;
+        dst_uuid.uu.uuid16 = UUID_SERVCLASS_GN;
+        mx_chan_id = src_uuid.uu.uuid16;
+    }
     /* The role combination is not valid */
     else {
         PAN_TRACE_ERROR(
             "Source %d and Destination roles %d are not valid combination",
             src_role, dst_role);
+        return PAN_FAILURE;
+    }
+
+    /* Same peer and the same roles are already up. A BNEP setup with unchanged
+     * UUIDs completes inside BNEP and posts no open result, so the application
+     * would not see a failure. Reject it here and leave the existing link alone.
+     */
+    if (pcb != NULL && pcb->con_state == PAN_STATE_CONNECTED &&
+            pcb->src_uuid == src_uuid.uu.uuid16 &&
+            pcb->dst_uuid == dst_uuid.uu.uuid16) {
+        PAN_TRACE_ERROR("PAN connection already exists for the same roles");
         return PAN_FAILURE;
     }
 
@@ -409,7 +431,7 @@ tPAN_RESULT PAN_Connect(BD_ADDR rem_bda, UINT8 src_role,
     if (result != BNEP_SUCCESS) {
         if (pcb->con_flags & PAN_FLAGS_CONN_COMPLETED) {
             /* Role renegotiation failed synchronously; BNEP/L2CAP are still up.
-             * Restore the PCB like pan_connect_state_cb does for async failures. */
+             * Restore the PCB, as pan_connect_state_cb does when the link stays up. */
             PAN_TRACE_EVENT("PAN_Connect: restore active connection after renegotiation failure");
             pcb->con_state = PAN_STATE_CONNECTED;
             pcb->con_flags &= (~PAN_FLAGS_CONN_COMPLETED);
@@ -467,6 +489,7 @@ tPAN_RESULT PAN_Disconnect(UINT16 handle)
     }
 
     pan_release_pcb(pcb);
+    pan_active_role_from_live();
 
     if (result != BNEP_SUCCESS) {
         PAN_TRACE_EVENT("Error in closing PAN connection");

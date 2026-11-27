@@ -88,11 +88,6 @@ typedef union {
     tBTA_PAN_CLOSE close;       /* Connection has been closed. */
 } tBTA_PAN;
 
-/* Number of PAN connections */
-#ifndef BTA_PAN_NUM_CONN
-#define BTA_PAN_NUM_CONN 4
-#endif
-
 /* PAN callback */
 typedef void (tBTA_PAN_CBACK)(tBTA_PAN_EVT event, tBTA_PAN *p_data);
 

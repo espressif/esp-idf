@@ -67,6 +67,20 @@ typedef struct {
 
 } tPAN_CONN;
 
+/* IEEE 802.1D filtering database. Entries are learned from the Ethernet
+ * source address of received frames, not from the peer Bluetooth address.
+ * PAN_FDB_AGE_MS is the 802.1D recommended default ageing time.
+ */
+#define PAN_FDB_ENTRIES 16
+#define PAN_FDB_AGE_MS  (300U * 1000U)
+
+typedef struct {
+    BOOLEAN in_use;
+    BD_ADDR addr;
+    UINT16 handle;
+    UINT32 last_ms;
+} tPAN_FDB_ENT;
+
 /*  The main PAN control block
  */
 typedef struct {
@@ -91,6 +105,7 @@ typedef struct {
     UINT32 pan_nap_sdp_handle;
     UINT8 num_conns;
     UINT8 trace_level;
+    tPAN_FDB_ENT fdb[PAN_FDB_ENTRIES];
 } tPAN_CB;
 
 /* Global PAN data
@@ -127,8 +142,13 @@ extern UINT32 pan_register_with_sdp(UINT16 uuid, UINT8 sec_mask,
 extern tPAN_CONN *pan_allocate_pcb(BD_ADDR p_bda, UINT16 handle);
 extern tPAN_CONN *pan_get_pcb_by_handle(UINT16 handle);
 extern tPAN_CONN *pan_get_pcb_by_addr(BD_ADDR p_bda);
+extern void pan_fdb_learn(BD_ADDR addr, UINT16 handle);
+extern tPAN_CONN *pan_fdb_lookup(BD_ADDR addr);
+extern void pan_fdb_remove_by_handle(UINT16 handle);
+extern void pan_fdb_clear(void);
 extern void pan_close_all_connections(void);
 extern void pan_release_pcb(tPAN_CONN *p_pcb);
+extern void pan_active_role_from_live(void);
 extern void pan_dump_status(void);
 
 /******************************************************************************/

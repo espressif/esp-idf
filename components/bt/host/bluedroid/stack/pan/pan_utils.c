@@ -37,6 +37,7 @@
 #include "pan_int.h"
 #include "stack/sdp_api.h"
 #include "stack/sdpdefs.h"
+#include "osi/alarm.h"
 
 static const UINT8 pan_proto_elem_data[] = {
     0x35, 0x18,       /* data element sequence of length 0x18 bytes */
@@ -264,6 +265,131 @@ tPAN_CONN *pan_get_pcb_by_addr(BD_ADDR p_bda)
 
 /*******************************************************************************
  *
+ * Function         pan_fdb_learn
+ *
+ * Description      Record that a unicast Ethernet source was seen on handle.
+ *                  Group addresses are not learned. A full table replaces the
+ *                  oldest entry. Moving a station updates the port.
+ *
+ ******************************************************************************/
+void pan_fdb_learn(BD_ADDR addr, UINT16 handle)
+{
+    UINT16 i;
+    UINT32 now;
+    UINT32 age;
+    UINT32 oldest_age = 0;
+    tPAN_FDB_ENT *ent;
+    tPAN_FDB_ENT *slot = NULL;
+    tPAN_FDB_ENT *oldest = NULL;
+
+    if (addr[0] & 0x01) {
+        return;
+    }
+
+    now = osi_time_get_os_boottime_ms();
+    for (i = 0; i < PAN_FDB_ENTRIES; i++) {
+        ent = &pan_cb.fdb[i];
+
+        if (ent->in_use && ((UINT32)(now - ent->last_ms) >= PAN_FDB_AGE_MS)) {
+            ent->in_use = FALSE;
+        }
+        if (ent->in_use && !bdcmp(ent->addr, addr)) {
+            ent->handle = handle;
+            ent->last_ms = now;
+            return;
+        }
+        if (!ent->in_use) {
+            if (slot == NULL) {
+                slot = ent;
+            }
+            continue;
+        }
+        age = (UINT32)(now - ent->last_ms);
+        if (oldest == NULL || age >= oldest_age) {
+            oldest = ent;
+            oldest_age = age;
+        }
+    }
+
+    if (slot == NULL) {
+        slot = oldest;
+    }
+    if (slot == NULL) {
+        return;
+    }
+    slot->in_use = TRUE;
+    bdcpy(slot->addr, addr);
+    slot->handle = handle;
+    slot->last_ms = now;
+}
+
+/*******************************************************************************
+ *
+ * Function         pan_fdb_lookup
+ *
+ * Description      Return the connection a unicast Ethernet address was
+ *                  learned on. Aged and disconnected entries are dropped.
+ *
+ ******************************************************************************/
+tPAN_CONN *pan_fdb_lookup(BD_ADDR addr)
+{
+    UINT16 i;
+    UINT32 now;
+    tPAN_FDB_ENT *ent;
+    tPAN_CONN *pcb;
+
+    now = osi_time_get_os_boottime_ms();
+    for (i = 0; i < PAN_FDB_ENTRIES; i++) {
+        ent = &pan_cb.fdb[i];
+
+        if (!ent->in_use || bdcmp(ent->addr, addr)) {
+            continue;
+        }
+        if ((UINT32)(now - ent->last_ms) >= PAN_FDB_AGE_MS) {
+            ent->in_use = FALSE;
+            return NULL;
+        }
+        pcb = pan_get_pcb_by_handle(ent->handle);
+        if (pcb == NULL || pcb->con_state != PAN_STATE_CONNECTED) {
+            ent->in_use = FALSE;
+            return NULL;
+        }
+        return pcb;
+    }
+    return NULL;
+}
+
+/*******************************************************************************
+ *
+ * Function         pan_fdb_remove_by_handle
+ *
+ * Description      Drop filtering entries for a closed connection, or for a
+ *                  port that left GN or NAP and no longer bridges.
+ *
+ ******************************************************************************/
+void pan_fdb_remove_by_handle(UINT16 handle)
+{
+    UINT16 i;
+
+    for (i = 0; i < PAN_FDB_ENTRIES; i++) {
+        if (pan_cb.fdb[i].in_use && pan_cb.fdb[i].handle == handle) {
+            pan_cb.fdb[i].in_use = FALSE;
+        }
+    }
+}
+
+/*******************************************************************************
+ *
+ * Function         pan_fdb_clear
+ *
+ ******************************************************************************/
+void pan_fdb_clear(void)
+{
+    memset(pan_cb.fdb, 0, sizeof(pan_cb.fdb));
+}
+
+/*******************************************************************************
+ *
  * Function         pan_close_all_connections
  *
  * Description
@@ -284,6 +410,7 @@ void pan_close_all_connections(void)
 
     pan_cb.active_role = PAN_ROLE_INACTIVE;
     pan_cb.num_conns = 0;
+    pan_fdb_clear();
     return;
 }
 
@@ -299,6 +426,7 @@ void pan_close_all_connections(void)
 void pan_release_pcb(tPAN_CONN *p_pcb)
 {
     /* Drop any response pointer we may be holding */
+    pan_fdb_remove_by_handle(p_pcb->handle);
     memset(p_pcb, 0, sizeof(tPAN_CONN));
     p_pcb->con_state = PAN_STATE_IDLE;
 }

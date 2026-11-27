@@ -157,7 +157,7 @@ typedef enum {
     ESP_PAN_INIT_EVT = 0,                 /*!< When PAN is initialized, the event comes. */
     ESP_PAN_DEINIT_EVT,                   /*!< When PAN is deinitialized, the event comes. */
     ESP_PAN_SET_ROLE_EVT,                 /*!< When PAN role registration completes, the event comes. */
-    ESP_PAN_OPEN_EVT,                     /*!< When a PAN connection is opened, the event comes. */
+    ESP_PAN_OPEN_EVT,                     /*!< When a PAN connection is opened, or roles on an existing connection are renegotiated. Renegotiation reuses the handle. */
     ESP_PAN_CLOSE_EVT,                    /*!< When a PAN connection is closed, the event comes. */
     ESP_PAN_DATA_IND_EVT,                 /*!< When PAN connection received data, the event comes. */
     ESP_PAN_CONG_EVT,                     /*!< When PAN connection congestion status changed, the event comes. */
@@ -194,13 +194,18 @@ typedef union {
 
     /**
      * @brief ESP_PAN_OPEN_EVT
+     *
+     * Reported for a new connection and again when roles change on an existing
+     * connection, whether this device or the peer started the change. The handle
+     * stays the same and ESP_PAN_CLOSE_EVT is not reported. Do not treat every
+     * event as a new connection.
      */
     struct pan_open_evt_param {
         esp_pan_status_t status;          /*!< Connection open status. */
         esp_bd_addr_t remote_bda;         /*!< Remote Bluetooth device address. */
-        uint16_t handle;                  /*!< Connection handle assigned by PAN stack. */
-        esp_pan_role_t local_role;        /*!< Local role used for this connection. */
-        esp_pan_role_t peer_role;         /*!< Peer role used for this connection. */
+        uint16_t handle;                  /*!< Connection handle. Unchanged when roles are renegotiated. */
+        esp_pan_role_t local_role;        /*!< On success, the local role in use. On failure, the local role requested by this open. */
+        esp_pan_role_t peer_role;         /*!< On success, the peer role in use. On failure, the peer role requested by this open. */
     } open;                               /*!< PAN callback param of ESP_PAN_OPEN_EVT */
 
     /**
@@ -221,7 +226,7 @@ typedef union {
         uint16_t len;                     /*!< Length of the payload pointed to by data. */
         uint8_t *data;                    /*!< Pointer to L3 payload. Ethernet header is not included. */
         bool ext;                         /*!< TRUE if BNEP extension headers are present. */
-        bool forward;                     /*!< TRUE if the frame is forwarded by GN/NAP. */
+        bool forward;                     /*!< TRUE if the local role is NAP. */
     } data_ind;                           /*!< PAN callback param of ESP_PAN_DATA_IND_EVT */
 
     /**
@@ -319,6 +324,13 @@ esp_err_t esp_pan_deinit(void);
  *
  *              When the connection is established or fails, the callback function will be called with ESP_PAN_OPEN_EVT.
  *              This function must be called after esp_pan_init() succeeds and before esp_pan_deinit().
+ *
+ *              If remote_bda is already connected and the requested roles differ, the roles are
+ *              renegotiated on that connection. The handle does not change. Success and failure
+ *              are both ESP_PAN_OPEN_EVT, with no ESP_PAN_CLOSE_EVT. On failure the roles already
+ *              in use remain. If the link is lost during renegotiation, ESP_PAN_CLOSE_EVT is
+ *              reported and the handle is released.
+ *              Requesting the roles already in use fails with ESP_PAN_OPEN_EVT and leaves the link up.
  *
  * @param[in]   remote_bda: Remote Bluetooth device address.
  * @param[in]   local_role: Local PAN role for this connection. One of ESP_PAN_ROLE_PANU, ESP_PAN_ROLE_GN, ESP_PAN_ROLE_NAP.
