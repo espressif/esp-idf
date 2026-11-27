@@ -96,7 +96,8 @@ include_directories("${secure_service_headers_dir}")
 externalproject_add(esp_tee
     SOURCE_DIR "${CMAKE_CURRENT_LIST_DIR}/subproject"
     BINARY_DIR "${TEE_BUILD_DIR}"
-    CMAKE_ARGS  -DSDKCONFIG=${esp_tee_sdkconfig} -DIDF_PATH=${idf_path} -DIDF_TARGET=${idf_target}
+    CMAKE_ARGS  -DCMAKE_INSTALL_PREFIX=<INSTALL_DIR>
+                -DSDKCONFIG=${esp_tee_sdkconfig} -DIDF_PATH=${idf_path} -DIDF_TARGET=${idf_target}
                 -DCUSTOM_SECURE_SERVICE_COMPONENT=${custom_secure_service_component}
                 -DCUSTOM_SECURE_SERVICE_COMPONENT_DIR=${custom_secure_service_dir}
                 -DSECURE_SERVICE_HEADERS_DIR=${secure_service_headers_dir}
