@@ -9,6 +9,7 @@
 
 #include "soc/soc_caps.h"
 #include "soc/pmu_reg.h"
+#include "soc/lp_timer_reg.h"
 
 #include "modem/i2c_ana_mst_reg.h"
 #include "modem/modem_syscon_reg.h"
@@ -61,15 +62,15 @@ esp_err_t sleep_phy_link_init(void **link_context)
         [4]  = REGDMA_LINK_WRITE_INIT(REGDMA_PHY_LINK(0x04), SARADC_TSENS_REG,                 SARADC_TSENS_PU,           0x400000,   1, 0),
 
         [5]  = REGDMA_LINK_WRITE_INIT(REGDMA_PHY_LINK(0x05), I2C_ANA_MST_I2C_BURST_CONF_REG,   0,                         0xffffffff, 1, 0),
-        [6]  = REGDMA_LINK_WRITE_INIT(REGDMA_PHY_LINK(0x06), PMU_DATE_REG,                     ~I2C_ANA_MST_BURST_DONE,   0x1,        1, 0),
-        [7]  = REGDMA_LINK_WAIT_INIT (REGDMA_PHY_LINK(0x07), PMU_DATE_REG,                     ~I2C_ANA_MST_BURST_DONE,   0x1,        1, 0),
+        [6]  = REGDMA_LINK_WRITE_INIT(REGDMA_PHY_LINK(0x06), LP_TIMER_DATE_REG,                     ~I2C_ANA_MST_BURST_DONE,   0x1,        1, 0),
+        [7]  = REGDMA_LINK_WAIT_INIT (REGDMA_PHY_LINK(0x07), LP_TIMER_DATE_REG,                     ~I2C_ANA_MST_BURST_DONE,   0x1,        1, 0),
         [8]  = REGDMA_LINK_WAIT_INIT (REGDMA_PHY_LINK(0x08), I2C_ANA_MST_I2C_BURST_STATUS_REG, I2C_ANA_MST_BURST_DONE,    0x1,        1, 0),
 
         [9]  = REGDMA_LINK_WRITE_INIT(REGDMA_PHY_LINK(0x09), FECOEX_SET_FREQ_SET_CHAN_REG,     FECOEX_SET_FREQ_RESETN,    FECOEX_SET_FREQ_RESETN,    1, 0),\
         [10]  = REGDMA_LINK_WRITE_INIT(REGDMA_PHY_LINK(0x0a), FECOEX_SET_FREQ_SET_CHAN_REG,     FECOEX_SET_CHAN_EN,        0x20000,    1, 0),
         [11]  = REGDMA_LINK_WRITE_INIT(REGDMA_PHY_LINK(0x0b), FECOEX_SET_FREQ_SET_CHAN_REG,     0,                         0x20000,    1, 0),
-        [12] = REGDMA_LINK_WRITE_INIT(REGDMA_PHY_LINK(0x0c), PMU_DATE_REG,                     ~FECOEX_SET_CHAN_DONE,     0x100,      1, 0),
-        [13] = REGDMA_LINK_WAIT_INIT (REGDMA_PHY_LINK(0x0d), PMU_DATE_REG,                     ~FECOEX_SET_CHAN_DONE,     0x100,      1, 0),
+        [12] = REGDMA_LINK_WRITE_INIT(REGDMA_PHY_LINK(0x0c), LP_TIMER_DATE_REG,                     ~FECOEX_SET_CHAN_DONE,     0x100,      1, 0),
+        [13] = REGDMA_LINK_WAIT_INIT (REGDMA_PHY_LINK(0x0d), LP_TIMER_DATE_REG,                     ~FECOEX_SET_CHAN_DONE,     0x100,      1, 0),
         [14] = REGDMA_LINK_WAIT_INIT (REGDMA_PHY_LINK(0x0e), FECOEX_SET_FREQ_SET_CHAN_ST_REG,  FECOEX_SET_CHAN_DONE,      0x100,      1, 0),
         [15] = REGDMA_LINK_WRITE_INIT(REGDMA_PHY_LINK(0x0f), MODEM_SYSCON_WIFI_BB_CFG_REG,     BIT(1),                    0x2,        1, 0),
         [16] = REGDMA_LINK_WRITE_INIT(REGDMA_PHY_LINK(0x10), FECOEX_AGC_CONF_REG,              0,                         0x20000000, 1, 0),
@@ -82,8 +83,8 @@ esp_err_t sleep_phy_link_init(void **link_context)
         [19] = REGDMA_LINK_WRITE_INIT(REGDMA_PHY_LINK(0x13), MODEM_SYSCON_WIFI_BB_CFG_REG,     0,                         0x2,        0, 1),
         [20] = REGDMA_LINK_WRITE_INIT(REGDMA_PHY_LINK(0x14), FECOEX_SET_FREQ_SET_CHAN_REG,     0,                         0x20000,    0, 1),
         [21] = REGDMA_LINK_WRITE_INIT(REGDMA_PHY_LINK(0x15), I2C_ANA_MST_I2C_BURST_CONF_REG,   0,                         0xffffffff, 0, 1),
-        [22] = REGDMA_LINK_WRITE_INIT(REGDMA_PHY_LINK(0x16), PMU_DATE_REG,                     ~I2C_ANA_MST_BURST_DONE,   0x1,        0, 1),
-        [23] = REGDMA_LINK_WAIT_INIT (REGDMA_PHY_LINK(0x17), PMU_DATE_REG,                     ~I2C_ANA_MST_BURST_DONE,   0x1,        0, 1),
+        [22] = REGDMA_LINK_WRITE_INIT(REGDMA_PHY_LINK(0x16), LP_TIMER_DATE_REG,                     ~I2C_ANA_MST_BURST_DONE,   0x1,        0, 1),
+        [23] = REGDMA_LINK_WAIT_INIT (REGDMA_PHY_LINK(0x17), LP_TIMER_DATE_REG,                     ~I2C_ANA_MST_BURST_DONE,   0x1,        0, 1),
         [24] = REGDMA_LINK_WAIT_INIT (REGDMA_PHY_LINK(0x18), I2C_ANA_MST_I2C_BURST_STATUS_REG, I2C_ANA_MST_BURST_DONE,    0x1,        0, 1),
         [25] = REGDMA_LINK_WRITE_INIT(REGDMA_PHY_LINK(0x19), SARADC_TSENS_REG,                 0,                         0x400000,   0, 1),
         [26] = REGDMA_LINK_WRITE_INIT(REGDMA_PHY_LINK(0x1a), PMU_RF_PWR_REG,                   0,                         0xf0000000, 0, 1),
@@ -92,12 +93,12 @@ esp_err_t sleep_phy_link_init(void **link_context)
         [28] = REGDMA_LINK_WRITE_INIT(REGDMA_PHY_LINK(0x1c), MODEM_LPCON_CLK_CONF_REG,         0,                         MODEM_LPCON_CLK_I2C_MST_EN_M,       0, 1), /* I2C MST disable */
 
         /* PMU to trigger disable RXBLOCK */
-        [29] = REGDMA_LINK_WRITE_INIT(REGDMA_PHY_LINK(0x1d), PMU_DATE_REG,                     ~0,                        0x6000,     0, 1),
-        [30] = REGDMA_LINK_WAIT_INIT (REGDMA_PHY_LINK(0x1e), PMU_DATE_REG,                     ~0,                        0x6000,     0, 1),
+        [29] = REGDMA_LINK_WRITE_INIT(REGDMA_PHY_LINK(0x1d), LP_TIMER_DATE_REG,                     ~0,                        0x6000,     0, 1),
+        [30] = REGDMA_LINK_WAIT_INIT (REGDMA_PHY_LINK(0x1e), LP_TIMER_DATE_REG,                     ~0,                        0x6000,     0, 1),
         [31] = REGDMA_LINK_WAIT_INIT (REGDMA_PHY_LINK(0x1f), WDEVTXQ_BLOCK,                    0,                         0x6000,     0, 1),
         [32] = REGDMA_LINK_WRITE_INIT(REGDMA_PHY_LINK(0x20), WDEVTXQ_BLOCK,                    WDEV_RXBLOCK,              0x1000,     0, 1),
-        [33] = REGDMA_LINK_WRITE_INIT(REGDMA_PHY_LINK(0x21), PMU_DATE_REG,                     ~0,                        0x6000,     0, 1),
-        [34] = REGDMA_LINK_WAIT_INIT (REGDMA_PHY_LINK(0x22), PMU_DATE_REG,                     ~0,                        0x6000,     0, 1),
+        [33] = REGDMA_LINK_WRITE_INIT(REGDMA_PHY_LINK(0x21), LP_TIMER_DATE_REG,                     ~0,                        0x6000,     0, 1),
+        [34] = REGDMA_LINK_WAIT_INIT (REGDMA_PHY_LINK(0x22), LP_TIMER_DATE_REG,                     ~0,                        0x6000,     0, 1),
         [35] = REGDMA_LINK_WAIT_INIT (REGDMA_PHY_LINK(0x23), WDEVTXQ_BLOCK,                    0,                         0x6000,     0, 1),
 
         [36] = REGDMA_LINK_WRITE_INIT(REGDMA_PHY_LINK(0x24), PMU_SLP_WAKEUP_CNTL7_REG,         0x200000,                  0xffff0000, 1, 0),

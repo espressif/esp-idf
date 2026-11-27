@@ -30,7 +30,7 @@
 #endif
 
 #if SOC_PM_PAU_REGDMA_UPDATE_CACHE_BEFORE_WAIT_COMPARE
-#include "soc/pmu_reg.h" // for PMU_DATE_REG, it can provide full 32 bit read and write access
+#include "soc/lp_timer_reg.h" // for LP_TIMER_DATE_REG, it can provide full 32 bit read and write access
 #endif
 #if SOC_CACHE_INTERNAL_MEM_VIA_L1CACHE
 #include "hal/cache_ll.h"
@@ -735,8 +735,8 @@ static esp_err_t entries_create(const sleep_retention_entries_config_t retent[],
             bool skip_b = retent[i].config.head.skip_b;
             bool skip_r = retent[i].config.head.skip_r;
             sleep_retention_entries_config_t wait_bug_workaround[] = {
-                [0] = { .config = REGDMA_LINK_WRITE_INIT(0xfffe, PMU_DATE_REG, ~value, mask, skip_b, skip_r), .owner = retent[i].owner },
-                [1] = { .config = REGDMA_LINK_WAIT_INIT (0xfffe, PMU_DATE_REG, ~value, mask, skip_b, skip_r), .owner = retent[i].owner }
+                [0] = { .config = REGDMA_LINK_WRITE_INIT(0xfffe, LP_TIMER_DATE_REG, ~value, mask, skip_b, skip_r), .owner = retent[i].owner },
+                [1] = { .config = REGDMA_LINK_WAIT_INIT (0xfffe, LP_TIMER_DATE_REG, ~value, mask, skip_b, skip_r), .owner = retent[i].owner }
             };
             err = entries_create(wait_bug_workaround, ARRAY_SIZE(wait_bug_workaround), priority, module);
         }
