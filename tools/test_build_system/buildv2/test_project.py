@@ -32,7 +32,7 @@ def test_project_init_explicit_steps_without_binary(idf_py: IdfPyFunc) -> None:
 @pytest.mark.usefixtures('test_app_copy')
 def test_project_default_produces_all_artifacts(idf_py: IdfPyFunc) -> None:
     """idf_project_default() should produce ELF, .bin, project_description.json,
-    flasher_args.json, and standard build targets (menuconfig, uf2, size)."""
+    flasher_args.json, project_index.json, and standard build targets (menuconfig, uf2, size)."""
     logging.info('Testing idf_project_default full artifact generation')
 
     idf_py('build')
@@ -44,6 +44,17 @@ def test_project_default_produces_all_artifacts(idf_py: IdfPyFunc) -> None:
 
     flasher_args = json.loads(Path('build/flasher_args.json').read_text())
     assert 'flash_files' in flasher_args, 'flasher_args.json should contain flash_files'
+
+    project_index = json.loads(Path('build/project_index.json').read_text())
+    assert project_index == {
+        'version': 1,
+        'apps': {
+            'build_test_app': {
+                'project_description': ['project_description.json'],
+                'flasher_args': ['flasher_args.json'],
+            },
+        },
+    }, f'unexpected project_index.json: {project_index}'
 
     ninja_targets_result = subprocess.run(
         ['ninja', '-t', 'targets', 'all'],

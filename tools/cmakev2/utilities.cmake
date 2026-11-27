@@ -799,7 +799,8 @@ endfunction()
     files.
 #]]
 function(file_generate output)
-    cmake_parse_arguments(_ "" "INPUT;CONTENT" "" ${ARGN})
+    # PARSE_ARGV keeps a semicolon in CONTENT, e.g. in a generator expression.
+    cmake_parse_arguments(PARSE_ARGV 1 _ "" "INPUT;CONTENT" "")
 
     if(__INPUT)
         file(GENERATE OUTPUT "${output}" INPUT "${__INPUT}")

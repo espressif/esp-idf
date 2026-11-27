@@ -1086,6 +1086,11 @@ function(idf_build_generate_metadata)
     file(GENERATE OUTPUT "${ARG_OUTPUT_FILE}"
          CONTENT "${project_description_json_templ}")
 
+    # Used by the __generate_project_index function.
+    file(RELATIVE_PATH index_file "${BUILD_DIR}" "${ARG_OUTPUT_FILE}")
+    set_property(TARGET "${ARG_EXECUTABLE}" APPEND PROPERTY __PROJECT_DESCRIPTION_FILES "${index_file}")
+    idf_build_set_property(__PROJECT_INDEX_EXECUTABLES "${ARG_EXECUTABLE}" APPEND)
+
     # Assumption: all hints.yml files are bare YAML lists (no "---" document
     # separators). Plain string concatenation is safe under this assumption.
     # Note for consumers: yaml.safe_load() only parses the first YAML document,
@@ -1365,7 +1370,8 @@ endfunction()
     *FLASH[in,opt]*
 
         If specified, the binary will also be added to the global ``flash``
-        target.
+        target. It is an error if the global ``flash`` target already contains
+        an image at the binary's offset.
 
     Create a new flash target for ``binary`` using the name specified in the
     ``TARGET`` option. The file path of the binary image should be stored in
@@ -1410,9 +1416,26 @@ function(idf_flash_binary binary)
     esptool_py_flash_target_image("${ARG_TARGET}" "${ARG_NAME}" "${offset}" "${binary_path}")
     add_dependencies("${ARG_TARGET}" "${binary}")
 
+    # Used by the idf_build_generate_flasher_args function.
+    set_target_properties("${binary}" PROPERTIES FLASH_TARGET "${ARG_TARGET}"
+                                                 FLASH_OFFSET "${offset}")
+
     if(ARG_FLASH)
+        # The global flash target can contain only one image at an offset.
+        get_target_property(images flash FLASH_FILE)
+        list(FILTER images INCLUDE REGEX "^\"${offset}\"")
+        if(images)
+            idf_die("Binary target '${binary}' cannot be added to the global 'flash' target, "
+                    "offset ${offset} is already used: ${images}")
+        endif()
         esptool_py_flash_target_image(flash ${ARG_NAME} "${offset}" "${binary_path}")
         add_dependencies(flash "${binary}")
+
+        # Used by the __generate_project_index function.
+        get_target_property(executable "${binary}" EXECUTABLE_TARGET)
+        if(executable)
+            idf_build_set_property(__PROJECT_INDEX_FLASH_EXECUTABLES "${executable}" APPEND)
+        endif()
     endif()
 endfunction()
 

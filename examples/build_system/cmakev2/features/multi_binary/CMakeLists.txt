@@ -46,13 +46,18 @@ idf_build_binary(app2.elf
                  OUTPUT_FILE "${CMAKE_BINARY_DIR}/app2.bin"
                  TARGET app2_binary)
 
-# Do NOT pass FLASH here: both apps share the same 0x10000 offset, which would
-# create a duplicate key in the global 'flash' target and break flasher_args.json.
+# Do NOT pass FLASH here: both apps share the same 0x10000 offset, and the
+# global 'flash' target can contain only one image at an offset.
 # app1 (with FLASH) is used as the default app in flasher_args.json; the pytest
 # test swaps in app2.bin when needed.
 idf_flash_binary(app2_binary
                  TARGET app2-flash
                  NAME "app2")
+
+# Generate flasher_args_app2.json: the images of flasher_args.json, with
+# app2.bin instead of app1.bin at 0x10000.
+idf_build_generate_flasher_args(BINARY app2_binary
+                                OUTPUT_FILE "${CMAKE_BINARY_DIR}/flasher_args_app2.json")
 
 # Generate metadata for app2. idf_build_generate_metadata writes the
 # project_description.json and the gdbinit files to shared default paths, so

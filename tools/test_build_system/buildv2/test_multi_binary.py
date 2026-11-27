@@ -74,7 +74,9 @@ def test_multi_binary_all_features(idf_py: IdfPyFunc) -> None:
         '  idf_create_size_report(app2_mapfile TARGET size-app2)\n'
         'endif()\n'
         # Generate flasher args
-        'idf_build_generate_flasher_args()\n',
+        'idf_build_generate_flasher_args()\n'
+        'idf_build_generate_flasher_args(BINARY app2_bin\n'
+        '    OUTPUT_FILE "${CMAKE_BINARY_DIR}/flasher_args_app2.json")\n',
     )
 
     idf_py('build')
@@ -106,6 +108,36 @@ def test_multi_binary_all_features(idf_py: IdfPyFunc) -> None:
     flash_files = flasher_args.get('flash_files', {})
     flash_values = ' '.join(str(v) for v in flash_files.values())
     assert 'app1' in flash_values, f'flasher_args.json should reference app1, got flash_files: {flash_files}'
+
+    # Verify flasher_args_app2.json: the images of flasher_args.json, with app2.bin instead of app1.bin.
+    # json.loads() keeps only the last of duplicate keys, so check the text for app1.bin.
+    flasher_args_app2_text = Path('build/flasher_args_app2.json').read_text()
+    assert 'app1.bin' not in flasher_args_app2_text, 'flasher_args_app2.json should not reference app1.bin'
+    flasher_args_app2 = json.loads(flasher_args_app2_text)
+    app_offset = flasher_args['app1']['offset']
+    assert flasher_args_app2['flash_files'] == {**flash_files, app_offset: 'app2.bin'}, (
+        f'unexpected flash_files in flasher_args_app2.json: {flasher_args_app2["flash_files"]}'
+    )
+    assert flasher_args_app2['app2'] == {**flasher_args['app1'], 'file': 'app2.bin'}, (
+        f'unexpected app2 entry in flasher_args_app2.json: {flasher_args_app2["app2"]}'
+    )
+
+    # Verify project_index.json lists the generated files of each executable, in the order of the calls.
+    # flasher_args.json belongs to app1, because app1_bin is added to the global flash target.
+    project_index = json.loads(Path('build/project_index.json').read_text())
+    assert project_index == {
+        'version': 1,
+        'apps': {
+            'app1': {
+                'project_description': ['project_description.json', 'project_description_bin.json'],
+                'flasher_args': ['flasher_args.json'],
+            },
+            'app2': {
+                'project_description': ['project_description_app2.json'],
+                'flasher_args': ['flasher_args_app2.json'],
+            },
+        },
+    }, f'unexpected project_index.json: {project_index}'
 
     # Read build.ninja once for all checks
     ninja = Path('build/build.ninja').read_text()

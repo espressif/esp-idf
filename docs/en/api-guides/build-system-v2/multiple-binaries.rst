@@ -41,6 +41,36 @@ To emit the ``project_description.json`` and gdbinit files that tooling such as 
 
 Each executable's ``project_description.json`` then references its own ELF and points ``gdbinit_files`` at its own directory, so a debugger loads the symbols of the executable it was launched for.
 
+Tools read the images to flash from ``flasher_args.json``. To generate this file, call :cmakev2:ref:`idf_build_generate_flasher_args`. Without arguments, the file describes the global ``flash`` target. In this example, only ``app1`` is added to the global ``flash`` target with ``FLASH``. Both applications use the same flash offset, and the global ``flash`` target can contain only one image at an offset. For ``app2``, pass its binary with ``BINARY`` and a distinct ``OUTPUT_FILE`` in the build directory:
+
+.. code-block:: cmake
+
+    idf_build_generate_flasher_args()
+    idf_build_generate_flasher_args(BINARY app2_binary
+                                    OUTPUT_FILE "${CMAKE_BINARY_DIR}/flasher_args_app2.json")
+
+``flasher_args_app2.json`` then contains the images of ``flasher_args.json``, with ``app2.bin`` instead of ``app1.bin``.
+
+The build system also writes ``project_index.json`` to the build directory. For each executable target, this file lists the project description and flasher args files generated above. Tools can use it to find the files of each application:
+
+.. code-block:: json
+
+    {
+        "version": 1,
+        "apps": {
+            "app1.elf": {
+                "project_description": ["project_description.json"],
+                "flasher_args": ["flasher_args.json"]
+            },
+            "app2.elf": {
+                "project_description": ["project_description_app2.json"],
+                "flasher_args": ["flasher_args_app2.json"]
+            }
+        }
+    }
+
+The format is described in :cmakev2:ref:`idf_project_init`.
+
 .. note::
 
     A multi-binary project has a single project-wide ``sdkconfig``, and a
