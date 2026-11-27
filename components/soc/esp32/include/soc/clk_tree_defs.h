@@ -386,6 +386,19 @@ typedef enum {
     DAC_COSINE_CLK_SRC_DEFAULT = SOC_MOD_CLK_RTC_FAST,  /*!< Select RTC FAST as the default source clock */
 } soc_periph_dac_cosine_clk_src_t;
 
+/**
+ * @brief Array initializer for all supported clock sources of DAC oneshot output
+ */
+#define SOC_DAC_ONESHOT_CLKS {SOC_MOD_CLK_RTC_FAST}
+
+/**
+ * @brief DAC oneshot clock source
+ */
+typedef enum {
+    DAC_ONESHOT_CLK_SRC_RTC_FAST = SOC_MOD_CLK_RTC_FAST, /*!< Select RTC FAST as the source clock */
+    DAC_ONESHOT_CLK_SRC_DEFAULT = SOC_MOD_CLK_RTC_FAST,  /*!< Select RTC FAST as the default source clock */
+} soc_periph_dac_oneshot_clk_src_t;
+
 //////////////////////////////////////////////////TWAI/////////////////////////////////////////////////////////////////
 
 /**

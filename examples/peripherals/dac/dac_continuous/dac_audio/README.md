@@ -1,5 +1,5 @@
-| Supported Targets | ESP32 | ESP32-S2 |
-| ----------------- | ----- | -------- |
+| Supported Targets | ESP32 | ESP32-S2 | ESP32-S31 |
+| ----------------- | ----- | -------- | --------- |
 
 # DAC Continuous Audio Example
 
@@ -13,7 +13,7 @@ This example shows how to play a piece of audio by DAC driver.
 
 ### Hardware Required
 
-* A development board with ESP32 or ESP32-S2 SoC
+* A development board with ESP32, ESP32-S2, or ESP32-S31 SoC
 * DAC channel to GPIO mapping: see [GPIO Summary](https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-reference/peripherals/gpio.html#gpio-summary) (switch the chip target on the documentation page if needed)
 * Note that some ESP32-S2 DevKits have an LED on the DAC1 pin, so that channel's output may not go fully low
 * An Audio Power Amplifier like `NS4150`

@@ -64,6 +64,7 @@ extern portMUX_TYPE dac_priv_spinlock;
 #define DAC_DIV_CEIL(n, d) (((n) + (d) - 1) / (d))
 #define DAC_MAX(a, b) ((a) > (b) ? (a) : (b))
 #define DAC_CLAMP(x, min, max) ((x) < (min) ? (min) : ((x) > (max) ? (max) : (x)))
+#define DAC_ABS_DIFF(a, b) ((a) > (b) ? (a) - (b) : (b) - (a))
 
 #define IS_VALID_DAC_CLK_SRC(clk_src, clk_src_list) ({                          \
     bool _dac_valid = false;                                                    \
@@ -156,9 +157,8 @@ esp_err_t dac_priv_channel_enable(dac_channel_t chan_id, dac_channel_config_t ch
  */
 esp_err_t dac_priv_channel_disable(dac_channel_t chan_id);
 
-#if DAC_LL_SHARED_HS_LS_CLK
 /*---------------------------------------------------------------
-                  DAC HS/LS clock management
+                      DAC clock management
 ---------------------------------------------------------------*/
 
 /**
@@ -171,6 +171,25 @@ typedef enum {
     DAC_LS_CLK_CONSTRAINT_COUNT,
 } dac_ls_clk_constraint_t;
 
+/**
+ * @brief Acquire a DAC clock reference with the requested LS constraint
+ *
+ * @param[in] source Clock source validated by the caller
+ * @param[in] constraint LS clock constraint, ignored on targets without HS/LS clocks.
+ * @param[out] freq_hz DAC HS frequency on targets with HS/LS clocks, otherwise the source frequency.
+ *                     Pass NULL when the frequency is not needed.
+ * @note On failure, the caller holds no new clock reference.
+ */
+esp_err_t dac_priv_clk_acquire_unified(soc_module_clk_t source, dac_ls_clk_constraint_t constraint, uint32_t *freq_hz);
+
+/**
+ * @brief Release a DAC clock reference using the source and constraint from its successful acquire
+ *
+ * @note The constraint is ignored on targets without HS/LS clocks.
+ */
+esp_err_t dac_priv_clk_release_unified(soc_module_clk_t source, dac_ls_clk_constraint_t constraint);
+
+#if DAC_LL_SHARED_HS_LS_CLK
 /**
  * @brief Acquire the shared DAC clocks and one LS clock constraint reference
  *

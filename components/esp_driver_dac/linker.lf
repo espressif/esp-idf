@@ -7,6 +7,9 @@ entries:
 
         if IDF_TARGET_ESP32 = y || IDF_TARGET_ESP32S2 = y:
             dac_dma: dac_priv_dma_intr_handler (noflash)
+        else:
+            dac_dma: dac_priv_dma_gdma_done_callback (noflash)
+            dac_dma: dac_priv_dma_gdma_teof_callback (noflash)
 
         if IDF_TARGET_ESP32 = y:
             dac_dma: dac_priv_dma_trans_start (noflash)
