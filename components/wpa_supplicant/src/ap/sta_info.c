@@ -288,7 +288,7 @@ void ap_sta_delayed_1x_auth_fail_disconnect(struct hostapd_data *hapd,
 	eloop_cancel_timeout(ap_sta_delayed_1x_auth_fail_cb, hapd, sta);
 	eloop_register_timeout(0, 10000, ap_sta_delayed_1x_auth_fail_cb,
 			       hapd, sta);
-	if (wps_get_status() == WPS_STATUS_PENDING)
+	if (wps_get_status() == WPS_STATUS_PENDING && wps_get_owner() == WPS_OWNER_REGISTRAR)
 		wps_set_status(WPS_STATUS_SUCCESS);
 }
 
