@@ -564,6 +564,12 @@ endif()
 # mbedtls but don't call any mbedtls function
 if(NOT (CMAKE_SYSTEM_NAME STREQUAL "Darwin" AND ${IDF_TARGET} STREQUAL "linux"))
     target_link_libraries(${COMPONENT_LIB} ${linkage_type} "-u esp_mbedtls_mem_calloc")
+    # The same for esp_platform_time.c: libtfpsacrypto.a calls mbedtls_ms_time(), but this
+    # component's library comes before it on the link line, so an app that uses PSA Crypto
+    # without TLS doesn't otherwise link on the Linux target.
+    if(CONFIG_MBEDTLS_HAVE_TIME)
+        target_link_libraries(${COMPONENT_LIB} ${linkage_type} "-u mbedtls_ms_time")
+    endif()
 endif()
 
 # Additional optional dependencies for the mbedcrypto library
