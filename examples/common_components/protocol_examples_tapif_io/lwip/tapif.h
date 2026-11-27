@@ -17,9 +17,10 @@ err_t lwip_tapif_init(struct netif *netif);
 
 /**
  * @brief Input data path
- * @param h pointer to network stack handle (stuct netif* in our case)
+ * @param h pointer to network stack handle (struct netif* in our case)
  * @param buffer Data
  * @param len Data size
  * @param l2_buff Data L2 buffer
+ * @return ESP_OK if lwIP took the frame, ESP_ERR_NO_MEM if no pbuf was free, ESP_FAIL otherwise
  */
-void lwip_tapif_input(void *h, void *buffer, size_t len, void *l2_buff);
+esp_err_t lwip_tapif_input(void *h, void *buffer, size_t len, void *l2_buff);
