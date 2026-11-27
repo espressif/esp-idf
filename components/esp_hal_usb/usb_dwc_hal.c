@@ -824,7 +824,7 @@ usb_dwc_hal_chan_t *usb_dwc_hal_get_chan_pending_intr(usb_dwc_hal_context_t *hal
     }
 }
 
-usb_dwc_hal_chan_event_t usb_dwc_hal_chan_decode_intr_desc_dma(usb_dwc_hal_chan_t *chan_obj)
+usb_dwc_hal_chan_event_t usb_dwc_hal_chan_decode_intr(usb_dwc_hal_chan_t *chan_obj)
 {
     uint32_t chan_intrs = usb_dwc_ll_hcint_read_and_clear_intrs(chan_obj->regs);
     usb_dwc_hal_chan_event_t chan_event;
