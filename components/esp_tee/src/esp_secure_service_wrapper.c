@@ -404,7 +404,7 @@ esp_err_t IRAM_ATTR __wrap_spi_flash_hal_set_write_protect(spi_flash_host_inst_t
 
 esp_err_t IRAM_ATTR __wrap_spi_flash_hal_setup_read_suspend(spi_flash_host_inst_t *host, const spi_flash_sus_cmd_conf *sus_conf)
 {
-    return esp_tee_service_call(6, SS_SPI_FLASH_HAL_SETUP_READ_SUSPEND, host, sus_conf);
+    return esp_tee_service_call(3, SS_SPI_FLASH_HAL_SETUP_READ_SUSPEND, host, sus_conf);
 }
 
 bool IRAM_ATTR __wrap_spi_flash_hal_supports_direct_read(spi_flash_host_inst_t *host, const void *p)
