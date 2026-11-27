@@ -396,7 +396,9 @@ static inline twai_error_flags_t twaifd_ll_get_err_reason(twaifd_dev_t *hw)
         .bit_err = error_code == TWAIFD_LL_ERR_BIT_ERR,
         .form_err = error_code == TWAIFD_LL_ERR_FRM_ERR,
         .stuff_err = error_code == TWAIFD_LL_ERR_STUF_ERR,
-        .ack_err = error_code == TWAIFD_LL_ERR_ACK_ERR
+        .ack_err = error_code == TWAIFD_LL_ERR_ACK_ERR,
+        .crc_err = error_code == TWAIFD_LL_ERR_CRC_ERR,
+        .other_err = error_code > TWAIFD_LL_ERR_STUF_ERR,
     };
     return errors;
 }
