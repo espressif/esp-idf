@@ -11,6 +11,18 @@
 #include "freertos/semphr.h"
 #include "esp_private/twai_frame_queue.h"
 
+#if CONFIG_TWAI_IO_FUNC_IN_IRAM
+#define TWAI_QUEUE_IO_ATTR IRAM_ATTR
+#else
+#define TWAI_QUEUE_IO_ATTR
+#endif
+
+#if CONFIG_TWAI_IO_FUNC_IN_IRAM || CONFIG_TWAI_ISR_IN_IRAM
+#define TWAI_QUEUE_ISR_ATTR IRAM_ATTR
+#else
+#define TWAI_QUEUE_ISR_ATTR
+#endif
+
 /**
  * @brief Priority queue item for TWAI frame pointers.
  *
@@ -152,7 +164,7 @@ esp_err_t twai_frame_queue_del(twai_frame_queue_t queue)
     return ESP_OK;
 }
 
-esp_err_t twai_frame_queue_push(twai_frame_queue_t queue, const twai_frame_t *data, uint32_t priority, int timeout_ms)
+TWAI_QUEUE_IO_ATTR esp_err_t twai_frame_queue_push(twai_frame_queue_t queue, const twai_frame_t *data, uint32_t priority, int timeout_ms)
 {
     if (!queue || !queue->spaces_sem) {
         return ESP_ERR_INVALID_ARG;
@@ -169,7 +181,7 @@ esp_err_t twai_frame_queue_push(twai_frame_queue_t queue, const twai_frame_t *da
     return ESP_OK;
 }
 
-esp_err_t twai_frame_queue_push_from_isr(twai_frame_queue_t queue, const twai_frame_t *data, uint32_t priority, bool *task_woken)
+TWAI_QUEUE_IO_ATTR esp_err_t twai_frame_queue_push_from_isr(twai_frame_queue_t queue, const twai_frame_t *data, uint32_t priority, bool *task_woken)
 {
     if (!queue || !queue->spaces_sem) {
         return ESP_ERR_INVALID_ARG;
@@ -185,7 +197,7 @@ esp_err_t twai_frame_queue_push_from_isr(twai_frame_queue_t queue, const twai_fr
     return ESP_OK;
 }
 
-esp_err_t twai_frame_queue_push_safe(twai_frame_queue_t queue, const twai_frame_t *data, uint32_t priority, int timeout_ms)
+TWAI_QUEUE_IO_ATTR esp_err_t twai_frame_queue_push_safe(twai_frame_queue_t queue, const twai_frame_t *data, uint32_t priority, int timeout_ms)
 {
     if (xPortInIsrContext()) {
         bool task_woken = false;
@@ -199,7 +211,7 @@ esp_err_t twai_frame_queue_push_safe(twai_frame_queue_t queue, const twai_frame_
     return twai_frame_queue_push(queue, data, priority, ticks_to_wait);
 }
 
-esp_err_t twai_frame_queue_pop(twai_frame_queue_t queue, const twai_frame_t **data)
+TWAI_QUEUE_IO_ATTR esp_err_t twai_frame_queue_pop(twai_frame_queue_t queue, const twai_frame_t **data)
 {
     bool ret;
 
@@ -217,7 +229,7 @@ esp_err_t twai_frame_queue_pop(twai_frame_queue_t queue, const twai_frame_t **da
     return ret ? ESP_OK : ESP_ERR_NOT_FOUND;
 }
 
-esp_err_t twai_frame_queue_pop_from_isr(twai_frame_queue_t queue, const twai_frame_t **data, bool *task_woken)
+TWAI_QUEUE_ISR_ATTR esp_err_t twai_frame_queue_pop_from_isr(twai_frame_queue_t queue, const twai_frame_t **data, bool *task_woken)
 {
     bool ret;
 
@@ -235,7 +247,7 @@ esp_err_t twai_frame_queue_pop_from_isr(twai_frame_queue_t queue, const twai_fra
     return ret ? ESP_OK : ESP_ERR_NOT_FOUND;
 }
 
-esp_err_t twai_frame_queue_pop_safe(twai_frame_queue_t queue, const twai_frame_t **data)
+TWAI_QUEUE_IO_ATTR esp_err_t twai_frame_queue_pop_safe(twai_frame_queue_t queue, const twai_frame_t **data)
 {
     if (xPortInIsrContext()) {
         bool task_woken = false;

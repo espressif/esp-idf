@@ -619,7 +619,6 @@ static esp_err_t _node_queue_tx(twai_node_handle_t node, const twai_frame_t *fra
     ESP_RETURN_ON_FALSE_ISR(!twai_ctx->hal->enable_listen_only, ESP_ERR_NOT_SUPPORTED, TAG, "node is config as listen only");
     ESP_RETURN_ON_FALSE_ISR(atomic_load(&twai_ctx->state) != TWAI_ERROR_BUS_OFF, ESP_ERR_INVALID_STATE, TAG, "node is bus off");
 
-    xEventGroupClearBits(twai_ctx->event_group, TWAI_IDLE_EVENT_BIT); //going to send, clear the idle event
     bool false_var = false;
     if (atomic_compare_exchange_strong(&twai_ctx->hw_busy, &false_var, true)) {
         twai_ctx->p_curr_tx[0] = frame; // here only has one frame, using slot 0
@@ -636,6 +635,16 @@ static esp_err_t _node_queue_tx(twai_node_handle_t node, const twai_frame_t *fra
             } else {
                 // any reason here means frame already taken and maybe finished by fast hardware, so back `hw_busy` to false
                 atomic_store(&twai_ctx->hw_busy, false);
+                // a waiter may have seen the claim above as busy, wake it to check again
+                if (xPortInIsrContext()) {
+                    BaseType_t do_yield = pdFALSE;
+                    xEventGroupSetBitsFromISR(twai_ctx->event_group, TWAI_IDLE_EVENT_BIT, &do_yield);
+                    if (do_yield) {
+                        portYIELD_FROM_ISR();
+                    }
+                } else {
+                    xEventGroupSetBits(twai_ctx->event_group, TWAI_IDLE_EVENT_BIT);
+                }
             }
         }
     }
@@ -648,15 +657,22 @@ static esp_err_t _node_wait_tx_all_done(twai_node_handle_t node, int timeout)
     TickType_t ticks_to_wait = (timeout == -1) ? portMAX_DELAY : pdMS_TO_TICKS(timeout);
     ESP_RETURN_ON_FALSE(atomic_load(&twai_ctx->state) != TWAI_ERROR_BUS_OFF, ESP_ERR_INVALID_STATE, TAG, "node is bus off");
 
-    // either hw_busy or tx_queue is not empty, means tx is not finished
-    // otherwise, hardware is idle, return immediately
-    if (atomic_load(&twai_ctx->hw_busy) || twai_frame_queue_get_count(twai_ctx->tx_queue)) {
-        //wait for idle event bit but without clear it, every tasks block here can be waked up
-        if (TWAI_IDLE_EVENT_BIT != xEventGroupWaitBits(twai_ctx->event_group, TWAI_IDLE_EVENT_BIT, pdFALSE, pdFALSE, ticks_to_wait)) {
+    // The idle bit only says the node may have gone idle since it was last cleared: `_node_queue_tx` can run
+    // from an ISR, where it cannot clear the bit synchronously, and the ISR sets it through the timer task.
+    // So the real state decides, and a waiter that finds the node idle sets the bit again for the other waiters.
+    TimeOut_t time_out;
+    vTaskSetTimeOutState(&time_out);
+    while (true) {
+        xEventGroupClearBits(twai_ctx->event_group, TWAI_IDLE_EVENT_BIT);
+        if (!atomic_load(&twai_ctx->hw_busy) && !twai_frame_queue_get_count(twai_ctx->tx_queue)) {
+            xEventGroupSetBits(twai_ctx->event_group, TWAI_IDLE_EVENT_BIT);
+            return ESP_OK;
+        }
+        if (xTaskCheckForTimeOut(&time_out, &ticks_to_wait) == pdTRUE) {
             return ESP_ERR_TIMEOUT;
         }
+        xEventGroupWaitBits(twai_ctx->event_group, TWAI_IDLE_EVENT_BIT, pdFALSE, pdFALSE, ticks_to_wait);
     }
-    return ESP_OK;
 }
 
 static esp_err_t _node_parse_rx(twai_node_handle_t node, twai_frame_t *rx_frame)
