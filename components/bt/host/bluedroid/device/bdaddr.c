@@ -32,6 +32,20 @@ static inline bool ets_isxdigit(char c)
     return ((c >= 'A') && (c <= 'F'));
 }
 
+static inline int hex_digit_value(char c)
+{
+    if ((c >= '0') && (c <= '9')) {
+        return c - '0';
+    }
+    if ((c >= 'a') && (c <= 'f')) {
+        return c - 'a' + 10;
+    }
+    if ((c >= 'A') && (c <= 'F')) {
+        return c - 'A' + 10;
+    }
+    return -1;
+}
+
 bool bdaddr_is_empty(const bt_bdaddr_t *addr)
 {
     assert(addr != NULL);
@@ -101,18 +115,29 @@ bool string_to_bdaddr(const char *string, bt_bdaddr_t *addr)
     assert(addr != NULL);
 
     bt_bdaddr_t new_addr;
-    uint8_t *ptr = new_addr.address;
-    uint32_t ptr_32[6];
-    bool ret  = sscanf(string, "%02x:%02x:%02x:%02x:%02x:%02x",
-                      &ptr_32[0], &ptr_32[1], &ptr_32[2], &ptr_32[3], &ptr_32[4], &ptr_32[5]) == 6;
-    if (ret) {
-        for (uint8_t i = 0; i < 6; i++){
-            ptr[i] = (uint8_t) ptr_32[i];
+    for (int i = 0; i < 6; i++) {
+        // One or two hex digits per byte, separated by ':'
+        int value = hex_digit_value(*string);
+        if (value < 0) {
+            return false;
         }
-        memcpy(addr, &new_addr, sizeof(bt_bdaddr_t));
+        string++;
+        int low = hex_digit_value(*string);
+        if (low >= 0) {
+            value = (value << 4) | low;
+            string++;
+        }
+        if (i < 5) {
+            if (*string != ':') {
+                return false;
+            }
+            string++;
+        }
+        new_addr.address[i] = (uint8_t)value;
     }
+    memcpy(addr, &new_addr, sizeof(bt_bdaddr_t));
 
-    return ret;
+    return true;
 }
 
 hash_index_t hash_function_bdaddr(const void *key)
