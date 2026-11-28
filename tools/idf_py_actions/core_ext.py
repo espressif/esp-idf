@@ -27,6 +27,7 @@ from idf_py_actions.constants import URL_TO_DOC
 from idf_py_actions.errors import FatalError
 from idf_py_actions.global_options import global_options
 from idf_py_actions.tools import PropertyDict
+from idf_py_actions.tools import RunTool
 from idf_py_actions.tools import TargetChoice
 from idf_py_actions.tools import ensure_build_directory
 from idf_py_actions.tools import generate_hints
@@ -97,8 +98,11 @@ def action_extensions(base_actions: dict, project_path: str) -> Any:
         `tool_error_handler` handler is used to suppress errors during the build,
         so size action can run even in case of overflow.
         """
+        build_failed = False
 
         def tool_error_handler(e: int, stdout: str, stderr: str) -> None:
+            nonlocal build_failed
+            build_failed = True
             for hint in generate_hints(stdout, stderr):
                 log.hint(escape(hint))
 
@@ -127,6 +131,9 @@ def action_extensions(base_actions: dict, project_path: str) -> Any:
             env['SIZE_DIFF_FILE'] = diff_map_file
 
         ensure_build_directory(args, ctx.info_name)
+        proj_desc = get_build_context().get('proj_desc') or {}
+        map_file = os.path.join(args.build_dir, os.path.splitext(proj_desc['app_elf'])[0] + '.map')
+        map_mtime = os.path.getmtime(map_file) if os.path.exists(map_file) else None
         run_target(
             'all',
             args,
@@ -134,9 +141,27 @@ def action_extensions(base_actions: dict, project_path: str) -> Any:
             custom_error_handler=tool_error_handler,
         )
 
-        proj_desc = get_build_context().get('proj_desc') or {}
         if proj_desc.get('target') == 'linux':
             log.note("'idf.py size' is not supported for the 'linux' target; skipping size analysis.")
+            return
+
+        # The size targets depend on the link, so they fail when the link fails.
+        # The linker writes the map file even when the link fails, for example on
+        # a memory region overflow. If the build failed and wrote the map file,
+        # run the size tool directly on it.
+        if build_failed and os.path.exists(map_file) and os.path.getmtime(map_file) != map_mtime:
+            size_cmd = [sys.executable, '-m', 'esp_idf_size']
+            if output_format != 'default':
+                size_cmd.append(f'--format={output_format}')
+            if output_file:
+                size_cmd.append(f'--output-file={os.path.abspath(output_file)}')
+            size_mode = {'size-files': '--files', 'size-components': '--archives'}.get(target_name)
+            if size_mode:
+                size_cmd.append(size_mode)
+            if diff_map_file:
+                size_cmd.append(f'--diff={diff_map_file}')
+            size_cmd.append(map_file)
+            RunTool('esp_idf_size', size_cmd, args.build_dir, env, hints=not args.no_hints)()
             return
 
         run_target(target_name, args, env=env)
