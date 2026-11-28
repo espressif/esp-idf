@@ -965,6 +965,9 @@ esp_http_client_handle_t esp_http_client_init(const esp_http_client_config_t *co
                );
     if (!_success) {
         ESP_LOGE(TAG, "Error initialize transport");
+        if (tcp != NULL) {
+            esp_transport_destroy(tcp);
+        }
         goto error;
     }
     ESP_GOTO_ON_ERROR(http_convert_addr_family_to_tls(config->addr_type, &addr_family), error, TAG, "Failed to convert addr type %d", config->addr_type);
@@ -982,6 +985,9 @@ esp_http_client_handle_t esp_http_client_init(const esp_http_client_config_t *co
 
     if (!_success) {
         ESP_LOGE(TAG, "Error initialize SSL Transport");
+        if (ssl != NULL) {
+            esp_transport_destroy(ssl);
+        }
         goto error;
     }
     esp_transport_ssl_set_addr_family(ssl, addr_family);
