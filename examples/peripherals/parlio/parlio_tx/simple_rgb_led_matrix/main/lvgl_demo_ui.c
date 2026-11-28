@@ -15,7 +15,7 @@ void example_lvgl_demo_ui(lv_display_t *disp)
     lv_style_set_text_color(&up_style, lv_palette_main(LV_PALETTE_RED));
     lv_obj_add_style(up_label, &up_style, 0);
     lv_label_set_text(up_label, "Hello World");
-    lv_label_set_long_mode(up_label, LV_LABEL_LONG_SCROLL_CIRCULAR); /* Circular scroll */
+    lv_label_set_long_mode(up_label, LV_LABEL_LONG_MODE_SCROLL_CIRCULAR); /* Circular scroll */
     /* Size of the screen */
     lv_obj_set_width(up_label, lv_display_get_horizontal_resolution(disp));
     lv_obj_align_to(up_label, scr, LV_ALIGN_TOP_MID, 0, 0);

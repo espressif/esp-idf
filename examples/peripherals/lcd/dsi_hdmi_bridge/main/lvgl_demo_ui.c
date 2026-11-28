@@ -174,7 +174,7 @@ void example_lvgl_demo_ui(lv_display_t *disp)
                                           gauge_size, arc_width, font_value, font_caption);
         lv_anim_set_var(&animation, arc);
         lv_anim_set_duration(&animation, durations[i]);
-        lv_anim_set_playback_duration(&animation, playbacks[i]);
+        lv_anim_set_reverse_duration(&animation, playbacks[i]);
         lv_anim_start(&animation);
     }
 
