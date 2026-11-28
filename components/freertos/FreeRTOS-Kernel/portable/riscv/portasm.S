@@ -315,7 +315,7 @@ _hwlp_restore_end:
      *
      * Word 0 (Lower 32 bits):
      *  +------+------+------+------+------+------+------+------+ 32
-     *  | res  | res  | res  | res  | res  | res  | res  | res  |
+     *  | res  | cfg  | cfg  | cfg  | cfg  | cfg  | cfg  | cfg  |
      *  +------+------+------+------+------+------+------+------+ 24
      *  | res  | res  | sar  | sar  | sar  | sar  | sar  | sar  |
      *  +------+------+------+------+------+------+------+------+ 16
@@ -340,6 +340,7 @@ _hwlp_restore_end:
      *  - `sar`   = sar bits
      *  - `sarB`  = sar_bytes bits
      *  - `fftW`  = FFT bit width bits
+     *  - `cfg`   = writable CFG fields, packed (see below)
      *  - `res`   = Reserved bits
      *
      */
@@ -360,6 +361,17 @@ _hwlp_restore_end:
     /* SAR register (6 bits) */
     esp.movx.r.sar a1
     sb    a1, 6(\frame)          /* Store byte after the SAR_BYTES and FFT_BIT_WIDTH */
+
+    /* CFG register: MIS_ST [0], MIS_LD [1], VXRM [7:4] and VXSAT_EN [8] are writable,
+     * RM_EXC [3] and VXSAT [2] are read-only flags. Pack the writable fields into the
+     * free byte 7: MIS_ST/MIS_LD in [1:0], VXRM in [5:2], VXSAT_EN in [6].
+     * Note that reading CFG clears VXSAT when VXSAT_EN is set. */
+    esp.movx.r.cfg a1
+    andi  a2, a1, 0x3            /* a2 = MIS_LD | MIS_ST */
+    srli  a1, a1, 2
+    andi  a1, a1, 0x7c           /* a1 = (VXSAT_EN << 6) | (VXRM << 2) */
+    or    a1, a1, a2
+    sb    a1, 7(\frame)
 .endm
 
 
@@ -389,6 +401,7 @@ _hwlp_restore_end:
      * - FFT_BIT_WIDTH      [11..8]
      * - SAR_BYTES          [15..12]
      * - SAR                [21..16]
+     * - CFG (packed)       [30..24]
      *
      * See pie_save_regs macro for more details.
      */
@@ -405,6 +418,14 @@ _hwlp_restore_end:
     /* SAR register (6 bits) */
     lbu   a1, 6(\frame)
     esp.movx.w.sar a1           /* SAR[5:0] = rs1[5:0] */
+
+    /* CFG register, unpacked from byte 7 (see pie_save_regs) */
+    lbu   a1, 7(\frame)
+    andi  a2, a1, 0x3            /* a2 = MIS_LD | MIS_ST */
+    andi  a1, a1, 0x7c
+    slli  a1, a1, 2              /* a1 = (VXSAT_EN << 8) | (VXRM << 4) */
+    or    a1, a1, a2
+    esp.movx.w.cfg a1
 .endm
 
 generate_coprocessor_routine pie, PIE_COPROC_IDX, pie_enable, pie_save_regs, pie_restore_regs

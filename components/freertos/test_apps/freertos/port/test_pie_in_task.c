@@ -7,6 +7,8 @@
 #include "sdkconfig.h"
 #include <math.h>
 #include <string.h>
+#include <inttypes.h>
+#include <stdio.h>
 #include "soc/soc_caps.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
@@ -59,6 +61,20 @@ void pie_store_q_regs(uint32_t dst[32]);
 #else
 #define TEST_PIE_CORE   0
 #endif
+
+/**
+ * @brief Writes the PIE CFG register.
+ *
+ * @param cfg New CFG value
+ */
+void pie_set_cfg(uint32_t cfg);
+
+/**
+ * @brief Reads the PIE CFG register.
+ *
+ * @return CFG value
+ */
+uint32_t pie_get_cfg(void);
 
 /* ------------------------------------------------------------------------------------------------------------------ */
 
@@ -544,6 +560,95 @@ TEST_CASE_MULTIPLE_STAGES("PIE: Task with stack in SPM aborts on PIE use",
                           pie_task_with_stack_in_spm,
                           check_pie_panic_reset);
 #endif /* SOC_MEM_SPM_SUPPORTED */
+
+/*
+Test that the PIE CFG register is part of the task context
+
+Purpose:
+    - Test that the writable fields of CFG (MIS_ST, MIS_LD, VXRM, VXSAT_EN) are saved and restored on a PIE context
+      switch, so that one task changing them (e.g. clearing the hardware misaligned access bits) does not affect
+      another task using the PIE on the same core
+Procedure:
+    - Create two tasks pinned to the same core, each with its own CFG value
+    - The tasks take turns: each writes its CFG value, then blocks while the other task writes its own value, which
+      forces the kernel to save the first task's PIE context
+    - When a task resumes, it reads CFG back and compares the writable fields to the value it wrote
+Expected:
+    - The CFG of each task survives every context switch
+*/
+
+#define TEST_PIE_CFG_NUM_ITERS      20
+#define TEST_PIE_CFG_WRITABLE       0x1f3   /* VXSAT_EN [8], VXRM [7:4], MIS_LD [1], MIS_ST [0] */
+
+typedef struct {
+    uint32_t cfg;
+    TaskHandle_t main;
+    TaskHandle_t other;
+    /* CFG of the first mismatch, checked by the main task since asserts must not fail in a helper task */
+    bool mismatch;
+    uint32_t actual;
+} pie_cfg_params_t;
+
+static void pie_cfg_task(void *arg)
+{
+    pie_cfg_params_t *param = (pie_cfg_params_t *) arg;
+
+    for (int iter = 0; iter < TEST_PIE_CFG_NUM_ITERS; iter++) {
+        ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
+        pie_set_cfg(param->cfg);
+
+        // The other task writes its own CFG now, so the kernel saves our PIE context
+        xTaskNotifyGive(param->other);
+        ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
+
+        uint32_t actual = pie_get_cfg() & TEST_PIE_CFG_WRITABLE;
+        if (!param->mismatch && actual != param->cfg) {
+            param->mismatch = true;
+            param->actual = actual;
+        }
+        xTaskNotifyGive(param->other);
+    }
+
+    xTaskNotifyGive(param->main);
+    vTaskSuspend(NULL);
+}
+
+TEST_CASE("PIE: CFG register is saved and restored on context switch", "[freertos]")
+{
+    pie_cfg_params_t params[2] = {
+        /* hardware misaligned loads and stores, VXRM 6 (half even), saturation tracking */
+        { .cfg = 0x163, .main = xTaskGetCurrentTaskHandle() },
+        /* force-aligned loads and stores, VXRM 1 (ceiling), no saturation tracking */
+        { .cfg = 0x010, .main = xTaskGetCurrentTaskHandle() },
+    };
+    TaskHandle_t tasks[2];
+
+    for (int i = 0; i < 2; i++) {
+        TEST_ASSERT_EQUAL(pdPASS, xTaskCreatePinnedToCore(pie_cfg_task, "pie_cfg", 4096, &params[i],
+                                                          UNITY_FREERTOS_PRIORITY + 1, &tasks[i], TEST_PIE_CORE));
+    }
+    params[0].other = tasks[1];
+    params[1].other = tasks[0];
+
+    // Start the first task, the tasks then take turns
+    xTaskNotifyGive(tasks[0]);
+    for (int i = 0; i < 2; i++) {
+        TEST_ASSERT_NOT_EQUAL(0, ulTaskNotifyTake(pdFALSE, pdMS_TO_TICKS(5000)));
+    }
+
+    for (int i = 0; i < 2; i++) {
+        vTaskDelete(tasks[i]);
+    }
+    for (int i = 0; i < 2; i++) {
+        if (params[i].mismatch) {
+            printf("Task %d: CFG 0x%03" PRIx32 " read back as 0x%03" PRIx32 "\n", i, params[i].cfg, params[i].actual);
+        }
+        TEST_ASSERT_FALSE_MESSAGE(params[i].mismatch, "CFG changed across a context switch");
+    }
+
+    // Let the idle task free the deleted tasks' memory
+    vTaskDelay(10);
+}
 
 #if CONFIG_FREERTOS_DEBUG_TASK_PIE_BLACKLIST
 

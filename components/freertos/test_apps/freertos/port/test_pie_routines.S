@@ -105,4 +105,29 @@ pie_store_q_regs:
     ret
     .size  pie_store_q_regs, .-pie_store_q_regs
 
+/**
+ * @brief Writes the PIE CFG register.
+ *
+ * @param a0 New CFG value
+ */
+    .type pie_set_cfg, @function
+    .global pie_set_cfg
+pie_set_cfg:
+    esp.movx.w.cfg  a0
+    ret
+    .size  pie_set_cfg, .-pie_set_cfg
+
+
+/**
+ * @brief Reads the PIE CFG register.
+ *
+ * @return CFG value
+ */
+    .type pie_get_cfg, @function
+    .global pie_get_cfg
+pie_get_cfg:
+    esp.movx.r.cfg  a0
+    ret
+    .size  pie_get_cfg, .-pie_get_cfg
+
 #endif /* SOC_CPU_HAS_PIE */
