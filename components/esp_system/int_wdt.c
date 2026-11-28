@@ -4,6 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <stdlib.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <stdbool.h>
@@ -32,6 +33,9 @@
 
 #if CONFIG_ESP_INT_WDT && CONFIG_ESP32_ECO3_CACHE_LOCK_FIX
 #include "esp_private/eco3_livelock_workaround.h"
+#include "esp_timer.h"
+#include "hal/mwdt_periph.h"
+#include "soc/timer_group_reg.h"
 #endif
 
 #if TIMG_LL_GET(INST_NUM) > 1
@@ -113,6 +117,206 @@ void ESP_SYSTEM_IRAM_ATTR esp_int_wdt_reconfigure_ticks(uint32_t stage0_ticks, u
 }
 #endif
 
+#if CONFIG_ESP_INT_WDT && CONFIG_ESP32_ECO3_CACHE_LOCK_FIX
+
+static inline __attribute__((always_inline)) void iwdt_observe_barrier(void)
+{
+    __asm__ __volatile__("memw" ::: "memory");
+}
+
+static inline __attribute__((always_inline)) unsigned iwdt_mask_high_interrupts(void)
+{
+    unsigned ps;
+    __asm__ __volatile__("rsil %0, 5; memw" : "=a"(ps) :: "memory");
+    return ps;
+}
+
+static inline __attribute__((always_inline)) void iwdt_restore_high_interrupts(unsigned ps)
+{
+    __asm__ __volatile__("memw; wsr %0, ps; rsync" :: "a"(ps) : "memory");
+}
+
+static inline __attribute__((always_inline)) bool iwdt_interrupt_pending(void)
+{
+    return (REG_READ(TIMG_INT_RAW_TIMERS_REG(1)) & TIMG_WDT_INT_RAW) != 0;
+}
+
+static inline __attribute__((always_inline)) uint32_t iwdt_stage0_ticks(void)
+{
+    return REG_READ(TIMG_WDTCONFIG2_REG(1));
+}
+
+static inline __attribute__((always_inline)) uint32_t iwdt_stage1_ticks(void)
+{
+    return REG_READ(TIMG_WDTCONFIG3_REG(1));
+}
+
+static inline __attribute__((always_inline)) bool iwdt_write_protect_is_open(void)
+{
+    return REG_READ(TIMG_WDTWPROTECT_REG(1)) == TIMG_WDT_WKEY_VALUE;
+}
+
+/* Serialize the livelock handler mode with the hardware timeout.
+ * Handler completion relies on MEMW ordering its peripheral writes before
+ * publishing idle bookkeeping in internal memory.
+ */
+static bool s_livelock_enabled = true;
+
+extern volatile uint32_t _lx_intr_livelock_sync[2];
+extern volatile uint32_t _lx_intr_livelock_app;
+extern volatile uint32_t _lx_intr_livelock_pro;
+
+/* Bound retries without feeding a stalled handler. The hardware watchdog
+ * continues running and may reset the system before this bound expires.
+ */
+#ifndef IWDT_MAX_WAIT_CYCLES
+#define IWDT_MAX_WAIT_CYCLES (1u << 30)
+#endif
+
+/* Observe both handler halves with local high interrupts masked. These
+ * separate loads are rechecked after installing a fresh full timeout.
+ */
+static inline __attribute__((always_inline)) bool iwdt_handler_idle(void)
+{
+    iwdt_observe_barrier();
+    bool idle = !iwdt_interrupt_pending()
+                && _lx_intr_livelock_app == 0 && _lx_intr_livelock_pro == 0
+                && _lx_intr_livelock_sync[0] == 0 && _lx_intr_livelock_sync[1] == 0;
+    iwdt_observe_barrier();
+    return idle;
+}
+
+/* Read-back detects rejected writes; handler exclusion provides ownership. */
+static bool ESP_SYSTEM_IRAM_ATTR iwdt_write_stages(uint32_t stage0_ticks)
+{
+    wdt_hal_write_protect_disable(&iwdt_context);
+    wdt_hal_config_stage(&iwdt_context, WDT_STAGE0, stage0_ticks, WDT_STAGE_ACTION_INT);
+    wdt_hal_config_stage(&iwdt_context, WDT_STAGE1, IWDT_STAGE1_TIMEOUT_US, WDT_STAGE_ACTION_RESET_SYSTEM);
+    wdt_hal_feed(&iwdt_context);
+    bool accepted = iwdt_write_protect_is_open();
+    wdt_hal_write_protect_enable(&iwdt_context);
+    return accepted
+           && iwdt_stage0_ticks() == stage0_ticks
+           && iwdt_stage1_ticks() == IWDT_STAGE1_TIMEOUT_US;
+}
+
+/* Caller masks local high interrupts. The second check catches a handler
+ * that started during the writes and has not yet finished. */
+static bool ESP_SYSTEM_IRAM_ATTR iwdt_prepare_stages(bool *stages_touched)
+{
+    if (!iwdt_handler_idle()) {
+        return false;
+    }
+
+    if (stages_touched != NULL) {
+        *stages_touched = true;
+    }
+    return iwdt_write_stages(IWDT_STAGE0_TIMEOUT_US) && iwdt_handler_idle();
+}
+
+static void ESP_SYSTEM_IRAM_ATTR iwdt_finish_recovery(unsigned ps)
+{
+    bool restored = !s_livelock_enabled
+                    || iwdt_write_stages(esp_int_wdt_livelock_get_feed_stage0_ticks());
+    iwdt_restore_high_interrupts(ps);
+    if (!restored) {
+        abort();
+    }
+}
+
+/* Sleep entry has already expired. Reestablish a verified full timeout with
+ * no handler in flight before restoring the previous stage. Use the remainder
+ * of the fixed cycle budget so recovery cannot extend the hard limit. */
+static void ESP_SYSTEM_IRAM_ATTR iwdt_recover_mode(uint32_t t0)
+{
+    while ((uint32_t)(esp_cpu_get_cycle_count() - t0) < IWDT_MAX_WAIT_CYCLES) {
+        unsigned ps = iwdt_mask_high_interrupts();
+        if (iwdt_prepare_stages(NULL)) {
+            iwdt_finish_recovery(ps);
+            return;
+        }
+        iwdt_restore_high_interrupts(ps);
+    }
+    abort();
+}
+
+static bool ESP_SYSTEM_IRAM_ATTR iwdt_commit_mode(bool enable, int64_t deadline_us)
+{
+    uint32_t t0 = esp_cpu_get_cycle_count();
+    bool stages_touched = false;
+    while ((uint32_t)(esp_cpu_get_cycle_count() - t0) < IWDT_MAX_WAIT_CYCLES) {
+        if (deadline_us && esp_timer_get_time() >= deadline_us) {
+            if (stages_touched) {
+                iwdt_recover_mode(t0);
+            }
+            return false;
+        }
+
+        unsigned ps = iwdt_mask_high_interrupts();
+        if (!iwdt_prepare_stages(&stages_touched)) {
+            /* Allow pending handlers to run before checking the deadline again. */
+            iwdt_restore_high_interrupts(ps);
+            continue;
+        }
+
+        if (deadline_us && esp_timer_get_time() >= deadline_us) {
+            iwdt_finish_recovery(ps);
+            return false;
+        }
+
+        /* Disable only after installing the full timeout. On enable, publish
+         * the recovery budget before installing the short timeout. */
+        bool ok;
+        if (enable) {
+            esp_int_wdt_set_livelock_params(CONFIG_ESP_INT_WDT_TIMEOUT_MS);
+            ok = iwdt_write_stages(esp_int_wdt_livelock_get_feed_stage0_ticks());
+        } else {
+            esp_int_wdt_reset_livelock_params();
+            ok = !iwdt_write_protect_is_open()
+                 && iwdt_stage0_ticks() == IWDT_STAGE0_TIMEOUT_US
+                 && iwdt_stage1_ticks() == IWDT_STAGE1_TIMEOUT_US;
+        }
+        iwdt_restore_high_interrupts(ps);
+        if (!ok) {
+            /* Do not continue with an unverified watchdog configuration. */
+            abort();
+        }
+        return true;
+    }
+    abort();
+}
+
+bool ESP_SYSTEM_IRAM_ATTR esp_int_wdt_set_livelock_mode(bool enable, int64_t deadline_us)
+{
+    bool committed = true;
+    portENTER_CRITICAL_SAFE(&s_iwdt_configure_lock);
+    if (soc_has_cache_lock_bug()) {
+        committed = iwdt_commit_mode(enable, deadline_us);
+        if (committed) {
+            s_livelock_enabled = enable;
+        }
+    } else {
+        reconfigure_ticks(IWDT_STAGE0_TIMEOUT_US, IWDT_STAGE1_TIMEOUT_US);
+    }
+    portEXIT_CRITICAL_SAFE(&s_iwdt_configure_lock);
+    return committed;
+}
+
+/* Preserve the selected mode when the tick feeds the watchdog. */
+static void ESP_SYSTEM_IRAM_ATTR iwdt_tick(void)
+{
+    portENTER_CRITICAL_SAFE(&s_iwdt_configure_lock);
+    if (soc_has_cache_lock_bug() && s_livelock_enabled) {
+        esp_int_wdt_set_livelock_params(CONFIG_ESP_INT_WDT_TIMEOUT_MS);
+        reconfigure_ticks(esp_int_wdt_livelock_get_feed_stage0_ticks(), IWDT_STAGE1_TIMEOUT_US);
+    } else {
+        reconfigure_ticks(IWDT_STAGE0_TIMEOUT_US, IWDT_STAGE1_TIMEOUT_US);
+    }
+    portEXIT_CRITICAL_SAFE(&s_iwdt_configure_lock);
+}
+
+#endif
+
 #if CONFIG_ESP_INT_WDT_CHECK_CPU1
 volatile bool int_wdt_cpu1_ticked = false;
 /* Set while CPU1 is intentionally idle (e.g. tickless idle) and therefore not ticking. The CPU1
@@ -136,8 +340,7 @@ static void ESP_SYSTEM_IRAM_ATTR tick_hook(void)
     }
 #endif
 #if CONFIG_ESP_INT_WDT && CONFIG_ESP32_ECO3_CACHE_LOCK_FIX
-    esp_int_wdt_set_livelock_params(CONFIG_ESP_INT_WDT_TIMEOUT_MS);
-    esp_int_wdt_reconfigure_ticks(esp_int_wdt_livelock_get_feed_stage0_ticks(), IWDT_STAGE1_TIMEOUT_US);
+    iwdt_tick();
 #else
     reconfigure_ticks(IWDT_STAGE0_TIMEOUT_US, IWDT_STAGE1_TIMEOUT_US);
 #endif

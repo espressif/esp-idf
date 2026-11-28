@@ -7,6 +7,7 @@
 #pragma once
 
 #include <stdbool.h>
+#include <stdint.h>
 #include "sdkconfig.h"
 
 #ifdef __cplusplus
@@ -76,6 +77,21 @@ void esp_int_wdt_pause_cpu1_checking(bool pause);
  * @param stage1_ticks Stage1 timeout ticks
  */
 void esp_int_wdt_reconfigure_ticks(uint32_t stage0_ticks, uint32_t stage1_ticks);
+
+/**
+ * @brief Change the ESP32 cache livelock recovery mode and watchdog timeout.
+ *
+ * Serializes the transition with tick feeds and waits for active recovery
+ * handlers before publishing the new mode. Does not feed while waiting for
+ * an active handler. Call before stalling the other CPU.
+ *
+ * @param enable Whether cache livelock recovery should be enabled.
+ * @param deadline_us Absolute esp_timer deadline in microseconds, or 0 to use only the fixed cycle limit.
+ * @return true on success; false if the deadline expired and the previous mode is intact.
+ *         If registers were already touched, recovery may continue past the deadline
+ *         within the original fixed cycle limit.
+ */
+bool esp_int_wdt_set_livelock_mode(bool enable, int64_t deadline_us);
 #endif
 
 #ifdef __cplusplus
