@@ -341,7 +341,7 @@ void hci_evt_process(void *pvParameters)
 
                     /* Counts of advertisements done. This count is set in advertising data every time before advertising. */
                     rssi = (short int *)malloc(sizeof(short int) * num_responses);
-                    if (data_len == NULL) {
+                    if (rssi == NULL) {
                         ESP_LOGE(TAG, "Malloc rssi failed!");
                         goto reset;
                     }
@@ -352,7 +352,7 @@ void hci_evt_process(void *pvParameters)
                     /* Extracting advertiser's name. */
                     data_msg_ptr = 0;
                     scanned_name = (ble_scan_local_name_t *)malloc(num_responses * sizeof(ble_scan_local_name_t));
-                    if (data_len == NULL) {
+                    if (scanned_name == NULL) {
                         ESP_LOGE(TAG, "Malloc scanned_name failed!");
                         goto reset;
                     }
