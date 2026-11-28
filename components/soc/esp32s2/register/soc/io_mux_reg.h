@@ -143,6 +143,9 @@
 #define GPIO_PAD_PULLUP(num) do{PIN_PULLUP_DIS(IOMUX_REG_GPIO##num);PIN_PULLDWN_EN(IOMUX_REG_GPIO##num);}while(0)
 #define GPIO_PAD_SET_DRV(num, drv) PIN_SET_DRV(IOMUX_REG_GPIO##num, drv)
 
+#define USB_INT_PHY0_DM_GPIO_NUM   19
+#define USB_INT_PHY0_DP_GPIO_NUM   20
+
 #define REG_IO_MUX_BASE DR_REG_IO_MUX_BASE
 #define PIN_CTRL                          (REG_IO_MUX_BASE +0x00)
 #define PAD_POWER_SEL                               BIT(15)

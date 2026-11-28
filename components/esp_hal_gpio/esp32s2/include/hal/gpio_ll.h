@@ -20,6 +20,7 @@
 #include "soc/io_mux_reg.h"
 #include "soc/gpio_struct.h"
 #include "soc/gpio_periph.h"
+#include "soc/usb_wrap_struct.h"
 #include "hal/gpio_types.h"
 #include "hal/assert.h"
 
@@ -318,6 +319,10 @@ static inline void gpio_ll_od_enable(gpio_dev_t *hw, uint32_t gpio_num)
 __attribute__((always_inline))
 static inline void gpio_ll_func_sel(gpio_dev_t *hw, uint8_t gpio_num, uint32_t func)
 {
+    // Disable the USB PHY pads if pin 19 or pin 20 needs to select an IOMUX function
+    if (gpio_num == USB_INT_PHY0_DM_GPIO_NUM || gpio_num == USB_INT_PHY0_DP_GPIO_NUM) {
+        USB_WRAP.otg_conf.pad_enable = 0;
+    }
     PIN_FUNC_SELECT(IO_MUX_GPIO0_REG + (gpio_num * 4), func);
 }
 
