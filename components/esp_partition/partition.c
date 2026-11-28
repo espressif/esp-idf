@@ -123,13 +123,15 @@ static esp_err_t load_partitions(void)
     esp_rom_md5_init(&context);
 #endif
 
-    uint32_t partition_align_pg_size = (ESP_PARTITION_TABLE_OFFSET) & ~(MMU_PAGE_SIZE - 1);
-    uint32_t partition_pad = ESP_PARTITION_TABLE_OFFSET - partition_align_pg_size;
-
 #if CONFIG_IDF_TARGET_LINUX
+    // The whole emulated flash is mapped, so the table is at its full offset into it.
+    uint32_t partition_pad = ESP_PARTITION_TABLE_OFFSET;
     esp_err_t err = esp_partition_file_mmap(&p_start);
     size_t mapped_size = ESP_PARTITION_EMULATED_SECTOR_SIZE;
 #else
+    // The MMU page holding the table is mapped, so the table is at its offset within that page.
+    uint32_t partition_align_pg_size = (ESP_PARTITION_TABLE_OFFSET) & ~(MMU_PAGE_SIZE - 1);
+    uint32_t partition_pad = ESP_PARTITION_TABLE_OFFSET - partition_align_pg_size;
     esp_err_t err = spi_flash_mmap(partition_align_pg_size,
                                    SPI_FLASH_SEC_SIZE, SPI_FLASH_MMAP_FLAG_DATA | SPI_FLASH_MMAP_FLAG_BLOCKS_WRITE, (const void **)&p_start, &handle);
     size_t mapped_size = SPI_FLASH_SEC_SIZE;
