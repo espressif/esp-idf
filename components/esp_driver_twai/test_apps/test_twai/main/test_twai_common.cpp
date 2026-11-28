@@ -526,6 +526,42 @@ static void test_twai_generate_tx_glitch(uint32_t bitrate, uint32_t offset_bits,
     gpio_matrix_output(TEST_TX_GPIO, twai_periph_signals[0].tx_sig, false, false);
 }
 
+typedef struct {
+    twai_frame_t frame;
+    uint8_t payload;
+    atomic_bool arm_recovery_tx;
+    atomic_int recovery_callback_count;
+    atomic_int recovery_submit_result;
+    atomic_int recovery_tx_success;
+} recovery_callback_test_ctx_t;
+
+static IRAM_ATTR bool test_bus_off_recovery_state_cb(twai_node_handle_t handle,
+                                                    const twai_state_change_event_data_t *event,
+                                                    void *user_ctx)
+{
+    recovery_callback_test_ctx_t *ctx = (recovery_callback_test_ctx_t *)user_ctx;
+    if (event->old_sta == TWAI_ERROR_BUS_OFF && event->new_sta == TWAI_ERROR_ACTIVE &&
+            atomic_exchange(&ctx->arm_recovery_tx, false)) {
+        /* Recovery must reserve TX ownership before invoking this callback. */
+        esp_err_t result = twai_node_transmit(handle, &ctx->frame, 0);
+        atomic_store(&ctx->recovery_submit_result, result);
+        atomic_fetch_add(&ctx->recovery_callback_count, 1);
+    }
+    return false;
+}
+
+static IRAM_ATTR bool test_bus_off_recovery_tx_done_cb(twai_node_handle_t handle,
+                                                       const twai_tx_done_event_data_t *event,
+                                                       void *user_ctx)
+{
+    (void)handle;
+    recovery_callback_test_ctx_t *ctx = (recovery_callback_test_ctx_t *)user_ctx;
+    if (event->done_tx_frame == &ctx->frame && event->is_tx_success) {
+        atomic_fetch_add(&ctx->recovery_tx_success, 1);
+    }
+    return false;
+}
+
 TEST_CASE("twai bus off recovery (loopback)", "[twai]")
 {
     twai_node_handle_t node_hdl;
@@ -535,10 +571,23 @@ TEST_CASE("twai bus off recovery (loopback)", "[twai]")
     node_config.io_cfg.quanta_clk_out = GPIO_NUM_NC;
     node_config.io_cfg.bus_off_indicator = GPIO_NUM_NC;
     node_config.bit_timing.bitrate = 50000; //slow bitrate to ensure soft error trigger
-    node_config.tx_queue_depth = 1;
+    node_config.tx_queue_depth = 8;
     node_config.flags.enable_self_test = true;
 
     TEST_ESP_OK(twai_new_node_onchip(&node_config, &node_hdl));
+
+    recovery_callback_test_ctx_t cb_ctx = {};
+    cb_ctx.payload = 0xA5;
+    cb_ctx.frame.header.id = 0x345;
+    cb_ctx.frame.header.dlc = 1;
+    cb_ctx.frame.buffer = &cb_ctx.payload;
+    cb_ctx.frame.buffer_len = 1;
+    atomic_store(&cb_ctx.recovery_submit_result, ESP_FAIL);
+
+    twai_event_callbacks_t cbs = {};
+    cbs.on_state_change = test_bus_off_recovery_state_cb;
+    cbs.on_tx_done = test_bus_off_recovery_tx_done_cb;
+    TEST_ESP_OK(twai_node_register_event_callbacks(node_hdl, &cbs, &cb_ctx));
     TEST_ESP_OK(twai_node_enable(node_hdl));
 
     twai_node_status_t node_status = {};
@@ -566,6 +615,7 @@ TEST_CASE("twai bus off recovery (loopback)", "[twai]")
 #endif
     TEST_ASSERT_EQUAL(TWAI_ERROR_BUS_OFF, node_status.state);
     printf("node offline, start recover ...\n");
+    atomic_store(&cb_ctx.arm_recovery_tx, true);
     TEST_ESP_OK(twai_node_recover(node_hdl));
 
     // wait node recovered
@@ -576,6 +626,19 @@ TEST_CASE("twai bus off recovery (loopback)", "[twai]")
     }
     printf("node recovered! current tec %d rec %d, continue\n", node_status.tx_error_count, node_status.rx_error_count);
     TEST_ASSERT_LESS_THAN(96, node_status.tx_error_count);
+
+    /* A frame submitted by the recovery callback must survive the
+     * ISR's subsequent queue/hardware ownership handoff.
+     */
+    TEST_ASSERT_EQUAL(1, atomic_load(&cb_ctx.recovery_callback_count));
+    TEST_ASSERT_EQUAL(ESP_OK, atomic_load(&cb_ctx.recovery_submit_result));
+    const TickType_t recovery_start = xTaskGetTickCount();
+    while (atomic_load(&cb_ctx.recovery_tx_success) == 0 &&
+           (xTaskGetTickCount() - recovery_start) < pdMS_TO_TICKS(3000)) {
+        vTaskDelay(pdMS_TO_TICKS(10));
+    }
+    TEST_ASSERT_EQUAL(1, atomic_load(&cb_ctx.recovery_tx_success));
+
     TEST_ESP_OK(twai_node_transmit(node_hdl, &tx_frame, 500));
     vTaskDelay(pdMS_TO_TICKS(100));
 
@@ -675,6 +738,100 @@ TEST_CASE("twai tx_wait_all_done thread safe", "[twai]")
     vTaskDelay(500);   //wait for tasks finished
     printf("tasks_finished: %d\n", atomic_load(&tasks_finished));
     TEST_ASSERT_EQUAL(2, atomic_load(&tasks_finished));
+
+    TEST_ESP_OK(twai_node_disable(node_hdl));
+    TEST_ESP_OK(twai_node_delete(node_hdl));
+}
+
+#define TEST_TWAI_CONCURRENT_TX_FRAMES 200
+
+typedef struct {
+    twai_node_handle_t node;
+    twai_frame_t *frames;
+    size_t frame_count;
+    atomic_int *tasks_finished;
+} concurrent_tx_task_args_t;
+
+static void test_concurrent_tx_task(void *arg)
+{
+    concurrent_tx_task_args_t *args = (concurrent_tx_task_args_t *)arg;
+    for (size_t i = 0; i < args->frame_count; i++) {
+        TEST_ESP_OK(twai_node_transmit(args->node, &args->frames[i], -1));
+    }
+    atomic_fetch_add(args->tasks_finished, 1);
+    vTaskDelete(NULL);
+}
+
+static IRAM_ATTR bool test_concurrent_tx_done_cb(twai_node_handle_t handle, const twai_tx_done_event_data_t *edata, void *user_ctx)
+{
+    atomic_int *tx_done = (atomic_int *)user_ctx;
+    if (edata->is_tx_success) {
+        atomic_fetch_add(tx_done, 1);
+    }
+    return false;
+}
+
+TEST_CASE("twai concurrent transmit does not lose TX handoff (loopback)", "[twai]")
+{
+    twai_node_handle_t node_hdl;
+    twai_onchip_node_config_t node_config = {};
+    node_config.io_cfg.tx = TEST_TX_GPIO;
+    node_config.io_cfg.rx = TEST_TX_GPIO;
+    node_config.io_cfg.quanta_clk_out = GPIO_NUM_NC;
+    node_config.io_cfg.bus_off_indicator = GPIO_NUM_NC;
+    node_config.bit_timing.bitrate = 1000000;
+    node_config.tx_queue_depth = 32;
+    node_config.flags.enable_self_test = true;
+    node_config.flags.enable_loopback = true;
+
+    TEST_ESP_OK(twai_new_node_onchip(&node_config, &node_hdl));
+
+    atomic_int tx_done = 0;
+    twai_event_callbacks_t user_cbs = {};
+    user_cbs.on_tx_done = test_concurrent_tx_done_cb;
+    TEST_ESP_OK(twai_node_register_event_callbacks(node_hdl, &user_cbs, &tx_done));
+    TEST_ESP_OK(twai_node_enable(node_hdl));
+
+    static twai_frame_t frames[2][TEST_TWAI_CONCURRENT_TX_FRAMES];
+    static uint8_t payload[2][TEST_TWAI_CONCURRENT_TX_FRAMES];
+    memset(frames, 0, sizeof(frames));
+    memset(payload, 0, sizeof(payload));
+    for (size_t task = 0; task < 2; task++) {
+        for (size_t i = 0; i < TEST_TWAI_CONCURRENT_TX_FRAMES; i++) {
+            frames[task][i].header.id = 0x100 + task;
+            frames[task][i].header.dlc = 1;
+            frames[task][i].buffer = &payload[task][i];
+            frames[task][i].buffer_len = 1;
+            payload[task][i] = i;
+        }
+    }
+
+    atomic_int tasks_finished = 0;
+    concurrent_tx_task_args_t args[2] = {
+        {
+            .node = node_hdl,
+            .frames = frames[0],
+            .frame_count = TEST_TWAI_CONCURRENT_TX_FRAMES,
+            .tasks_finished = &tasks_finished,
+        },
+        {
+            .node = node_hdl,
+            .frames = frames[1],
+            .frame_count = TEST_TWAI_CONCURRENT_TX_FRAMES,
+            .tasks_finished = &tasks_finished,
+        },
+    };
+
+    TEST_ASSERT_EQUAL(pdPASS, xTaskCreate(test_concurrent_tx_task, "twai_tx_0", 4096, &args[0], 2, NULL));
+    TEST_ASSERT_EQUAL(pdPASS, xTaskCreate(test_concurrent_tx_task, "twai_tx_1", 4096, &args[1], 2, NULL));
+
+    const TickType_t start = xTaskGetTickCount();
+    while ((atomic_load(&tasks_finished) != 2) && ((xTaskGetTickCount() - start) < pdMS_TO_TICKS(5000))) {
+        vTaskDelay(1);
+    }
+    TEST_ASSERT_EQUAL(2, atomic_load(&tasks_finished));
+    TEST_ESP_OK(twai_node_transmit_wait_all_done(node_hdl, 5000));
+    TEST_ASSERT_EQUAL(2 * TEST_TWAI_CONCURRENT_TX_FRAMES, atomic_load(&tx_done));
 
     TEST_ESP_OK(twai_node_disable(node_hdl));
     TEST_ESP_OK(twai_node_delete(node_hdl));
