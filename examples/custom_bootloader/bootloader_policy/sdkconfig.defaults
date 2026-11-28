@@ -1,0 +1,9 @@
+# The bootloader carries policy code, so on chips whose bootloader region is small
+# (0x1000 to 0x8000 on ESP32) the partition table has to move up.
+CONFIG_PARTITION_TABLE_CUSTOM=y
+CONFIG_PARTITION_TABLE_CUSTOM_FILENAME="partitions.csv"
+CONFIG_PARTITION_TABLE_OFFSET=0xa000
+
+# The example never confirms the image by default, so every boot is an unconfirmed boot and
+# the attempt limit is reached. See main/Kconfig.projbuild for the healthy path.
+CONFIG_EXAMPLE_CONFIRM_IMAGE=n
