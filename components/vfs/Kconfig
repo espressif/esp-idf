@@ -38,6 +38,18 @@ menu "Virtual file system"
             Disabling this option can save memory when the support for these functions
             is not required.
 
+    config VFS_SUPPORT_SYNTHETIC_ROOT
+        bool "List synthetic parent directories of mount points"
+        default n
+        depends on VFS_SUPPORT_DIR
+        help
+            If enabled, opendir()/readdir()/stat() also work on the root ("/") and on the
+            intermediate parent directories of registered mount points, so the mount point
+            hierarchy can be browsed even though no filesystem is mounted there.
+
+            Disabled by default, as it adds code and a small per-call check to the directory
+            functions.
+
     config VFS_SUPPORT_SELECT
         bool "Provide select function"
         default y
