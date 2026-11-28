@@ -8,6 +8,8 @@
 #ifndef __SYS_ARCH_H__
 #define __SYS_ARCH_H__
 
+#include <string.h>
+
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "freertos/queue.h"
@@ -57,9 +59,14 @@ void sys_delay_ms(uint32_t ms);
  * @brief Check if a static semaphore is valid (initialized)
  *
  * For static semaphores, we check if the structure is zero-initialized.
- * A zero-initialized StaticSemaphore_t indicates an uninitialized semaphore.
+ * A null pointer or an all-zero semaphore indicates an uninitialized semaphore.
  */
-#define sys_sem_valid(sema)       ((memcmp((sema), &(StaticSemaphore_t){0}, sizeof(StaticSemaphore_t)) == 0) ? pdFALSE : pdTRUE)
+static inline BaseType_t sys_sem_is_initialized(const sys_sem_t *sema)
+{
+    static const unsigned char empty[sizeof(sys_sem_t)] = {0};
+    return sema != NULL && memcmp(sema, empty, sizeof(empty)) != 0;
+}
+#define sys_sem_valid(sema) sys_sem_is_initialized(sema)
 
 /**
  * @brief Mark a static semaphore as invalid (uninitialized)

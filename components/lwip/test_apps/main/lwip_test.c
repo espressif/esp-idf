@@ -19,6 +19,7 @@
 #include "lwip/inet.h"
 #include "lwip/netdb.h"
 #include "lwip/sockets.h"
+#include "lwip/sys.h"
 #include "lwip/tcpip.h"
 #include "lwip/prot/iana.h"
 #include "ping/ping_sock.h"
@@ -45,6 +46,17 @@ TEST_SETUP(lwip)
 
 TEST_TEAR_DOWN(lwip)
 {
+}
+
+TEST(lwip, static_semaphore_validity)
+{
+    sys_sem_t semaphore = {0};
+    TEST_ASSERT_FALSE(sys_sem_valid(NULL));
+    TEST_ASSERT_FALSE(sys_sem_valid(&semaphore));
+    TEST_ASSERT_EQUAL(ERR_OK, sys_sem_new(&semaphore, 0));
+    TEST_ASSERT_TRUE(sys_sem_valid(&semaphore));
+    sys_sem_free(&semaphore);
+    TEST_ASSERT_FALSE(sys_sem_valid(&semaphore));
 }
 
 static void test_on_ping_success(esp_ping_handle_t hdl, void *args)
@@ -614,6 +626,7 @@ TEST(lwip, dhcps_parse_options_req_ipaddr_truncated)
 
 TEST_GROUP_RUNNER(lwip)
 {
+    RUN_TEST_CASE(lwip, static_semaphore_validity)
     RUN_TEST_CASE(lwip, localhost_ping_test)
     RUN_TEST_CASE(lwip, dhcp_server_init_deinit)
     RUN_TEST_CASE(lwip, dhcp_server_start_stop_localhost)
