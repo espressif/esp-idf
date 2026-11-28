@@ -719,6 +719,12 @@ static esp_err_t i2c_hw_fsm_reset(i2c_port_t i2c_num)
     i2c_hal_get_timing_config(&i2c_context[i2c_num].hal, &timing_config);
     i2c_ll_master_get_filter(i2c_context[i2c_num].hal.dev, &filter_cfg);
 
+    // Disable and clear the interrupts while the bus clock is still running.
+    // Once the clock is gated, writes to int_ena/int_clr are lost, and an
+    // interrupt that is already raised keeps the line asserted: the ISR then
+    // reads int_status as 0 and re-enters until the interrupt watchdog fires.
+    i2c_ll_disable_intr_mask(i2c_context[i2c_num].hal.dev, I2C_LL_INTR_MASK);
+    i2c_ll_clear_intr_mask(i2c_context[i2c_num].hal.dev, I2C_LL_INTR_MASK);
     //to reset the I2C hw module, we need re-enable the hw
     i2c_hw_disable(i2c_num);
     i2c_master_clear_bus(i2c_num);
