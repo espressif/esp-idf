@@ -186,6 +186,7 @@ def _run(
     fragments_list_file,
     libraries_file,
     mutable_libraries_file,
+    excluded_archives,
     output_path,
     config_file,
     kconfig_file,
@@ -252,7 +253,7 @@ def _run(
             sys.exit(0)
 
         mutable_libs = [lib.strip() for lib in mutable_libraries_file]
-        generation_model = Generation(check_mapping, check_mapping_exceptions, mutable_libs, debug)
+        generation_model = Generation(check_mapping, check_mapping_exceptions, mutable_libs, debug, excluded_archives)
 
         _update_environment(env, env_file)
 
@@ -352,6 +353,14 @@ def _run(
     type=click.File('r'),
     help='File that contains the list of mutable libraries in the build',
 )
+@click.option(
+    '--excluded-archive',
+    'excluded_archives',
+    multiple=True,
+    default=[],
+    metavar='ARCHIVE',
+    help='Archive left out of the libraries on purpose; a mapping of its objects or symbols is an error',
+)
 @click.option('--output', '-o', help='Output linker script')
 @click.option('--config', '-c', help='Project configuration')
 @click.option('--kconfig', '-k', help='IDF Kconfig file')
@@ -388,6 +397,7 @@ def cli(
     fragments_list_file,
     libraries_file,
     mutable_libraries_file,
+    excluded_archives,
     output,
     config,
     kconfig,
@@ -408,6 +418,7 @@ def cli(
         fragments_list_file=fragments_list_file,
         libraries_file=libraries_file,
         mutable_libraries_file=mutable_libraries_file or [],
+        excluded_archives=excluded_archives,
         output_path=output,
         config_file=config,
         kconfig_file=kconfig,

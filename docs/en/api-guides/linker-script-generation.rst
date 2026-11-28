@@ -194,6 +194,17 @@ In the same manner as ``rtc`` and ``noflash`` are schemes, there exists a ``defa
 
     For an example of an ESP-IDF component using the linker script generation mechanism, see :component_file:`freertos/CMakeLists.txt`. ``freertos`` uses this to place its object files to the instruction RAM for performance reasons.
 
+Excluding Components from Linker Script Generation
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+The generated linker script depends on every component archive linked into the application, so the script is regenerated, and the application relinked, whenever any of them is rebuilt. A project can leave components out of this with the ``LDGEN_EXCLUDE_COMPONENTS`` :ref:`build property <cmake-build-properties>`. Set it before ``project()`` in the project ``CMakeLists.txt``:
+
+.. code-block:: cmake
+
+    idf_build_set_property(LDGEN_EXCLUDE_COMPONENTS main)
+
+The archives of the listed components are not scanned by the linker script generator and are not dependencies of the generated script, so editing only those components does not regenerate it. The generator does not know what those archives contain, so the build fails if a mapping fragment places objects or symbols from one of them; archive level entries such as ``* (noflash)`` are still fine.
+
 This marks the end of the quick start guide. The following text discusses the internals of the mechanism in a little bit more detail. The following sections should be helpful in creating custom placements or modifying default behavior.
 
 Linker Script Generation Internals
