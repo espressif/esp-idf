@@ -17,10 +17,6 @@
    *(.fini)
    *(.fini_array)
    *(.fini_array.*)
-#if CONFIG_IDF_TARGET_ARCH_XTENSA
-   *(.eh_frame_hdr)
-#endif // CONFIG_IDF_TARGET_ARCH_XTENSA
-
 #if !EH_FRAME_LINKING_ENABLED
    *(.eh_frame_hdr)
    *(.eh_frame)
