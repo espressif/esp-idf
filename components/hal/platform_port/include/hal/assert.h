@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -46,7 +46,14 @@ __noreturn void abort(void);
 #if IS_ULP_COCPU
 #define HAL_ASSERT(__e) ((void)(__e))
 #elif CONFIG_HAL_DEFAULT_ASSERTION_LEVEL == 1 // silent
-#define HAL_ASSERT(__e) (__builtin_expect(!!(__e), 1) ? (void)0 : abort())
+// Keeps each assertion's call to abort() separate, so the address it reports is the assertion's own.
+// See the silent assert() in esp_libc's assert.h.
+void __hal_abort_silent(void) __asm__("abort");
+#define HAL_ASSERT(__e) (__builtin_expect(!!(__e), 1) ? (void)0 : __extension__ ({ \
+        __hal_abort_silent(); \
+        __asm__ __volatile__("" :: "i"(__COUNTER__)); \
+        __builtin_unreachable(); \
+    }))
 #elif CONFIG_HAL_DEFAULT_ASSERTION_LEVEL == 2 // full assertion
 #define HAL_ASSERT(__e) (__builtin_expect(!!(__e), 1) ? (void)0 : __assert_func(__FILE__, __LINE__, __ASSERT_FUNC, #__e))
 #else // no assert

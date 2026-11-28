@@ -105,10 +105,15 @@ void _esp_error_check_failed_without_abort(esp_err_t rc, const char *file, int l
         (void) sizeof(err_rc_);                                         \
     } while(0)
 #elif defined(CONFIG_COMPILER_OPTIMIZATION_ASSERTIONS_SILENT)
+// Keeps each check's call to abort() separate, so the address it reports is the check's own.
+// See the silent assert() in esp_libc's assert.h.
+void _esp_error_check_abort(void) __asm__("abort");
 #define ESP_ERROR_CHECK(x) do {                                         \
         esp_err_t err_rc_ = (x);                                        \
         if (unlikely(err_rc_ != ESP_OK)) {                              \
-            abort();                                                    \
+            _esp_error_check_abort();                                   \
+            __asm__ __volatile__("" :: "i"(__COUNTER__));               \
+            __builtin_unreachable();                                    \
         }                                                               \
     } while(0)
 #else
