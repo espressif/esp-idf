@@ -1002,6 +1002,9 @@ esp_err_t protocomm_ble_start(protocomm_t *pc, const protocomm_ble_config_t *con
    /* Set parameter to keep BLE on */
     ble_config->keep_ble_on = config->keep_ble_on;
 
+    /* Opt in to starting on a stack the application already brought up */
+    ble_config->reuse_ble_stack = config->reuse_ble_stack;
+
     if (config->ble_addr != NULL) {
         ble_config->ble_addr = protocomm_ble_addr;
     }
