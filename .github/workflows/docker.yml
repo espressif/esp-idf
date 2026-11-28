@@ -35,6 +35,7 @@ jobs:
         run: |
           echo "CLONE_BRANCH_OR_TAG=$GITHUB_REF_NAME" >> $GITHUB_ENV
           echo "TAG_NAME=$GITHUB_REF_NAME" >> $GITHUB_ENV
+          echo "CLONE_SHALLOW=1" >> $GITHUB_ENV
       - name: Set variables (release branches)
         if: ${{ github.ref_type == 'branch' && startsWith(github.ref_name, 'release/') }}
         run: |
@@ -52,6 +53,7 @@ jobs:
           echo "CLONE_BRANCH_OR_TAG: $CLONE_BRANCH_OR_TAG"
           echo "CHECKOUT_REF: $CHECKOUT_REF"
           echo "TAG_NAME: $TAG_NAME"
+          echo "CLONE_SHALLOW: $CLONE_SHALLOW"
 
       # The following steps are the standard boilerplate from
       # https://github.com/marketplace/actions/build-and-push-docker-images
@@ -76,6 +78,7 @@ jobs:
           build-args: |
             IDF_CLONE_URL=${{ github.server_url }}/${{ github.repository }}.git
             IDF_CLONE_BRANCH_OR_TAG=${{ env.CLONE_BRANCH_OR_TAG }}
+            IDF_CLONE_SHALLOW=${{ env.CLONE_SHALLOW }}
 
       - name: Update Docker Hub repository description (master branch)
         if: ${{ github.ref_type == 'branch' && github.ref_name == 'master' }}
