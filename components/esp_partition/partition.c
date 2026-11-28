@@ -123,8 +123,13 @@ static esp_err_t load_partitions(void)
     esp_rom_md5_init(&context);
 #endif
 
-    uint32_t partition_align_pg_size = (ESP_PARTITION_TABLE_OFFSET) & ~(MMU_PAGE_SIZE - 1);
-    uint32_t partition_pad = ESP_PARTITION_TABLE_OFFSET - partition_align_pg_size;
+#if CONFIG_IDF_TARGET_LINUX
+    uint32_t partition_table_offset = ESP_PARTITION_TABLE_OFFSET;
+#else
+    uint32_t partition_table_offset = esp_partition_table_get_offset();
+#endif
+    uint32_t partition_align_pg_size = partition_table_offset & ~(MMU_PAGE_SIZE - 1);
+    uint32_t partition_pad = partition_table_offset - partition_align_pg_size;
 
 #if CONFIG_IDF_TARGET_LINUX
     esp_err_t err = esp_partition_file_mmap(&p_start);

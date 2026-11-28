@@ -27,6 +27,7 @@ const esp_bootloader_desc_t esp_bootloader_desc = {
 #else
     .date_time = "",
 #endif
+    .partition_table_offset = CONFIG_PARTITION_TABLE_OFFSET,
     .reserved2 = { 0 },
 };
 
